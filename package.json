@@ -1,0 +1,25 @@
+{
+  "name": "racehubos",
+  "version": "0.1.0",
+  "description": "Open Source Race Management System for Carrera Digital 132/124",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev -w @racehubos/backend",
+    "dev:frontend": "npm run dev -w @racehubos/frontend",
+    "build": "npm run build -w @racehubos/frontend && npm run build -w @racehubos/backend",
+    "lint": "npm run lint --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "author": "",
+  "license": "Apache-2.0"
+}
