@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  name      String
+  photo     String?
+  color     String
+  team      String?
+  createdAt DateTime @default(now())
+
+  raceResults RaceResult[]
+  stats       DriverStats?
+}
+
+model Car {
+  id           String @id @default(cuid())
+  brand        String
+  model        String
+  year         Int?
+  photo        String?
+  maxSpeed     Int    @default(100)
+  braking      Int    @default(50)
+  fuelCapacity Int    @default(100)
+
+  raceResults RaceResult[]
+}
+
+model Track {
+  id     String  @id @default(cuid())
+  name   String
+  config String?
+  length Float?
+
+  races Race[]
+}
+
+model Race {
+  id          String   @id @default(cuid())
+  name        String
+  date        DateTime @default(now())
+  type        String
+  mode        String
+  lapsCount   Int?
+  duration    Int?
+  fuelEnabled Boolean  @default(true)
+
+  trackId        String?
+  track          Track?        @relation(fields: [trackId], references: [id])
+  championshipId String?
+  championship   Championship? @relation(fields: [championshipId], references: [id])
+
+  results RaceResult[]
+}
+
+model RaceResult {
+  id        String @id @default(cuid())
+  position  Int
+  laps      Int
+  totalTime Float
+  bestLap   Float
+  pitStops  Int    @default(0)
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  carId String
+  car   Car    @relation(fields: [carId], references: [id])
+
+  raceId String
+  race   Race   @relation(fields: [raceId], references: [id])
+
+  lapTimes LapTime[]
+}
+
+model LapTime {
+  id        String @id @default(cuid())
+  lapNumber Int
+  time      Float
+
+  resultId String
+  result   RaceResult @relation(fields: [resultId], references: [id])
+}
+
+model Championship {
+  id           String @id @default(cuid())
+  name         String
+  season       String
+  pointsSystem String
+
+  races Race[]
+}
+
+model DriverStats {
+  id          String @id @default(cuid())
+  racesCount  Int    @default(0)
+  wins        Int    @default(0)
+  podiums     Int    @default(0)
+  bestLapEver Float?
+
+  driverId String @unique
+  driver   Driver @relation(fields: [driverId], references: [id])
+}
