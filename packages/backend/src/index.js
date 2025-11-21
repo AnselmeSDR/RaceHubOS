@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { CarreraSimulator } from './services/simulator.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,6 +16,10 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
   },
 });
+
+// Initialize simulator
+const simulator = new CarreraSimulator(io);
+simulator.init(6); // 6 cars by default
 
 // Middleware
 app.use(cors());
@@ -41,13 +46,42 @@ app.get('/api', (req, res) => {
       tracks: '/api/tracks',
       races: '/api/races',
       championships: '/api/championships',
+      simulator: '/api/simulator',
     },
   });
+});
+
+// Simulator control endpoints
+app.get('/api/simulator', (req, res) => {
+  res.json(simulator.getState());
+});
+
+app.post('/api/simulator/start', (req, res) => {
+  simulator.start();
+  res.json({ status: 'started' });
+});
+
+app.post('/api/simulator/stop', (req, res) => {
+  simulator.stop();
+  res.json({ status: 'stopped' });
+});
+
+app.post('/api/simulator/pause', (req, res) => {
+  simulator.togglePause();
+  res.json({ status: 'toggled' });
 });
 
 // WebSocket connection
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
+
+  // Send current simulator state on connection
+  socket.emit('race:status', {
+    running: simulator.isRunning,
+    active: simulator.raceActive,
+    raceTime: simulator.raceTime,
+    carCount: simulator.cars.length,
+  });
 
   socket.on('disconnect', () => {
     console.log(`❌ Client disconnected: ${socket.id}`);
@@ -56,35 +90,39 @@ io.on('connection', (socket) => {
   // Race control events
   socket.on('race:start', (data) => {
     console.log('▶️  Race start requested:', data);
-    // TODO: Start race logic
-    socket.broadcast.emit('race:started');
+    simulator.start();
   });
 
   socket.on('race:pause', () => {
     console.log('⏸️  Race pause requested');
-    // TODO: Pause race logic
-    socket.broadcast.emit('race:paused');
+    simulator.togglePause();
   });
 
   socket.on('race:stop', () => {
     console.log('⏹️  Race stop requested');
-    // TODO: Stop race logic
-    socket.broadcast.emit('race:finished', { results: [] });
+    simulator.stop();
   });
 
   socket.on('car:setSpeed', (data) => {
     console.log('🏎️  Set speed:', data);
-    // TODO: Set car speed
+    simulator.setCarSpeed(data.carId, data.speed);
   });
 
-  socket.on('car:setBrake', (data) => {
-    console.log('🛑 Set brake:', data);
-    // TODO: Set car brake
+  // Simulator control via WebSocket
+  socket.on('simulator:start', () => {
+    simulator.start();
   });
 
-  socket.on('car:setFuel', (data) => {
-    console.log('⛽ Set fuel:', data);
-    // TODO: Set car fuel
+  socket.on('simulator:stop', () => {
+    simulator.stop();
+  });
+
+  socket.on('simulator:pause', () => {
+    simulator.togglePause();
+  });
+
+  socket.on('simulator:getState', () => {
+    socket.emit('simulator:state', simulator.getState());
   });
 });
 
