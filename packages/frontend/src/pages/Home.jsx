@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { CarreraConnection } from '../utils/carrera-protocol';
 
 export default function Home() {
   const [systemStatus, setSystemStatus] = useState({
@@ -12,6 +13,7 @@ export default function Home() {
   const [logs, setLogs] = useState([]);
   const logsEndRef = useRef(null);
   const socketRef = useRef(null);
+  const bleConnectionRef = useRef(null);
 
   const [simulatorStatus, setSimulatorStatus] = useState({
     running: false,
@@ -21,6 +23,7 @@ export default function Home() {
   });
 
   const [carData, setCarData] = useState([]);
+  const [connectionMode, setConnectionMode] = useState('none'); // 'none', 'simulator', 'bluetooth'
 
   const addLog = (type, message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -102,27 +105,67 @@ export default function Home() {
         return;
       }
 
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: 'Control_Unit' }],
-        optionalServices: ['39df7777-b1b4-b90b-57f1-7144ae4e4a6a']
-      });
+      // Create BLE connection
+      const connection = new CarreraConnection();
+      bleConnectionRef.current = connection;
 
-      addLog('success', `Device trouvé: ${device.name} (${device.id})`);
+      // Handle incoming events from Control Unit
+      connection.onEvent = (event) => {
+        if (event.type === 'timer') {
+          // Lap or sector event
+          addLog('info', `Voiture ${event.carId} - Secteur ${event.sector} - ${event.timestamp}ms`);
+
+          // Emit to backend for processing
+          if (socketRef.current) {
+            socketRef.current.emit('bluetooth:timer', event);
+          }
+        } else if (event.type === 'status') {
+          // Status update (fuel, pit lanes, etc.)
+          addLog('info', `Status reçu - Carburant: ${event.fuel.join(',')}`);
+
+          if (socketRef.current) {
+            socketRef.current.emit('bluetooth:status', event);
+          }
+        }
+      };
+
+      // Connect
+      const device = await connection.connect();
+
+      addLog('success', `Device trouvé: ${device.name}`);
       addLog('info', 'Connexion au Control Unit...');
 
       setSystemStatus(prev => ({ ...prev, bluetooth: 'connected' }));
+      setConnectionMode('bluetooth');
       addLog('success', 'Connecté au Carrera Control Unit');
-      alert('Connecté à ' + device.name);
+      addLog('info', 'Réception des données en temps réel...');
+
     } catch (error) {
       console.error('Bluetooth error:', error);
       addLog('error', 'Erreur Bluetooth: ' + error.message);
       setSystemStatus(prev => ({ ...prev, bluetooth: 'error' }));
+
+      if (bleConnectionRef.current) {
+        await bleConnectionRef.current.disconnect();
+        bleConnectionRef.current = null;
+      }
+    }
+  };
+
+  const disconnectBluetooth = async () => {
+    if (bleConnectionRef.current) {
+      await bleConnectionRef.current.disconnect();
+      bleConnectionRef.current = null;
+      setSystemStatus(prev => ({ ...prev, bluetooth: 'disconnected' }));
+      setConnectionMode('none');
+      addLog('warning', 'Bluetooth déconnecté');
     }
   };
 
   const startSimulator = () => {
     if (socketRef.current) {
       socketRef.current.emit('simulator:start');
+      setConnectionMode('simulator');
       addLog('success', 'Simulateur démarré');
     }
   };
@@ -130,6 +173,7 @@ export default function Home() {
   const stopSimulator = () => {
     if (socketRef.current) {
       socketRef.current.emit('simulator:stop');
+      setConnectionMode('none');
       addLog('warning', 'Simulateur arrêté');
     }
   };
@@ -271,23 +315,42 @@ export default function Home() {
             <p className="text-gray-400 mb-6">
               Connectez le Carrera AppConnect via Bluetooth pour commencer à recevoir les données du circuit.
             </p>
-            <button
-              onClick={connectBluetooth}
-              disabled={systemStatus.bluetooth === 'connecting' || systemStatus.bluetooth === 'connected'}
-              className={`w-full py-3 px-6 rounded-lg font-semibold text-lg transition-all ${
-                systemStatus.bluetooth === 'connected'
-                  ? 'bg-green-600 hover:bg-green-700 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {systemStatus.bluetooth === 'connected' ? '✓ Connecté' :
-               systemStatus.bluetooth === 'connecting' ? 'Connexion...' :
-               'Connecter AppConnect'}
-            </button>
+
+            {connectionMode === 'bluetooth' ? (
+              <button
+                onClick={disconnectBluetooth}
+                className="w-full py-3 px-6 bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-lg transition-all active:scale-95"
+              >
+                Déconnecter
+              </button>
+            ) : (
+              <button
+                onClick={connectBluetooth}
+                disabled={systemStatus.bluetooth === 'connecting' || connectionMode === 'simulator'}
+                className={`w-full py-3 px-6 rounded-lg font-semibold text-lg transition-all ${
+                  connectionMode === 'simulator'
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {systemStatus.bluetooth === 'connecting' ? 'Connexion...' :
+                 connectionMode === 'simulator' ? 'Simulateur actif' :
+                 'Connecter AppConnect'}
+              </button>
+            )}
+
             {!navigator.bluetooth && (
               <p className="text-yellow-500 text-sm mt-4">
                 ⚠️ Web Bluetooth non supporté. Utilisez Chrome ou Edge.
               </p>
+            )}
+
+            {connectionMode === 'bluetooth' && (
+              <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-lg">
+                <p className="text-green-400 text-sm">
+                  ✓ Connecté en Bluetooth - Données en temps réel
+                </p>
+              </div>
             )}
           </div>
 
@@ -328,31 +391,45 @@ export default function Home() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-400">État</div>
-              <div className={`text-lg font-semibold ${simulatorStatus.running ? 'text-green-400' : 'text-gray-500'}`}>
-                {simulatorStatus.running ? (simulatorStatus.active ? '▶ En cours' : '⏸ En pause') : '⏹ Arrêté'}
+              <div className="text-sm text-gray-400">Mode</div>
+              <div className={`text-lg font-semibold ${
+                connectionMode === 'bluetooth' ? 'text-blue-400' :
+                connectionMode === 'simulator' ? 'text-green-400' :
+                'text-gray-500'
+              }`}>
+                {connectionMode === 'bluetooth' ? '📡 Bluetooth' :
+                 connectionMode === 'simulator' ? (simulatorStatus.active ? '▶ Simulateur' : '⏸ Pause') :
+                 '⏹ Aucun'}
               </div>
             </div>
           </div>
 
+          {connectionMode === 'bluetooth' && (
+            <div className="mb-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+              <p className="text-blue-400 text-sm">
+                ℹ️ Simulateur désactivé - Connexion Bluetooth active
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-4 mb-6">
             <button
               onClick={startSimulator}
-              disabled={simulatorStatus.running}
+              disabled={simulatorStatus.running || connectionMode === 'bluetooth'}
               className="flex-1 py-3 px-6 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ▶ Démarrer
             </button>
             <button
               onClick={pauseSimulator}
-              disabled={!simulatorStatus.running}
+              disabled={!simulatorStatus.running || connectionMode === 'bluetooth'}
               className="flex-1 py-3 px-6 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {simulatorStatus.active ? '⏸ Pause' : '▶ Reprendre'}
             </button>
             <button
               onClick={stopSimulator}
-              disabled={!simulatorStatus.running}
+              disabled={!simulatorStatus.running || connectionMode === 'bluetooth'}
               className="flex-1 py-3 px-6 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ⏹ Arrêter
