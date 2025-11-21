@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 
 export default function Home() {
   const [systemStatus, setSystemStatus] = useState({
@@ -10,6 +11,16 @@ export default function Home() {
   const [backendInfo, setBackendInfo] = useState(null);
   const [logs, setLogs] = useState([]);
   const logsEndRef = useRef(null);
+  const socketRef = useRef(null);
+
+  const [simulatorStatus, setSimulatorStatus] = useState({
+    running: false,
+    active: false,
+    raceTime: 0,
+    carCount: 0,
+  });
+
+  const [carData, setCarData] = useState([]);
 
   const addLog = (type, message) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -28,12 +39,50 @@ export default function Home() {
         setBackendInfo(data);
         addLog('success', 'Backend connecté: ' + data.version);
         addLog('success', 'Base de données SQLite opérationnelle');
+
+        // Connect WebSocket
+        const socket = io('http://localhost:3000');
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+          addLog('success', 'WebSocket connecté');
+        });
+
+        socket.on('race:status', (status) => {
+          setSimulatorStatus(status);
+        });
+
+        socket.on('race:carData', (data) => {
+          setCarData(data);
+        });
+
+        socket.on('race:lap', (data) => {
+          addLog('info', `Voiture ${data.carId} - Tour ${data.lapNumber}: ${(data.lapTime / 1000).toFixed(2)}s`);
+        });
+
+        socket.on('race:sector', (data) => {
+          addLog('info', `Voiture ${data.carId} - Secteur ${data.sector}`);
+        });
+
+        socket.on('race:pitStop', (data) => {
+          addLog('warning', `Voiture ${data.carId} - Arrêt au stand (${(data.duration / 1000).toFixed(1)}s)`);
+        });
+
+        socket.on('disconnect', () => {
+          addLog('warning', 'WebSocket déconnecté');
+        });
       })
       .catch((error) => {
         setSystemStatus(prev => ({ ...prev, backend: 'offline', database: 'offline' }));
         addLog('error', 'Impossible de se connecter au backend');
         addLog('warning', 'Vérifiez que le backend est lancé sur le port 3000');
       });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -68,6 +117,27 @@ export default function Home() {
       console.error('Bluetooth error:', error);
       addLog('error', 'Erreur Bluetooth: ' + error.message);
       setSystemStatus(prev => ({ ...prev, bluetooth: 'error' }));
+    }
+  };
+
+  const startSimulator = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('simulator:start');
+      addLog('success', 'Simulateur démarré');
+    }
+  };
+
+  const stopSimulator = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('simulator:stop');
+      addLog('warning', 'Simulateur arrêté');
+    }
+  };
+
+  const pauseSimulator = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('simulator:pause');
+      addLog('info', simulatorStatus.active ? 'Simulateur en pause' : 'Simulateur repris');
     }
   };
 
@@ -246,6 +316,127 @@ export default function Home() {
               Configurer une course →
             </button>
           </div>
+        </div>
+
+        {/* Simulator Controls */}
+        <div className="mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-2xl font-semibold">🎮 Simulateur de Course</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Testez le système sans matériel Carrera
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-400">État</div>
+              <div className={`text-lg font-semibold ${simulatorStatus.running ? 'text-green-400' : 'text-gray-500'}`}>
+                {simulatorStatus.running ? (simulatorStatus.active ? '▶ En cours' : '⏸ En pause') : '⏹ Arrêté'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={startSimulator}
+              disabled={simulatorStatus.running}
+              className="flex-1 py-3 px-6 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ▶ Démarrer
+            </button>
+            <button
+              onClick={pauseSimulator}
+              disabled={!simulatorStatus.running}
+              className="flex-1 py-3 px-6 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {simulatorStatus.active ? '⏸ Pause' : '▶ Reprendre'}
+            </button>
+            <button
+              onClick={stopSimulator}
+              disabled={!simulatorStatus.running}
+              className="flex-1 py-3 px-6 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ⏹ Arrêter
+            </button>
+          </div>
+
+          {/* Race Info */}
+          {simulatorStatus.running && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-900 rounded-lg">
+              <div>
+                <div className="text-gray-400 text-sm">Temps de course</div>
+                <div className="text-xl font-mono text-green-400">
+                  {Math.floor(simulatorStatus.raceTime / 60000)}:{String(Math.floor((simulatorStatus.raceTime % 60000) / 1000)).padStart(2, '0')}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-sm">Voitures</div>
+                <div className="text-xl font-mono text-blue-400">{simulatorStatus.carCount}</div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-sm">Tours total</div>
+                <div className="text-xl font-mono text-purple-400">
+                  {carData.reduce((sum, car) => sum + car.totalLaps, 0)}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-400 text-sm">Leader</div>
+                <div className="text-xl font-mono text-yellow-400">
+                  Voiture {carData.find(c => c.position === 1)?.id || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Car Data Table */}
+          {carData.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-2 px-3 text-gray-400 font-semibold">Pos</th>
+                    <th className="text-left py-2 px-3 text-gray-400 font-semibold">Voiture</th>
+                    <th className="text-right py-2 px-3 text-gray-400 font-semibold">Tours</th>
+                    <th className="text-right py-2 px-3 text-gray-400 font-semibold">Dernier tour</th>
+                    <th className="text-right py-2 px-3 text-gray-400 font-semibold">Meilleur</th>
+                    <th className="text-right py-2 px-3 text-gray-400 font-semibold">Carburant</th>
+                    <th className="text-right py-2 px-3 text-gray-400 font-semibold">Vitesse</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {carData.sort((a, b) => a.position - b.position).map((car) => (
+                    <tr key={car.id} className="border-b border-gray-700 hover:bg-gray-700/50">
+                      <td className="py-2 px-3 font-semibold">{car.position}</td>
+                      <td className="py-2 px-3">
+                        <span className={`inline-flex items-center ${car.inPit ? 'text-yellow-400' : ''}`}>
+                          Voiture {car.id}
+                          {car.inPit && <span className="ml-2 text-xs">🔧 PIT</span>}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono">{car.totalLaps}</td>
+                      <td className="py-2 px-3 text-right font-mono">
+                        {car.lastLapTime > 0 ? `${(car.lastLapTime / 1000).toFixed(2)}s` : '-'}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono text-green-400">
+                        {car.bestLapTime ? `${(car.bestLapTime / 1000).toFixed(2)}s` : '-'}
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${car.fuel > 5 ? 'bg-green-500' : car.fuel > 2 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${(car.fuel / 15) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs font-mono w-8">{car.fuel}/15</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono">{car.speed}/15</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Features */}
