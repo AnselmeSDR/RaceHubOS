@@ -10,13 +10,25 @@ datasource db {
 model Driver {
   id        String   @id @default(cuid())
   name      String
+  number    Int?     @unique  // Numéro de course (1-999)
+  email     String?  @unique
   photo     String?
-  color     String
-  team      String?
-  createdAt DateTime @default(now())
+  color     String   @default("#3B82F6")
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id])
 
-  raceResults RaceResult[]
-  stats       DriverStats?
+  // Stats
+  totalRaces  Int    @default(0)
+  wins        Int    @default(0)
+  podiums     Int    @default(0)
+  bestLap     Float?
+
+  // Relations
+  laps        Lap[]
+  sessions    SessionDriver[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Car {
@@ -25,85 +37,165 @@ model Car {
   model        String
   year         Int?
   photo        String?
-  maxSpeed     Int    @default(100)
-  braking      Int    @default(50)
-  fuelCapacity Int    @default(100)
 
-  raceResults RaceResult[]
+  // Réglages par défaut
+  maxSpeed     Int    @default(100)  // 0-100%
+  brakeForce   Int    @default(50)   // 0-100%
+  fuelCapacity Int    @default(100)  // unités
+
+  // Stats
+  totalRaces   Int    @default(0)
+  bestLap      Float?
+
+  sessions     SessionDriver[]
+  laps         Lap[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Track {
-  id     String  @id @default(cuid())
-  name   String
-  config String?
-  length Float?
+  id        String  @id @default(cuid())
+  name      String
+  layout    String? // Photo/schéma
+  length    Float?  // mètres
+  corners   Int?
 
-  races Race[]
+  // Records
+  bestLap   Float?
+  bestLapBy String?
+
+  sessions  Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Race {
-  id          String   @id @default(cuid())
-  name        String
-  date        DateTime @default(now())
-  type        String
-  mode        String
-  lapsCount   Int?
-  duration    Int?
-  fuelEnabled Boolean  @default(true)
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  color     String?
+  logo      String?
 
-  trackId        String?
-  track          Track?        @relation(fields: [trackId], references: [id])
-  championshipId String?
-  championship   Championship? @relation(fields: [championshipId], references: [id])
+  drivers   Driver[]
 
-  results RaceResult[]
-}
-
-model RaceResult {
-  id        String @id @default(cuid())
-  position  Int
-  laps      Int
-  totalTime Float
-  bestLap   Float
-  pitStops  Int    @default(0)
-
-  driverId String
-  driver   Driver @relation(fields: [driverId], references: [id])
-
-  carId String
-  car   Car    @relation(fields: [carId], references: [id])
-
-  raceId String
-  race   Race   @relation(fields: [raceId], references: [id])
-
-  lapTimes LapTime[]
-}
-
-model LapTime {
-  id        String @id @default(cuid())
-  lapNumber Int
-  time      Float
-
-  resultId String
-  result   RaceResult @relation(fields: [resultId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Championship {
-  id           String @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
-  season       String
-  pointsSystem String
+  season       String   // "2025", "Hiver 2025"
+  pointsSystem String   // JSON string: {1: 25, 2: 18, 3: 15, ...}
+  status       String   @default("planned") // planned, active, completed
 
-  races Race[]
+  sessions     Session[]
+  standings    ChampionshipStanding[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-model DriverStats {
-  id          String @id @default(cuid())
-  racesCount  Int    @default(0)
-  wins        Int    @default(0)
-  podiums     Int    @default(0)
-  bestLapEver Float?
+model ChampionshipStanding {
+  id              String       @id @default(cuid())
+  championshipId  String
+  championship    Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  driverId        String
 
-  driverId String @unique
-  driver   Driver @relation(fields: [driverId], references: [id])
+  position        Int
+  points          Int          @default(0)
+  wins            Int          @default(0)
+  podiums         Int          @default(0)
+
+  @@unique([championshipId, driverId])
+}
+
+model Session {
+  id              String       @id @default(cuid())
+  name            String?
+  type            String       // "practice", "qualifying", "race"
+  trackId         String
+  track           Track        @relation(fields: [trackId], references: [id])
+  championshipId  String?
+  championship    Championship? @relation(fields: [championshipId], references: [id])
+
+  // Configuration
+  duration        Int?         // secondes (null = illimité)
+  maxLaps         Int?         // nombre de tours (null = au temps)
+  fuelMode        String       @default("OFF") // OFF, ON, REAL
+
+  // État
+  status          String       @default("setup") // setup, running, paused, finished
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  // Relations
+  drivers         SessionDriver[]
+  laps            Lap[]
+  events          RaceEvent[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model SessionDriver {
+  id          String  @id @default(cuid())
+  sessionId   String
+  session     Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  driverId    String
+  driver      Driver  @relation(fields: [driverId], references: [id])
+  carId       String
+  car         Car     @relation(fields: [carId], references: [id])
+
+  controller  Int     // 1-6 (manette/controller)
+  position    Int?    // Position sur la piste
+  gridPos     Int?    // Position grille de départ
+  finalPos    Int?    // Position finale
+
+  @@unique([sessionId, driverId])
+  @@unique([sessionId, controller])
+}
+
+
+model Lap {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  carId       String
+  car         Car      @relation(fields: [carId], references: [id])
+
+  controller  Int      // 1-6 (manette/controller)
+  lapNumber   Int
+  lapTime     Float    // millisecondes
+  speed       Float?   // Vitesse moyenne
+  sector1     Float?
+  sector2     Float?
+  sector3     Float?
+
+  fuelBefore  Int?     // Niveau avant le tour
+  fuelAfter   Int?     // Niveau après le tour
+
+  isPitLap    Boolean  @default(false)
+  pitDuration Float?   // millisecondes
+
+  timestamp   DateTime @default(now())
+
+  @@index([sessionId, driverId])
+  @@index([sessionId, lapTime])
+}
+
+model RaceEvent {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  type        String   // "lap", "sector", "pit", "fuel_low", "leader_change", "penalty"
+  data        String   // JSON string
+
+  timestamp   DateTime @default(now())
+
+  @@index([sessionId, timestamp])
 }

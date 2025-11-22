@@ -6,6 +6,16 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { CarreraSimulator } from './services/simulator.js';
 
+// Import routes
+import driversRouter from './routes/drivers.js';
+import carsRouter from './routes/cars.js';
+import tracksRouter from './routes/tracks.js';
+import teamsRouter from './routes/teams.js';
+import sessionsRouter from './routes/sessions.js';
+import championshipsRouter from './routes/championships.js';
+import activeSessionRouter, { setIo, emitToClients } from './routes/activeSession.js';
+import settingsRouter from './routes/settings.js';
+
 const app = express();
 const httpServer = createServer(app);
 const prisma = new PrismaClient();
@@ -21,9 +31,13 @@ const io = new Server(httpServer, {
 const simulator = new CarreraSimulator(io);
 simulator.init(6); // 6 cars by default
 
+// Pass io to activeSession
+setIo(io);
+
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Augmenté pour supporter les images base64
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 
 // Health check
@@ -44,16 +58,34 @@ app.get('/api', (req, res) => {
       drivers: '/api/drivers',
       cars: '/api/cars',
       tracks: '/api/tracks',
+      teams: '/api/teams',
+      sessions: '/api/sessions',
       races: '/api/races',
       championships: '/api/championships',
       simulator: '/api/simulator',
+      activeSession: '/api/active-session',
     },
   });
 });
 
+// Mount API routes
+app.use('/api/drivers', driversRouter);
+app.use('/api/cars', carsRouter);
+app.use('/api/tracks', tracksRouter);
+app.use('/api/teams', teamsRouter);
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/championships', championshipsRouter);
+app.use('/api/active-session', activeSessionRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/bluetooth', settingsRouter);
+
 // Simulator control endpoints
 app.get('/api/simulator', (req, res) => {
-  res.json(simulator.getState());
+  const state = simulator.getState();
+  res.json({
+    ...state,
+    isMockDevice: process.env.USE_MOCK_DEVICE === 'true'
+  });
 });
 
 app.post('/api/simulator/start', (req, res) => {
@@ -81,6 +113,7 @@ io.on('connection', (socket) => {
     active: simulator.raceActive,
     raceTime: simulator.raceTime,
     carCount: simulator.cars.length,
+    isMockDevice: process.env.USE_MOCK_DEVICE === 'true'
   });
 
   socket.on('disconnect', () => {
