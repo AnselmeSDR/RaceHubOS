@@ -242,20 +242,14 @@ export default function Cars() {
 }
 
 function CarCard({ car, onEdit, onDelete }) {
-  // Détermine la couleur du gradient basée sur la vitesse
-  const getSpeedColor = (speed) => {
-    if (speed >= 90) return '#10b981' // vert
-    if (speed >= 70) return '#3b82f6' // bleu
-    return '#6366f1' // indigo
-  }
-
-  const speedColor = getSpeedColor(car.maxSpeed)
+  // Utilise la couleur de la voiture ou une couleur par défaut
+  const carColor = car.color || '#3b82f6'
 
   return (
     <div
       className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 group bg-white"
       style={{
-        background: `linear-gradient(135deg, ${speedColor}10 0%, ${speedColor}05 100%)`,
+        background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)`,
       }}
     >
       {/* Background pattern */}
@@ -264,8 +258,8 @@ function CarCard({ car, onEdit, onDelete }) {
         style={{
           backgroundImage: `repeating-linear-gradient(
             45deg,
-            ${speedColor},
-            ${speedColor} 10px,
+            ${carColor},
+            ${carColor} 10px,
             transparent 10px,
             transparent 20px
           )`
@@ -279,12 +273,12 @@ function CarCard({ car, onEdit, onDelete }) {
           <div className="relative">
             <div
               className="absolute inset-0 rounded-xl blur-md opacity-50"
-              style={{ backgroundColor: speedColor }}
+              style={{ backgroundColor: carColor }}
             />
             <div
               className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
               style={{
-                background: `linear-gradient(135deg, ${speedColor} 0%, ${speedColor}CC 100%)`,
+                background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)`,
               }}
             >
               {car.photo ? (
@@ -320,10 +314,17 @@ function CarCard({ car, onEdit, onDelete }) {
               <PencilIcon className="w-4 h-4" />
             </button>
           </div>
-          <p className="font-bold text-lg" style={{ color: speedColor }}>
+          <p className="font-bold text-lg" style={{ color: carColor }}>
             {car.model}
           </p>
-          <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: speedColor }} />
+          <div className="flex items-center gap-2 mt-2">
+            <div className="h-1 w-16 rounded-full" style={{ backgroundColor: carColor }} />
+            <div
+              className="w-6 h-6 rounded-full ring-2 ring-white shadow-md"
+              style={{ backgroundColor: carColor }}
+              title={carColor}
+            />
+          </div>
         </div>
       </div>
 
@@ -386,7 +387,7 @@ function CarCard({ car, onEdit, onDelete }) {
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 uppercase tracking-wide">Courses</span>
-            <span className="text-lg font-black" style={{ color: speedColor }}>
+            <span className="text-lg font-black" style={{ color: carColor }}>
               {car._count?.sessions || 0}
             </span>
           </div>
@@ -396,7 +397,7 @@ function CarCard({ car, onEdit, onDelete }) {
       {/* Racing stripe effect */}
       <div
         className="absolute top-0 left-0 w-1 h-full opacity-80"
-        style={{ backgroundColor: speedColor }}
+        style={{ backgroundColor: carColor }}
       />
     </div>
   )
@@ -407,6 +408,7 @@ function CarForm({ car, onClose, onDelete }) {
     brand: car?.brand || '',
     model: car?.model || '',
     year: car?.year || new Date().getFullYear(),
+    color: car?.color || '#3B82F6',
     maxSpeed: car?.maxSpeed || 100,
     brakeForce: car?.brakeForce || 50,
     fuelCapacity: car?.fuelCapacity || 100,
@@ -532,6 +534,27 @@ function CarForm({ car, onClose, onDelete }) {
               min="1900"
               max="2100"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Couleur
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="w-16 h-10 rounded cursor-pointer"
+              />
+              <input
+                type="text"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="#3B82F6"
+              />
+            </div>
           </div>
 
           <div>

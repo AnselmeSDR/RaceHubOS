@@ -14,7 +14,7 @@ import teamsRouter from './routes/teams.js';
 import sessionsRouter from './routes/sessions.js';
 import championshipsRouter from './routes/championships.js';
 import activeSessionRouter, { setIo, emitToClients } from './routes/activeSession.js';
-import settingsRouter from './routes/settings.js';
+import settingsRouter, { setSettingsIo } from './routes/settings.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -31,8 +31,9 @@ const io = new Server(httpServer, {
 const simulator = new CarreraSimulator(io);
 simulator.init(6); // 6 cars by default
 
-// Pass io to activeSession
+// Pass io to activeSession and settings
 setIo(io);
+setSettingsIo(io);
 
 // Middleware
 app.use(cors());
@@ -82,9 +83,13 @@ app.use('/api/bluetooth', settingsRouter);
 // Simulator control endpoints
 app.get('/api/simulator', (req, res) => {
   const state = simulator.getState();
+  const isMockDevice = process.env.USE_MOCK_DEVICE === 'true';
+
+  // If not using mock device, don't return simulated cars
   res.json({
     ...state,
-    isMockDevice: process.env.USE_MOCK_DEVICE === 'true'
+    cars: isMockDevice ? state.cars : [],
+    isMockDevice: isMockDevice
   });
 });
 
@@ -108,12 +113,13 @@ io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
 
   // Send current simulator state on connection
+  const isMockDevice = process.env.USE_MOCK_DEVICE === 'true';
   socket.emit('race:status', {
     running: simulator.isRunning,
     active: simulator.raceActive,
     raceTime: simulator.raceTime,
-    carCount: simulator.cars.length,
-    isMockDevice: process.env.USE_MOCK_DEVICE === 'true'
+    carCount: isMockDevice ? simulator.cars.length : 0,
+    isMockDevice: isMockDevice
   });
 
   socket.on('disconnect', () => {
