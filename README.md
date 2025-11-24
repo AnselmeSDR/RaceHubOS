@@ -10,6 +10,10 @@ Open Source Race Management System for Carrera Digital 132/124
 - 📈 Advanced statistics
 - 🔌 Bluetooth LE connectivity via AppConnect
 - 🎮 Built-in simulator for development
+- 🏁 **Multi-phase sessions** (Practice → Qualifying → Race)
+  - Separate leaderboards per phase
+  - Smart sorting based on phase type
+  - Real-time phase switching
 
 ## Tech Stack
 
@@ -90,6 +94,7 @@ racehubos/
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) - System architecture and design decisions
+- [Multi-Phase Sessions](packages/backend/PHASES.md) - Session phases system (Practice/Qualifying/Race)
 - [CHANGELOG](CHANGELOG.md) - Version history and changes
 
 ## API

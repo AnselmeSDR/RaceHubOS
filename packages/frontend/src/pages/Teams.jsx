@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { UserGroupIcon as UserGroupSolidIcon } from '@heroicons/react/24/solid'
 import ImageCropper from '../components/ImageCropper'
+import ErrorMessage from '../components/ErrorMessage'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -19,6 +20,7 @@ export default function Teams() {
   const [showForm, setShowForm] = useState(false)
   const [editingTeam, setEditingTeam] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [error, setError] = useState('')
 
   useEffect(() => {
     loadTeams()
@@ -46,11 +48,13 @@ export default function Teams() {
       if (res.ok) {
         await loadTeams()
       } else {
-        alert(data.error || 'Erreur lors de la suppression')
+        setError(data.error || 'Erreur lors de la suppression')
+        setTimeout(() => setError(''), 5000)
       }
     } catch (error) {
       console.error('Failed to delete team:', error)
-      alert('Erreur lors de la suppression')
+      setError('Erreur lors de la suppression')
+      setTimeout(() => setError(''), 5000)
     }
   }
 
@@ -123,6 +127,11 @@ export default function Teams() {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+      )}
 
       {/* Teams Display */}
       {teams.length > 0 ? (
@@ -367,6 +376,8 @@ function TeamForm({ team, onClose, onDelete }) {
     logo: team?.logo || '',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [logoPreview, setLogoPreview] = useState(team?.logo || '')
   const [imageToCrop, setImageToCrop] = useState(null)
   const [showCropper, setShowCropper] = useState(false)
@@ -377,7 +388,7 @@ function TeamForm({ team, onClose, onDelete }) {
     if (file) {
       // Check file type only (no size limit!)
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image.')
+        setError('Veuillez sélectionner une image.')
         return
       }
 
@@ -408,6 +419,8 @@ function TeamForm({ team, onClose, onDelete }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
+    setSuccess('')
 
     try {
       const url = team
@@ -423,14 +436,15 @@ function TeamForm({ team, onClose, onDelete }) {
       })
 
       if (res.ok) {
-        onClose()
+        setSuccess('Équipe sauvegardée avec succès')
+        setTimeout(() => onClose(), 1500)
       } else {
-        const error = await res.json()
-        alert(error.error || 'Erreur lors de la sauvegarde')
+        const errorData = await res.json()
+        setError(errorData.error || 'Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Failed to save team:', error)
-      alert('Erreur lors de la sauvegarde')
+      setError('Erreur de connexion au serveur')
     } finally {
       setSaving(false)
     }
@@ -442,6 +456,14 @@ function TeamForm({ team, onClose, onDelete }) {
         <h2 className="text-2xl font-bold mb-6">
           {team ? 'Modifier l\'équipe' : 'Nouvelle équipe'}
         </h2>
+
+        {error && (
+          <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+        )}
+
+        {success && (
+          <ErrorMessage type="success" message={success} className="mb-4" />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

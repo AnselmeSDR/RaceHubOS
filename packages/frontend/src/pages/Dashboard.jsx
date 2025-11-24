@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import io from 'socket.io-client'
 import {
   UserGroupIcon,
@@ -19,11 +19,13 @@ import {
   PlusIcon,
   CogIcon,
 } from '@heroicons/react/24/outline'
+import SessionForm from '../components/SessionForm'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     drivers: 0,
     cars: 0,
@@ -43,19 +45,12 @@ export default function Dashboard() {
   })
   const [showConfigWarning, setShowConfigWarning] = useState(false)
   const [showConfigModal, setShowConfigModal] = useState(false)
-  const [tracks, setTracks] = useState([])
-  const [drivers, setDrivers] = useState([])
-  const [cars, setCars] = useState([])
-  const [sessionConfig, setSessionConfig] = useState({
-    trackId: '',
-    drivers: []
-  })
+  const [sessionToEdit, setSessionToEdit] = useState(null)
 
   useEffect(() => {
     loadStats()
     loadActiveSession()
     loadCircuitStatus()
-    loadResources()
 
     // Initialize WebSocket
     const newSocket = io(WS_URL)
@@ -160,67 +155,25 @@ export default function Dashboard() {
     }
   }
 
-  async function loadResources() {
-    try {
-      const [tracksRes, driversRes, carsRes] = await Promise.all([
-        fetch(`${API_URL}/tracks`),
-        fetch(`${API_URL}/drivers`),
-        fetch(`${API_URL}/cars`),
-      ])
-
-      const [tracksData, driversData, carsData] = await Promise.all([
-        tracksRes.json(),
-        driversRes.json(),
-        carsRes.json(),
-      ])
-
-      setTracks(tracksData.data || [])
-      setDrivers(driversData.data || [])
-      setCars(carsData.data || [])
-    } catch (error) {
-      console.error('Error loading resources:', error)
-    }
-  }
-
-  function openConfigModal() {
-    // Préremplir avec une configuration par défaut
-    if (tracks.length > 0) {
-      setSessionConfig({
-        trackId: tracks[0].id,
-        drivers: [{
-          driverId: drivers[0]?.id || '',
-          carId: cars[0]?.id || '',
-          controller: 1
-        }]
-      })
+  async function openConfigModal() {
+    if (activeSession?.sessionId) {
+      // Si la session active a un sessionId, charger la session complète
+      try {
+        const response = await fetch(`${API_URL}/sessions/${activeSession.sessionId}`)
+        const data = await response.json()
+        if (data.success) {
+          setSessionToEdit(data.data)
+        }
+      } catch (error) {
+        console.error('Error loading session:', error)
+      }
+    } else {
+      // Sinon, créer une nouvelle session
+      setSessionToEdit(null)
     }
     setShowConfigModal(true)
   }
 
-  async function startPracticeSession() {
-    try {
-      if (!sessionConfig.trackId || sessionConfig.drivers.length === 0) {
-        alert('Veuillez configurer la session')
-        return
-      }
-
-      const response = await fetch(`${API_URL}/active-session/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionConfig)
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        setActiveSession(data.data)
-        setShowConfigWarning(false)
-        setShowConfigModal(false)
-      }
-    } catch (error) {
-      console.error('Error starting session:', error)
-      alert('Erreur lors du démarrage de la session')
-    }
-  }
 
   async function pauseSession() {
     try {
@@ -325,7 +278,13 @@ export default function Dashboard() {
 
       {/* Active Session */}
       {activeSession && (
-        <div className="mb-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
+        <div
+          className="mb-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white cursor-pointer hover:shadow-xl transition-all"
+          onClick={() => {
+            if (activeSession.sessionId) {
+              navigate(`/sessions/${activeSession.sessionId}`)
+            }
+          }}>
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-2xl font-bold mb-2">
@@ -348,7 +307,10 @@ export default function Dashboard() {
             <div className="flex gap-2">
               {/* Configuration button - always visible */}
               <button
-                onClick={openConfigModal}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openConfigModal()
+                }}
                 className="p-2 bg-white/20 rounded hover:bg-white/30"
                 title="Configurer"
               >
@@ -361,7 +323,10 @@ export default function Dashboard() {
               {/* Play/Pause button */}
               {(activeSession.status === 'waiting' || activeSession.status === 'stopped' || activeSession.status === 'paused') && (
                 <button
-                  onClick={activeSession.status === 'paused' ? pauseSession : startPracticeSession}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    pauseSession()
+                  }}
                   className="p-2 bg-white/20 rounded hover:bg-white/30"
                   title={activeSession.status === 'paused' ? "Reprendre" : "Démarrer"}
                 >
@@ -370,7 +335,10 @@ export default function Dashboard() {
               )}
               {activeSession.status === 'running' && (
                 <button
-                  onClick={pauseSession}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    pauseSession()
+                  }}
                   className="p-2 bg-white/20 rounded hover:bg-white/30"
                   title="Pause"
                 >
@@ -381,7 +349,10 @@ export default function Dashboard() {
               {/* Stop button */}
               {(activeSession.status === 'running' || activeSession.status === 'paused') && (
                 <button
-                  onClick={stopSession}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    stopSession()
+                  }}
                   className="p-2 bg-white/20 rounded hover:bg-white/30"
                   title="Arrêter"
                 >
@@ -628,157 +599,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Configuration Modal */}
+      {/* Session Configuration Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Configuration de la session</h2>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Circuit Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Circuit
-              </label>
-              <select
-                value={sessionConfig.trackId}
-                onChange={(e) => setSessionConfig({ ...sessionConfig, trackId: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Sélectionner un circuit</option>
-                {tracks.map(track => (
-                  <option key={track.id} value={track.id}>
-                    {track.name} {track.length && `(${track.length}m)`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Drivers Configuration */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Pilotes et voitures
-                </label>
-                <button
-                  onClick={() => {
-                    const newDriver = {
-                      driverId: '',
-                      carId: '',
-                      controller: sessionConfig.drivers.length + 1
-                    }
-                    setSessionConfig({
-                      ...sessionConfig,
-                      drivers: [...sessionConfig.drivers, newDriver]
-                    })
-                  }}
-                  className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 flex items-center gap-1"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Ajouter
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {sessionConfig.drivers.map((config, index) => (
-                  <div key={index} className="flex gap-3 items-center bg-gray-50 p-3 rounded-lg">
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-600 mb-1">Pilote</label>
-                      <select
-                        value={config.driverId}
-                        onChange={(e) => {
-                          const updated = [...sessionConfig.drivers]
-                          updated[index].driverId = e.target.value
-                          setSessionConfig({ ...sessionConfig, drivers: updated })
-                        }}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">Sélectionner</option>
-                        {drivers.map(driver => (
-                          <option key={driver.id} value={driver.id}>
-                            {driver.name} #{driver.number}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-600 mb-1">Voiture</label>
-                      <select
-                        value={config.carId}
-                        onChange={(e) => {
-                          const updated = [...sessionConfig.drivers]
-                          updated[index].carId = e.target.value
-                          setSessionConfig({ ...sessionConfig, drivers: updated })
-                        }}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">Sélectionner</option>
-                        {cars.map(car => (
-                          <option key={car.id} value={car.id}>
-                            {car.brand} {car.model}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="w-24">
-                      <label className="block text-xs text-gray-600 mb-1">Contrôleur</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="6"
-                        value={config.controller}
-                        onChange={(e) => {
-                          const updated = [...sessionConfig.drivers]
-                          updated[index].controller = parseInt(e.target.value) || 1
-                          setSessionConfig({ ...sessionConfig, drivers: updated })
-                        }}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    {sessionConfig.drivers.length > 1 && (
-                      <button
-                        onClick={() => {
-                          const updated = sessionConfig.drivers.filter((_, i) => i !== index)
-                          setSessionConfig({ ...sessionConfig, drivers: updated })
-                        }}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded"
-                      >
-                        <XMarkIcon className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={startPracticeSession}
-                disabled={!sessionConfig.trackId || sessionConfig.drivers.some(d => !d.driverId || !d.carId)}
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                Démarrer la session
-              </button>
-            </div>
-          </div>
-        </div>
+        <SessionForm
+          session={sessionToEdit}
+          onClose={() => {
+            setShowConfigModal(false)
+            setSessionToEdit(null)
+          }}
+          onSaved={async (session) => {
+            setShowConfigModal(false)
+            setSessionToEdit(null)
+            // Si c'est une nouvelle session ou une mise à jour, la définir comme session active
+            if (session?.id) {
+              try {
+                await fetch(`${API_URL}/active-session/start`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionId: session.id })
+                })
+              } catch (error) {
+                console.error('Error starting session:', error)
+              }
+            }
+            loadActiveSession()
+          }}
+        />
       )}
     </div>
   )

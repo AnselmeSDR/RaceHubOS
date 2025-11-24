@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/solid'
 import { DriverListItem } from '../components/DriverDisplays'
 import ImageCropper from '../components/ImageCropper'
+import ErrorMessage from '../components/ErrorMessage'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -23,6 +24,7 @@ export default function Drivers() {
   const [showForm, setShowForm] = useState(false)
   const [editingDriver, setEditingDriver] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [error, setError] = useState('')
 
   useEffect(() => {
     loadDrivers()
@@ -48,7 +50,8 @@ export default function Drivers() {
       await loadDrivers()
     } catch (error) {
       console.error('Failed to delete driver:', error)
-      alert('Erreur lors de la suppression')
+      setError('Erreur lors de la suppression')
+      setTimeout(() => setError(''), 5000)
     }
   }
 
@@ -120,6 +123,11 @@ export default function Drivers() {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+      )}
 
       {/* Drivers Display */}
       {drivers.length > 0 ? (
@@ -407,6 +415,8 @@ function DriverForm({ driver, onClose, onDelete }) {
     teamId: driver?.teamId || '',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [photoPreview, setPhotoPreview] = useState(driver?.photo || '')
   const [imageToCrop, setImageToCrop] = useState(null) // Image à cropper
   const [showCropper, setShowCropper] = useState(false)
@@ -432,7 +442,7 @@ function DriverForm({ driver, onClose, onDelete }) {
     if (file) {
       // Check file type only (no size limit!)
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image.')
+        setError('Veuillez sélectionner une image.')
         return
       }
 
@@ -463,6 +473,8 @@ function DriverForm({ driver, onClose, onDelete }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
+    setSuccess('')
 
     try {
       const url = driver
@@ -478,14 +490,15 @@ function DriverForm({ driver, onClose, onDelete }) {
       })
 
       if (res.ok) {
-        onClose()
+        setSuccess('Pilote sauvegardé avec succès')
+        setTimeout(() => onClose(), 1500)
       } else {
-        const error = await res.json()
-        alert(error.error || 'Erreur lors de la sauvegarde')
+        const errorData = await res.json()
+        setError(errorData.error || 'Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Failed to save driver:', error)
-      alert('Erreur lors de la sauvegarde')
+      setError('Erreur de connexion au serveur')
     } finally {
       setSaving(false)
     }
@@ -497,6 +510,14 @@ function DriverForm({ driver, onClose, onDelete }) {
         <h2 className="text-2xl font-bold mb-6">
           {driver ? 'Modifier le pilote' : 'Nouveau pilote'}
         </h2>
+
+        {error && (
+          <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+        )}
+
+        {success && (
+          <ErrorMessage type="success" message={success} className="mb-4" />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

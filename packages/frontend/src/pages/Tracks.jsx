@@ -13,6 +13,7 @@ import {
   TrophyIcon as TrophySolidIcon,
 } from '@heroicons/react/24/solid'
 import ImageCropper from '../components/ImageCropper'
+import ErrorMessage from '../components/ErrorMessage'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -42,11 +43,15 @@ export default function Tracks() {
     if (!confirm('Voulez-vous vraiment supprimer ce circuit ?')) return
 
     try {
-      await fetch(`${API_URL}/tracks/${id}`, { method: 'DELETE' })
-      await loadTracks()
+      const res = await fetch(`${API_URL}/tracks/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        await loadTracks()
+      } else {
+        const errorData = await res.json()
+        console.error('Failed to delete track:', errorData)
+      }
     } catch (error) {
       console.error('Failed to delete track:', error)
-      alert('Erreur lors de la suppression')
     }
   }
 
@@ -132,7 +137,7 @@ export default function Tracks() {
 }
 
 function TrackCard({ track, onEdit, onDelete }) {
-  const trackColor = '#9333ea' // purple
+  const trackColor = track.color || '#9333ea' // Utilise la couleur du circuit ou violet par défaut
 
   return (
     <div
@@ -282,8 +287,11 @@ function TrackForm({ track, onClose, onDelete }) {
     length: track?.length || '',
     corners: track?.corners || '',
     photo: track?.photo || '',
+    color: track?.color || '#9333ea',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [photoPreview, setPhotoPreview] = useState(track?.photo || '')
   const [imageToCrop, setImageToCrop] = useState(null)
   const [showCropper, setShowCropper] = useState(false)
@@ -294,7 +302,7 @@ function TrackForm({ track, onClose, onDelete }) {
     if (file) {
       // Check file type only (no size limit!)
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image.')
+        setError('Veuillez sélectionner une image.')
         return
       }
 
@@ -325,6 +333,8 @@ function TrackForm({ track, onClose, onDelete }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
+    setSuccess('')
 
     try {
       const url = track
@@ -335,9 +345,10 @@ function TrackForm({ track, onClose, onDelete }) {
 
       const payload = {
         name: formData.name,
+        photo: formData.photo || null,
         length: formData.length ? parseFloat(formData.length) : null,
         corners: formData.corners ? parseInt(formData.corners) : null,
-        photo: formData.photo || null,
+        color: formData.color || '#9333ea',
       }
 
       const res = await fetch(url, {
@@ -347,14 +358,15 @@ function TrackForm({ track, onClose, onDelete }) {
       })
 
       if (res.ok) {
-        onClose()
+        setSuccess('Circuit sauvegardé avec succès')
+        setTimeout(() => onClose(), 1500)
       } else {
-        const error = await res.json()
-        alert(error.error || 'Erreur lors de la sauvegarde')
+        const errorData = await res.json()
+        setError(errorData.error || 'Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Failed to save track:', error)
-      alert('Erreur lors de la sauvegarde')
+      setError('Erreur de connexion au serveur')
     } finally {
       setSaving(false)
     }
@@ -366,6 +378,14 @@ function TrackForm({ track, onClose, onDelete }) {
         <h2 className="text-2xl font-bold mb-6">
           {track ? 'Modifier le circuit' : 'Nouveau circuit'}
         </h2>
+
+        {error && (
+          <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+        )}
+
+        {success && (
+          <ErrorMessage type="success" message={success} className="mb-4" />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -430,6 +450,27 @@ function TrackForm({ track, onClose, onDelete }) {
             <p className="mt-1 text-xs text-gray-500">
               L'image sera recadrée • JPG, PNG, GIF
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Couleur
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="w-16 h-10 rounded cursor-pointer"
+              />
+              <input
+                type="text"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="#9333ea"
+              />
+            </div>
           </div>
 
           <div>

@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { BoltIcon as BoltSolidIcon } from '@heroicons/react/24/solid'
 import ImageCropper from '../components/ImageCropper'
+import ErrorMessage from '../components/ErrorMessage'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -20,6 +21,7 @@ export default function Cars() {
   const [showForm, setShowForm] = useState(false)
   const [editingCar, setEditingCar] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [error, setError] = useState('')
 
   useEffect(() => {
     loadCars()
@@ -45,7 +47,8 @@ export default function Cars() {
       await loadCars()
     } catch (error) {
       console.error('Failed to delete car:', error)
-      alert('Erreur lors de la suppression')
+      setError('Erreur lors de la suppression')
+      setTimeout(() => setError(''), 5000)
     }
   }
 
@@ -118,6 +121,11 @@ export default function Cars() {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+      )}
 
       {/* Cars Display */}
       {cars.length > 0 ? (
@@ -319,11 +327,6 @@ function CarCard({ car, onEdit, onDelete }) {
           </p>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-16 rounded-full" style={{ backgroundColor: carColor }} />
-            <div
-              className="w-6 h-6 rounded-full ring-2 ring-white shadow-md"
-              style={{ backgroundColor: carColor }}
-              title={carColor}
-            />
           </div>
         </div>
       </div>
@@ -415,6 +418,8 @@ function CarForm({ car, onClose, onDelete }) {
     photo: car?.photo || '',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [photoPreview, setPhotoPreview] = useState(car?.photo || '')
   const [imageToCrop, setImageToCrop] = useState(null)
   const [showCropper, setShowCropper] = useState(false)
@@ -425,7 +430,7 @@ function CarForm({ car, onClose, onDelete }) {
     if (file) {
       // Check file type only (no size limit!)
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image.')
+        setError('Veuillez sélectionner une image.')
         return
       }
 
@@ -456,6 +461,8 @@ function CarForm({ car, onClose, onDelete }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setError('')
+    setSuccess('')
 
     try {
       const url = car
@@ -471,14 +478,15 @@ function CarForm({ car, onClose, onDelete }) {
       })
 
       if (res.ok) {
-        onClose()
+        setSuccess('Voiture sauvegardée avec succès')
+        setTimeout(() => onClose(), 1500)
       } else {
-        const error = await res.json()
-        alert(error.error || 'Erreur lors de la sauvegarde')
+        const errorData = await res.json()
+        setError(errorData.error || 'Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Failed to save car:', error)
-      alert('Erreur lors de la sauvegarde')
+      setError('Erreur de connexion au serveur')
     } finally {
       setSaving(false)
     }
@@ -490,6 +498,14 @@ function CarForm({ car, onClose, onDelete }) {
         <h2 className="text-2xl font-bold mb-6">
           {car ? 'Modifier la voiture' : 'Nouvelle voiture'}
         </h2>
+
+        {error && (
+          <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+        )}
+
+        {success && (
+          <ErrorMessage type="success" message={success} className="mb-4" />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

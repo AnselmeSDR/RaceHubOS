@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline'
+import ErrorMessage from '../components/ErrorMessage'
 
 // Session Card Component
 function SessionCard({ session, onEdit, onClick }) {
@@ -129,6 +130,9 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
     selectedDrivers: [],
     selectedCars: []
   })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (session) {
@@ -154,6 +158,9 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSaving(true)
+    setError('')
+    setSuccess('')
 
     const sessionData = {
       ...formData,
@@ -180,17 +187,25 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
       if (!response.ok) throw new Error('Erreur lors de la sauvegarde')
 
       const data = await response.json()
-      onSave(data)
-      onClose()
+      setSuccess('Session sauvegardée avec succès')
+      setTimeout(() => {
+        onSave(data)
+        onClose()
+      }, 1500)
     } catch (error) {
       console.error('Error saving session:', error)
-      alert('Erreur lors de la sauvegarde de la session')
+      setError('Erreur lors de la sauvegarde de la session')
+    } finally {
+      setSaving(false)
     }
   }
 
   const handleDelete = async () => {
     if (!session) return
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) return
+
+    setSaving(true)
+    setError('')
 
     try {
       const response = await fetch(`http://localhost:3000/api/sessions/${session.id}`, {
@@ -203,7 +218,9 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
       onClose()
     } catch (error) {
       console.error('Error deleting session:', error)
-      alert('Erreur lors de la suppression de la session')
+      setError('Erreur lors de la suppression de la session')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -233,6 +250,14 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
         <h2 className="text-2xl font-bold mb-6">
           {session ? 'Modifier la session' : 'Nouvelle session'}
         </h2>
+
+        {error && (
+          <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+        )}
+
+        {success && (
+          <ErrorMessage type="success" message={success} className="mb-4" />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info */}
@@ -421,10 +446,11 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                  disabled={saving}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2 disabled:opacity-50"
                 >
                   <TrashIcon className="h-5 w-5" />
-                  Supprimer
+                  {saving ? 'Suppression...' : 'Supprimer'}
                 </button>
               )}
             </div>
@@ -439,9 +465,10 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                disabled={saving}
+                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50"
               >
-                {session ? 'Modifier' : 'Créer'}
+                {saving ? 'Enregistrement...' : (session ? 'Modifier' : 'Créer')}
               </button>
             </div>
           </div>
