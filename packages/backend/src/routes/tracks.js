@@ -83,10 +83,11 @@ router.post('/', async (req, res) => {
   try {
     const {
       name,
+      photo,
       layout,
       length,
       corners,
-      photo,
+      color,
     } = req.body;
 
     // Validation
@@ -100,10 +101,11 @@ router.post('/', async (req, res) => {
     const track = await prisma.track.create({
       data: {
         name: name.trim(),
+        photo: photo || null,
         layout: layout || null,
         length: length || null,
         corners: corners || null,
-        photo: photo || null,
+        color: color || '#9333ea',
       },
     });
 
@@ -126,10 +128,11 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const {
       name,
+      photo,
       layout,
       length,
       corners,
-      photo,
+      color,
       bestLap,
       bestLapBy,
     } = req.body;
@@ -149,10 +152,11 @@ router.put('/:id', async (req, res) => {
     // Build update data
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
+    if (photo !== undefined) updateData.photo = photo;
     if (layout !== undefined) updateData.layout = layout;
     if (length !== undefined) updateData.length = length;
     if (corners !== undefined) updateData.corners = corners;
-    if (photo !== undefined) updateData.photo = photo;
+    if (color !== undefined) updateData.color = color;
     if (bestLap !== undefined) updateData.bestLap = bestLap;
     if (bestLapBy !== undefined) updateData.bestLapBy = bestLapBy;
 

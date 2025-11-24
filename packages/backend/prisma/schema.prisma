@@ -58,9 +58,11 @@ model Car {
 model Track {
   id        String  @id @default(cuid())
   name      String
-  layout    String? // Photo/schéma
+  photo     String? // Photo du circuit
+  layout    String? // Schéma/plan du circuit
   length    Float?  // mètres
   corners   Int?
+  color     String  @default("#9333ea") // Couleur personnalisée (violet par défaut)
 
   // Records
   bestLap   Float?
@@ -128,6 +130,7 @@ model Session {
 
   // État
   status          String       @default("setup") // setup, running, paused, finished
+  currentPhase    String       @default("practice") // practice, qualifying, race - phase actuelle
   startedAt       DateTime?
   finishedAt      DateTime?
 
@@ -149,7 +152,7 @@ model SessionDriver {
   carId       String
   car         Car     @relation(fields: [carId], references: [id])
 
-  controller  Int     // 1-6 (manette/controller)
+  controller  String  // 1-6 (manette/controller)
   position    Int?    // Position sur la piste
   gridPos     Int?    // Position grille de départ
   finalPos    Int?    // Position finale
@@ -168,7 +171,8 @@ model Lap {
   carId       String
   car         Car      @relation(fields: [carId], references: [id])
 
-  controller  Int      // 1-6 (manette/controller)
+  controller  String   // 1-6 (manette/controller)
+  phase       String   @default("practice") // practice, qualifying, race - phase du tour
   lapNumber   Int
   lapTime     Float    // millisecondes
   speed       Float?   // Vitesse moyenne
@@ -186,6 +190,7 @@ model Lap {
 
   @@index([sessionId, driverId])
   @@index([sessionId, lapTime])
+  @@index([sessionId, phase])
 }
 
 model RaceEvent {

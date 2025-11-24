@@ -7,7 +7,12 @@ const prisma = new PrismaClient();
 // GET /api/sessions - Liste toutes les sessions
 router.get('/', async (req, res) => {
   try {
+    const { status } = req.query;
+
+    const where = status && status !== 'all' ? { status } : {};
+
     const sessions = await prisma.session.findMany({
+      where,
       include: {
         track: true,
         championship: true,
@@ -188,6 +193,7 @@ router.put('/:id', async (req, res) => {
       status,
       startedAt,
       finishedAt,
+      drivers,
     } = req.body;
 
     // Vérifier que la session existe
@@ -206,14 +212,35 @@ router.put('/:id', async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name?.trim() || null;
     if (type !== undefined) updateData.type = type;
-    if (trackId !== undefined) updateData.trackId = trackId;
-    if (championshipId !== undefined) updateData.championshipId = championshipId;
-    if (duration !== undefined) updateData.duration = duration;
-    if (maxLaps !== undefined) updateData.maxLaps = maxLaps;
+    if (trackId !== undefined) updateData.trackId = trackId || null;
+    if (championshipId !== undefined) updateData.championshipId = championshipId || null;
+    if (duration !== undefined) updateData.duration = duration || null;
+    if (maxLaps !== undefined) updateData.maxLaps = maxLaps || null;
     if (fuelMode !== undefined) updateData.fuelMode = fuelMode;
     if (status !== undefined) updateData.status = status;
     if (startedAt !== undefined) updateData.startedAt = startedAt;
     if (finishedAt !== undefined) updateData.finishedAt = finishedAt;
+
+    // Gérer les drivers si fournis
+    if (drivers !== undefined) {
+      // Supprimer tous les drivers existants
+      await prisma.sessionDriver.deleteMany({
+        where: { sessionId: id },
+      });
+
+      // Créer les nouveaux drivers si l'array n'est pas vide
+      if (drivers && drivers.length > 0) {
+        updateData.drivers = {
+          create: drivers.map(d => ({
+            driverId: d.driverId,
+            carId: d.carId,
+            controller: d.controller,
+            position: d.position || null,
+            gridPos: d.gridPos || null,
+          })),
+        };
+      }
+    }
 
     const session = await prisma.session.update({
       where: { id },

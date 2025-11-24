@@ -13,6 +13,7 @@ import tracksRouter from './routes/tracks.js';
 import teamsRouter from './routes/teams.js';
 import sessionsRouter from './routes/sessions.js';
 import championshipsRouter from './routes/championships.js';
+import statsRouter from './routes/stats.js';
 import activeSessionRouter, { setIo, emitToClients } from './routes/activeSession.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
 
@@ -63,6 +64,7 @@ app.get('/api', (req, res) => {
       sessions: '/api/sessions',
       races: '/api/races',
       championships: '/api/championships',
+      stats: '/api/stats',
       simulator: '/api/simulator',
       activeSession: '/api/active-session',
     },
@@ -76,6 +78,7 @@ app.use('/api/tracks', tracksRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/championships', championshipsRouter);
+app.use('/api/stats', statsRouter);
 app.use('/api/active-session', activeSessionRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bluetooth', settingsRouter);

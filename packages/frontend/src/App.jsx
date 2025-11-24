@@ -9,7 +9,9 @@ import Teams from './pages/Teams'
 import Home from './pages/Home'
 import Displays from './pages/Displays'
 import DriverDisplayDemo from './pages/DriverDisplayDemo'
-import Sessions from './pages/Sessions'
+import SessionsList from './pages/SessionsList'
+import SessionDetail from './pages/SessionDetail'
+import Stats from './pages/Stats'
 import Settings from './pages/Settings'
 
 function App() {
@@ -24,7 +26,9 @@ function App() {
           <Route path="cars" element={<Cars />} />
           <Route path="tracks" element={<Tracks />} />
           <Route path="teams" element={<Teams />} />
-          <Route path="sessions" element={<Sessions />} />
+          <Route path="sessions" element={<SessionsList />} />
+          <Route path="sessions/:id" element={<SessionDetail />} />
+          <Route path="stats" element={<Stats />} />
           <Route path="settings" element={<Settings />} />
           <Route path="displays" element={<Displays />} />
           <Route path="demo-displays" element={<DriverDisplayDemo />} />
