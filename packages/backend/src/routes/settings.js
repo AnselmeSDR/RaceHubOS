@@ -9,6 +9,13 @@ let settings = {
   connectionStatus: 'disconnected'
 };
 
+// Store io instance for emitting events
+let ioInstance = null;
+
+export function setSettingsIo(io) {
+  ioInstance = io;
+}
+
 // Mock Bluetooth devices for development
 const mockDevices = [
   { id: 'CARRERA-30369-001', name: 'Carrera AppConnect 30369' },
@@ -43,6 +50,17 @@ router.post('/mock-device', async (req, res) => {
     if (!enabled && settings.connectedDevice?.isMock) {
       settings.connectedDevice = null;
       settings.connectionStatus = 'disconnected';
+    }
+
+    // Emit update to all connected clients
+    if (ioInstance) {
+      ioInstance.emit('race:status', {
+        running: false,
+        active: false,
+        raceTime: 0,
+        carCount: enabled ? 6 : 0,
+        isMockDevice: enabled
+      });
     }
 
     res.json({

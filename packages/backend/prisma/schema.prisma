@@ -37,6 +37,7 @@ model Car {
   model        String
   year         Int?
   photo        String?
+  color        String @default("#3B82F6")  // Couleur personnalisée
 
   // Réglages par défaut
   maxSpeed     Int    @default(100)  // 0-100%

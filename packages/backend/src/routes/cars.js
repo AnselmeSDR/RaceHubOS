@@ -89,6 +89,7 @@ router.post('/', async (req, res) => {
       model,
       year,
       photo,
+      color,
       maxSpeed,
       brakeForce,
       fuelCapacity,
@@ -115,6 +116,7 @@ router.post('/', async (req, res) => {
         model: model.trim(),
         year: year || null,
         photo: photo || null,
+        color: color || '#3B82F6',
         maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
         brakeForce: brakeForce !== undefined ? brakeForce : 50,
         fuelCapacity: fuelCapacity !== undefined ? fuelCapacity : 100,
@@ -143,6 +145,7 @@ router.put('/:id', async (req, res) => {
       model,
       year,
       photo,
+      color,
       maxSpeed,
       brakeForce,
       fuelCapacity,
@@ -166,6 +169,7 @@ router.put('/:id', async (req, res) => {
     if (model !== undefined) updateData.model = model.trim();
     if (year !== undefined) updateData.year = year;
     if (photo !== undefined) updateData.photo = photo;
+    if (color !== undefined) updateData.color = color;
     if (maxSpeed !== undefined) updateData.maxSpeed = maxSpeed;
     if (brakeForce !== undefined) updateData.brakeForce = brakeForce;
     if (fuelCapacity !== undefined) updateData.fuelCapacity = fuelCapacity;
