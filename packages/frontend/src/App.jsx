@@ -13,6 +13,7 @@ import SessionsList from './pages/SessionsList'
 import SessionDetail from './pages/SessionDetail'
 import Stats from './pages/Stats'
 import Settings from './pages/Settings'
+import Test from './pages/Test'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="displays" element={<Displays />} />
           <Route path="demo-displays" element={<DriverDisplayDemo />} />
+          <Route path="test" element={<Test />} />
         </Route>
 
         {/* Legacy home (simulator) */}
