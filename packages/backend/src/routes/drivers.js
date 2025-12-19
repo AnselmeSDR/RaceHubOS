@@ -164,7 +164,7 @@ router.put('/:id', async (req, res) => {
     if (email !== undefined) updateData.email = email?.trim() || null;
     if (photo !== undefined) updateData.photo = photo;
     if (color !== undefined) updateData.color = color;
-    if (teamId !== undefined) updateData.teamId = teamId;
+    if (teamId !== undefined) updateData.teamId = teamId || null;
 
     const driver = await prisma.driver.update({
       where: { id },

@@ -6,7 +6,8 @@ const router = express.Router();
 let settings = {
   useMockDevice: process.env.USE_MOCK_DEVICE === 'true',
   connectedDevice: null,
-  connectionStatus: 'disconnected'
+  connectionStatus: 'disconnected',
+  knownDevices: [] // Liste des appareils connus
 };
 
 // Store io instance for emitting events
@@ -167,6 +168,117 @@ router.post('/disconnect', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to disconnect device'
+    });
+  }
+});
+
+// POST /api/settings/bluetooth-device - Set bluetooth device info
+router.post('/bluetooth-device', async (req, res) => {
+  try {
+    const { deviceId, deviceName, connected } = req.body;
+
+    if (connected) {
+      settings.connectedDevice = { id: deviceId, name: deviceName };
+      settings.connectionStatus = 'connected';
+    } else {
+      settings.connectedDevice = null;
+      settings.connectionStatus = 'disconnected';
+    }
+
+    res.json({
+      success: true,
+      data: {
+        device: settings.connectedDevice,
+        status: settings.connectionStatus
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update bluetooth device'
+    });
+  }
+});
+
+// GET /api/settings/bluetooth-device - Get bluetooth device info
+router.get('/bluetooth-device', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        device: settings.connectedDevice,
+        status: settings.connectionStatus
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get bluetooth device'
+    });
+  }
+});
+
+// GET /api/settings/known-devices - Get list of known devices
+router.get('/known-devices', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: settings.knownDevices
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get known devices'
+    });
+  }
+});
+
+// POST /api/settings/known-devices - Add a known device
+router.post('/known-devices', async (req, res) => {
+  try {
+    const { id, name, address } = req.body;
+
+    // Check if device already exists
+    const existingIndex = settings.knownDevices.findIndex(d => d.id === id || d.address === address);
+
+    const device = {
+      id: id || address,
+      name: name || 'Control_Unit',
+      address: address || id,
+      lastConnected: new Date().toISOString()
+    };
+
+    if (existingIndex >= 0) {
+      settings.knownDevices[existingIndex] = device;
+    } else {
+      settings.knownDevices.push(device);
+    }
+
+    res.json({
+      success: true,
+      data: device
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add known device'
+    });
+  }
+});
+
+// DELETE /api/settings/known-devices/:id - Remove a known device
+router.delete('/known-devices/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    settings.knownDevices = settings.knownDevices.filter(d => d.id !== id && d.address !== id);
+
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove known device'
     });
   }
 });

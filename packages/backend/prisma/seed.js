@@ -10,7 +10,7 @@ async function main() {
   const redBull = await prisma.team.create({
     data: {
       name: 'Red Bull Racing',
-      color: '#0600EF',
+      color: '#1E3A5F',
       logo: null,
     },
   });
@@ -23,62 +23,52 @@ async function main() {
     },
   });
 
-  console.log(`✅ Created ${2} teams`);
+  const porsche = await prisma.team.create({
+    data: {
+      name: 'Porsche Motorsport',
+      color: '#C9A227',
+      logo: null,
+    },
+  });
+
+  console.log(`✅ Created ${3} teams`);
 
   // Create Drivers
   console.log('Creating drivers...');
   const drivers = await Promise.all([
     prisma.driver.create({
       data: {
-        name: 'Max Verstappen',
-        number: 1,
-        email: 'max@redbull.com',
-        color: '#0600EF',
-        teamId: redBull.id,
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        name: 'Sergio Pérez',
-        number: 11,
-        email: 'checo@redbull.com',
-        color: '#1E3A8A',
-        teamId: redBull.id,
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        name: 'Charles Leclerc',
-        number: 16,
-        email: 'charles@ferrari.com',
-        color: '#DC0000',
-        teamId: ferrari.id,
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        name: 'Carlos Sainz',
-        number: 55,
-        email: 'carlos@ferrari.com',
-        color: '#EF4444',
-        teamId: ferrari.id,
-      },
-    }),
-    prisma.driver.create({
-      data: {
-        name: 'Lewis Hamilton',
-        number: 44,
-        email: 'lewis@mercedes.com',
-        color: '#00D2BE',
+        name: 'Anselme SDR',
+        number: 42,
+        email: 'anselme@mail.fr',
+        color: '#060d08',
         teamId: null,
       },
     }),
     prisma.driver.create({
       data: {
-        name: 'Lando Norris',
-        number: 4,
-        email: 'lando@mclaren.com',
-        color: '#FF8700',
+        name: 'Fanny Benoit',
+        number: 2,
+        email: 'fanny@mail.fr',
+        color: '#f12835',
+        teamId: null,
+      },
+    }),
+    prisma.driver.create({
+      data: {
+        name: 'Romain Danna',
+        number: 71,
+        email: 'romain@mail.fr',
+        color: '#74b9d2',
+        teamId: null,
+      },
+    }),
+    prisma.driver.create({
+      data: {
+        name: 'Lisa Furnari',
+        number: 7,
+        email: 'lisa@mail.fr',
+        color: '#c5b9d5',
         teamId: null,
       },
     }),
@@ -86,15 +76,16 @@ async function main() {
 
   console.log(`✅ Created ${drivers.length} drivers`);
 
-  // Create Cars
+  // Create Cars (Carrera 1:32 models)
   console.log('Creating cars...');
   const cars = await Promise.all([
     prisma.car.create({
       data: {
-        brand: 'Red Bull',
-        model: 'RB19',
-        year: 2023,
-        maxSpeed: 100,
+        brand: 'Mercedes-Benz',
+        model: 'CLK DTM Vodafone',
+        year: 2005,
+        color: '#C0C0C0',
+        maxSpeed: 95,
         brakeForce: 55,
         fuelCapacity: 100,
       },
@@ -102,8 +93,9 @@ async function main() {
     prisma.car.create({
       data: {
         brand: 'Ferrari',
-        model: 'SF-23',
-        year: 2023,
+        model: '488 GT3 #68',
+        year: 2018,
+        color: '#DC0000',
         maxSpeed: 98,
         brakeForce: 60,
         fuelCapacity: 105,
@@ -111,9 +103,10 @@ async function main() {
     }),
     prisma.car.create({
       data: {
-        brand: 'Mercedes',
-        model: 'W14',
-        year: 2023,
+        brand: 'McLaren',
+        model: '720S GT3 #03',
+        year: 2020,
+        color: '#FF8C00',
         maxSpeed: 97,
         brakeForce: 58,
         fuelCapacity: 102,
@@ -121,31 +114,34 @@ async function main() {
     }),
     prisma.car.create({
       data: {
-        brand: 'McLaren',
-        model: 'MCL60',
-        year: 2023,
-        maxSpeed: 96,
-        brakeForce: 56,
-        fuelCapacity: 100,
-      },
-    }),
-    prisma.car.create({
-      data: {
         brand: 'Porsche',
-        model: '911 GT3',
-        year: 2022,
-        maxSpeed: 95,
+        model: '911 RSR Project 1 #56',
+        year: 2018,
+        color: '#FFD700',
+        maxSpeed: 96,
         brakeForce: 62,
         fuelCapacity: 95,
       },
     }),
     prisma.car.create({
       data: {
+        brand: 'Red Bull',
+        model: 'RB12 F1 #33',
+        year: 2016,
+        color: '#1E3A5F',
+        maxSpeed: 100,
+        brakeForce: 65,
+        fuelCapacity: 100,
+      },
+    }),
+    prisma.car.create({
+      data: {
         brand: 'BMW',
-        model: 'M4 GT3',
-        year: 2022,
+        model: 'M4 DTM BMW Bank #7',
+        year: 2017,
+        color: '#1C1C1C',
         maxSpeed: 94,
-        brakeForce: 60,
+        brakeForce: 58,
         fuelCapacity: 98,
       },
     }),

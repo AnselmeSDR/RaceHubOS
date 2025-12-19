@@ -12,6 +12,7 @@ export class CarreraSimulator {
     this.raceTime = 0;
     this.interval = null;
     this.tickRate = 100; // Update every 100ms
+    this.onLapComplete = null; // Callback pour enregistrer les tours
   }
 
   /**
@@ -184,6 +185,11 @@ export class CarreraSimulator {
     });
 
     console.log(`Car ${car.id} completed lap ${car.totalLaps} in ${(lapTime / 1000).toFixed(2)}s`);
+
+    // Appeler le callback pour enregistrer le tour en base de données
+    if (this.onLapComplete) {
+      this.onLapComplete(car);
+    }
 
     // Reset sector times
     car.sectorTimes = [0, 0, 0];

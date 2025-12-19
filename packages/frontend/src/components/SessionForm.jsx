@@ -21,6 +21,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
   const [cars, setCars] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [availableSlots, setAvailableSlots] = useState(6) // Nombre de slots disponibles
 
   useEffect(() => {
     loadData()
@@ -49,22 +50,36 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
   async function loadData() {
     try {
-      const [tracksRes, championshipsRes, driversRes, carsRes] = await Promise.all([
+      const [tracksRes, championshipsRes, driversRes, carsRes, simulatorRes] = await Promise.all([
         fetch(`${API_URL}/tracks`),
         fetch(`${API_URL}/championships`),
         fetch(`${API_URL}/drivers`),
         fetch(`${API_URL}/cars`),
+        fetch(`${API_URL}/simulator`), // Récupérer les infos du simulateur/CU
       ])
 
       const tracksData = await tracksRes.json()
       const chipsData = await championshipsRes.json()
       const driversData = await driversRes.json()
       const carsData = await carsRes.json()
+      const simulatorData = await simulatorRes.json()
 
       setTracks(tracksData.data || [])
       setChampionships(chipsData.data || [])
       setDrivers(driversData.data || [])
       setCars(carsData.data || [])
+
+      // Récupérer le nombre de slots disponibles
+      if (simulatorData.isMockDevice) {
+        // Mode simulateur
+        setAvailableSlots(simulatorData.cars?.length || 6)
+      } else if (simulatorData.cuNumCars) {
+        // Mode Control Unit réel
+        setAvailableSlots(simulatorData.cuNumCars)
+      } else {
+        // Par défaut
+        setAvailableSlots(6)
+      }
     } catch (err) {
       console.error('Error loading data:', err)
       setError('Erreur lors du chargement des données')
@@ -121,11 +136,16 @@ export default function SessionForm({ session, onClose, onSaved }) {
   }
 
   function addDriver() {
+    // Trouver le prochain contrôleur disponible
+    const usedControllers = formData.drivers.map(d => d.controller)
+    const nextController = Array.from({ length: availableSlots }, (_, i) => String(i + 1))
+      .find(c => !usedControllers.includes(c)) || ''
+
     setFormData({
       ...formData,
       drivers: [
         ...formData.drivers,
-        { driverId: '', carId: '', controller: '', gridPos: null, position: null },
+        { driverId: '', carId: '', controller: nextController, gridPos: null, position: null },
       ],
     })
   }
@@ -285,11 +305,17 @@ export default function SessionForm({ session, onClose, onSaved }) {
           {/* Drivers */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Pilotes</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold text-gray-900">Pilotes</h3>
+                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                  {formData.drivers.length}/{availableSlots} slots
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={addDriver}
-                className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                disabled={formData.drivers.length >= availableSlots}
+                className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlusIcon className="w-4 h-4" />
                 Ajouter
@@ -325,13 +351,25 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     ))}
                   </select>
 
-                  <input
-                    type="text"
+                  <select
                     value={driver.controller}
                     onChange={(e) => updateDriver(index, 'controller', e.target.value)}
-                    placeholder="Contrôleur"
                     className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                  />
+                  >
+                    <option value="">Ctrl</option>
+                    {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
+                      const isUsed = formData.drivers.some((d, idx) => idx !== index && d.controller === String(slot))
+                      return (
+                        <option
+                          key={slot}
+                          value={slot}
+                          disabled={isUsed}
+                        >
+                          {slot} {isUsed ? '(utilisé)' : ''}
+                        </option>
+                      )
+                    })}
+                  </select>
 
                   <input
                     type="number"

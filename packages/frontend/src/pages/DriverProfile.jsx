@@ -55,7 +55,7 @@ export default function DriverProfile() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 max-w-7xl mx-auto">
       {/* Back button */}
       <button
         onClick={() => navigate('/drivers')}
