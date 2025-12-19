@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import {
   ChartBarIcon,
@@ -10,9 +11,13 @@ import {
   FlagIcon,
   CogIcon,
   TrophyIcon,
+  XMarkIcon,
+  Bars3Icon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline'
 
 export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const navItems = [
     { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
     { to: '/drivers', label: 'Pilotes', Icon: UserGroupIcon },
@@ -23,17 +28,39 @@ export default function Layout() {
     { to: '/stats', label: 'Statistiques', Icon: TrophyIcon },
     { to: '/displays', label: 'Displays', Icon: Squares2X2Icon },
     { to: '/simulator', label: 'Simulateur', Icon: BeakerIcon },
+    { to: '/test', label: 'Test', Icon: CommandLineIcon },
     { to: '/settings', label: 'Paramètres', Icon: CogIcon },
   ]
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white flex flex-col transition-all duration-300`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold">RaceHubOS</h1>
-          <p className="text-sm text-gray-400 mt-1">Carrera Digital 132/124</p>
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+          {sidebarOpen ? (
+            <>
+              <div>
+                <h1 className="text-2xl font-bold">RaceHubOS</h1>
+                <p className="text-sm text-gray-400 mt-1">Carrera Digital 132/124</p>
+              </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                title="Réduire"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors mx-auto"
+              title="Agrandir"
+            >
+              <Bars3Icon className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
@@ -47,15 +74,16 @@ export default function Layout() {
                     to={item.to}
                     end={item.to === '/'}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      `flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-blue-600 text-white'
                           : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                       }`
                     }
+                    title={!sidebarOpen ? item.label : ''}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="font-medium">{item.label}</span>}
                   </NavLink>
                 </li>
               )
@@ -65,13 +93,19 @@ export default function Layout() {
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-800">
-          <div className="text-xs text-gray-400">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Backend connecté</span>
+          {sidebarOpen ? (
+            <div className="text-xs text-gray-400">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>Backend connecté</span>
+              </div>
+              <div>Version 0.1.0</div>
             </div>
-            <div>Version 0.1.0</div>
-          </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Backend connecté"></div>
+            </div>
+          )}
         </div>
       </aside>
 

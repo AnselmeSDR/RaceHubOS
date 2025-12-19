@@ -8,12 +8,16 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --runInBand",
+    "test:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --watch --runInBand",
+    "test:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --coverage --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@abandonware/noble": "^1.9.2-26",
     "@prisma/client": "^5.7.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -21,6 +25,12 @@
     "socket.io": "^4.6.0"
   },
   "devDependencies": {
-    "prisma": "^5.7.1"
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "prisma": "^5.7.1",
+    "supertest": "^6.3.3"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

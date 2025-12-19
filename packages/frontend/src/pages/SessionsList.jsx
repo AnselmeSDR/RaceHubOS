@@ -27,7 +27,7 @@ export default function SessionsList() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filter, setFilter] = useState('all') // all, setup, running, finished
+  const [filter, setFilter] = useState('all') // all, draft, ready, active, finished
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
@@ -86,12 +86,12 @@ export default function SessionsList() {
 
   function getStatusIcon(status) {
     switch (status) {
-      case 'setup':
+      case 'draft':
         return <ClockIcon className="h-5 w-5 text-gray-500" />
-      case 'running':
+      case 'ready':
+        return <ClockSolidIcon className="h-5 w-5 text-blue-500" />
+      case 'active':
         return <PlayIcon className="h-5 w-5 text-green-500 animate-pulse" />
-      case 'paused':
-        return <ClockSolidIcon className="h-5 w-5 text-yellow-500" />
       case 'finished':
         return <CheckCircleIcon className="h-5 w-5 text-blue-500" />
       default:
@@ -101,12 +101,12 @@ export default function SessionsList() {
 
   function getStatusLabel(status) {
     switch (status) {
-      case 'setup':
-        return 'En préparation'
-      case 'running':
+      case 'draft':
+        return 'Brouillon'
+      case 'ready':
+        return 'Prête'
+      case 'active':
         return 'En cours'
-      case 'paused':
-        return 'En pause'
       case 'finished':
         return 'Terminée'
       default:
@@ -170,19 +170,19 @@ export default function SessionsList() {
               Toutes
             </button>
             <button
-              onClick={() => setFilter('setup')}
+              onClick={() => setFilter('draft')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'setup'
+                filter === 'draft'
                   ? 'bg-white shadow text-indigo-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Préparation
+              Brouillons
             </button>
             <button
-              onClick={() => setFilter('running')}
+              onClick={() => setFilter('active')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'running'
+                filter === 'active'
                   ? 'bg-white shadow text-indigo-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}

@@ -76,6 +76,8 @@ setControlSessionManager(sessionManager);
 // Pass services to routes
 if (trackSync) {
   setTrackSync(trackSync);
+  // Connect SessionManager to TrackSync for CU control
+  sessionManager.setTrackSync(trackSync);
 }
 
 // Middleware
