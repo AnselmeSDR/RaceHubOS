@@ -105,12 +105,15 @@ export function RaceProvider({ children }) {
 
       if (!lapTime || lapTime <= 0) return
 
-      // Update local leaderboard
+      // Update local leaderboard with position tracking
       setFreePracticeBoard(prev => {
-        const existing = prev[controller] || { laps: 0, bestLap: null, lastLap: null, totalTime: 0 }
-        return {
+        const existing = prev[controller] || { laps: 0, bestLap: null, lastLap: null, totalTime: 0, position: 99 }
+
+        // Create updated entry
+        const updated = {
           ...prev,
           [controller]: {
+            ...existing,
             laps: existing.laps + 1,
             bestLap: existing.bestLap === null ? lapTime : Math.min(existing.bestLap, lapTime),
             lastLap: lapTime,
@@ -118,6 +121,30 @@ export function RaceProvider({ children }) {
             lastUpdate: Date.now()
           }
         }
+
+        // Calculate new positions
+        const sorted = Object.entries(updated)
+          .sort((a, b) => {
+            if (b[1].laps !== a[1].laps) return b[1].laps - a[1].laps
+            if (!a[1].bestLap) return 1
+            if (!b[1].bestLap) return -1
+            return a[1].bestLap - b[1].bestLap
+          })
+
+        // Update positions and calculate deltas
+        sorted.forEach(([ctrl, data], index) => {
+          const newPosition = index + 1
+          const oldPosition = data.position || newPosition
+          updated[ctrl] = {
+            ...data,
+            position: newPosition,
+            prevPosition: oldPosition,
+            positionDelta: oldPosition - newPosition, // positive = gained, negative = lost
+            positionChanged: oldPosition !== newPosition ? Date.now() : data.positionChanged
+          }
+        })
+
+        return updated
       })
 
       // Save to database if we have track and config

@@ -128,7 +128,7 @@ export default function DriverProfile() {
                         Tour {lap.lapNumber}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Session #{lap.sessionId.slice(-6)}
+                        {lap.sessionId ? `Session #${lap.sessionId.slice(-6)}` : 'Libre'}
                       </div>
                     </div>
                   </div>

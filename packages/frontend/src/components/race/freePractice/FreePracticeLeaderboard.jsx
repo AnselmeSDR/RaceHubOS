@@ -1,12 +1,20 @@
+import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { FlagIcon } from '@heroicons/react/24/outline'
+import { FlagIcon, ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import FreePracticeEntry from './FreePracticeEntry'
+
+const SORT_OPTIONS = {
+    LAPS: 'laps',
+    BEST_TIME: 'bestTime'
+}
 
 export default function FreePracticeLeaderboard({
     freePracticeBoard,
     configs,
     onReset
 }) {
+    const [sortBy, setSortBy] = useState(SORT_OPTIONS.LAPS)
+
     const entries = Object.entries(freePracticeBoard)
         .map(([ctrl, data]) => {
             const config = configs.find(c => String(c.controller) === ctrl)
@@ -15,6 +23,12 @@ export default function FreePracticeLeaderboard({
             return { controller: ctrl, ...data, driver, car }
         })
         .sort((a, b) => {
+            if (sortBy === SORT_OPTIONS.BEST_TIME) {
+                if (!a.bestLap) return 1
+                if (!b.bestLap) return -1
+                return a.bestLap - b.bestLap
+            }
+            // Default: sort by laps, then best time
             if (b.laps !== a.laps) return b.laps - a.laps
             if (!a.bestLap) return 1
             if (!b.bestLap) return -1
@@ -29,12 +43,41 @@ export default function FreePracticeLeaderboard({
                         <FlagIcon className="w-5 h-5 text-green-500" />
                         Classement
                     </h2>
-                    <button
-                        onClick={onReset}
-                        className="text-sm text-gray-500 hover:text-gray-700"
-                    >
-                        Réinitialiser
-                    </button>
+
+                    <div className="flex items-center gap-2">
+                        {/* Sort filters */}
+                        <div className="flex bg-gray-100 rounded-lg p-1">
+                            <button
+                                onClick={() => setSortBy(SORT_OPTIONS.LAPS)}
+                                className={`flex items-center gap-1 px-3 py-1 text-sm rounded-md transition-colors ${
+                                    sortBy === SORT_OPTIONS.LAPS
+                                        ? 'bg-white text-gray-800 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <ArrowPathIcon className="w-4 h-4" />
+                                Tours
+                            </button>
+                            <button
+                                onClick={() => setSortBy(SORT_OPTIONS.BEST_TIME)}
+                                className={`flex items-center gap-1 px-3 py-1 text-sm rounded-md transition-colors ${
+                                    sortBy === SORT_OPTIONS.BEST_TIME
+                                        ? 'bg-white text-gray-800 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <ClockIcon className="w-4 h-4" />
+                                Temps
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={onReset}
+                            className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            Réinitialiser
+                        </button>
+                    </div>
                 </div>
 
                 {entries.length === 0 ? (

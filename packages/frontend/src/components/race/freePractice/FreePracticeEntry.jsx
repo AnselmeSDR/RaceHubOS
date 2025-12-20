@@ -4,7 +4,6 @@ import LapTime from '../LapTime'
 
 export default function FreePracticeEntry({ entry, index }) {
     const driverColor = entry.driver?.color || 'grey'
-    const isRecent = Date.now() - entry.lastUpdate < 3000
 
     return (
         <motion.div
@@ -17,7 +16,7 @@ export default function FreePracticeEntry({ entry, index }) {
                 layout: { type: 'spring', stiffness: 200, damping: 30, mass: 1 },
                 opacity: { duration: 0.3 }
             }}
-            className={`flex items-center gap-3 p-3 rounded-lg shadow-md ${isRecent ? 'ring-2 ring-green-400' : ''}`}
+            className="flex items-center gap-3 p-3 rounded-lg shadow-md"
             style={{
                 background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, white)`,
                 borderLeft: `5px solid ${driverColor}`,
