@@ -14,17 +14,19 @@ import {
   XMarkIcon,
   Bars3Icon,
   CommandLineIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const navItems = [
     { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
+    { to: '/race', label: 'Course', Icon: FlagIcon },
+    { to: '/history', label: 'Historique', Icon: ClockIcon },
     { to: '/drivers', label: 'Pilotes', Icon: UserGroupIcon },
     { to: '/cars', label: 'Voitures', Icon: TruckIcon },
     { to: '/tracks', label: 'Circuits', Icon: MapIcon },
     { to: '/teams', label: 'Équipes', Icon: UsersIcon },
-    { to: '/sessions', label: 'Sessions', Icon: FlagIcon },
     { to: '/stats', label: 'Statistiques', Icon: TrophyIcon },
     { to: '/displays', label: 'Displays', Icon: Squares2X2Icon },
     { to: '/simulator', label: 'Simulateur', Icon: BeakerIcon },

@@ -28,7 +28,6 @@ router.get('/', async (req, res) => {
             car: true
           }
         },
-        phases: true,
         _count: {
           select: {
             laps: true,
@@ -77,7 +76,6 @@ router.get('/:id', async (req, res) => {
             controller: 'asc'
           }
         },
-        phases: true,
         laps: {
           include: {
             driver: true
@@ -101,22 +99,9 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Calculer la phase courante et son status pour le frontend
-    const runningPhase = session.phases?.find(p => p.status === 'running');
-    const pausedPhase = session.phases?.find(p => p.status === 'paused');
-    const activePhase = runningPhase || pausedPhase || session.phases?.[0];
-
-    const enrichedSession = {
-      ...session,
-      currentPhase: activePhase?.phase || 'practice',
-      phaseStatus: activePhase?.status || 'waiting',
-      phaseStartedAt: activePhase?.startedAt,
-      phaseFinishedAt: activePhase?.finishedAt
-    };
-
     res.json({
       success: true,
-      data: enrichedSession
+      data: session
     });
   } catch (error) {
     console.error('Error fetching session:', error);
@@ -129,11 +114,11 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/sessions
- * Crée une nouvelle session
+ * Crée une nouvelle session (simple CRUD, no phases)
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, type, trackId, championshipId, fuelMode, drivers, phases } = req.body;
+    const { name, type, trackId, championshipId, fuelMode, drivers } = req.body;
 
     // Validation
     if (!type || !trackId) {
@@ -143,21 +128,13 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Créer les phases par défaut si non fournies
-    const defaultPhases = phases || [
-      { phase: 'practice', duration: null, maxLaps: null },
-      { phase: 'qualifying', duration: null, maxLaps: null },
-      { phase: 'race', duration: null, maxLaps: null }
-    ];
-
     const session = await sessionManager.createSession({
       name,
       type,
       trackId,
       championshipId,
       fuelMode,
-      drivers,
-      phases: defaultPhases
+      drivers
     });
 
     res.status(201).json({
@@ -207,8 +184,7 @@ router.put('/:id', async (req, res) => {
             driver: true,
             car: true
           }
-        },
-        phases: true
+        }
       }
     });
 
@@ -237,10 +213,20 @@ router.put('/:id', async (req, res) => {
 /**
  * DELETE /api/sessions/:id
  * Supprime une session
+ * Query param: ?keepLaps=true to preserve laps as free practice laps (sessionId = null)
  */
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { keepLaps } = req.query;
+
+    // If keepLaps=true, update laps to remove session reference before deleting
+    if (keepLaps === 'true') {
+      await sessionManager.prisma.lap.updateMany({
+        where: { sessionId: id },
+        data: { sessionId: null }
+      });
+    }
 
     await sessionManager.prisma.session.delete({
       where: { id }
@@ -248,41 +234,12 @@ router.delete('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Session deleted successfully'
+      message: keepLaps === 'true'
+        ? 'Session deleted, laps preserved as free practice'
+        : 'Session deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting session:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
- * PUT /api/sessions/:id/phases/:phaseId
- * Met à jour une phase (duration, maxLaps)
- */
-router.put('/:id/phases/:phaseId', async (req, res) => {
-  try {
-    const { phaseId } = req.params;
-    const { duration, maxLaps } = req.body;
-
-    const updateData = {};
-    if (duration !== undefined) updateData.duration = duration || null;
-    if (maxLaps !== undefined) updateData.maxLaps = maxLaps || null;
-
-    const phase = await sessionManager.prisma.sessionPhase.update({
-      where: { id: phaseId },
-      data: updateData
-    });
-
-    res.json({
-      success: true,
-      data: phase
-    });
-  } catch (error) {
-    console.error('Error updating phase:', error);
     res.status(500).json({
       success: false,
       error: error.message

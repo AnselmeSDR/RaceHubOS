@@ -62,10 +62,6 @@ export class SimulatorSyncService {
         });
       }
 
-      console.log(`📋 Session active chargée: ${session.name || session.id}`);
-      console.log(`   Pilotes: ${this.sessionDrivers.size}`);
-    } else {
-      console.log('ℹ️  Aucune session active');
     }
 
     return session;
@@ -104,7 +100,6 @@ export class SimulatorSyncService {
     // Démarrer le simulateur
     this.simulator.start();
 
-    console.log('🎮 Simulateur démarré avec', simulatorInfo.numCars, 'voitures');
 
     this.io?.emit('session:started', { sessionId });
   }
@@ -179,10 +174,6 @@ export class SimulatorSyncService {
       this.io?.emit('lap:completed', lapData);
       this.io?.emit('lap_completed', { ...lapData, sessionId: this.activeSessionId });
 
-      console.log(
-        `🏁 Tour enregistré: ${driverData.driver.name} - ${(lapTime / 1000).toFixed(3)}s`
-      );
-
       // Créer un événement de course
       await this.prisma.raceEvent.create({
         data: {
@@ -249,8 +240,6 @@ export class SimulatorSyncService {
 
       // Arrêter la phase si nécessaire
       if (shouldStop) {
-        console.log(`⏹️  Phase ${session.currentPhase} terminée automatiquement: ${reason}`);
-
         await this.prisma.session.update({
           where: { id: this.activeSessionId },
           data: {
