@@ -21,7 +21,8 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const navItems = [
     { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
-    { to: '/race', label: 'Course', Icon: FlagIcon },
+    { to: '/race', label: 'Mode Libre', Icon: FlagIcon },
+    { to: '/championships', label: 'Championnats', Icon: TrophyIcon },
     { to: '/history', label: 'Historique', Icon: ClockIcon },
     { to: '/drivers', label: 'Pilotes', Icon: UserGroupIcon },
     { to: '/cars', label: 'Voitures', Icon: TruckIcon },

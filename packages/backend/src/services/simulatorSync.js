@@ -10,7 +10,9 @@ export class SimulatorSyncService {
     this.io = io;
     this.prisma = new PrismaClient();
     this.activeSessionId = null;
+    this.activeTrackId = null;
     this.sessionDrivers = new Map(); // carId -> { driverId, carId, controller }
+    this.currentPhase = 'free'; // 'free', 'qualif', 'race'
 
     // Écouter les événements du simulateur
     this.setupListeners();
@@ -31,7 +33,7 @@ export class SimulatorSyncService {
   async loadActiveSession() {
     const session = await this.prisma.session.findFirst({
       where: {
-        status: 'running',
+        status: { in: ['running', 'active'] },
       },
       include: {
         drivers: {
@@ -46,6 +48,8 @@ export class SimulatorSyncService {
 
     if (session) {
       this.activeSessionId = session.id;
+      this.activeTrackId = session.trackId;
+      this.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
 
       // Mapper les SessionDriver aux voitures du simulateur
       this.sessionDrivers.clear();
@@ -146,17 +150,14 @@ export class SimulatorSyncService {
     }
 
     try {
-      const session = await this.prisma.session.findUnique({
-        where: { id: this.activeSessionId },
-      });
-
       const lap = await this.prisma.lap.create({
         data: {
           sessionId: this.activeSessionId,
+          trackId: this.activeTrackId,
           driverId: driverData.driverId,
           carId: driverData.carId,
           controller: driverData.controller,
-          phase: session?.currentPhase || 'race',
+          phase: this.currentPhase || 'race',
           lapNumber,
           lapTime,
         },

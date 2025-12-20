@@ -1,4 +1,4 @@
-import { SignalIcon, SignalSlashIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import { SignalIcon, SignalSlashIcon, ChevronDownIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline'
 import StateChip from '../StateChip'
 
 export default function FreePracticeHeader({
@@ -6,7 +6,10 @@ export default function FreePracticeHeader({
     tracks,
     selectedTrack,
     onTrackChange,
-    cuConnected
+    cuConnected,
+    canStartSession,
+    onStartQualifying,
+    onStartRace
 }) {
     return (
         <div className="bg-white border-b px-6 py-4">
@@ -16,7 +19,7 @@ export default function FreePracticeHeader({
                     <StateChip state={state} />
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {/* Track selector */}
                     <div className="relative">
                         <select
@@ -33,6 +36,27 @@ export default function FreePracticeHeader({
                             ))}
                         </select>
                         <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                    </div>
+
+                    {/* Session buttons */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onStartQualifying}
+                            disabled={!canStartSession}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                            <ClockIcon className="w-4 h-4" />
+                            Qualifications
+                        </button>
+
+                        <button
+                            onClick={onStartRace}
+                            disabled={!canStartSession}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                            <FlagIcon className="w-4 h-4" />
+                            Course
+                        </button>
                     </div>
 
                     {/* CU status */}

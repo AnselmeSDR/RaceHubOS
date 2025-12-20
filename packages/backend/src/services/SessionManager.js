@@ -13,6 +13,7 @@ export class SessionManager {
     this.prisma = new PrismaClient();
     this.io = io;
     this.trackSync = null; // Set via setTrackSync
+    this.simulatorSync = null; // Set via setSimulatorSync
   }
 
   /**
@@ -20,6 +21,20 @@ export class SessionManager {
    */
   setTrackSync(trackSync) {
     this.trackSync = trackSync;
+  }
+
+  /**
+   * Connecter le SimulatorSyncService pour le simulateur
+   */
+  setSimulatorSync(simulatorSync) {
+    this.simulatorSync = simulatorSync;
+  }
+
+  /**
+   * Connecter le Simulateur
+   */
+  setSimulator(simulator) {
+    this.simulator = simulator;
   }
 
   /**

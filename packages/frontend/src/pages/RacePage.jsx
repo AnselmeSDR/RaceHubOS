@@ -16,7 +16,6 @@ import FreePracticeLeaderboard from '../components/race/freePractice/FreePractic
 import TrackRecordsPanel from '../components/race/freePractice/TrackRecordsPanel'
 
 // Shared components
-import SessionActionBar from '../components/race/SessionActionBar'
 import Leaderboard from '../components/race/Leaderboard'
 
 // Modals
@@ -69,7 +68,6 @@ export default function RacePage() {
     const [drivers, setDrivers] = useState([])
     const [cars, setCars] = useState([])
     const [tracks, setTracks] = useState([])
-    const [championships, setChampionships] = useState([])
     const [selectedTrack, setSelectedTrack] = useState(null)
     const [trackRecords, setTrackRecords] = useState({ free: [], qualifying: [], race: [] })
 
@@ -95,14 +93,12 @@ export default function RacePage() {
     const [qualifyingForm, setQualifyingForm] = useState({
         name: '',
         duration: 10,
-        maxLaps: 0,
-        championshipId: null
+        maxLaps: 0
     })
     const [raceForm, setRaceForm] = useState({
         name: '',
         duration: 0,
         maxLaps: 20,
-        championshipId: null,
         useQualifyingGrid: false
     })
 
@@ -110,24 +106,21 @@ export default function RacePage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [driversRes, carsRes, tracksRes, champsRes] = await Promise.all([
+                const [driversRes, carsRes, tracksRes] = await Promise.all([
                     fetch(`${API_URL}/api/drivers`),
                     fetch(`${API_URL}/api/cars`),
-                    fetch(`${API_URL}/api/tracks`),
-                    fetch(`${API_URL}/api/championships`)
+                    fetch(`${API_URL}/api/tracks`)
                 ])
 
-                const [driversData, carsData, tracksData, champsData] = await Promise.all([
+                const [driversData, carsData, tracksData] = await Promise.all([
                     driversRes.json(),
                     carsRes.json(),
-                    tracksRes.json(),
-                    champsRes.json()
+                    tracksRes.json()
                 ])
 
                 setDrivers(driversData.data || [])
                 setCars(carsData.data || [])
                 setTracks(tracksData.data || [])
-                setChampionships(champsData.data || [])
 
                 if (tracksData.data?.length > 0 && !selectedTrack) {
                     setSelectedTrack(tracksData.data[0])
@@ -200,8 +193,7 @@ export default function RacePage() {
             name: qualifyingForm.name || 'Qualifying',
             trackId: selectedTrack?.id,
             duration: qualifyingForm.duration > 0 ? qualifyingForm.duration : null,
-            maxLaps: qualifyingForm.maxLaps > 0 ? qualifyingForm.maxLaps : null,
-            championshipId: qualifyingForm.championshipId || null
+            maxLaps: qualifyingForm.maxLaps > 0 ? qualifyingForm.maxLaps : null
         }
         await startQualifying(params)
         setShowQualifyingModal(false)
@@ -213,7 +205,6 @@ export default function RacePage() {
             trackId: selectedTrack?.id,
             duration: raceForm.duration > 0 ? raceForm.duration : null,
             maxLaps: raceForm.maxLaps > 0 ? raceForm.maxLaps : null,
-            championshipId: raceForm.championshipId || null,
             gridFromQualifying: raceForm.useQualifyingGrid
         }
         await startRace(params)
@@ -230,7 +221,7 @@ export default function RacePage() {
         await dismiss()
     }
 
-    const canStartSession = selectedTrack && cuConnected && configuredCount > 0
+    const canStartSession = selectedTrack && configuredCount > 0
     const sessionTypeLabel = isQualifying ? 'Qualifications' : isRace ? 'Course' : 'Session'
 
     // ===== SESSION ACTIVE (PENDING/RUNNING/PAUSED/RESULTS) =====
@@ -298,6 +289,9 @@ export default function RacePage() {
                 selectedTrack={selectedTrack}
                 onTrackChange={setSelectedTrack}
                 cuConnected={cuConnected}
+                canStartSession={canStartSession}
+                onStartQualifying={() => setShowQualifyingModal(true)}
+                onStartRace={() => setShowRaceModal(true)}
             />
 
             <ControllerConfigSection
@@ -325,20 +319,10 @@ export default function RacePage() {
                 />
             </div>
 
-            <SessionActionBar
-                canStartSession={canStartSession}
-                selectedTrack={selectedTrack}
-                cuConnected={cuConnected}
-                configuredCount={configuredCount}
-                onStartQualifying={() => setShowQualifyingModal(true)}
-                onStartRace={() => setShowRaceModal(true)}
-            />
-
             {showQualifyingModal && (
                 <QualifyingModal
                     form={qualifyingForm}
                     setForm={setQualifyingForm}
-                    championships={championships}
                     onClose={() => setShowQualifyingModal(false)}
                     onStart={handleStartQualifying}
                 />
@@ -348,7 +332,6 @@ export default function RacePage() {
                 <RaceModal
                     form={raceForm}
                     setForm={setRaceForm}
-                    championships={championships}
                     onClose={() => setShowRaceModal(false)}
                     onStart={handleStartRace}
                 />

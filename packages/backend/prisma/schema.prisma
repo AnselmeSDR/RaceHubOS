@@ -64,6 +64,7 @@ model Track {
   controllerConfigs ControllerConfig[]
   trackRecords      TrackRecord[]
   laps              Lap[]
+  championships     Championship[]
 }
 
 model Team {
@@ -82,10 +83,12 @@ model Championship {
   season       String
   pointsSystem String
   status       String                 @default("planned")
+  trackId      String?
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   standings    ChampionshipStanding[]
   sessions     Session[]
+  track        Track?                 @relation(fields: [trackId], references: [id])
 }
 
 model ChampionshipStanding {
@@ -96,6 +99,9 @@ model ChampionshipStanding {
   points         Int          @default(0)
   wins           Int          @default(0)
   podiums        Int          @default(0)
+  qualifBestTime Int?
+  raceTotalLaps  Int          @default(0)
+  raceTotalTime  Int          @default(0)
   championship   Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
 
   @@unique([championshipId, driverId])

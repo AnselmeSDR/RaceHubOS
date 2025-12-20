@@ -78,6 +78,10 @@ if (useMockDevice) {
 
   // Charger la session active au démarrage
   simulatorSync.loadActiveSession();
+
+  // Connect SessionManager to SimulatorSync and Simulator
+  sessionManager.setSimulatorSync(simulatorSync);
+  sessionManager.setSimulator(simulator);
 } else {
   // Mode Control Unit réel
   trackSync = new TrackSyncService(io);

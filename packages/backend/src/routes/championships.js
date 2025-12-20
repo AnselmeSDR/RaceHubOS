@@ -9,14 +9,17 @@ router.get('/', async (req, res) => {
   try {
     const championships = await prisma.championship.findMany({
       include: {
+        track: true,
         standings: {
           orderBy: {
             position: 'asc',
           },
         },
-        _count: {
+        sessions: {
           select: {
-            sessions: true,
+            id: true,
+            type: true,
+            status: true,
           },
         },
       },
@@ -47,6 +50,7 @@ router.get('/:id', async (req, res) => {
     const championship = await prisma.championship.findUnique({
       where: { id },
       include: {
+        track: true,
         sessions: {
           include: {
             track: true,
@@ -91,7 +95,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/championships - Crée un nouveau championnat
 router.post('/', async (req, res) => {
   try {
-    const { name, season, pointsSystem, status } = req.body;
+    const { name, season, pointsSystem, status, trackId } = req.body;
 
     // Validation
     if (!name || !season) {
@@ -99,6 +103,17 @@ router.post('/', async (req, res) => {
         success: false,
         error: 'Name and season are required',
       });
+    }
+
+    // Validate trackId if provided
+    if (trackId) {
+      const track = await prisma.track.findUnique({ where: { id: trackId } });
+      if (!track) {
+        return res.status(400).json({
+          success: false,
+          error: 'Track not found',
+        });
+      }
     }
 
     // Valider le système de points (doit être un objet JSON valide)
@@ -124,8 +139,10 @@ router.post('/', async (req, res) => {
         season: season.trim(),
         pointsSystem: validatedPointsSystem || JSON.stringify({ 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 }),
         status: status || 'planned',
+        trackId: trackId || null,
       },
       include: {
+        track: true,
         standings: true,
         sessions: true,
       },
@@ -299,6 +316,8 @@ router.post('/:id/recalculate', async (req, res) => {
                 driver: true,
               },
             },
+            laps: true,
+            phases: true,
           },
         },
       },
@@ -314,42 +333,73 @@ router.post('/:id/recalculate', async (req, res) => {
     // Parse points system
     const pointsSystem = JSON.parse(championship.pointsSystem);
 
-    // Calculer les points par pilote
-    const driverPoints = {};
-    const driverWins = {};
-    const driverPodiums = {};
+    // Calculer les stats par pilote
+    const driverStats = {};
+
+    const initDriver = (driverId) => {
+      if (!driverStats[driverId]) {
+        driverStats[driverId] = {
+          points: 0,
+          wins: 0,
+          podiums: 0,
+          qualifBestTime: null,
+          raceTotalLaps: 0,
+          raceTotalTime: 0,
+        };
+      }
+    };
 
     championship.sessions.forEach(session => {
+      // Points-based stats from session drivers
       session.drivers.forEach(sd => {
         if (sd.finalPos !== null) {
           const driverId = sd.driverId;
+          initDriver(driverId);
           const points = pointsSystem[sd.finalPos] || 0;
 
-          if (!driverPoints[driverId]) {
-            driverPoints[driverId] = 0;
-            driverWins[driverId] = 0;
-            driverPodiums[driverId] = 0;
-          }
+          driverStats[driverId].points += points;
+          if (sd.finalPos === 1) driverStats[driverId].wins++;
+          if (sd.finalPos <= 3) driverStats[driverId].podiums++;
+        }
+      });
 
-          driverPoints[driverId] += points;
-          if (sd.finalPos === 1) driverWins[driverId]++;
-          if (sd.finalPos <= 3) driverPodiums[driverId]++;
+      // Time-based stats from laps
+      session.laps.forEach(lap => {
+        const driverId = lap.driverId;
+        initDriver(driverId);
+
+        const lapTimeMs = Math.round(lap.lapTime);
+
+        // Qualifying: track best lap time
+        if (lap.phase === 'qualif' || lap.phase === 'qualifying') {
+          if (driverStats[driverId].qualifBestTime === null || lapTimeMs < driverStats[driverId].qualifBestTime) {
+            driverStats[driverId].qualifBestTime = lapTimeMs;
+          }
+        }
+
+        // Race: accumulate laps and time
+        if (lap.phase === 'race') {
+          driverStats[driverId].raceTotalLaps++;
+          driverStats[driverId].raceTotalTime += lapTimeMs;
         }
       });
     });
 
     // Trier par points (puis victoires en cas d'égalité)
-    const sortedDrivers = Object.entries(driverPoints)
+    const sortedDrivers = Object.entries(driverStats)
       .sort((a, b) => {
-        if (b[1] !== a[1]) return b[1] - a[1]; // Par points
-        return driverWins[b[0]] - driverWins[a[0]]; // Par victoires
+        if (b[1].points !== a[1].points) return b[1].points - a[1].points;
+        return b[1].wins - a[1].wins;
       })
-      .map(([driverId], index) => ({
+      .map(([driverId, stats], index) => ({
         driverId,
         position: index + 1,
-        points: driverPoints[driverId],
-        wins: driverWins[driverId],
-        podiums: driverPodiums[driverId],
+        points: stats.points,
+        wins: stats.wins,
+        podiums: stats.podiums,
+        qualifBestTime: stats.qualifBestTime,
+        raceTotalLaps: stats.raceTotalLaps,
+        raceTotalTime: stats.raceTotalTime,
       }));
 
     // Supprimer les anciens standings
@@ -366,6 +416,9 @@ router.post('/:id/recalculate', async (req, res) => {
         points: s.points,
         wins: s.wins,
         podiums: s.podiums,
+        qualifBestTime: s.qualifBestTime,
+        raceTotalLaps: s.raceTotalLaps,
+        raceTotalTime: s.raceTotalTime,
       })),
     });
 
