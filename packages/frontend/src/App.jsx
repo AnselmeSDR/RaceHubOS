@@ -16,6 +16,8 @@ import Stats from './pages/Stats'
 import Settings from './pages/Settings'
 import Test from './pages/Test'
 import RacePage from './pages/RacePage'
+import Championships from './pages/Championships'
+import ChampionshipDetail from './pages/ChampionshipDetail'
 
 function App() {
   return (
@@ -27,6 +29,9 @@ function App() {
             <Route index element={<Dashboard />} />
             {/* Race - single page for free practice + sessions */}
             <Route path="race" element={<RacePage />} />
+            {/* Championships */}
+            <Route path="championships" element={<Championships />} />
+            <Route path="championships/:id" element={<ChampionshipDetail />} />
             {/* Core routes */}
             <Route path="drivers" element={<Drivers />} />
             <Route path="drivers/:id" element={<DriverProfile />} />

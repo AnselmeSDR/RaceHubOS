@@ -63,7 +63,7 @@ export default function ControllerSlot({
           >
             {controller}
           </div>
-          <span className="font-medium text-gray-700">Controller {controller}</span>
+          <span className="font-medium text-gray-700">Manette {controller}</span>
         </div>
         {!isConfigured && (
           <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
@@ -93,7 +93,7 @@ export default function ControllerSlot({
       {/* Driver select */}
       <div className="mb-2">
         <label className="block text-xs font-medium text-gray-500 mb-1">
-          Driver
+          Pilote
         </label>
         <select
           value={config?.driverId || ''}
@@ -101,7 +101,7 @@ export default function ControllerSlot({
           disabled={disabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <option value="">Select driver...</option>
+          <option value="">Sélectionner...</option>
           {availableDrivers.map((driver) => (
             <option key={driver.id} value={driver.id}>
               {driver.name}
@@ -113,7 +113,7 @@ export default function ControllerSlot({
       {/* Car select */}
       <div>
         <label className="block text-xs font-medium text-gray-500 mb-1">
-          Car
+          Voiture
         </label>
         <select
           value={config?.carId || ''}
@@ -121,7 +121,7 @@ export default function ControllerSlot({
           disabled={disabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <option value="">Select car...</option>
+          <option value="">Sélectionner...</option>
           {availableCars.map((car) => (
             <option key={car.id} value={car.id}>
               {car.brand} {car.model}

@@ -25,7 +25,7 @@ export default function ConfigPanel({
   return (
     <div className="bg-gray-50 rounded-xl p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        Controller Configuration
+        Configuration des Manettes
       </h2>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">

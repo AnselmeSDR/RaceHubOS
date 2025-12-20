@@ -19,6 +19,7 @@ export class TrackSyncService extends EventEmitter {
     this.raceStartTime = null;
     this.positions = new Map(); // controller -> position
     this.lastTimestamps = new Map(); // controller -> last timestamp
+    this.currentPhase = 'free'; // 'free', 'qualif', 'race'
 
     // Écouter les événements du Control Unit
     this.setupControlUnitListeners();
@@ -178,6 +179,7 @@ export class TrackSyncService extends EventEmitter {
     if (session) {
       this.activeSessionId = session.id;
       this.raceStartTime = session.startedAt;
+      this.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
 
       // Charger les pilotes dans la map
       this.sessionDrivers.clear();
@@ -274,6 +276,7 @@ export class TrackSyncService extends EventEmitter {
     this.activeSessionId = null;
     this.sessionDrivers.clear();
     this.raceStartTime = null;
+    this.currentPhase = 'free';
 
     this.emit('session-stopped', sessionId);
     this.io?.emit('session:stopped', { sessionId });
@@ -313,17 +316,13 @@ export class TrackSyncService extends EventEmitter {
     if (this.activeSessionId && sector === 1) {
       // Sector 1 = ligne de départ/arrivée
       try {
-        const session = await this.prisma.session.findUnique({
-          where: { id: this.activeSessionId },
-        });
-
         const lap = await this.prisma.lap.create({
           data: {
             sessionId: this.activeSessionId,
             driverId: driverData.driverId,
             carId: driverData.carId,
             controller,
-            phase: session?.currentPhase || 'race',
+            phase: this.currentPhase || 'race',
             lapNumber: driverData.lapCount + 1,
             lapTime: lapTime,
             fuelBefore: this.lastStatus?.fuel?.[address],

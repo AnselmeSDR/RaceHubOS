@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { FlagIcon, ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import FreePracticeEntry from './FreePracticeEntry'
@@ -15,25 +15,35 @@ export default function FreePracticeLeaderboard({
 }) {
     const [sortBy, setSortBy] = useState(SORT_OPTIONS.LAPS)
 
-    const entries = Object.entries(freePracticeBoard)
-        .map(([ctrl, data]) => {
-            const config = configs.find(c => String(c.controller) === ctrl)
-            const driver = config?.driver
-            const car = config?.car
-            return { controller: ctrl, ...data, driver, car }
-        })
-        .sort((a, b) => {
-            if (sortBy === SORT_OPTIONS.BEST_TIME) {
+    const entries = useMemo(() => {
+        const mapped = Object.entries(freePracticeBoard)
+            .map(([ctrl, data]) => {
+                const config = configs.find(c => String(c.controller) === ctrl)
+                const driver = config?.driver
+                const car = config?.car
+                return { controller: ctrl, ...data, driver, car }
+            })
+
+        // Sort based on selected option
+        if (sortBy === SORT_OPTIONS.BEST_TIME) {
+            return mapped.sort((a, b) => {
+                // Sort by best lap time (ascending) - fastest first
+                if (!a.bestLap && !b.bestLap) return 0
                 if (!a.bestLap) return 1
                 if (!b.bestLap) return -1
                 return a.bestLap - b.bestLap
-            }
-            // Default: sort by laps, then best time
+            })
+        }
+
+        // Default: sort by laps (descending), then best time (ascending)
+        return mapped.sort((a, b) => {
             if (b.laps !== a.laps) return b.laps - a.laps
+            if (!a.bestLap && !b.bestLap) return 0
             if (!a.bestLap) return 1
             if (!b.bestLap) return -1
             return a.bestLap - b.bestLap
         })
+    }, [freePracticeBoard, configs, sortBy])
 
     return (
         <div className="flex-1 bg-gray-50 overflow-y-auto p-6">

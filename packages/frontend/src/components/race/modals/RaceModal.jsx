@@ -3,7 +3,6 @@ import { XMarkIcon, FlagIcon } from '@heroicons/react/24/outline'
 export default function RaceModal({
     form,
     setForm,
-    championships,
     onClose,
     onStart
 }) {
@@ -50,18 +49,6 @@ export default function RaceModal({
                                 className="w-full px-4 py-2 border rounded-lg"
                             />
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Championnat</label>
-                        <select
-                            value={form.championshipId || ''}
-                            onChange={(e) => setForm(f => ({ ...f, championshipId: e.target.value || null }))}
-                            className="w-full px-4 py-2 border rounded-lg"
-                        >
-                            <option value="">Aucun</option>
-                            {championships.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
                     </div>
 
                     <label className="flex items-center gap-2">
