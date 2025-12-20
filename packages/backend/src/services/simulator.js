@@ -34,7 +34,6 @@ export class CarreraSimulator {
       currentSector: 0,
     }));
 
-    console.log(`Simulator initialized with ${carCount} cars`);
   }
 
   /**
@@ -42,15 +41,12 @@ export class CarreraSimulator {
    */
   start() {
     if (this.isRunning) {
-      console.log('Simulator already running');
       return;
     }
 
     this.isRunning = true;
     this.raceActive = true;
     this.raceTime = 0;
-
-    console.log('Simulator started');
 
     this.interval = setInterval(() => {
       this.tick();
@@ -75,7 +71,6 @@ export class CarreraSimulator {
       this.interval = null;
     }
 
-    console.log('Simulator stopped');
     this.emitRaceStatus();
   }
 
@@ -85,7 +80,6 @@ export class CarreraSimulator {
   togglePause() {
     this.raceActive = !this.raceActive;
     this.emitRaceStatus();
-    console.log(`Race ${this.raceActive ? 'resumed' : 'paused'}`);
   }
 
   /**
@@ -117,7 +111,6 @@ export class CarreraSimulator {
       // Check if fuel is low and need pit stop
       if (car.fuel < 2 && !car.inPit && Math.random() > 0.95) {
         car.inPit = true;
-        console.log(`Car ${car.id} entering pit stop`);
       }
 
       // Simulate sector progression
@@ -184,7 +177,6 @@ export class CarreraSimulator {
       timestamp: Date.now(),
     });
 
-    console.log(`Car ${car.id} completed lap ${car.totalLaps} in ${(lapTime / 1000).toFixed(2)}s`);
 
     // Appeler le callback pour enregistrer le tour en base de données
     if (this.onLapComplete) {
@@ -219,7 +211,6 @@ export class CarreraSimulator {
         timestamp: Date.now(),
       });
 
-      console.log(`Car ${car.id} left pit stop (fuel: ${car.fuel.toFixed(1)})`);
     }
   }
 
@@ -284,6 +275,7 @@ export class CarreraSimulator {
       active: this.raceActive,
       raceTime: this.raceTime,
       carCount: this.cars.length,
+      isMockDevice: true
     });
   }
 
@@ -294,7 +286,6 @@ export class CarreraSimulator {
     const car = this.cars.find((c) => c.id === carId);
     if (car) {
       car.speed = Math.max(0, Math.min(15, speed));
-      console.log(`Car ${carId} speed set to ${car.speed}`);
     }
   }
 

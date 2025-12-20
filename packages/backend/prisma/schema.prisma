@@ -8,55 +8,62 @@ datasource db {
 }
 
 model Driver {
-  id         String          @id @default(cuid())
-  name       String
-  email      String?         @unique
-  photo      String?
-  color      String          @default("#3B82F6")
-  teamId     String?
-  totalRaces Int             @default(0)
-  wins       Int             @default(0)
-  podiums    Int             @default(0)
-  bestLap    Float?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  number     Int?            @unique
-  team       Team?           @relation(fields: [teamId], references: [id])
-  laps       Lap[]
-  sessions   SessionDriver[]
+  id                String             @id @default(cuid())
+  name              String
+  email             String?            @unique
+  photo             String?
+  color             String             @default("#3B82F6")
+  teamId            String?
+  totalRaces        Int                @default(0)
+  wins              Int                @default(0)
+  podiums           Int                @default(0)
+  bestLap           Float?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  number            Int?               @unique
+  team              Team?              @relation(fields: [teamId], references: [id])
+  laps              Lap[]
+  sessions          SessionDriver[]
+  controllerConfigs ControllerConfig[]
+  trackRecords      TrackRecord[]
 }
 
 model Car {
-  id           String          @id @default(cuid())
-  brand        String
-  model        String
-  year         Int?
-  photo        String?
-  color        String          @default("#3B82F6")
-  maxSpeed     Int             @default(100)
-  brakeForce   Int             @default(50)
-  fuelCapacity Int             @default(100)
-  totalRaces   Int             @default(0)
-  bestLap      Float?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  laps         Lap[]
-  sessions     SessionDriver[]
+  id                String             @id @default(cuid())
+  brand             String
+  model             String
+  year              Int?
+  photo             String?
+  color             String             @default("#3B82F6")
+  maxSpeed          Int                @default(100)
+  brakeForce        Int                @default(50)
+  fuelCapacity      Int                @default(100)
+  totalRaces        Int                @default(0)
+  bestLap           Float?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  laps              Lap[]
+  sessions          SessionDriver[]
+  controllerConfigs ControllerConfig[]
+  trackRecords      TrackRecord[]
 }
 
 model Track {
-  id        String    @id @default(cuid())
-  name      String
-  photo     String?
-  layout    String?
-  length    Float?
-  corners   Int?
-  color     String    @default("#9333ea")
-  bestLap   Float?
-  bestLapBy String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
+  id                String             @id @default(cuid())
+  name              String
+  photo             String?
+  layout            String?
+  length            Float?
+  corners           Int?
+  color             String             @default("#9333ea")
+  bestLap           Float?
+  bestLapBy         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  sessions          Session[]
+  controllerConfigs ControllerConfig[]
+  trackRecords      TrackRecord[]
+  laps              Lap[]
 }
 
 model Team {
@@ -121,6 +128,7 @@ model Session {
   track          Track           @relation(fields: [trackId], references: [id])
   drivers        SessionDriver[]
   phases         SessionPhase[]
+  trackRecords   TrackRecord[]
 }
 
 model SessionPhase {
@@ -159,7 +167,8 @@ model SessionDriver {
 
 model Lap {
   id          String   @id @default(cuid())
-  sessionId   String
+  sessionId   String?
+  trackId     String
   driverId    String
   carId       String
   controller  String
@@ -177,11 +186,13 @@ model Lap {
   timestamp   DateTime @default(now())
   car         Car      @relation(fields: [carId], references: [id])
   driver      Driver   @relation(fields: [driverId], references: [id])
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  track       Track    @relation(fields: [trackId], references: [id])
 
   @@index([sessionId, driverId])
   @@index([sessionId, lapTime])
   @@index([sessionId, phase])
+  @@index([trackId, driverId, lapTime])
 }
 
 model RaceEvent {
@@ -193,4 +204,38 @@ model RaceEvent {
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, timestamp])
+}
+
+model ControllerConfig {
+  id         String   @id @default(cuid())
+  controller String   // "1" to "6"
+  driverId   String?
+  carId      String?
+  trackId    String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  driver Driver? @relation(fields: [driverId], references: [id])
+  car    Car?    @relation(fields: [carId], references: [id])
+  track  Track   @relation(fields: [trackId], references: [id])
+
+  @@unique([trackId, controller])
+}
+
+model TrackRecord {
+  id        String   @id @default(cuid())
+  trackId   String
+  driverId  String
+  carId     String
+  lapTime   Float
+  sessionId String?
+  setAt     DateTime @default(now())
+
+  track   Track    @relation(fields: [trackId], references: [id])
+  driver  Driver   @relation(fields: [driverId], references: [id])
+  car     Car      @relation(fields: [carId], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  @@unique([trackId, driverId, carId])
 }

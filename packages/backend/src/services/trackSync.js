@@ -29,19 +29,16 @@ export class TrackSyncService extends EventEmitter {
    */
   setupControlUnitListeners() {
     this.controlUnit.on('connected', () => {
-      console.log('✅ Control Unit connected');
       this.emit('cu-connected');
       this.io?.emit('cu:connected');
     });
 
     this.controlUnit.on('disconnected', () => {
-      console.log('⚠️  Control Unit disconnected');
       this.emit('cu-disconnected');
       this.io?.emit('cu:disconnected');
     });
 
     this.controlUnit.on('reconnect-failed', () => {
-      console.error('❌ Control Unit reconnection failed');
       this.emit('cu-reconnect-failed');
       this.io?.emit('cu:reconnect-failed');
     });
@@ -55,7 +52,6 @@ export class TrackSyncService extends EventEmitter {
     });
 
     this.controlUnit.on('error', (error) => {
-      console.error('Control Unit error:', error);
       this.emit('error', error);
     });
   }
@@ -209,10 +205,6 @@ export class TrackSyncService extends EventEmitter {
         driverData.lapCount = lapCount;
       }
 
-      console.log(`📋 Loaded active session: ${session.name || session.id}`);
-      console.log(`   Drivers: ${this.sessionDrivers.size}`);
-    } else {
-      console.log('ℹ️  No active session found');
     }
 
     return session;
@@ -227,9 +219,8 @@ export class TrackSyncService extends EventEmitter {
     if (this.controlUnit.isConnected()) {
       try {
         cuInfo = await this.controlUnit.getInfo();
-        console.log('📡 Infos Control Unit récupérées:', cuInfo);
-      } catch (error) {
-        console.warn('⚠️  Impossible de récupérer les infos CU:', error.message);
+      } catch {
+        // CU info not available
       }
     }
 
@@ -294,8 +285,6 @@ export class TrackSyncService extends EventEmitter {
   async handleTimerEvent(timerEvent) {
     const { address, timestamp, sector } = timerEvent;
 
-    console.log(`⏱️  Timer event: address=${address}, timestamp=${timestamp}ms, sector=${sector}`);
-
     // Trouver le pilote correspondant
     const controller = (address + 1).toString(); // Les addresses commencent à 0, les controllers à 1
 
@@ -304,8 +293,7 @@ export class TrackSyncService extends EventEmitter {
     const lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
     this.lastTimestamps.set(controller, timestamp);
 
-    // Toujours émettre l'événement raw pour la page Test (debug)
-    console.log(`📡 Emitting cu:timer for controller ${controller}, lapTime=${lapTime}ms, io=${!!this.io}`);
+    // Émettre l'événement pour le frontend
     this.io?.emit('cu:timer', {
       controller,
       address,
@@ -318,7 +306,6 @@ export class TrackSyncService extends EventEmitter {
     const driverData = this.sessionDrivers.get(controller);
 
     if (!driverData) {
-      console.warn(`⚠️  Unknown controller: ${controller} (no active session)`);
       return;
     }
 
@@ -360,10 +347,6 @@ export class TrackSyncService extends EventEmitter {
         this.emit('lap-completed', lapData);
         this.io?.emit('lap:completed', lapData);
 
-        console.log(
-          `🏁 Lap completed: ${driverData.driver.name} - ${(lapTime / 1000).toFixed(3)}s`
-        );
-
         // Créer un événement de course
         await this.prisma.raceEvent.create({
           data: {
@@ -378,8 +361,6 @@ export class TrackSyncService extends EventEmitter {
           },
         });
       } catch (error) {
-        console.error('❌ Error recording lap:', error.message);
-        console.error('   Stack:', error.stack);
         this.emit('error', error);
       }
     }
@@ -481,16 +462,12 @@ export class TrackSyncService extends EventEmitter {
       if (this.controlUnit.isConnected()) {
         try {
           await this.controlUnit.poll();
-        } catch (error) {
-          // Ignorer les erreurs de timeout
-          if (error.message !== 'Request timeout') {
-            console.error('Polling error:', error);
-          }
+        } catch {
+          // Ignore polling errors
         }
       }
     }, interval);
 
-    console.log(`🔄 Started polling Control Unit (interval: ${interval}ms)`);
   }
 
   /**
@@ -500,7 +477,6 @@ export class TrackSyncService extends EventEmitter {
     if (this.pollingTimer) {
       clearInterval(this.pollingTimer);
       this.pollingTimer = null;
-      console.log('⏹️  Stopped polling Control Unit');
     }
   }
 

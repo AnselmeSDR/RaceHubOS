@@ -23,8 +23,19 @@ import bluetoothRouter, { setTrackSync } from './routes/bluetooth.js';
 import sessionsSimpleRouter, { setSessionManager as setSimpleSessionManager } from './routes/sessions-simple.js';
 import sessionControlRouter, { setSessionManager as setControlSessionManager } from './routes/session-control.js';
 
-// Import SessionManager service
+// Import new v2 routes
+import configRouter, { setConfigService } from './routes/config.js';
+import raceRouter, { setRaceController } from './routes/race.js';
+import recordsRouter from './routes/records.js';
+
+// Import SessionManager service (legacy)
 import { SessionManager } from './services/SessionManager.js';
+
+// Import new v2 services
+import { ConfigService } from './services/ConfigService.js';
+import { LeaderboardService } from './services/LeaderboardService.js';
+import { RaceControllerService } from './services/RaceControllerService.js';
+// Note: LapRecorderService not needed - TrackSyncService handles lap recording directly
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,8 +48,14 @@ const io = new Server(httpServer, {
   },
 });
 
-// Initialize SessionManager
+// Initialize SessionManager (legacy)
 const sessionManager = new SessionManager(io);
+
+// Initialize new v2 services
+const configService = new ConfigService(io);
+const leaderboardService = new LeaderboardService();
+const raceControllerService = new RaceControllerService(io, leaderboardService);
+// Note: LapRecorderService not used - TrackSyncService handles lap recording
 
 // Initialize services
 const useMockDevice = process.env.USE_MOCK_DEVICE === 'true';
@@ -73,11 +90,17 @@ setSettingsIo(io);
 setSimpleSessionManager(sessionManager);
 setControlSessionManager(sessionManager);
 
+// Pass v2 services to routes
+setConfigService(configService);
+setRaceController(raceControllerService);
+
 // Pass services to routes
 if (trackSync) {
   setTrackSync(trackSync);
-  // Connect SessionManager to TrackSync for CU control
+  // Connect SessionManager to TrackSync for CU control (legacy)
   sessionManager.setTrackSync(trackSync);
+  // Connect RaceControllerService to TrackSync for CU control (v2)
+  raceControllerService.setTrackSync(trackSync);
 }
 
 // Middleware
@@ -99,18 +122,27 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'RaceHubOS API',
-    version: '0.1.0',
+    version: '0.2.0',
     endpoints: {
+      // Core CRUD
       drivers: '/api/drivers',
       cars: '/api/cars',
       tracks: '/api/tracks',
       teams: '/api/teams',
-      sessions: '/api/sessions',
-      sessionControl: '/api/session-control',
       championships: '/api/championships',
+      sessions: '/api/sessions',
+      // Race control v2
+      race: '/api/race',
+      config: '/api/config',
+      records: '/api/records',
+      // Utils
       stats: '/api/stats',
+      laps: '/api/laps',
+      bluetooth: '/api/bluetooth',
+      settings: '/api/settings',
+      // Legacy
+      sessionControl: '/api/session-control (legacy)',
       simulator: '/api/simulator',
-      activeSession: '/api/active-session (deprecated)',
     },
   });
 });
@@ -129,6 +161,11 @@ app.use('/api/bluetooth', bluetoothRouter);
 // New simplified session routes
 app.use('/api/sessions', sessionsSimpleRouter);
 app.use('/api/session-control', sessionControlRouter);
+
+// New v2 routes
+app.use('/api/config', configRouter);
+app.use('/api/race', raceRouter);
+app.use('/api/records', recordsRouter);
 
 // Simulator control endpoints
 app.get('/api/simulator', (req, res) => {
@@ -187,11 +224,16 @@ io.on('connection', (socket) => {
       isMockDevice: true
     });
   } else if (trackSync) {
-    const state = trackSync.getState();
+    const cuState = trackSync.getState();
     socket.emit('cu:status', {
-      connected: state.connected,
-      activeSession: state.activeSessionId,
+      connected: cuState.connected,
+      activeSession: cuState.activeSessionId,
       isMockDevice: false
+    });
+
+    // Send race state for v2 pages
+    raceControllerService.getState().then(raceState => {
+      socket.emit('race:state', raceState);
     });
   }
 
