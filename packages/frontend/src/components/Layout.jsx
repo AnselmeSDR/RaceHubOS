@@ -21,8 +21,16 @@ import BackendStatusPopup from './BackendStatusPopup'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen')
+    return saved !== null ? saved === 'true' : true
+  })
   const [statusPopupOpen, setStatusPopupOpen] = useState(false)
+
+  // Persist sidebar state
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', sidebarOpen)
+  }, [sidebarOpen])
   const [backendConnected, setBackendConnected] = useState(true)
   const [backendVersion, setBackendVersion] = useState('0.1.0')
 
