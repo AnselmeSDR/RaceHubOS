@@ -4,6 +4,94 @@ import { SessionManager } from '../services/SessionManager.js';
 const router = express.Router();
 let sessionManager;
 
+/**
+ * Recalculate championship standings after a session finishes
+ */
+async function recalculateChampionshipStandings(prisma, championshipId) {
+  const championship = await prisma.championship.findUnique({
+    where: { id: championshipId },
+    include: {
+      sessions: {
+        where: { status: 'finished' },
+        include: {
+          drivers: { include: { driver: true } },
+          laps: true,
+        },
+      },
+    },
+  });
+
+  if (!championship) return;
+
+  const pointsSystem = JSON.parse(championship.pointsSystem || '{}');
+  const driverStats = {};
+
+  const initDriver = (driverId) => {
+    if (!driverStats[driverId]) {
+      driverStats[driverId] = {
+        points: 0,
+        wins: 0,
+        podiums: 0,
+        qualifBestTime: null,
+        raceTotalLaps: 0,
+        raceTotalTime: 0,
+      };
+    }
+  };
+
+  championship.sessions.forEach(session => {
+    // Points from final positions
+    session.drivers.forEach(sd => {
+      if (sd.finalPos !== null) {
+        initDriver(sd.driverId);
+        const points = pointsSystem[sd.finalPos] || 0;
+        driverStats[sd.driverId].points += points;
+        if (sd.finalPos === 1) driverStats[sd.driverId].wins++;
+        if (sd.finalPos <= 3) driverStats[sd.driverId].podiums++;
+      }
+    });
+
+    // Stats from laps
+    session.laps.forEach(lap => {
+      initDriver(lap.driverId);
+      const lapTimeMs = Math.round(lap.lapTime);
+
+      // Qualifying: track best lap time
+      if (lap.phase === 'qualif' || lap.phase === 'qualifying') {
+        const current = driverStats[lap.driverId].qualifBestTime;
+        if (current === null || lapTimeMs < current) {
+          driverStats[lap.driverId].qualifBestTime = lapTimeMs;
+        }
+      }
+
+      // Race: accumulate laps and time
+      if (lap.phase === 'race') {
+        driverStats[lap.driverId].raceTotalLaps++;
+        driverStats[lap.driverId].raceTotalTime += lapTimeMs;
+      }
+    });
+  });
+
+  // Sort by points, then wins
+  const sortedDrivers = Object.entries(driverStats)
+    .sort((a, b) => {
+      if (b[1].points !== a[1].points) return b[1].points - a[1].points;
+      return b[1].wins - a[1].wins;
+    })
+    .map(([driverId, stats], index) => ({
+      championshipId,
+      driverId,
+      position: index + 1,
+      ...stats,
+    }));
+
+  // Delete old standings and create new ones
+  await prisma.championshipStanding.deleteMany({ where: { championshipId } });
+  if (sortedDrivers.length > 0) {
+    await prisma.championshipStanding.createMany({ data: sortedDrivers });
+  }
+}
+
 export function setSessionManager(manager) {
   sessionManager = manager;
 }
@@ -372,6 +460,16 @@ router.post('/:id/stop', async (req, res) => {
     }
 
     sessionManager.io?.emit('session:stopped', { session });
+
+    // Recalculate championship standings if session belongs to a championship
+    if (session.championshipId) {
+      try {
+        await recalculateChampionshipStandings(sessionManager.prisma, session.championshipId);
+        console.log(`📊 Championship standings recalculated for ${session.championshipId}`);
+      } catch (err) {
+        console.error('Error recalculating standings:', err);
+      }
+    }
 
     res.json({
       success: true,
