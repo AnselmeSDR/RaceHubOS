@@ -477,7 +477,7 @@ export class SimulatorSyncService {
         initDriver(lap.driverId);
         const lapTimeMs = Math.round(lap.lapTime);
 
-        if (lap.phase === 'qualif' || lap.phase === 'qualifying') {
+        if (lap.phase === 'qualif') {
           const current = driverStats[lap.driverId].qualifBestTime;
           if (current === null || lapTimeMs < current) {
             driverStats[lap.driverId].qualifBestTime = lapTimeMs;
