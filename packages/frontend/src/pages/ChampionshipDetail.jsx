@@ -812,12 +812,7 @@ export default function ChampionshipDetail() {
             return c
         })
 
-        // Only save if the changed controller has BOTH driver and car
-        const changedConfig = newConfigs.find(c => c.controller === controllerStr)
-        if (!changedConfig?.driverId || !changedConfig?.carId) {
-            return // Don't save yet, wait for complete config
-        }
-
+        // Build drivers payload - only include complete configs (driver + car)
         const driversPayload = newConfigs
             .filter(c => c.driverId && c.carId)
             .map(c => ({
@@ -825,6 +820,18 @@ export default function ChampionshipDetail() {
                 driverId: c.driverId,
                 carId: c.carId
             }))
+
+        // Only save if:
+        // 1. The changed controller has BOTH driver and car (adding/updating)
+        // 2. OR the changed controller had a driver before but now doesn't (removing)
+        const changedConfig = newConfigs.find(c => c.controller === controllerStr)
+        const existingDriver = selectedSession.drivers?.find(d => d.controller === controllerStr)
+        const isRemoving = existingDriver && (!changedConfig?.driverId || !changedConfig?.carId)
+        const isComplete = changedConfig?.driverId && changedConfig?.carId
+
+        if (!isComplete && !isRemoving) {
+            return // Don't save yet, wait for complete config
+        }
 
         try {
             const res = await fetch(`${API_URL}/api/sessions/${selectedSession.id}/drivers`, {
