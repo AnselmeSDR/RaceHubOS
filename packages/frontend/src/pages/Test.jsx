@@ -56,6 +56,7 @@ export default function Test() {
   const [cuStatus, setCuStatus] = useState(null)
   const [leaderboard, setLeaderboard] = useState({})
   const [filter, setFilter] = useState('all')
+  const [groupByType, setGroupByType] = useState(false)
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
   const [showConfig, setShowConfig] = useState(false)
@@ -88,7 +89,7 @@ export default function Test() {
 
   const addLog = (type, source, message, data = null) => {
     const timestamp = new Date().toISOString()
-    setLogs(prev => [...prev, { timestamp, type, source, message, data }].slice(-500))
+    setLogs(prev => [...prev, { timestamp, type, source, message, data }])
   }
 
   // Get driver/car name from config or default
@@ -356,6 +357,18 @@ export default function Test() {
     ? logs
     : logs.filter(log => log.type === filter || log.source.toLowerCase() === filter)
 
+  // Group logs by type for grouped view
+  const groupedLogs = groupByType
+    ? filteredLogs.reduce((acc, log) => {
+        const key = log.type
+        if (!acc[key]) acc[key] = []
+        acc[key].push(log)
+        return acc
+      }, {})
+    : null
+
+  const logTypes = ['success', 'error', 'lap', 'status', 'info']
+
   const sortedLeaderboard = Object.values(leaderboard).sort((a, b) => {
     if (b.laps !== a.laps) return b.laps - a.laps
     if (!a.bestLap) return 1
@@ -600,18 +613,26 @@ export default function Test() {
               <span className="text-gray-400 text-sm">({filteredLogs.length})</span>
             </div>
             <div className="flex items-center gap-2">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700"
+              <button
+                onClick={() => setGroupByType(!groupByType)}
+                className={`px-2 py-1 text-sm rounded ${groupByType ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}
               >
-                <option value="all">All</option>
-                <option value="lap">Laps</option>
-                <option value="status">Status</option>
-                <option value="error">Errors</option>
-                <option value="success">Success</option>
-                <option value="info">Info</option>
-              </select>
+                {groupByType ? 'Groupé' : 'Chrono'}
+              </button>
+              {!groupByType && (
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700"
+                >
+                  <option value="all">All</option>
+                  <option value="lap">Laps</option>
+                  <option value="status">Status</option>
+                  <option value="error">Errors</option>
+                  <option value="success">Success</option>
+                  <option value="info">Info</option>
+                </select>
+              )}
               <button
                 onClick={clearLogs}
                 className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
@@ -622,32 +643,72 @@ export default function Test() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1">
+          <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
             {filteredLogs.length === 0 ? (
               <div className="text-gray-500 text-center py-8">
                 Waiting for events...
               </div>
+            ) : groupByType ? (
+              // Grouped view by type
+              <div className="space-y-4">
+                {logTypes.map(type => {
+                  const typeLogs = groupedLogs[type] || []
+                  if (typeLogs.length === 0) return null
+                  return (
+                    <div key={type}>
+                      <div className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(type)} bg-gray-800`}>
+                        {type} ({typeLogs.length})
+                      </div>
+                      <div className="space-y-1 pl-2 border-l-2 border-gray-700">
+                        {typeLogs.map((log, i) => (
+                          <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
+                            <span className="text-gray-500 flex-shrink-0">
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
+                              {log.source}
+                            </span>
+                            <span className="flex-1">{log.message}</span>
+                            {log.data && (
+                              <button
+                                onClick={() => console.log(log.data)}
+                                className="text-gray-500 hover:text-gray-300 flex-shrink-0"
+                                title="Log data to console"
+                              >
+                                [data]
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             ) : (
-              filteredLogs.map((log, i) => (
-                <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
-                  <span className="text-gray-500 flex-shrink-0">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
-                    {log.source}
-                  </span>
-                  <span className="flex-1">{log.message}</span>
-                  {log.data && (
-                    <button
-                      onClick={() => console.log(log.data)}
-                      className="text-gray-500 hover:text-gray-300 flex-shrink-0"
-                      title="Log data to console"
-                    >
-                      [data]
-                    </button>
-                  )}
-                </div>
-              ))
+              // Chronological view
+              <div className="space-y-1">
+                {filteredLogs.map((log, i) => (
+                  <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
+                    <span className="text-gray-500 flex-shrink-0">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
+                      {log.source}
+                    </span>
+                    <span className="flex-1">{log.message}</span>
+                    {log.data && (
+                      <button
+                        onClick={() => console.log(log.data)}
+                        className="text-gray-500 hover:text-gray-300 flex-shrink-0"
+                        title="Log data to console"
+                      >
+                        [data]
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
             <div ref={logsEndRef} />
           </div>

@@ -57,6 +57,12 @@ router.get('/:id', async (req, res) => {
             drivers: {
               include: {
                 driver: true,
+                car: true,
+              },
+            },
+            laps: {
+              orderBy: {
+                timestamp: 'asc',
               },
             },
           },

@@ -277,6 +277,7 @@ function TrackFormModal({ track, onClose, onDelete }) {
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}
+        uploadType="tracks"
       />
 
       <ColorPickerField

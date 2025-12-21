@@ -338,6 +338,7 @@ function DriverFormModal({ driver, teams, onClose, onDelete }) {
         shape="round"
         primaryColor={PRIMARY_COLOR}
         onError={setError}
+        uploadType="drivers"
       />
 
       <ColorPickerField

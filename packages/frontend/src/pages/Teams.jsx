@@ -321,6 +321,7 @@ function TeamFormModal({ team, onClose, onDelete }) {
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}
+        uploadType="teams"
       />
 
       <ColorPickerField
