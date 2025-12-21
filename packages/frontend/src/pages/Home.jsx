@@ -75,7 +75,7 @@ export default function Home() {
           addLog('warning', 'WebSocket déconnecté');
         });
       })
-      .catch((error) => {
+      .catch(() => {
         setSystemStatus(prev => ({ ...prev, backend: 'offline', database: 'offline' }));
         addLog('error', 'Impossible de se connecter au backend');
         addLog('warning', 'Vérifiez que le backend est lancé sur le port 3000');

@@ -37,27 +37,7 @@ export default function Dashboard() {
 
   const [showConfigWarning, setShowConfigWarning] = useState(false)
 
-  useEffect(() => {
-    loadStats()
-
-    // Initialize WebSocket for simulator status
-    const socket = io(WS_URL)
-
-    socket.on('race:status', (data) => {
-      setCircuitStatus({
-        connected: data.carCount > 0 && !data.isMockDevice,
-        running: data.running || false,
-        carCount: data.carCount || 0,
-        isMockDevice: data.isMockDevice || false
-      })
-    })
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
-  async function loadStats() {
+  const loadStats = async () => {
     try {
       const [driversRes, carsRes, tracksRes, sessionsRes] = await Promise.all([
         fetch(`${API_URL}/drivers`),
@@ -89,6 +69,26 @@ export default function Dashboard() {
       setStats((prev) => ({ ...prev, loading: false }))
     }
   }
+
+  useEffect(() => {
+    loadStats()
+
+    // Initialize WebSocket for simulator status
+    const socket = io(WS_URL)
+
+    socket.on('race:status', (data) => {
+      setCircuitStatus({
+        connected: data.carCount > 0 && !data.isMockDevice,
+        running: data.running || false,
+        carCount: data.carCount || 0,
+        isMockDevice: data.isMockDevice || false
+      })
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [])
 
   const isSessionActive = state !== RACE_STATES.IDLE
 

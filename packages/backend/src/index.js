@@ -17,7 +17,7 @@ import championshipsRouter from './routes/championships.js';
 import statsRouter from './routes/stats.js';
 import lapsRouter from './routes/laps.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
-import bluetoothRouter, { setTrackSync } from './routes/bluetooth.js';
+import bluetoothRouter, { setTrackSync, setSimulator } from './routes/bluetooth.js';
 
 // Import new simplified routes
 import sessionsSimpleRouter, { setSessionManager as setSimpleSessionManager } from './routes/sessions-simple.js';
@@ -105,6 +105,12 @@ if (trackSync) {
   sessionManager.setTrackSync(trackSync);
   // Connect RaceControllerService to TrackSync for CU control (v2)
   raceControllerService.setTrackSync(trackSync);
+} else if (simulator) {
+  // In simulator mode, use simulator for bluetooth routes
+  setSimulator(simulator);
+  // Start CU status polling to emit cu:status events
+  simulator.startStatusPolling(200);
+  console.log('🎮 Simulator mode: CU status polling started');
 }
 
 // Middleware

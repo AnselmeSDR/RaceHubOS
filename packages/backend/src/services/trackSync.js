@@ -14,8 +14,10 @@ export class TrackSyncService extends EventEmitter {
     this.controlUnit = new ControlUnit();
 
     this.activeSessionId = null;
-    this.sessionDrivers = new Map(); // controller -> { driverId, carId, lapCount, lastLapTime }
+    this.activeTrackId = null;
+    this.sessionDrivers = new Map(); // controller -> { driverId, carId, lapCount, lastLapTime, bestLapTime }
     this.lastStatus = null;
+    this.raceFinishTime = null; // For 30s grace period in races
     this.raceStartTime = null;
     this.positions = new Map(); // controller -> position
     this.lastTimestamps = new Map(); // controller -> last timestamp
@@ -83,6 +85,34 @@ export class TrackSyncService extends EventEmitter {
    */
   async getVersion() {
     return this.controlUnit.version();
+  }
+
+  /**
+   * Réinitialiser pour une nouvelle session
+   * - Reset le timer du CU
+   * - Efface la Position Tower
+   * - Reset les compteurs internes
+   */
+  async resetForNewSession() {
+    // Reset internal state
+    this.sessionDrivers.clear();
+    this.positions.clear();
+    this.lastTimestamps.clear();
+    this.raceStartTime = null;
+    this.raceFinishTime = null;
+
+    // Reset CU if connected
+    if (this.controlUnit?.isConnected()) {
+      try {
+        await this.controlUnit.reset();
+        await this.controlUnit.clearPosition();
+        console.log('🔄 CU reset for new session');
+      } catch (e) {
+        console.warn('Could not reset CU:', e.message);
+      }
+    }
+
+    this.emit('session-reset');
   }
 
   /**
@@ -183,6 +213,7 @@ export class TrackSyncService extends EventEmitter {
 
       // Charger les pilotes dans la map
       this.sessionDrivers.clear();
+      this.activeTrackId = session.trackId;
       for (const sd of session.drivers) {
         this.sessionDrivers.set(sd.controller, {
           sessionDriverId: sd.id,
@@ -192,6 +223,7 @@ export class TrackSyncService extends EventEmitter {
           car: sd.car,
           lapCount: 0,
           lastLapTime: null,
+          bestLapTime: null,
           position: sd.position || 0,
         });
       }
@@ -313,12 +345,13 @@ export class TrackSyncService extends EventEmitter {
     }
 
     // Enregistrer le tour en BDD
-    if (this.activeSessionId && sector === 1) {
+    if (this.activeSessionId && this.activeTrackId && sector === 1) {
       // Sector 1 = ligne de départ/arrivée
       try {
         const lap = await this.prisma.lap.create({
           data: {
             sessionId: this.activeSessionId,
+            trackId: this.activeTrackId,
             driverId: driverData.driverId,
             carId: driverData.carId,
             controller,
@@ -332,6 +365,10 @@ export class TrackSyncService extends EventEmitter {
 
         driverData.lapCount++;
         driverData.lastLapTime = lapTime;
+        // Update best lap time
+        if (lapTime > 0 && (driverData.bestLapTime === null || lapTime < driverData.bestLapTime)) {
+          driverData.bestLapTime = lapTime;
+        }
 
         // Calculer les positions
         await this.updatePositions();
@@ -359,6 +396,9 @@ export class TrackSyncService extends EventEmitter {
             }),
           },
         });
+
+        // Vérifier si la session doit s'arrêter
+        await this.checkSessionComplete();
       } catch (error) {
         this.emit('error', error);
       }
@@ -424,10 +464,138 @@ export class TrackSyncService extends EventEmitter {
       driver: d.driver,
       lapCount: d.lapCount,
       lastLapTime: d.lastLapTime,
+      bestLapTime: d.bestLapTime,
     }));
 
     this.emit('positions-updated', positions);
     this.io?.emit('positions:updated', positions);
+  }
+
+  /**
+   * Vérifier si la session doit s'arrêter automatiquement
+   */
+  async checkSessionComplete() {
+    if (!this.activeSessionId) return;
+
+    try {
+      const session = await this.prisma.session.findUnique({
+        where: { id: this.activeSessionId },
+        include: { drivers: true },
+      });
+
+      if (!session) return;
+      if (session.status !== 'active' && session.status !== 'finishing') return;
+
+      let shouldStop = false;
+      let shouldStartFinishing = false;
+      let reason = '';
+
+      // Get lap counts per driver
+      const lapCounts = await this.prisma.lap.groupBy({
+        by: ['controller'],
+        where: { sessionId: this.activeSessionId },
+        _count: { id: true },
+      });
+
+      const lapCountMap = new Map(lapCounts.map(l => [l.controller, l._count.id]));
+
+      // Vérifier le temps écoulé
+      if (session.duration && session.startedAt) {
+        const elapsed = Date.now() - new Date(session.startedAt).getTime();
+        const durationMs = session.duration * 60 * 1000;
+
+        if (elapsed >= durationMs) {
+          shouldStop = true;
+          reason = `Temps écoulé (${session.duration}min)`;
+        }
+      }
+
+      // Vérifier le nombre de tours max
+      if (session.maxLaps && !shouldStop) {
+        const maxLapsReached = lapCounts.filter(l => l._count.id >= session.maxLaps);
+
+        if (session.type === 'qualifying') {
+          // QUALIF: Leader atteint X tours → autres peuvent finir leurs X tours
+          if (maxLapsReached.length > 0 && session.status !== 'finishing') {
+            shouldStartFinishing = true;
+            reason = `Leader a terminé ${session.maxLaps} tours`;
+          }
+
+          if (session.status === 'finishing') {
+            const driversWithLaps = session.drivers.filter(d => lapCountMap.has(d.controller));
+            const allFinished = driversWithLaps.every(d => (lapCountMap.get(d.controller) || 0) >= session.maxLaps);
+
+            if (allFinished && driversWithLaps.length > 0) {
+              shouldStop = true;
+              reason = `Tous les pilotes ont terminé ${session.maxLaps} tours`;
+            }
+          }
+        } else {
+          // COURSE: Leader atteint X tours → 30s pour finir tour actuel
+          if (maxLapsReached.length > 0) {
+            if (session.status !== 'finishing') {
+              shouldStartFinishing = true;
+              reason = `Leader a terminé ${session.maxLaps} tours`;
+              this.raceFinishTime = Date.now();
+            } else {
+              const gracePeriod = 30000;
+              if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
+                shouldStop = true;
+                reason = `Délai de grâce écoulé (30s)`;
+              }
+            }
+          }
+        }
+      }
+
+      // Passer en mode "finishing"
+      if (shouldStartFinishing && !shouldStop) {
+        await this.prisma.session.update({
+          where: { id: this.activeSessionId },
+          data: { status: 'finishing' },
+        });
+
+        this.io?.emit('session:finishing', {
+          sessionId: this.activeSessionId,
+          type: session.type,
+          reason,
+        });
+
+        console.log(`🏁 Session entering finishing state: ${reason}`);
+      }
+
+      // Arrêter la session
+      if (shouldStop) {
+        await this.prisma.session.update({
+          where: { id: this.activeSessionId },
+          data: {
+            status: 'finished',
+            finishedAt: new Date(),
+          },
+        });
+
+        // Arrêter le CU (passer en mode lights)
+        if (this.controlUnit.isConnected()) {
+          await this.controlUnit.start(); // Toggle to lights mode
+        }
+
+        this.io?.emit('session:auto-stopped', {
+          sessionId: this.activeSessionId,
+          type: session.type,
+          reason,
+        });
+
+        console.log(`🛑 Session auto-stopped: ${reason}`);
+
+        // Clear state
+        this.activeSessionId = null;
+        this.activeTrackId = null;
+        this.sessionDrivers.clear();
+        this.raceFinishTime = null;
+      }
+    } catch (error) {
+      console.error('Erreur vérification fin de session:', error);
+    }
   }
 
   /**

@@ -121,7 +121,7 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
  * DriverGridPosition - Format grille de départ NASCAR
  * Affichage ROW 1, ROW 2, etc.
  */
-export function DriverGridPosition({ driver, row, side = 'left' }) {
+export function DriverGridPosition({ driver, side = 'left' }) {
   return (
     <div className={`flex items-center gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
       {/* Driver card */}

@@ -11,20 +11,40 @@ export class SimulatorSyncService {
     this.prisma = new PrismaClient();
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.sessionDrivers = new Map(); // carId -> { driverId, carId, controller }
+    this.sessionDrivers = new Map(); // carId -> { driverId, carId, controller, lapCount, lastLapTime, bestLapTime }
     this.currentPhase = 'free'; // 'free', 'qualif', 'race'
+    this.raceFinishTime = null; // For 30s grace period in races
 
     // Écouter les événements du simulateur
     this.setupListeners();
   }
 
   setupListeners() {
-    // Utiliser l'EventEmitter interne du simulateur serait mieux,
-    // mais pour l'instant on va écouter via le socket.io
-    // On va plutôt ajouter des callbacks dans le simulateur
+    // Le simulateur émet des événements via io, pas besoin de listeners ici
+  }
 
-    // Pour l'instant, on va modifier le simulateur pour appeler des callbacks
-    // Mais je vais d'abord créer les méthodes nécessaires
+  /**
+   * Réinitialiser pour une nouvelle session
+   * - Arrête le simulateur
+   * - Reset le timer du simulateur (compteurs à 0)
+   * - Efface les positions
+   * - Reset les compteurs internes
+   */
+  async resetForNewSession() {
+    console.log('🔄 SimulatorSync: resetForNewSession called');
+
+    // Reset internal state
+    this.sessionDrivers.clear();
+    this.raceFinishTime = null;
+    this.activeSessionId = null;
+
+    // Stop and reset simulator
+    if (this.simulator) {
+      this.simulator.stop();
+      this.simulator.resetTimer();
+      this.simulator.clearPosition();
+      console.log('🔄 Simulator stopped and reset for new session');
+    }
   }
 
   /**
@@ -63,6 +83,9 @@ export class SimulatorSyncService {
           controller: sd.controller,
           driver: sd.driver,
           car: sd.car,
+          lapCount: 0,
+          lastLapTime: null,
+          bestLapTime: null,
         });
       }
 
@@ -101,9 +124,9 @@ export class SimulatorSyncService {
 
     await this.loadActiveSession();
 
-    // Démarrer le simulateur
+    // Démarrer le simulateur et lancer la course
     this.simulator.start();
-
+    await this.simulator.startRace();
 
     this.io?.emit('session:started', { sessionId });
   }
@@ -139,13 +162,17 @@ export class SimulatorSyncService {
    * Appelé par le simulateur via callback
    */
   async recordLap(carId, lapTime, lapNumber) {
+    console.log(`📍 recordLap called: carId=${carId}, lapTime=${lapTime}, lapNumber=${lapNumber}`);
+    console.log(`📍 activeSessionId: ${this.activeSessionId}, sessionDrivers size: ${this.sessionDrivers.size}`);
+
     if (!this.activeSessionId) {
+      console.log('📍 No active session, skipping');
       return;
     }
 
     const driverData = this.sessionDrivers.get(carId);
     if (!driverData) {
-      console.warn(`⚠️  Voiture ${carId} non mappée à un pilote`);
+      console.warn(`⚠️  Voiture ${carId} non mappée à un pilote. Keys: ${[...this.sessionDrivers.keys()].join(', ')}`);
       return;
     }
 
@@ -172,6 +199,14 @@ export class SimulatorSyncService {
         car: driverData.car,
       };
 
+      // Update driver data
+      driverData.lapCount = lapNumber;
+      driverData.lastLapTime = lapTime;
+      if (lapTime > 0 && (driverData.bestLapTime === null || lapTime < driverData.bestLapTime)) {
+        driverData.bestLapTime = lapTime;
+      }
+
+      console.log(`📍 Emitting lap:completed - controller: ${lapData.controller}, lapTime: ${lapData.lapTime}, lapNumber: ${lapNumber}`);
       this.io?.emit('lap:completed', lapData);
       this.io?.emit('lap_completed', { ...lapData, sessionId: this.activeSessionId });
 
@@ -205,16 +240,34 @@ export class SimulatorSyncService {
     try {
       const session = await this.prisma.session.findUnique({
         where: { id: this.activeSessionId },
+        include: {
+          drivers: true,
+        },
       });
 
-      if (!session || session.phaseStatus !== 'running') return;
+      if (!session) return;
+      // Allow checking for both 'active' and 'finishing' status
+      if (session.status !== 'active' && session.status !== 'finishing') return;
 
       let shouldStop = false;
+      let shouldStartFinishing = false;
       let reason = '';
 
-      // Vérifier le temps écoulé
-      if (session.duration && session.phaseStartedAt) {
-        const elapsed = Date.now() - new Date(session.phaseStartedAt).getTime();
+      // Get lap counts per driver
+      const lapCounts = await this.prisma.lap.groupBy({
+        by: ['controller'],
+        where: { sessionId: this.activeSessionId },
+        _count: { id: true },
+      });
+
+      console.log(`📊 checkPhaseComplete: sessionId=${this.activeSessionId}, maxLaps=${session.maxLaps}, lapCounts=`, JSON.stringify(lapCounts));
+
+      const lapCountMap = new Map(lapCounts.map(l => [l.controller, l._count.id]));
+      const activeDrivers = session.drivers.filter(d => lapCountMap.has(d.controller) || session.status === 'active');
+
+      // Vérifier le temps écoulé (pour qualif/course avec durée)
+      if (session.duration && session.startedAt) {
+        const elapsed = Date.now() - new Date(session.startedAt).getTime();
         const durationMs = session.duration * 60 * 1000;
 
         if (elapsed >= durationMs) {
@@ -223,40 +276,90 @@ export class SimulatorSyncService {
         }
       }
 
-      // Vérifier le nombre de tours max
+      // Vérifier le nombre de tours max (logique différente pour qualif vs course)
       if (session.maxLaps && !shouldStop) {
-        const maxLapsInPhase = await this.prisma.lap.findFirst({
-          where: {
-            sessionId: this.activeSessionId,
-            phase: session.currentPhase,
-          },
-          orderBy: { lapNumber: 'desc' },
-        });
+        const maxLapsReached = lapCounts.filter(l => l._count.id >= session.maxLaps);
 
-        if (maxLapsInPhase && maxLapsInPhase.lapNumber >= session.maxLaps) {
-          shouldStop = true;
-          reason = `${session.maxLaps} tours atteints`;
+        if (session.type === 'qualifying') {
+          // QUALIF: Leader atteint X tours → autres peuvent finir leurs X tours
+          if (maxLapsReached.length > 0 && session.status !== 'finishing') {
+            // Au moins un pilote a atteint X tours, passer en mode "finishing"
+            shouldStartFinishing = true;
+            reason = `Leader a terminé ${session.maxLaps} tours`;
+          }
+
+          if (session.status === 'finishing') {
+            // Vérifier si TOUS les pilotes actifs ont terminé X tours
+            const driversWithLaps = session.drivers.filter(d => lapCountMap.has(d.controller));
+            const allFinished = driversWithLaps.every(d => (lapCountMap.get(d.controller) || 0) >= session.maxLaps);
+
+            if (allFinished && driversWithLaps.length > 0) {
+              shouldStop = true;
+              reason = `Tous les pilotes ont terminé ${session.maxLaps} tours`;
+            }
+          }
+        } else {
+          // COURSE: Leader atteint X tours → 30s pour les autres pour finir tour actuel
+          if (maxLapsReached.length > 0) {
+            if (session.status !== 'finishing') {
+              shouldStartFinishing = true;
+              reason = `Leader a terminé ${session.maxLaps} tours`;
+              // Store finish time for 30s grace period
+              this.raceFinishTime = Date.now();
+            } else {
+              // Check 30s grace period
+              const gracePeriod = 30000; // 30 seconds
+              if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
+                shouldStop = true;
+                reason = `Délai de grâce écoulé (30s)`;
+              }
+            }
+          }
         }
       }
 
-      // Arrêter la phase si nécessaire
+      // Passer en mode "finishing" si nécessaire
+      if (shouldStartFinishing && !shouldStop) {
+        await this.prisma.session.update({
+          where: { id: this.activeSessionId },
+          data: { status: 'finishing' },
+        });
+
+        this.io?.emit('session:finishing', {
+          sessionId: this.activeSessionId,
+          type: session.type,
+          reason,
+        });
+
+        console.log(`🏁 Session entering finishing state: ${reason}`);
+      }
+
+      // Arrêter la session si nécessaire
       if (shouldStop) {
         await this.prisma.session.update({
           where: { id: this.activeSessionId },
           data: {
-            phaseStatus: 'finished',
-            phaseFinishedAt: new Date(),
+            status: 'finished',
+            finishedAt: new Date(),
           },
         });
 
-        // Arrêter le simulateur
+        // Arrêter le simulateur (passe en mode lights)
         this.simulator.stop();
 
-        this.io?.emit('phase:auto-stopped', {
+        this.io?.emit('session:auto-stopped', {
           sessionId: this.activeSessionId,
-          phase: session.currentPhase,
+          type: session.type,
           reason,
         });
+
+        console.log(`🛑 Session auto-stopped: ${reason}`);
+
+        // Clear state
+        this.activeSessionId = null;
+        this.activeTrackId = null;
+        this.sessionDrivers.clear();
+        this.raceFinishTime = null;
       }
     } catch (error) {
       console.error('Erreur vérification fin de phase:', error);
@@ -318,6 +421,7 @@ export class SimulatorSyncService {
       driver: d.driver,
       lapCount: d.lapCount,
       lastLapTime: d.lastLapTime,
+      bestLapTime: d.bestLapTime,
     }));
 
     this.io?.emit('positions:updated', positions);

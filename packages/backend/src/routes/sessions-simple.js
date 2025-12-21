@@ -118,7 +118,7 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, type, trackId, championshipId, fuelMode, drivers } = req.body;
+    const { name, type, trackId, championshipId, fuelMode, drivers, duration, maxLaps } = req.body;
 
     // Validation
     if (!type || !trackId) {
@@ -134,7 +134,9 @@ router.post('/', async (req, res) => {
       trackId,
       championshipId,
       fuelMode,
-      drivers
+      drivers,
+      duration,
+      maxLaps
     });
 
     res.status(201).json({
@@ -218,6 +220,25 @@ router.post('/:id/start', async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Check existing laps before starting
+    const existingLaps = await sessionManager.prisma.lap.count({
+      where: { sessionId: id }
+    });
+    console.log(`🏁 START: Session ${id} has ${existingLaps} existing laps`);
+
+    // Always clear existing laps when starting a session (fresh start)
+    // This ensures restart works correctly regardless of status
+    if (existingLaps > 0) {
+      console.log(`🏁 START: Clearing ${existingLaps} existing laps for fresh start`);
+      await sessionManager.prisma.lap.deleteMany({
+        where: { sessionId: id }
+      });
+      // Also clear events
+      await sessionManager.prisma.raceEvent.deleteMany({
+        where: { sessionId: id }
+      });
+    }
+
     const session = await sessionManager.prisma.session.update({
       where: { id },
       data: {
@@ -235,6 +256,14 @@ router.post('/:id/start', async (req, res) => {
         }
       }
     });
+
+    // Reset CU/Simulator before starting new session
+    if (sessionManager.trackSync?.resetForNewSession) {
+      await sessionManager.trackSync.resetForNewSession();
+    }
+    if (sessionManager.simulatorSync?.resetForNewSession) {
+      await sessionManager.simulatorSync.resetForNewSession();
+    }
 
     // Configure TrackSync with active session (for real CU)
     if (sessionManager.trackSync) {
@@ -362,6 +391,142 @@ router.post('/:id/stop', async (req, res) => {
 });
 
 /**
+ * POST /api/sessions/:id/restart
+ * Redémarre une session (supprime laps, events, reset status)
+ */
+router.post('/:id/restart', async (req, res) => {
+  console.log('🔄🔄🔄 RESTART ENDPOINT CALLED for session:', req.params.id);
+  try {
+    const { id } = req.params;
+
+    // Verify session exists
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id }
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Delete all laps for this session
+    const deletedLaps = await sessionManager.prisma.lap.deleteMany({
+      where: { sessionId: id }
+    });
+    console.log(`🔄 Restart: Deleted ${deletedLaps.count} laps for session ${id}`);
+
+    // Verify laps are deleted
+    const remainingLaps = await sessionManager.prisma.lap.count({
+      where: { sessionId: id }
+    });
+    console.log(`🔄 Restart: Remaining laps after delete: ${remainingLaps}`);
+
+    // Delete all events for this session
+    await sessionManager.prisma.raceEvent.deleteMany({
+      where: { sessionId: id }
+    });
+
+    // Reset session driver positions
+    await sessionManager.prisma.sessionDriver.updateMany({
+      where: { sessionId: id },
+      data: { position: null, finalPos: null }
+    });
+
+    // Reset session status to 'draft' (ready to configure and start again)
+    const updatedSession = await sessionManager.prisma.session.update({
+      where: { id },
+      data: {
+        status: 'draft',
+        startedAt: null,
+        finishedAt: null
+      },
+      include: {
+        track: true,
+        championship: true,
+        drivers: {
+          include: {
+            driver: true,
+            car: true
+          }
+        }
+      }
+    });
+
+    // Reset CU/Simulator
+    console.log('🔄 Restart: Resetting CU/Simulator...');
+    if (sessionManager.trackSync?.resetForNewSession) {
+      await sessionManager.trackSync.resetForNewSession();
+      console.log('🔄 Restart: TrackSync reset done');
+    }
+    if (sessionManager.simulatorSync?.resetForNewSession) {
+      await sessionManager.simulatorSync.resetForNewSession();
+      console.log('🔄 Restart: SimulatorSync reset done');
+    }
+    if (sessionManager.simulator) {
+      // Double-check simulator state
+      console.log('🔄 Restart: Simulator cars lap counts:',
+        sessionManager.simulator.cars.map(c => ({ id: c.id, laps: c.totalLaps })));
+    }
+
+    // Re-configure TrackSync for the session
+    if (sessionManager.trackSync) {
+      sessionManager.trackSync.activeSessionId = id;
+      sessionManager.trackSync.activeTrackId = updatedSession.trackId;
+      sessionManager.trackSync.currentPhase = updatedSession.type === 'qualifying' ? 'qualif' : 'race';
+      for (const sd of updatedSession.drivers) {
+        sessionManager.trackSync.sessionDrivers.set(sd.controller, {
+          sessionDriverId: sd.id,
+          driverId: sd.driverId,
+          carId: sd.carId,
+          driver: sd.driver,
+          car: sd.car,
+          lapCount: 0,
+          lastLapTime: null,
+          position: sd.gridPos || 0,
+        });
+      }
+    }
+
+    // Re-configure SimulatorSync for the session
+    if (sessionManager.simulatorSync) {
+      sessionManager.simulatorSync.activeSessionId = id;
+      sessionManager.simulatorSync.activeTrackId = updatedSession.trackId;
+      sessionManager.simulatorSync.currentPhase = updatedSession.type === 'qualifying' ? 'qualif' : 'race';
+      for (const sd of updatedSession.drivers) {
+        const carId = parseInt(sd.controller);
+        sessionManager.simulatorSync.sessionDrivers.set(carId, {
+          sessionDriverId: sd.id,
+          driverId: sd.driverId,
+          carId: sd.carId,
+          controller: sd.controller,
+          driver: sd.driver,
+          car: sd.car,
+          lapCount: 0,
+          lastLapTime: null,
+          bestLapTime: null,
+        });
+      }
+    }
+
+    sessionManager.io?.emit('session:restarted', { session: updatedSession });
+
+    res.json({
+      success: true,
+      data: updatedSession,
+      message: 'Session redémarrée, résultats supprimés'
+    });
+  } catch (error) {
+    console.error('Error restarting session:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * PUT /api/sessions/:id/drivers
  * Met à jour les pilotes d'une session
  * Body: { drivers: [{ controller, driverId, carId }] }
@@ -457,6 +622,25 @@ router.delete('/:id', async (req, res) => {
         where: { sessionId: id },
         data: { sessionId: null }
       });
+    }
+
+    // Clear TrackRecord references (no cascade on this relation)
+    await sessionManager.prisma.trackRecord.updateMany({
+      where: { sessionId: id },
+      data: { sessionId: null }
+    });
+
+    // Clear sync services if this was the active session
+    if (sessionManager.trackSync?.activeSessionId === id) {
+      sessionManager.trackSync.activeSessionId = null;
+      sessionManager.trackSync.sessionDrivers.clear();
+      sessionManager.trackSync.currentPhase = 'free';
+    }
+    if (sessionManager.simulatorSync?.activeSessionId === id) {
+      sessionManager.simulatorSync.activeSessionId = null;
+      sessionManager.simulatorSync.sessionDrivers.clear();
+      sessionManager.simulatorSync.currentPhase = 'free';
+      sessionManager.simulator?.stop();
     }
 
     await sessionManager.prisma.session.delete({

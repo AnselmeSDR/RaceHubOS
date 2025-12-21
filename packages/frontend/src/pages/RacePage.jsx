@@ -19,8 +19,7 @@ import TrackRecordsPanel from '../components/race/freePractice/TrackRecordsPanel
 import Leaderboard from '../components/race/Leaderboard'
 
 // Modals
-import QualifyingModal from '../components/race/modals/QualifyingModal'
-import RaceModal from '../components/race/modals/RaceModal'
+import SessionModal from '../components/race/modals/SessionModal'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -43,7 +42,6 @@ export default function RacePage() {
 
     const {
         state,
-        session,
         leaderboard,
         isIdle,
         isPending,
@@ -84,23 +82,9 @@ export default function RacePage() {
 
     // UI state
     const [configExpanded, setConfigExpanded] = useState(false)
-    const [showQualifyingModal, setShowQualifyingModal] = useState(false)
-    const [showRaceModal, setShowRaceModal] = useState(false)
+    const [sessionModalType, setSessionModalType] = useState(null) // 'qualifying' | 'race' | null
     const [showResultsModal, setShowResultsModal] = useState(false)
     const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-
-    // Form states
-    const [qualifyingForm, setQualifyingForm] = useState({
-        name: '',
-        duration: 10,
-        maxLaps: 0
-    })
-    const [raceForm, setRaceForm] = useState({
-        name: '',
-        duration: 0,
-        maxLaps: 20,
-        useQualifyingGrid: false
-    })
 
     // Fetch initial data
     useEffect(() => {
@@ -133,21 +117,7 @@ export default function RacePage() {
         fetchData()
     }, [])
 
-    // Fetch track records when track changes
-    useEffect(() => {
-        if (selectedTrack?.id) {
-            fetchTrackRecords(selectedTrack.id)
-            fetchConfigs(selectedTrack.id)
-            setCurrentTrackId(selectedTrack.id)
-        }
-    }, [selectedTrack?.id, fetchConfigs, setCurrentTrackId])
-
-    // Sync controller configs with context
-    useEffect(() => {
-        setControllerConfigs(configs)
-    }, [configs, setControllerConfigs])
-
-    const fetchTrackRecords = async (trackId) => {
+    const fetchTrackRecords = useCallback(async (trackId) => {
         try {
             const response = await fetch(`${API_URL}/api/records/track/${trackId}`)
             if (!response.ok) {
@@ -163,7 +133,21 @@ export default function RacePage() {
         } catch {
             setTrackRecords({ free: [], qualifying: [], race: [] })
         }
-    }
+    }, [])
+
+    // Fetch track records when track changes
+    useEffect(() => {
+        if (selectedTrack?.id) {
+            fetchTrackRecords(selectedTrack.id)
+            fetchConfigs(selectedTrack.id)
+            setCurrentTrackId(selectedTrack.id)
+        }
+    }, [selectedTrack?.id, fetchConfigs, setCurrentTrackId, fetchTrackRecords])
+
+    // Sync controller configs with context
+    useEffect(() => {
+        setControllerConfigs(configs)
+    }, [configs, setControllerConfigs])
 
     // Refresh records periodically in free practice
     useEffect(() => {
@@ -174,7 +158,7 @@ export default function RacePage() {
         }, 3000)
 
         return () => clearInterval(interval)
-    }, [isIdle, selectedTrack?.id])
+    }, [isIdle, selectedTrack?.id, fetchTrackRecords])
 
     // Show results modal when entering RESULTS state
     useEffect(() => {
@@ -188,27 +172,21 @@ export default function RacePage() {
         updateSlot(controller, data.driverId, data.carId)
     }, [updateSlot])
 
-    const handleStartQualifying = async () => {
+    const handleStartSession = async (formData) => {
+        const isQualifyingSession = sessionModalType === 'qualifying'
         const params = {
-            name: qualifyingForm.name || 'Qualifying',
+            name: formData.name || (isQualifyingSession ? 'Qualifying' : 'Race'),
             trackId: selectedTrack?.id,
-            duration: qualifyingForm.duration > 0 ? qualifyingForm.duration : null,
-            maxLaps: qualifyingForm.maxLaps > 0 ? qualifyingForm.maxLaps : null
+            duration: formData.duration,
+            maxLaps: formData.maxLaps,
+            ...(isQualifyingSession ? {} : { gridFromQualifying: formData.useQualifyingGrid })
         }
-        await startQualifying(params)
-        setShowQualifyingModal(false)
-    }
-
-    const handleStartRace = async () => {
-        const params = {
-            name: raceForm.name || 'Race',
-            trackId: selectedTrack?.id,
-            duration: raceForm.duration > 0 ? raceForm.duration : null,
-            maxLaps: raceForm.maxLaps > 0 ? raceForm.maxLaps : null,
-            gridFromQualifying: raceForm.useQualifyingGrid
+        if (isQualifyingSession) {
+            await startQualifying(params)
+        } else {
+            await startRace(params)
         }
-        await startRace(params)
-        setShowRaceModal(false)
+        setSessionModalType(null)
     }
 
     const handleCancel = async () => {
@@ -290,8 +268,8 @@ export default function RacePage() {
                 onTrackChange={setSelectedTrack}
                 cuConnected={cuConnected}
                 canStartSession={canStartSession}
-                onStartQualifying={() => setShowQualifyingModal(true)}
-                onStartRace={() => setShowRaceModal(true)}
+                onStartQualifying={() => setSessionModalType('qualifying')}
+                onStartRace={() => setSessionModalType('race')}
             />
 
             <ControllerConfigSection
@@ -319,21 +297,12 @@ export default function RacePage() {
                 />
             </div>
 
-            {showQualifyingModal && (
-                <QualifyingModal
-                    form={qualifyingForm}
-                    setForm={setQualifyingForm}
-                    onClose={() => setShowQualifyingModal(false)}
-                    onStart={handleStartQualifying}
-                />
-            )}
-
-            {showRaceModal && (
-                <RaceModal
-                    form={raceForm}
-                    setForm={setRaceForm}
-                    onClose={() => setShowRaceModal(false)}
-                    onStart={handleStartRace}
+            {sessionModalType && (
+                <SessionModal
+                    open
+                    type={sessionModalType}
+                    onClose={() => setSessionModalType(null)}
+                    onStart={handleStartSession}
                 />
             )}
         </div>

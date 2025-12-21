@@ -19,7 +19,7 @@ const loadControllerConfig = () => {
   try {
     const saved = localStorage.getItem('racehub_controllers')
     if (saved) return JSON.parse(saved)
-  } catch {}
+  } catch { /* ignore */ }
   return {}
 }
 
@@ -283,7 +283,7 @@ export default function Test() {
       const data = await res.json()
       setCuConnected(data.connected)
       if (data.lastStatus) setCuStatus(data.lastStatus)
-    } catch {}
+    } catch { /* ignore */ }
   }
 
   // CU Control functions
@@ -320,11 +320,6 @@ export default function Test() {
     await apiCall('/disconnect')
     setCuConnected(false)
     setCuStatus(null)
-  }
-
-  // Toggle race state (START/STOP)
-  const toggleRace = async () => {
-    await apiCall('/start-race')
   }
 
   const formatTime = (ms) => {

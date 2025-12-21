@@ -20,7 +20,6 @@ export function useControllerConfig(initialTrackId = null) {
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [currentTrackId, setCurrentTrackId] = useState(initialTrackId)
 
   // Use ref to avoid stale closure issues
   const trackIdRef = useRef(initialTrackId)
@@ -35,8 +34,7 @@ export function useControllerConfig(initialTrackId = null) {
       return
     }
 
-    // Update both state and ref
-    setCurrentTrackId(trackId)
+    // Update ref for current trackId
     trackIdRef.current = trackId
 
     setLoading(true)
@@ -74,7 +72,6 @@ export function useControllerConfig(initialTrackId = null) {
       })
 
       setConfigs(mergedConfigs)
-      setCurrentTrackId(trackId)
     } catch (err) {
       setError(err.message)
     } finally {

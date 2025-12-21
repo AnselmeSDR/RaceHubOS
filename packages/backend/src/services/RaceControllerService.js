@@ -181,6 +181,12 @@ export class RaceControllerService extends EventEmitter {
 
     this.activeTrackId = trackId;
     this.sessionLaps.clear();
+
+    // Reset CU/simulator for new session
+    if (this.trackSync) {
+      await this.trackSync.resetForNewSession();
+    }
+
     this.setState(STATES.PENDING);
 
     return this.currentSession;
@@ -268,6 +274,12 @@ export class RaceControllerService extends EventEmitter {
 
     this.activeTrackId = trackId;
     this.sessionLaps.clear();
+
+    // Reset CU/simulator for new session
+    if (this.trackSync) {
+      await this.trackSync.resetForNewSession();
+    }
+
     this.setState(STATES.PENDING);
 
     return this.currentSession;
