@@ -259,13 +259,6 @@ router.delete('/:id', async (req, res) => {
 
     const exists = await prisma.championship.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: {
-            sessions: true,
-          },
-        },
-      },
     });
 
     if (!exists) {
@@ -275,13 +268,38 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    if (exists._count.sessions > 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Cannot delete championship with ${exists._count.sessions} session(s). Delete sessions first or archive the championship.`,
-      });
-    }
+    // Delete related data in order (respecting foreign keys)
+    // 1. Delete laps for all sessions
+    await prisma.lap.deleteMany({
+      where: { session: { championshipId: id } },
+    });
 
+    // 2. Delete race events for all sessions
+    await prisma.raceEvent.deleteMany({
+      where: { session: { championshipId: id } },
+    });
+
+    // 3. Delete session drivers for all sessions
+    await prisma.sessionDriver.deleteMany({
+      where: { session: { championshipId: id } },
+    });
+
+    // 4. Delete session phases for all sessions
+    await prisma.sessionPhase.deleteMany({
+      where: { session: { championshipId: id } },
+    });
+
+    // 5. Delete all sessions
+    await prisma.session.deleteMany({
+      where: { championshipId: id },
+    });
+
+    // 6. Delete standings
+    await prisma.championshipStanding.deleteMany({
+      where: { championshipId: id },
+    });
+
+    // 7. Delete championship
     await prisma.championship.delete({
       where: { id },
     });

@@ -557,6 +557,24 @@ export default function ChampionshipDetail() {
             })
     }, [championship?.standings])
 
+    // Standings for Free Practice tab (best lap time from practice session)
+    const practiceStandings = useMemo(() => {
+        if (!practiceSession?.laps) return []
+
+        // Group laps by driver and find best time
+        const driverBest = {}
+        practiceSession.laps.forEach(lap => {
+            if (!lap.driverId || lap.lapTime <= 0) return
+            if (!driverBest[lap.driverId] || lap.lapTime < driverBest[lap.driverId].lapTime) {
+                driverBest[lap.driverId] = lap
+            }
+        })
+
+        // Convert to array and sort by best time
+        return Object.values(driverBest)
+            .sort((a, b) => a.lapTime - b.lapTime)
+    }, [practiceSession?.laps])
+
     // Build drivers array from current configs
     const getSessionDrivers = useCallback(() => {
         return configs
@@ -1046,7 +1064,7 @@ export default function ChampionshipDetail() {
             {/* Main content */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Left: Session Leaderboard or Free Practice */}
-                {selectedSession ? (
+                {selectedSession && selectedSession.type !== 'practice' ? (
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
                         <div>
                             <div className="flex items-center justify-between mb-4">
@@ -1335,49 +1353,53 @@ export default function ChampionshipDetail() {
                             {/* Standings list */}
                             <div className="flex-1 overflow-auto p-3">
                                 {standingsTab === 'libre' ? (
-                                    trackRecords.free.length > 0 ? (
+                                    practiceStandings.length > 0 ? (
                                         <div className="space-y-2">
-                                            {trackRecords.free.map((record, idx) => (
-                                                <div
-                                                    key={record.id}
-                                                    className={`flex items-center gap-2 p-2 rounded-lg ${
-                                                        idx === 0 ? 'bg-yellow-50 border border-yellow-200' :
-                                                        idx === 1 ? 'bg-gray-50 border border-gray-200' :
-                                                        idx === 2 ? 'bg-orange-50 border border-orange-200' :
-                                                        'bg-gray-50'
-                                                    }`}
-                                                >
-                                                    <span className={`w-5 text-center font-bold text-sm ${
-                                                        idx === 0 ? 'text-yellow-600' :
-                                                        idx === 1 ? 'text-gray-500' :
-                                                        idx === 2 ? 'text-orange-600' :
-                                                        'text-gray-700'
-                                                    }`}>
-                                                        {idx + 1}
-                                                    </span>
+                                            {practiceStandings.map((lap, idx) => {
+                                                const driver = getDriverInfo(lap.driverId)
+                                                const car = cars.find(c => c.id === lap.carId)
+                                                return (
                                                     <div
-                                                        className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                                        style={{ backgroundColor: record.driver?.color || '#6B7280' }}
+                                                        key={lap.id}
+                                                        className={`flex items-center gap-2 p-2 rounded-lg ${
+                                                            idx === 0 ? 'bg-yellow-50 border border-yellow-200' :
+                                                            idx === 1 ? 'bg-gray-50 border border-gray-200' :
+                                                            idx === 2 ? 'bg-orange-50 border border-orange-200' :
+                                                            'bg-gray-50'
+                                                        }`}
                                                     >
-                                                        {record.driver?.photo ? (
-                                                            <img src={record.driver.photo} alt="" className="w-full h-full rounded-full object-cover" />
-                                                        ) : (
-                                                            record.driver?.name?.charAt(0) || '?'
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-medium text-gray-900 text-sm truncate">{record.driver?.name}</div>
-                                                        <div className="text-xs text-gray-500 truncate">
-                                                            {record.car?.brand} {record.car?.model}
+                                                        <span className={`w-5 text-center font-bold text-sm ${
+                                                            idx === 0 ? 'text-yellow-600' :
+                                                            idx === 1 ? 'text-gray-500' :
+                                                            idx === 2 ? 'text-orange-600' :
+                                                            'text-gray-700'
+                                                        }`}>
+                                                            {idx + 1}
+                                                        </span>
+                                                        <div
+                                                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                                            style={{ backgroundColor: driver.color || '#6B7280' }}
+                                                        >
+                                                            {driver.photo ? (
+                                                                <img src={driver.photo} alt="" className="w-full h-full rounded-full object-cover" />
+                                                            ) : (
+                                                                driver.name?.charAt(0) || '?'
+                                                            )}
                                                         </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-medium text-gray-900 text-sm truncate">{driver.name}</div>
+                                                            <div className="text-xs text-gray-500 truncate">
+                                                                {car?.brand} {car?.model}
+                                                            </div>
+                                                        </div>
+                                                        <LapTime time={lap.lapTime} size="sm" />
                                                     </div>
-                                                    <LapTime time={record.lapTime} size="sm" />
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="text-center text-gray-500 py-8 text-sm">
-                                            Aucun record
+                                            Aucun temps
                                         </div>
                                     )
                                 ) : standingsTab === 'qualif' ? (
