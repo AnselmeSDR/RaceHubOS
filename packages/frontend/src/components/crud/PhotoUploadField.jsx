@@ -2,18 +2,21 @@ import { useState, useRef } from 'react'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../ImageCropper'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 /**
  * Photo upload field with cropper integration
- * Reduces ~70 lines of duplicated code per CRUD page
+ * Uploads to server and returns URL path
  *
  * @param {object} props
  * @param {string} props.label - Field label
- * @param {string} props.value - Current photo URL/data
- * @param {function} props.onChange - Photo change handler (receives base64 string)
+ * @param {string} props.value - Current photo URL
+ * @param {function} props.onChange - Photo change handler (receives URL string)
  * @param {'round' | 'rect'} props.shape - Crop shape
  * @param {number} props.aspect - Aspect ratio (default 1 for square)
  * @param {string} props.primaryColor - Primary color for styling
  * @param {function} props.onError - Error handler
+ * @param {'drivers' | 'cars' | 'tracks'} props.uploadType - Type of upload for folder organization
  */
 export default function PhotoUploadField({
   label = 'Photo',
@@ -22,10 +25,12 @@ export default function PhotoUploadField({
   shape = 'round',
   aspect = 1,
   primaryColor = '#3B82F6',
-  onError
+  onError,
+  uploadType = 'drivers'
 }) {
   const [showCropper, setShowCropper] = useState(false)
   const [imageToCrop, setImageToCrop] = useState(null)
+  const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleFileChange = (e) => {
@@ -45,13 +50,41 @@ export default function PhotoUploadField({
     reader.readAsDataURL(file)
   }
 
-  const handleCropComplete = (croppedImage) => {
-    onChange(croppedImage)
+  const handleCropComplete = async (croppedImage) => {
     setShowCropper(false)
     setImageToCrop(null)
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+    setUploading(true)
+
+    try {
+      // Convert base64 to blob
+      const response = await fetch(croppedImage)
+      const blob = await response.blob()
+
+      // Create form data
+      const formData = new FormData()
+      formData.append('photo', blob, 'photo.jpg')
+
+      // Upload to server
+      const uploadRes = await fetch(`${API_URL}/api/upload/${uploadType}`, {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await uploadRes.json()
+
+      if (data.success) {
+        onChange(data.data.url)
+      } else {
+        onError?.(data.error || 'Erreur lors de l\'upload')
+      }
+    } catch (err) {
+      console.error('Upload error:', err)
+      onError?.('Erreur lors de l\'upload de l\'image')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -61,6 +94,11 @@ export default function PhotoUploadField({
       fileInputRef.current.value = ''
     }
   }
+
+  // Build full image URL
+  const imageUrl = value
+    ? (value.startsWith('http') || value.startsWith('data:') ? value : `${API_URL}${value}`)
+    : null
 
   return (
     <div>
@@ -73,10 +111,12 @@ export default function PhotoUploadField({
         <div
           className={`relative w-20 h-20 ${shape === 'round' ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300`}
         >
-          {value ? (
+          {uploading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: primaryColor }} />
+          ) : imageUrl ? (
             <>
               <img
-                src={value}
+                src={imageUrl}
                 alt="Preview"
                 className="w-full h-full object-cover"
               />
@@ -102,13 +142,14 @@ export default function PhotoUploadField({
             onChange={handleFileChange}
             className="hidden"
             id="photo-upload"
+            disabled={uploading}
           />
           <label
             htmlFor="photo-upload"
-            style={{ borderColor: primaryColor, color: primaryColor }}
-            className="inline-block px-4 py-2 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-sm font-medium"
+            style={{ borderColor: primaryColor, color: uploading ? '#9CA3AF' : primaryColor }}
+            className={`inline-block px-4 py-2 border-2 rounded-lg transition-colors text-sm font-medium ${uploading ? 'cursor-wait bg-gray-50' : 'cursor-pointer hover:bg-gray-50'}`}
           >
-            {value ? 'Changer' : 'Choisir une image'}
+            {uploading ? 'Upload...' : (value ? 'Changer' : 'Choisir une image')}
           </label>
           <p className="text-xs text-gray-500 mt-1">
             JPG, PNG ou GIF. Max 5MB.

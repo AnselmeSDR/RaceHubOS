@@ -346,6 +346,7 @@ function CarFormModal({ car, onClose, onDelete }) {
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}
+        uploadType="cars"
       />
 
       <ColorPickerField

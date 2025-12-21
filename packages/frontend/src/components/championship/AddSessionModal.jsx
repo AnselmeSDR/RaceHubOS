@@ -4,22 +4,27 @@ import { XMarkIcon, PlayIcon, FlagIcon, ClockIcon, ArrowPathIcon } from '@heroic
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 /**
- * AddSessionModal - Modal to add a new session to a championship
- * Calls POST /api/race/qualifying or /api/race/race with championshipId
+ * AddSessionModal - Modal to add or edit a session
+ * Create: POST /api/race/qualifying or /api/race/race with championshipId
+ * Edit: PUT /api/sessions/:id
  */
-export default function AddSessionModal({ type = 'qualifying', championshipId, onClose, onCreated }) {
+export default function AddSessionModal({ type = 'qualifying', championshipId, session = null, onClose, onCreated }) {
+  const isEditMode = !!session
+
   const [form, setForm] = useState({
-    name: '',
-    useTime: true,
-    useLaps: false,
-    duration: 5,
-    maxLaps: 10
+    name: session?.name || '',
+    useTime: session ? !!session.duration : true,
+    useLaps: session ? !!session.maxLaps : false,
+    duration: session?.duration || 5,
+    maxLaps: session?.maxLaps || 10
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const isQualifying = type === 'qualifying'
-  const title = isQualifying ? 'Nouvelle Qualification' : 'Nouvelle Course'
+  const title = isEditMode
+    ? (isQualifying ? 'Modifier Qualification' : 'Modifier Course')
+    : (isQualifying ? 'Nouvelle Qualification' : 'Nouvelle Course')
   const buttonColor = isQualifying ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
   const ButtonIcon = isQualifying ? PlayIcon : FlagIcon
 
@@ -36,28 +41,44 @@ export default function AddSessionModal({ type = 'qualifying', championshipId, o
     setError('')
 
     try {
-      const endpoint = isQualifying ? '/api/race/qualifying' : '/api/race/race'
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name || undefined,
-          duration: form.useTime && form.duration > 0 ? form.duration : null,
-          maxLaps: form.useLaps && form.maxLaps > 0 ? form.maxLaps : null,
-          championshipId
-        })
-      })
+      let response, data
 
-      const data = await response.json()
+      if (isEditMode) {
+        // Edit mode: PUT /api/sessions/:id
+        response = await fetch(`${API_URL}/api/sessions/${session.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name || null,
+            duration: form.useTime && form.duration > 0 ? form.duration : null,
+            maxLaps: form.useLaps && form.maxLaps > 0 ? form.maxLaps : null
+          })
+        })
+        data = await response.json()
+      } else {
+        // Create mode: POST /api/race/qualifying or /api/race/race
+        const endpoint = isQualifying ? '/api/race/qualifying' : '/api/race/race'
+        response = await fetch(`${API_URL}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name || undefined,
+            duration: form.useTime && form.duration > 0 ? form.duration : null,
+            maxLaps: form.useLaps && form.maxLaps > 0 ? form.maxLaps : null,
+            championshipId
+          })
+        })
+        data = await response.json()
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la creation de la session')
+        throw new Error(data.error || 'Erreur lors de la sauvegarde')
       }
 
       onCreated(data.data)
       onClose()
     } catch (err) {
-      console.error('Failed to create session:', err)
+      console.error('Failed to save session:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -189,7 +210,7 @@ export default function AddSessionModal({ type = 'qualifying', championshipId, o
               className={`flex items-center gap-2 px-6 py-2 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 ${buttonColor}`}
             >
               <ButtonIcon className="w-5 h-5" />
-              {loading ? 'Creation...' : 'Creer'}
+              {loading ? 'Sauvegarde...' : (isEditMode ? 'Modifier' : 'Créer')}
             </button>
           </div>
         </form>

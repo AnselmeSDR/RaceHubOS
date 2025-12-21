@@ -19,7 +19,8 @@ import {
     StopIcon,
     BoltIcon,
     SignalIcon,
-    SignalSlashIcon
+    SignalSlashIcon,
+    PencilIcon
 } from '@heroicons/react/24/outline'
 import Leaderboard from '../components/race/Leaderboard'
 import LapTime from '../components/race/LapTime'
@@ -73,6 +74,7 @@ export default function ChampionshipDetail() {
     // Modal states
     const [showQualifModal, setShowQualifModal] = useState(false)
     const [showRaceModal, setShowRaceModal] = useState(false)
+    const [editingSession, setEditingSession] = useState(null) // Session being edited
     const [qualifForm, setQualifForm] = useState({ name: '', duration: 10, maxLaps: 0 })
     const [raceForm, setRaceForm] = useState({ name: '', duration: 0, maxLaps: 20 })
     const [saving, setSaving] = useState(false)
@@ -165,17 +167,16 @@ export default function ChampionshipDetail() {
 
         // Listen for lap completions
         socket.on('lap:completed', (lapData) => {
-            console.log('📍 lap:completed received:', lapData)
             const controller = String(lapData.controller)
             const lapTime = lapData.lapTime
-            if (!controller || lapTime === undefined) {
-                console.warn('Invalid lap data:', lapData)
+            if (!controller || lapTime === undefined || lapTime <= 0) {
                 return
             }
             setSessionDriverData(prev => {
                 const existing = prev[controller] || { laps: 0, bestLap: null, lastLap: null, position: 99 }
-                const newBestLap = existing.bestLap === null ? lapTime : Math.min(existing.bestLap, lapTime)
-                console.log(`📍 Updating driver ${controller}: laps=${existing.laps + 1}, bestLap=${newBestLap}`)
+                // Check for null, undefined, NaN, or 0
+                const hasBestLap = existing.bestLap != null && !isNaN(existing.bestLap) && existing.bestLap > 0
+                const newBestLap = hasBestLap ? Math.min(existing.bestLap, lapTime) : lapTime
                 return {
                     ...prev,
                     [controller]: {
@@ -196,11 +197,15 @@ export default function ChampionshipDetail() {
                 positions.forEach(p => {
                     const controller = String(p.controller)
                     const existing = updated[controller] || {}
+                    // Only use bestLapTime from positions if it's valid
+                    const newBestLap = (p.bestLapTime != null && !isNaN(p.bestLapTime) && p.bestLapTime > 0)
+                        ? p.bestLapTime
+                        : existing.bestLap
                     updated[controller] = {
                         ...existing,
                         laps: p.lapCount || existing.laps || 0,
                         lastLap: p.lastLapTime || existing.lastLap,
-                        bestLap: p.bestLapTime || existing.bestLap,
+                        bestLap: newBestLap,
                         position: p.position
                     }
                 })
@@ -450,19 +455,37 @@ export default function ChampionshipDetail() {
     // Build leaderboard from session data with real-time updates
     const sessionLeaderboard = useMemo(() => {
         if (!selectedSession) return []
-        // Build leaderboard from session drivers, merging with real-time data
+        // Build leaderboard from session drivers, merging with real-time data or stored laps
+        const sessionLaps = selectedSession.laps || []
         const entries = (selectedSession.drivers || []).map((sd, idx) => {
             const controller = String(sd.controller)
             const realTime = sessionDriverData[controller] || {}
+
+            // Calculate stats from stored laps (fallback for finished sessions or when no real-time data)
+            let storedLaps = 0
+            let storedBestLap = null
+            let storedLastLap = null
+
+            if (sessionLaps.length > 0) {
+                const driverLaps = sessionLaps.filter(l => l.controller === controller)
+                storedLaps = driverLaps.length
+                if (driverLaps.length > 0) {
+                    storedBestLap = Math.min(...driverLaps.map(l => l.lapTime))
+                    storedLastLap = driverLaps[driverLaps.length - 1]?.lapTime
+                }
+            }
+
+            // Prefer real-time data for active sessions, stored data for finished
+            const isFinished = selectedSession.status === 'finished'
             return {
                 id: sd.id,
                 position: realTime.position || sd.finalPos || sd.gridPos || idx + 1,
                 driver: sd.driver,
                 car: sd.car,
                 controller: sd.controller,
-                laps: realTime.laps || 0,
-                bestLap: realTime.bestLap || null,
-                lastLap: realTime.lastLap || null,
+                laps: isFinished ? (storedLaps || realTime.laps || 0) : (realTime.laps || storedLaps || 0),
+                bestLap: isFinished ? (storedBestLap || realTime.bestLap || null) : (realTime.bestLap || storedBestLap || null),
+                lastLap: isFinished ? (storedLastLap || realTime.lastLap || null) : (realTime.lastLap || storedLastLap || null),
                 gap: null
             }
         })
@@ -598,6 +621,62 @@ export default function ChampionshipDetail() {
         }
     }
 
+    // Edit qualifying session
+    async function handleEditQualif(e) {
+        e.preventDefault()
+        if (!editingSession) return
+        setSaving(true)
+        try {
+            const res = await fetch(`${API_URL}/api/sessions/${editingSession.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: qualifForm.name || null,
+                    duration: qualifForm.duration > 0 ? qualifForm.duration : null,
+                    maxLaps: qualifForm.maxLaps > 0 ? qualifForm.maxLaps : null
+                })
+            })
+            if (res.ok) {
+                setShowQualifModal(false)
+                setEditingSession(null)
+                setQualifForm({ name: '', duration: 10, maxLaps: 0 })
+                loadData()
+            }
+        } catch (err) {
+            console.error('Failed to edit qualifying:', err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // Edit race session
+    async function handleEditRace(e) {
+        e.preventDefault()
+        if (!editingSession) return
+        setSaving(true)
+        try {
+            const res = await fetch(`${API_URL}/api/sessions/${editingSession.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: raceForm.name || null,
+                    duration: raceForm.duration > 0 ? raceForm.duration : null,
+                    maxLaps: raceForm.maxLaps > 0 ? raceForm.maxLaps : null
+                })
+            })
+            if (res.ok) {
+                setShowRaceModal(false)
+                setEditingSession(null)
+                setRaceForm({ name: '', duration: 0, maxLaps: 20 })
+                loadData()
+            }
+        } catch (err) {
+            console.error('Failed to edit race:', err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
     // Get driver info from standings
     const getDriverInfo = (driverId) => {
         return drivers.find(d => d.id === driverId) || { name: 'Unknown', color: '#6B7280' }
@@ -624,9 +703,33 @@ export default function ChampionshipDetail() {
         }
     }
 
+    // Edit session - open modal with session data
+    function handleEditSession(session) {
+        const form = {
+            name: session.name || '',
+            duration: session.duration || 0,
+            maxLaps: session.maxLaps || 0
+        }
+        if (session.type === 'qualifying') {
+            setQualifForm(form)
+            setEditingSession(session)
+            setShowQualifModal(true)
+        } else {
+            setRaceForm(form)
+            setEditingSession(session)
+            setShowRaceModal(true)
+        }
+    }
+
     // Start session (puts CU in Lights 1)
     async function handleStartSession(sessionId) {
         try {
+            // Reset real-time data before starting
+            setSessionDriverData({})
+            setElapsedTime(0)
+            raceStartTimeRef.current = Date.now()
+            baseElapsedRef.current = 0
+
             const res = await fetch(`${API_URL}/api/sessions/${sessionId}/start`, {
                 method: 'POST'
             })
@@ -1008,7 +1111,7 @@ export default function ChampionshipDetail() {
                                          selectedSession.status === 'finishing' ? '🏁 Fin de session...' :
                                          selectedSession.status === 'active' ? 'En cours' : selectedSession.status}
                                     </span>
-                                    {selectedSession.status !== 'active' && selectedSession.status !== 'finishing' ? (
+                                    {selectedSession.status === 'draft' || selectedSession.status === 'pending' ? (
                                         // Session not started - show "Démarrer"
                                         <button
                                             onClick={() => handleStartSession(selectedSession.id)}
@@ -1023,6 +1126,9 @@ export default function ChampionshipDetail() {
                                             <FlagIcon className="w-4 h-4" />
                                             Attente fin...
                                         </span>
+                                    ) : selectedSession.status === 'finished' ? (
+                                        // Session finished - no action button
+                                        null
                                     ) : cuStatus?.start >= 1 && cuStatus?.start <= 5 ? (
                                         // Session active, CU in lights - show "START"
                                         <button
@@ -1042,9 +1148,16 @@ export default function ChampionshipDetail() {
                                         </button>
                                     )}
                                     <button
+                                        onClick={() => handleEditSession(selectedSession)}
+                                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                        title="Modifier la session"
+                                    >
+                                        <PencilIcon className="w-4 h-4" />
+                                    </button>
+                                    <button
                                         onClick={() => handleRestartSession(selectedSession.id)}
                                         className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
-                                        title="Redémarrer (supprimer les résultats)"
+                                        title="Réinitialiser (supprimer les résultats)"
                                     >
                                         <ArrowUturnLeftIcon className="w-4 h-4" />
                                     </button>
@@ -1364,13 +1477,15 @@ export default function ChampionshipDetail() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-800">Nouvelle qualification</h2>
-                            <button onClick={() => setShowQualifModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {editingSession ? 'Modifier qualification' : 'Nouvelle qualification'}
+                            </h2>
+                            <button onClick={() => { setShowQualifModal(false); setEditingSession(null) }} className="p-1 hover:bg-gray-100 rounded">
                                 <XMarkIcon className="w-6 h-6 text-gray-500" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateQualif} className="space-y-4">
+                        <form onSubmit={editingSession ? handleEditQualif : handleCreateQualif} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Nom (optionnel)
@@ -1414,7 +1529,7 @@ export default function ChampionshipDetail() {
                             <div className="flex justify-end gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setShowQualifModal(false)}
+                                    onClick={() => { setShowQualifModal(false); setEditingSession(null) }}
                                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                                 >
                                     Annuler
@@ -1424,7 +1539,7 @@ export default function ChampionshipDetail() {
                                     disabled={saving}
                                     className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50"
                                 >
-                                    {saving ? 'Creation...' : 'Creer'}
+                                    {saving ? 'Sauvegarde...' : (editingSession ? 'Modifier' : 'Créer')}
                                 </button>
                             </div>
                         </form>
@@ -1437,13 +1552,15 @@ export default function ChampionshipDetail() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-800">Nouvelle course</h2>
-                            <button onClick={() => setShowRaceModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {editingSession ? 'Modifier course' : 'Nouvelle course'}
+                            </h2>
+                            <button onClick={() => { setShowRaceModal(false); setEditingSession(null) }} className="p-1 hover:bg-gray-100 rounded">
                                 <XMarkIcon className="w-6 h-6 text-gray-500" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateRace} className="space-y-4">
+                        <form onSubmit={editingSession ? handleEditRace : handleCreateRace} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Nom (optionnel)
@@ -1487,7 +1604,7 @@ export default function ChampionshipDetail() {
                             <div className="flex justify-end gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setShowRaceModal(false)}
+                                    onClick={() => { setShowRaceModal(false); setEditingSession(null) }}
                                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                                 >
                                     Annuler
@@ -1497,7 +1614,7 @@ export default function ChampionshipDetail() {
                                     disabled={saving}
                                     className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50"
                                 >
-                                    {saving ? 'Creation...' : 'Creer'}
+                                    {saving ? 'Sauvegarde...' : (editingSession ? 'Modifier' : 'Créer')}
                                 </button>
                             </div>
                         </form>

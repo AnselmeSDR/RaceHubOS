@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { XMarkIcon, ArrowPathIcon, BoltIcon, SignalIcon, SignalSlashIcon, ServerIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ArrowPathIcon, BoltIcon, SignalIcon, SignalSlashIcon, ServerIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { io } from 'socket.io-client'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+
+const LOG_TYPES = ['info', 'warn', 'error', 'debug']
 
 /**
  * BackendStatusPopup - Modal showing backend/CU/simulator status and logs
@@ -14,6 +16,8 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
     const [simulatorStatus, setSimulatorStatus] = useState(null)
     const [logs, setLogs] = useState([])
     const [loading, setLoading] = useState(true)
+    const [groupByType, setGroupByType] = useState(false)
+    const [filter, setFilter] = useState('all')
     const logsEndRef = useRef(null)
     const socketRef = useRef(null)
 
@@ -147,8 +151,23 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
     const addLog = (level, message) => {
         const timestamp = new Date().toLocaleTimeString('fr-FR', { hour12: false })
-        setLogs(prev => [...prev.slice(-99), { timestamp, level, message }])
+        setLogs(prev => [...prev, { timestamp, level, message }])
     }
+
+    // Filter logs
+    const filteredLogs = filter === 'all'
+        ? logs
+        : logs.filter(log => log.level === filter)
+
+    // Group logs by type for grouped view
+    const groupedLogs = groupByType
+        ? filteredLogs.reduce((acc, log) => {
+            const key = log.level
+            if (!acc[key]) acc[key] = []
+            acc[key].push(log)
+            return acc
+        }, {})
+        : null
 
     const clearLogs = () => {
         setLogs([])
@@ -168,8 +187,14 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[60vh] flex flex-col">
+        <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={onClose}
+        >
+            <div
+                className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[60vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
                     <div className="flex items-center gap-3">
@@ -237,15 +262,36 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
                 {/* Logs */}
                 <div className="flex-1 overflow-hidden flex flex-col">
-                    <div className="flex items-center justify-between px-4 py-2 bg-gray-850">
-                        <span className="text-sm font-medium text-gray-400">Logs ({logs.length})</span>
-                        <button
-                            onClick={clearLogs}
-                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                            <ArrowPathIcon className="w-3 h-3" />
-                            Effacer
-                        </button>
+                    <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
+                        <span className="text-sm font-medium text-gray-400">Logs ({filteredLogs.length})</span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setGroupByType(!groupByType)}
+                                className={`px-2 py-1 text-xs rounded ${groupByType ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                            >
+                                {groupByType ? 'Groupé' : 'Chrono'}
+                            </button>
+                            {!groupByType && (
+                                <select
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                    className="bg-gray-700 text-white text-xs rounded px-2 py-1 border border-gray-600"
+                                >
+                                    <option value="all">All</option>
+                                    <option value="info">Info</option>
+                                    <option value="warn">Warn</option>
+                                    <option value="error">Error</option>
+                                    <option value="debug">Debug</option>
+                                </select>
+                            )}
+                            <button
+                                onClick={clearLogs}
+                                className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                                title="Effacer"
+                            >
+                                <TrashIcon className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                     <div
                         ref={logsContainerRef}
@@ -254,10 +300,34 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
                     >
                         {loading ? (
                             <div className="text-gray-500 text-center py-4">Chargement...</div>
-                        ) : logs.length === 0 ? (
+                        ) : filteredLogs.length === 0 ? (
                             <div className="text-gray-500 text-center py-4">Aucun log</div>
+                        ) : groupByType ? (
+                            // Grouped view by type
+                            <div className="space-y-4">
+                                {LOG_TYPES.map(level => {
+                                    const typeLogs = groupedLogs[level] || []
+                                    if (typeLogs.length === 0) return null
+                                    return (
+                                        <div key={level}>
+                                            <div className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(level)} bg-gray-800`}>
+                                                {level} ({typeLogs.length})
+                                            </div>
+                                            <div className="space-y-0.5 pl-2 border-l-2 border-gray-700">
+                                                {typeLogs.map((log, i) => (
+                                                    <div key={i} className="flex gap-2 py-0.5">
+                                                        <span className="text-gray-600 flex-shrink-0">{log.timestamp}</span>
+                                                        <span className="text-gray-300">{log.message}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         ) : (
-                            logs.map((log, idx) => (
+                            // Chronological view
+                            filteredLogs.map((log, idx) => (
                                 <div key={idx} className="flex gap-2 py-0.5">
                                     <span className="text-gray-600 flex-shrink-0">{log.timestamp}</span>
                                     <span className={`flex-shrink-0 uppercase w-12 ${getLogColor(log.level)}`}>

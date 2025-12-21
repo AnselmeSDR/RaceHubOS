@@ -27,6 +27,7 @@ import sessionControlRouter, { setSessionManager as setControlSessionManager } f
 import configRouter, { setConfigService } from './routes/config.js';
 import raceRouter, { setRaceController } from './routes/race.js';
 import recordsRouter from './routes/records.js';
+import uploadRouter from './routes/upload.js';
 
 // Import SessionManager service (legacy)
 import { SessionManager } from './services/SessionManager.js';
@@ -176,6 +177,7 @@ app.use('/api/session-control', sessionControlRouter);
 app.use('/api/config', configRouter);
 app.use('/api/race', raceRouter);
 app.use('/api/records', recordsRouter);
+app.use('/api/upload', uploadRouter);
 
 // Simulator control endpoints
 app.get('/api/simulator', (req, res) => {
