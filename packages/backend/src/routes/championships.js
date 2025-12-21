@@ -154,9 +154,30 @@ router.post('/', async (req, res) => {
       },
     });
 
+    // Create permanent free practice session for this championship
+    await prisma.session.create({
+      data: {
+        name: 'Essais Libres',
+        type: 'practice',
+        status: 'draft',
+        championshipId: championship.id,
+        trackId: trackId || null,
+      },
+    });
+
+    // Refetch with the new session
+    const result = await prisma.championship.findUnique({
+      where: { id: championship.id },
+      include: {
+        track: true,
+        standings: true,
+        sessions: true,
+      },
+    });
+
     res.status(201).json({
       success: true,
-      data: championship,
+      data: result,
     });
   } catch (error) {
     console.error('Error creating championship:', error);
