@@ -309,8 +309,8 @@ router.get('/leaderboard/drivers', async (req, res) => {
         };
       });
 
-      // Sort by best lap for practice/qualifying, by laps and best lap for race
-      if (phase === 'practice' || phase === 'qualifying') {
+      // Sort by best lap for practice/qualif, by laps and best lap for race
+      if (phase === 'practice' || phase === 'qualif') {
         leaderboard = leaderboard
           .filter(entry => entry.bestLap !== null)
           .sort((a, b) => a.bestLap - b.bestLap)

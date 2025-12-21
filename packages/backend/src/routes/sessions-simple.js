@@ -57,7 +57,7 @@ async function recalculateChampionshipStandings(prisma, championshipId) {
       const lapTimeMs = Math.round(lap.lapTime);
 
       // Qualifying: track best lap time
-      if (lap.phase === 'qualif' || lap.phase === 'qualifying') {
+      if (lap.phase === 'qualif') {
         const current = driverStats[lap.driverId].qualifBestTime;
         if (current === null || lapTimeMs < current) {
           driverStats[lap.driverId].qualifBestTime = lapTimeMs;

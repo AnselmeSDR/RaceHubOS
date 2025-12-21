@@ -377,7 +377,7 @@ router.post('/:id/recalculate', async (req, res) => {
         const lapTimeMs = Math.round(lap.lapTime);
 
         // Qualifying: track best lap time
-        if (lap.phase === 'qualif' || lap.phase === 'qualifying') {
+        if (lap.phase === 'qualif') {
           if (driverStats[driverId].qualifBestTime === null || lapTimeMs < driverStats[driverId].qualifBestTime) {
             driverStats[driverId].qualifBestTime = lapTimeMs;
           }
