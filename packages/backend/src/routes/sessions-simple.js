@@ -224,12 +224,9 @@ router.post('/:id/start', async (req, res) => {
     const existingLaps = await sessionManager.prisma.lap.count({
       where: { sessionId: id }
     });
-    console.log(`🏁 START: Session ${id} has ${existingLaps} existing laps`);
 
     // Always clear existing laps when starting a session (fresh start)
-    // This ensures restart works correctly regardless of status
     if (existingLaps > 0) {
-      console.log(`🏁 START: Clearing ${existingLaps} existing laps for fresh start`);
       await sessionManager.prisma.lap.deleteMany({
         where: { sessionId: id }
       });
@@ -395,7 +392,6 @@ router.post('/:id/stop', async (req, res) => {
  * Redémarre une session (supprime laps, events, reset status)
  */
 router.post('/:id/restart', async (req, res) => {
-  console.log('🔄🔄🔄 RESTART ENDPOINT CALLED for session:', req.params.id);
   try {
     const { id } = req.params;
 
@@ -412,16 +408,9 @@ router.post('/:id/restart', async (req, res) => {
     }
 
     // Delete all laps for this session
-    const deletedLaps = await sessionManager.prisma.lap.deleteMany({
+    await sessionManager.prisma.lap.deleteMany({
       where: { sessionId: id }
     });
-    console.log(`🔄 Restart: Deleted ${deletedLaps.count} laps for session ${id}`);
-
-    // Verify laps are deleted
-    const remainingLaps = await sessionManager.prisma.lap.count({
-      where: { sessionId: id }
-    });
-    console.log(`🔄 Restart: Remaining laps after delete: ${remainingLaps}`);
 
     // Delete all events for this session
     await sessionManager.prisma.raceEvent.deleteMany({
@@ -455,19 +444,11 @@ router.post('/:id/restart', async (req, res) => {
     });
 
     // Reset CU/Simulator
-    console.log('🔄 Restart: Resetting CU/Simulator...');
     if (sessionManager.trackSync?.resetForNewSession) {
       await sessionManager.trackSync.resetForNewSession();
-      console.log('🔄 Restart: TrackSync reset done');
     }
     if (sessionManager.simulatorSync?.resetForNewSession) {
       await sessionManager.simulatorSync.resetForNewSession();
-      console.log('🔄 Restart: SimulatorSync reset done');
-    }
-    if (sessionManager.simulator) {
-      // Double-check simulator state
-      console.log('🔄 Restart: Simulator cars lap counts:',
-        sessionManager.simulator.cars.map(c => ({ id: c.id, laps: c.totalLaps })));
     }
 
     // Re-configure TrackSync for the session
