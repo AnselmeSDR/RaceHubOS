@@ -162,11 +162,7 @@ export class SimulatorSyncService {
    * Appelé par le simulateur via callback
    */
   async recordLap(carId, lapTime, lapNumber) {
-    console.log(`📍 recordLap called: carId=${carId}, lapTime=${lapTime}, lapNumber=${lapNumber}`);
-    console.log(`📍 activeSessionId: ${this.activeSessionId}, sessionDrivers size: ${this.sessionDrivers.size}`);
-
     if (!this.activeSessionId) {
-      console.log('📍 No active session, skipping');
       return;
     }
 
@@ -206,7 +202,6 @@ export class SimulatorSyncService {
         driverData.bestLapTime = lapTime;
       }
 
-      console.log(`📍 Emitting lap:completed - controller: ${lapData.controller}, lapTime: ${lapData.lapTime}, lapNumber: ${lapNumber}`);
       this.io?.emit('lap:completed', lapData);
       this.io?.emit('lap_completed', { ...lapData, sessionId: this.activeSessionId });
 
@@ -259,8 +254,6 @@ export class SimulatorSyncService {
         where: { sessionId: this.activeSessionId },
         _count: { id: true },
       });
-
-      console.log(`📊 checkPhaseComplete: sessionId=${this.activeSessionId}, maxLaps=${session.maxLaps}, lapCounts=`, JSON.stringify(lapCounts));
 
       const lapCountMap = new Map(lapCounts.map(l => [l.controller, l._count.id]));
       const activeDrivers = session.drivers.filter(d => lapCountMap.has(d.controller) || session.status === 'active');
