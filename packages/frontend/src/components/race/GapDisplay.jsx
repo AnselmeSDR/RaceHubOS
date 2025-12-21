@@ -17,7 +17,16 @@ export default function GapDisplay({ gap, position }) {
     return <span className="text-gray-400">--</span>
   }
 
-  // Format gap in seconds
+  // Handle string gaps (e.g., "+2 tours")
+  if (typeof gap === 'string') {
+    return (
+      <span className="font-mono tabular-nums text-sm font-medium text-orange-600">
+        {gap}
+      </span>
+    )
+  }
+
+  // Format gap in seconds (gap is in milliseconds)
   const gapSeconds = gap / 1000
   const formattedGap = `+${gapSeconds.toFixed(3)}s`
 

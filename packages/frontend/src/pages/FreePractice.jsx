@@ -103,15 +103,7 @@ export default function FreePractice() {
     fetchData()
   }, [])
 
-  // Fetch track records when track changes
-  useEffect(() => {
-    if (selectedTrack?.id) {
-      fetchTrackRecords(selectedTrack.id)
-      fetchConfigs(selectedTrack.id)
-    }
-  }, [selectedTrack?.id, fetchConfigs])
-
-  const fetchTrackRecords = async (trackId) => {
+  const fetchTrackRecords = useCallback(async (trackId) => {
     try {
       const response = await fetch(`${API_URL}/api/laps/records?trackId=${trackId}`)
       const data = await response.json()
@@ -119,7 +111,33 @@ export default function FreePractice() {
     } catch (error) {
       console.error('Error fetching track records:', error)
     }
-  }
+  }, [])
+
+  // Fetch track records when track changes
+  useEffect(() => {
+    if (selectedTrack?.id) {
+      fetchTrackRecords(selectedTrack.id)
+      fetchConfigs(selectedTrack.id)
+    }
+  }, [selectedTrack?.id, fetchConfigs, fetchTrackRecords])
+
+  const addLiveLap = useCallback((lapData) => {
+    const controller = lapData.controller || lapData.carId
+    const config = configs.find(c => c.controller === controller)
+    const driver = config?.driver
+      ? (typeof config.driver === 'object' ? config.driver : drivers.find(d => d.id === config.driver))
+      : null
+
+    const lap = {
+      id: Date.now() + Math.random(),
+      controller,
+      driverName: driver?.name || `Controller ${controller}`,
+      lapTime: lapData.lapTime || lapData.time,
+      timestamp: lapData.timestamp || Date.now()
+    }
+
+    setLiveLaps(prev => [lap, ...prev].slice(0, 20))
+  }, [configs, drivers])
 
   // Subscribe to live lap events
   useEffect(() => {
@@ -146,25 +164,7 @@ export default function FreePractice() {
     return () => {
       socket.disconnect()
     }
-  }, [drivers, configs])
-
-  const addLiveLap = useCallback((lapData) => {
-    const controller = lapData.controller || lapData.carId
-    const config = configs.find(c => c.controller === controller)
-    const driver = config?.driver
-      ? (typeof config.driver === 'object' ? config.driver : drivers.find(d => d.id === config.driver))
-      : null
-
-    const lap = {
-      id: Date.now() + Math.random(),
-      controller,
-      driverName: driver?.name || `Controller ${controller}`,
-      lapTime: lapData.lapTime || lapData.time,
-      timestamp: lapData.timestamp || Date.now()
-    }
-
-    setLiveLaps(prev => [lap, ...prev].slice(0, 20))
-  }, [configs, drivers])
+  }, [addLiveLap])
 
   // Handle config change
   const handleConfigChange = useCallback((controller, driverId, carId) => {

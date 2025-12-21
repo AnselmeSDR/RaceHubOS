@@ -47,7 +47,7 @@ export class SessionManager {
   /**
    * Créer une nouvelle session avec ses phases
    */
-  async createSession({ name, type, trackId, championshipId, fuelMode, drivers, phases }) {
+  async createSession({ name, type, trackId, championshipId, fuelMode, drivers, phases, duration, maxLaps }) {
     const session = await this.prisma.session.create({
       data: {
         name,
@@ -55,6 +55,8 @@ export class SessionManager {
         trackId,
         championshipId: championshipId || null,
         fuelMode: fuelMode || 'OFF',
+        duration: duration || null,
+        maxLaps: maxLaps || null,
         status: 'draft', // Commence en draft, passe à ready après sync
         drivers: {
           create: drivers?.map(d => ({

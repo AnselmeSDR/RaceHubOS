@@ -83,7 +83,7 @@ export default function Settings() {
       addLogEntry(`🔧 Voiture ${data.carId} - Arrêt au stand: ${(data.duration / 1000).toFixed(1)}s`)
     })
 
-    socket.on('race:carData', (cars) => {
+    socket.on('race:carData', () => {
       // Optional: log car data periodically
     })
 
@@ -116,7 +116,7 @@ export default function Settings() {
       } else {
         setConnectedDeviceId(null)
       }
-    } catch (error) {
+    } catch {
       // Error loading settings
     }
   }
@@ -200,8 +200,6 @@ export default function Settings() {
   }
 
   async function removeDevice(device) {
-    if (!confirm(`Supprimer "${device.name}" de la liste ?`)) return
-
     try {
       // Si connecté, déconnecter d'abord
       if (connectedDeviceId === device.id) {
@@ -228,7 +226,7 @@ export default function Settings() {
       if (data.success) {
         setConnectedDeviceId(null)
       }
-    } catch (error) {
+    } catch {
       // Error disconnecting device
     }
   }
@@ -246,7 +244,7 @@ export default function Settings() {
       if (!data.success) {
         setUseMockDevice(!newValue) // Revert on error
       }
-    } catch (error) {
+    } catch {
       // Error toggling mock device
       setUseMockDevice(!newValue) // Revert on error
     }

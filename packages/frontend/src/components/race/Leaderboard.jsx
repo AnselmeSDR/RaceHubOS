@@ -6,7 +6,7 @@ import GapDisplay from './GapDisplay'
 /**
  * Leaderboard - Real-time race leaderboard with NASCAR-style driver cards
  */
-export default function Leaderboard({ leaderboard = [], sessionType = 'race' }) {
+export default function Leaderboard({ leaderboard = [] }) {
   if (!leaderboard || leaderboard.length === 0) {
     return (
       <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">
@@ -61,8 +61,7 @@ export default function Leaderboard({ leaderboard = [], sessionType = 'race' }) 
                   {position}
                 </span>
                 {/* Position delta arrow */}
-                {entry.positionDelta !== 0 && entry.positionDelta !== undefined &&
-                 Date.now() - (entry.positionChanged || 0) < 10000 && (
+                {entry.positionDelta !== 0 && entry.positionDelta !== undefined && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}

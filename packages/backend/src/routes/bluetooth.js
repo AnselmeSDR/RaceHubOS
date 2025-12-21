@@ -2,6 +2,7 @@ import express from 'express';
 
 const router = express.Router();
 let trackSyncService = null;
+let simulator = null;
 
 /**
  * Configurer le service TrackSync
@@ -11,30 +12,49 @@ export function setTrackSync(service) {
 }
 
 /**
+ * Configurer le simulateur pour le mode simulation
+ */
+export function setSimulator(sim) {
+  simulator = sim;
+}
+
+/**
  * GET /api/bluetooth/status
  * Récupérer l'état de la connexion Bluetooth
  */
 router.get('/status', async (req, res) => {
-  if (!trackSyncService) {
+  // Real CU mode
+  if (trackSyncService) {
+    try {
+      const state = trackSyncService.getState();
+      return res.json({
+        available: true,
+        connected: state.connected,
+        activeSession: state.activeSessionId,
+        drivers: state.drivers,
+        lastStatus: state.lastStatus,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Simulator mode
+  if (simulator) {
+    const state = simulator.getState();
     return res.json({
-      available: false,
-      connected: false,
-      message: 'Running in simulator mode',
+      available: true,
+      connected: true,
+      simulator: true,
+      lastStatus: state.lastStatus,
     });
   }
 
-  try {
-    const state = trackSyncService.getState();
-    res.json({
-      available: true,
-      connected: state.connected,
-      activeSession: state.activeSessionId,
-      drivers: state.drivers,
-      lastStatus: state.lastStatus,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  return res.json({
+    available: false,
+    connected: false,
+    message: 'No CU or simulator available',
+  });
 });
 
 /**
@@ -298,17 +318,17 @@ router.post('/stop-session', async (req, res) => {
  * Démarrer la course sur le Control Unit (bouton START)
  */
 router.post('/start-race', async (req, res) => {
-  if (!trackSyncService) {
-    return res.status(400).json({
-      error: 'Not available in simulator mode',
-    });
-  }
-
   try {
-    await trackSyncService.startRace();
+    if (trackSyncService) {
+      await trackSyncService.startRace();
+    } else if (simulator) {
+      await simulator.startRace();
+    } else {
+      return res.status(400).json({ error: 'No CU or simulator available' });
+    }
     res.json({
       success: true,
-      message: 'Race started on Control Unit',
+      message: 'Race started',
     });
   } catch (error) {
     res.status(500).json({
@@ -323,14 +343,14 @@ router.post('/start-race', async (req, res) => {
  * Réinitialiser le timer du Control Unit
  */
 router.post('/reset-timer', async (req, res) => {
-  if (!trackSyncService) {
-    return res.status(400).json({
-      error: 'Not available in simulator mode',
-    });
-  }
-
   try {
-    await trackSyncService.resetTimer();
+    if (trackSyncService) {
+      await trackSyncService.resetTimer();
+    } else if (simulator) {
+      simulator.resetTimer();
+    } else {
+      return res.status(400).json({ error: 'No CU or simulator available' });
+    }
     res.json({
       success: true,
       message: 'Timer reset',
@@ -348,12 +368,14 @@ router.post('/reset-timer', async (req, res) => {
  * Appuyer sur ESC/Pace Car (arrêter la course)
  */
 router.post('/esc', async (req, res) => {
-  if (!trackSyncService) {
-    return res.status(400).json({ error: 'Not available in simulator mode' });
-  }
-
   try {
-    await trackSyncService.pressEsc();
+    if (trackSyncService) {
+      await trackSyncService.pressEsc();
+    } else if (simulator) {
+      simulator.pressEsc();
+    } else {
+      return res.status(400).json({ error: 'No CU or simulator available' });
+    }
     res.json({ success: true, message: 'ESC pressed' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -365,16 +387,18 @@ router.post('/esc', async (req, res) => {
  * Appuyer sur un bouton du CU (1=ESC, 2=START, 5=SPEED, 6=BRAKE, 7=FUEL, 8=CODE)
  */
 router.post('/button/:id', async (req, res) => {
-  if (!trackSyncService) {
-    return res.status(400).json({ error: 'Not available in simulator mode' });
-  }
-
   try {
     const buttonId = parseInt(req.params.id);
     if (isNaN(buttonId) || buttonId < 1 || buttonId > 8) {
       return res.status(400).json({ error: 'Invalid button ID (1-8)' });
     }
-    await trackSyncService.pressButton(buttonId);
+    if (trackSyncService) {
+      await trackSyncService.pressButton(buttonId);
+    } else if (simulator) {
+      await simulator.pressButton(buttonId);
+    } else {
+      return res.status(400).json({ error: 'No CU or simulator available' });
+    }
     res.json({ success: true, message: `Button ${buttonId} pressed` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -386,12 +410,14 @@ router.post('/button/:id', async (req, res) => {
  * Effacer l'affichage de la Position Tower
  */
 router.post('/clear-position', async (req, res) => {
-  if (!trackSyncService) {
-    return res.status(400).json({ error: 'Not available in simulator mode' });
-  }
-
   try {
-    await trackSyncService.clearPosition();
+    if (trackSyncService) {
+      await trackSyncService.clearPosition();
+    } else if (simulator) {
+      simulator.clearPosition();
+    } else {
+      return res.status(400).json({ error: 'No CU or simulator available' });
+    }
     res.json({ success: true, message: 'Position tower cleared' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

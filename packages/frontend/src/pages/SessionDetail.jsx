@@ -71,8 +71,6 @@ export default function SessionDetail() {
   }
 
   async function handleDelete() {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) return
-
     try {
       const res = await fetch(`${API_URL}/sessions/${id}`, { method: 'DELETE' })
       if (res.ok) {

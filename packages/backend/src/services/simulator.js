@@ -3,6 +3,27 @@
  * Simulates the AppConnect 30369 Bluetooth device for development
  */
 
+// CU State values (matching real CU protocol)
+const CU_STATE = {
+  RACING: 0,
+  LIGHTS_1: 1,
+  LIGHTS_2: 2,
+  LIGHTS_3: 3,
+  LIGHTS_4: 4,
+  LIGHTS_5: 5,
+  FALSE_START: 6,
+  GO: 7,
+  STOPPED: 9,
+};
+
+// Mode flags
+const MODE_FLAGS = {
+  FUEL: 1,
+  REAL: 2,
+  PIT_LANE: 4,
+  LAP_COUNTER: 8,
+};
+
 export class CarreraSimulator {
   constructor(io) {
     this.io = io;
@@ -13,6 +34,12 @@ export class CarreraSimulator {
     this.interval = null;
     this.tickRate = 100; // Update every 100ms
     this.onLapComplete = null; // Callback pour enregistrer les tours
+
+    // CU status (simulated)
+    this.cuState = CU_STATE.STOPPED; // start field
+    this.cuMode = MODE_FLAGS.LAP_COUNTER; // Default: Lap Counter only (no fuel)
+    this.cuDisplay = 6; // Number of cars to display
+    this.statusInterval = null;
   }
 
   /**
@@ -37,7 +64,7 @@ export class CarreraSimulator {
   }
 
   /**
-   * Start the simulator
+   * Start the simulator (prepare for race - Lights 1)
    */
   start() {
     if (this.isRunning) {
@@ -45,14 +72,16 @@ export class CarreraSimulator {
     }
 
     this.isRunning = true;
-    this.raceActive = true;
+    this.raceActive = false; // Not racing yet, waiting for START
     this.raceTime = 0;
+    this.cuState = CU_STATE.LIGHTS_1; // Ready, waiting for START
 
     this.interval = setInterval(() => {
       this.tick();
     }, this.tickRate);
 
     this.emitRaceStatus();
+    this.emitCuStatus();
   }
 
   /**
@@ -65,6 +94,7 @@ export class CarreraSimulator {
 
     this.isRunning = false;
     this.raceActive = false;
+    this.cuState = CU_STATE.STOPPED; // Set CU to stopped state
 
     if (this.interval) {
       clearInterval(this.interval);
@@ -72,6 +102,7 @@ export class CarreraSimulator {
     }
 
     this.emitRaceStatus();
+    this.emitCuStatus();
   }
 
   /**
@@ -93,25 +124,9 @@ export class CarreraSimulator {
     this.raceTime += this.tickRate;
 
     this.cars.forEach((car) => {
-      // Skip if in pit
-      if (car.inPit) {
-        this.handlePitStop(car);
-        return;
-      }
-
       // Simulate speed variation (realistic racing)
       const baseSpeed = 8 + Math.random() * 4; // 8-12 speed units
-      car.speed = Math.max(0, Math.min(15, baseSpeed - (15 - car.fuel) * 0.2));
-
-      // Consume fuel
-      if (car.fuel > 0) {
-        car.fuel = Math.max(0, car.fuel - 0.003 * car.speed);
-      }
-
-      // Check if fuel is low and need pit stop
-      if (car.fuel < 2 && !car.inPit && Math.random() > 0.95) {
-        car.inPit = true;
-      }
+      car.speed = Math.max(0, Math.min(15, baseSpeed));
 
       // Simulate sector progression
       this.simulateSectorProgress(car);
@@ -298,6 +313,176 @@ export class CarreraSimulator {
       active: this.raceActive,
       raceTime: this.raceTime,
       cars: this.cars,
+      connected: true, // Simulator is always "connected"
+      lastStatus: this.getCuStatus(),
     };
   }
+
+  /**
+   * Get current CU status (matches real CU format)
+   */
+  getCuStatus() {
+    return {
+      start: this.cuState,
+      mode: this.cuMode,
+      display: this.cuDisplay,
+      fuel: this.cars.map(c => Math.round(c.fuel)),
+    };
+  }
+
+  /**
+   * Emit CU status to clients
+   */
+  emitCuStatus() {
+    const status = this.getCuStatus();
+    this.io.emit('cu:status', status);
+  }
+
+  /**
+   * Start CU status polling (like real CU)
+   */
+  startStatusPolling(interval = 200) {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+    }
+    this.statusInterval = setInterval(() => {
+      this.emitCuStatus();
+    }, interval);
+    this.io.emit('cu:connected');
+  }
+
+  /**
+   * Stop CU status polling
+   */
+  stopStatusPolling() {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+      this.statusInterval = null;
+    }
+    this.io.emit('cu:disconnected');
+  }
+
+  /**
+   * Start race (simulate START button press)
+   * Cycles through: LIGHTS 1-5 -> GO -> RACING
+   */
+  async startRace() {
+    if (this.cuState === CU_STATE.RACING) {
+      // Already racing, pressing START stops the race (ESC behavior)
+      this.cuState = CU_STATE.STOPPED;
+      this.raceActive = false;
+      this.emitCuStatus();
+      return;
+    }
+
+    // Start or continue light sequence from current state
+    const startLight = (this.cuState >= CU_STATE.LIGHTS_1 && this.cuState <= CU_STATE.LIGHTS_5)
+      ? this.cuState
+      : CU_STATE.LIGHTS_1;
+
+    for (let light = startLight; light <= 5; light++) {
+      this.cuState = light;
+      this.emitCuStatus();
+      await this.delay(500);
+    }
+    // GO!
+    this.cuState = CU_STATE.GO;
+    this.emitCuStatus();
+    await this.delay(300);
+    // Racing
+    this.cuState = CU_STATE.RACING;
+    this.raceActive = true;
+    this.emitCuStatus();
+  }
+
+  /**
+   * Press ESC (Pace Car / Stop)
+   */
+  pressEsc() {
+    if (this.cuState === CU_STATE.RACING) {
+      this.cuState = CU_STATE.STOPPED;
+      this.raceActive = false;
+      this.emitCuStatus();
+    }
+  }
+
+  /**
+   * Press a CU button (1=ESC, 2=START, 5=SPEED, 6=BRAKE, 7=FUEL, 8=CODE)
+   */
+  async pressButton(buttonId) {
+    switch (buttonId) {
+      case 1: // ESC
+        this.pressEsc();
+        break;
+      case 2: // START
+        await this.startRace();
+        break;
+      case 7: // FUEL - toggle fuel mode
+        this.cuMode ^= MODE_FLAGS.FUEL;
+        this.emitCuStatus();
+        break;
+      case 5: // SPEED - (placeholder)
+      case 6: // BRAKE - (placeholder)
+      case 8: // CODE - (placeholder)
+        // These don't change visible state
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Reset timer and lap counts
+   */
+  resetTimer() {
+    this.raceTime = 0;
+    this.cars.forEach(car => {
+      car.currentLap = 0;
+      car.totalLaps = 0;
+      car.lastLapTime = 0;
+      car.bestLapTime = null;
+      car.totalTime = 0;
+      car.sectorTimes = [0, 0, 0];
+      car.currentSector = 0;
+    });
+    this.emitCuStatus();
+  }
+
+  /**
+   * Clear position tower
+   */
+  clearPosition() {
+    // Reset positions to default order
+    this.cars.forEach((car, i) => {
+      car.position = i + 1;
+    });
+  }
+
+  /**
+   * Toggle a mode flag
+   */
+  toggleMode(flag) {
+    this.cuMode ^= flag;
+    this.emitCuStatus();
+  }
+
+  /**
+   * Set fuel for a controller
+   */
+  setFuel(controller, value) {
+    const car = this.cars.find(c => c.id === controller);
+    if (car) {
+      car.fuel = Math.max(0, Math.min(15, value));
+      this.emitCuStatus();
+    }
+  }
+
+  /**
+   * Helper delay function
+   */
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 }
+
+export { CU_STATE, MODE_FLAGS };

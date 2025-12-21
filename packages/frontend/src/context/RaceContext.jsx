@@ -38,10 +38,48 @@ export function RaceProvider({ children }) {
   const stateRef = useRef(state)
   const trackIdRef = useRef(currentTrackId)
   const configsRef = useRef(controllerConfigs)
+  const refreshStateRef = useRef(null)
 
   useEffect(() => { stateRef.current = state }, [state])
   useEffect(() => { trackIdRef.current = currentTrackId }, [currentTrackId])
   useEffect(() => { configsRef.current = controllerConfigs }, [controllerConfigs])
+
+  // API helper
+  const apiCall = useCallback(async (endpoint, method = 'GET', body = null) => {
+    try {
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+      }
+      if (body) {
+        options.body = JSON.stringify(body)
+      }
+      const response = await fetch(`${API_URL}/api/race${endpoint}`, options)
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error(`[RaceContext] API error (${endpoint}):`, error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
+  // Refresh current state from backend
+  const refreshState = useCallback(async () => {
+    const data = await apiCall('/status')
+    if (data.success !== false) {
+      if (data.state) setState(data.state)
+      if (data.session) setSession(data.session)
+      if (data.leaderboard) setLeaderboard(data.leaderboard)
+      if (data.config) setConfig(data.config)
+      if (data.cuConnected !== undefined) setCuConnected(data.cuConnected)
+      if (data.elapsed !== undefined) setElapsed(data.elapsed)
+      if (data.remaining !== undefined) setRemaining(data.remaining)
+    }
+    return data
+  }, [apiCall])
+
+  // Keep ref updated for socket callback
+  useEffect(() => { refreshStateRef.current = refreshState }, [refreshState])
 
   // Initialize socket connection
   useEffect(() => {
@@ -55,7 +93,7 @@ export function RaceProvider({ children }) {
 
     socket.on('connect', () => {
       setSocketConnected(true)
-      refreshState()
+      refreshStateRef.current?.()
     })
 
     socket.on('disconnect', () => {
@@ -178,40 +216,6 @@ export function RaceProvider({ children }) {
       socket.disconnect()
     }
   }, [])
-
-  // API helper
-  const apiCall = useCallback(async (endpoint, method = 'GET', body = null) => {
-    try {
-      const options = {
-        method,
-        headers: { 'Content-Type': 'application/json' }
-      }
-      if (body) {
-        options.body = JSON.stringify(body)
-      }
-      const response = await fetch(`${API_URL}/api/race${endpoint}`, options)
-      const data = await response.json()
-      return data
-    } catch (error) {
-      console.error(`[RaceContext] API error (${endpoint}):`, error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Refresh current state from backend
-  const refreshState = useCallback(async () => {
-    const data = await apiCall('/status')
-    if (data.success !== false) {
-      if (data.state) setState(data.state)
-      if (data.session) setSession(data.session)
-      if (data.leaderboard) setLeaderboard(data.leaderboard)
-      if (data.config) setConfig(data.config)
-      if (data.cuConnected !== undefined) setCuConnected(data.cuConnected)
-      if (data.elapsed !== undefined) setElapsed(data.elapsed)
-      if (data.remaining !== undefined) setRemaining(data.remaining)
-    }
-    return data
-  }, [apiCall])
 
   // Start qualifying session
   const startQualifying = useCallback(async (params) => {

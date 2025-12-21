@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ClockIcon, FlagIcon, CheckCircleIcon, PlayCircleIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ClockIcon, CheckCircleIcon, PlayCircleIcon } from '@heroicons/react/24/outline'
 
 /**
  * SessionSelector - Dropdown to select a session from a championship
@@ -47,10 +47,6 @@ export default function SessionSelector({ sessions = [], selectedSession, onSele
     }
   }
 
-  const getTypeIcon = (type) => {
-    return type === 'race' ? FlagIcon : ClockIcon
-  }
-
   if (!sessions || sessions.length === 0) {
     return (
       <div className="text-sm text-gray-500 px-3 py-2 bg-gray-50 rounded-lg">
@@ -58,10 +54,6 @@ export default function SessionSelector({ sessions = [], selectedSession, onSele
       </div>
     )
   }
-
-  const selectedLabel = selectedSession
-    ? formatSessionLabel(selectedSession, 0, sessions)
-    : 'Selectionner...'
 
   return (
     <div className="relative">

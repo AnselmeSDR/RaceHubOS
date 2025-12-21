@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import {
   ChartBarIcon,
@@ -16,9 +16,33 @@ import {
   CommandLineIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline'
+import BackendStatusPopup from './BackendStatusPopup'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [statusPopupOpen, setStatusPopupOpen] = useState(false)
+  const [backendConnected, setBackendConnected] = useState(true)
+  const [backendVersion, setBackendVersion] = useState('0.1.0')
+
+  // Check backend health periodically
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(`${API_URL}/health`)
+        const data = await res.json()
+        setBackendConnected(data.status === 'ok')
+        setBackendVersion(data.version || '0.1.0')
+      } catch {
+        setBackendConnected(false)
+      }
+    }
+
+    checkHealth()
+    const interval = setInterval(checkHealth, 5000)
+    return () => clearInterval(interval)
+  }, [])
   const navItems = [
     { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
     { to: '/race', label: 'Mode Libre', Icon: FlagIcon },
@@ -96,19 +120,28 @@ export default function Layout() {
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-800">
-          {sidebarOpen ? (
-            <div className="text-xs text-gray-400">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Backend connecté</span>
+          <button
+            onClick={() => setStatusPopupOpen(true)}
+            className={`w-full text-left rounded-lg transition-colors ${sidebarOpen ? 'p-2 hover:bg-gray-800' : ''}`}
+            title="Voir les logs"
+          >
+            {sidebarOpen ? (
+              <div className="text-xs text-gray-400">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                  <span>{backendConnected ? 'Backend connecté' : 'Backend déconnecté'}</span>
+                </div>
+                <div>Version {backendVersion}</div>
               </div>
-              <div>Version 0.1.0</div>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Backend connecté"></div>
-            </div>
-          )}
+            ) : (
+              <div className="flex justify-center">
+                <div
+                  className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
+                  title={backendConnected ? 'Backend connecté' : 'Backend déconnecté'}
+                ></div>
+              </div>
+            )}
+          </button>
         </div>
       </aside>
 
@@ -116,6 +149,12 @@ export default function Layout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      {/* Backend Status Popup */}
+      <BackendStatusPopup
+        isOpen={statusPopupOpen}
+        onClose={() => setStatusPopupOpen(false)}
+      />
     </div>
   )
 }

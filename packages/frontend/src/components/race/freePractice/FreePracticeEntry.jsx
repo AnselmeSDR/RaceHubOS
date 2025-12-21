@@ -34,24 +34,23 @@ export default function FreePracticeEntry({ entry, index }) {
                     {index + 1}
                 </span>
                 {/* Position delta arrow */}
-                {entry.positionDelta !== 0 && entry.positionDelta !== undefined &&
-                    Date.now() - (entry.positionChanged || 0) < 10000 && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0 }}
-                            className={`flex items-center justify-center gap-0.5 text-xs font-bold ${
-                                entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
-                            }`}
-                        >
-                            {entry.positionDelta > 0 ? (
-                                <ArrowUpIcon className="w-3 h-3" />
-                            ) : (
-                                <ArrowDownIcon className="w-3 h-3" />
-                            )}
-                            <span>{Math.abs(entry.positionDelta)}</span>
-                        </motion.div>
-                    )}
+                {entry.positionDelta !== 0 && entry.positionDelta !== undefined && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={`flex items-center justify-center gap-0.5 text-xs font-bold ${
+                            entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
+                        }`}
+                    >
+                        {entry.positionDelta > 0 ? (
+                            <ArrowUpIcon className="w-3 h-3" />
+                        ) : (
+                            <ArrowDownIcon className="w-3 h-3" />
+                        )}
+                        <span>{Math.abs(entry.positionDelta)}</span>
+                    </motion.div>
+                )}
             </div>
 
             {/* Driver Photo */}

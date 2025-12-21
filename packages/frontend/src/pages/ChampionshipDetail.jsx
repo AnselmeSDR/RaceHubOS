@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import {
     ArrowLeftIcon,
+    ArrowPathIcon,
+    ArrowUturnLeftIcon,
     TrophyIcon,
     MapPinIcon,
     ChevronDownIcon,
@@ -14,7 +16,10 @@ import {
     XMarkIcon,
     PlayIcon,
     TrashIcon,
-    StopIcon
+    StopIcon,
+    BoltIcon,
+    SignalIcon,
+    SignalSlashIcon
 } from '@heroicons/react/24/outline'
 import Leaderboard from '../components/race/Leaderboard'
 import LapTime from '../components/race/LapTime'
@@ -45,9 +50,21 @@ export default function ChampionshipDetail() {
     const [error, setError] = useState('')
     const [trackRecords, setTrackRecords] = useState({ free: [], qualifying: [], race: [] })
 
-    // Session selection
-    const [selectedSessionId, setSelectedSessionId] = useState(null)
+    // Session selection - restore from localStorage
+    const [selectedSessionId, setSelectedSessionId] = useState(() => {
+        const saved = localStorage.getItem(`championship_${id}_session`)
+        return saved || null
+    })
     const [sessionDropdownOpen, setSessionDropdownOpen] = useState(false)
+
+    // Persist selected session to localStorage
+    useEffect(() => {
+        if (selectedSessionId) {
+            localStorage.setItem(`championship_${id}_session`, selectedSessionId)
+        } else {
+            localStorage.removeItem(`championship_${id}_session`)
+        }
+    }, [id, selectedSessionId])
 
     // Standings tabs and panel
     const [standingsTab, setStandingsTab] = useState('libre')
@@ -66,19 +83,53 @@ export default function ChampionshipDetail() {
 
     // Real-time session data
     const [sessionDriverData, setSessionDriverData] = useState({}) // controller -> { laps, bestLap, lastLap, position }
+    const [elapsedTime, setElapsedTime] = useState(0) // in seconds
     const socketRef = useRef(null)
+    const raceStartTimeRef = useRef(null)
+    const baseElapsedRef = useRef(0)
+
+    // CU status
+    const [cuConnected, setCuConnected] = useState(false)
+    const [cuStatus, setCuStatus] = useState(null)
     const {
         configs,
         loading: configLoading,
         fetchConfigs,
-        updateSlot,
-        isComplete,
-        unconfiguredSlots
+        updateSlot
     } = useControllerConfig()
+
+    const loadData = useCallback(async () => {
+        try {
+            const [champRes, driversRes, carsRes] = await Promise.all([
+                fetch(`${API_URL}/api/championships/${id}`),
+                fetch(`${API_URL}/api/drivers`),
+                fetch(`${API_URL}/api/cars`)
+            ])
+            const [champData, driversData, carsData] = await Promise.all([
+                champRes.json(),
+                driversRes.json(),
+                carsRes.json()
+            ])
+
+            if (!champData.success) {
+                setError('Championnat introuvable')
+                return
+            }
+
+            setChampionship(champData.data)
+            setDrivers(driversData.data || [])
+            setCars(carsData.data || [])
+        } catch (err) {
+            console.error('Failed to load championship:', err)
+            setError('Erreur lors du chargement')
+        } finally {
+            setLoading(false)
+        }
+    }, [id])
 
     useEffect(() => {
         loadData()
-    }, [id])
+    }, [loadData])
 
     // Fetch controller configs and set up race context when championship track is available
     useEffect(() => {
@@ -114,16 +165,24 @@ export default function ChampionshipDetail() {
 
         // Listen for lap completions
         socket.on('lap:completed', (lapData) => {
+            console.log('📍 lap:completed received:', lapData)
             const controller = String(lapData.controller)
+            const lapTime = lapData.lapTime
+            if (!controller || lapTime === undefined) {
+                console.warn('Invalid lap data:', lapData)
+                return
+            }
             setSessionDriverData(prev => {
                 const existing = prev[controller] || { laps: 0, bestLap: null, lastLap: null, position: 99 }
+                const newBestLap = existing.bestLap === null ? lapTime : Math.min(existing.bestLap, lapTime)
+                console.log(`📍 Updating driver ${controller}: laps=${existing.laps + 1}, bestLap=${newBestLap}`)
                 return {
                     ...prev,
                     [controller]: {
                         ...existing,
                         laps: existing.laps + 1,
-                        bestLap: existing.bestLap === null ? lapData.lapTime : Math.min(existing.bestLap, lapData.lapTime),
-                        lastLap: lapData.lapTime,
+                        bestLap: newBestLap,
+                        lastLap: lapTime,
                         lastUpdate: Date.now()
                     }
                 }
@@ -136,10 +195,12 @@ export default function ChampionshipDetail() {
                 const updated = { ...prev }
                 positions.forEach(p => {
                     const controller = String(p.controller)
+                    const existing = updated[controller] || {}
                     updated[controller] = {
-                        ...(updated[controller] || {}),
-                        laps: p.lapCount || updated[controller]?.laps || 0,
-                        lastLap: p.lastLapTime || updated[controller]?.lastLap,
+                        ...existing,
+                        laps: p.lapCount || existing.laps || 0,
+                        lastLap: p.lastLapTime || existing.lastLap,
+                        bestLap: p.bestLapTime || existing.bestLap,
                         position: p.position
                     }
                 })
@@ -147,15 +208,100 @@ export default function ChampionshipDetail() {
             })
         })
 
+        // CU events
+        socket.on('cu:connected', () => setCuConnected(true))
+        socket.on('cu:disconnected', () => {
+            setCuConnected(false)
+            setCuStatus(null)
+        })
+        socket.on('cu:status', (data) => setCuStatus(data))
+
+        // Session lifecycle events
+        socket.on('session:finishing', ({ reason }) => {
+            console.log(`🏁 Session finishing: ${reason}`)
+            // Refresh session data to get new status
+            loadData()
+        })
+
+        socket.on('session:auto-stopped', ({ reason }) => {
+            console.log(`🛑 Session auto-stopped: ${reason}`)
+            // Refresh session data
+            loadData()
+        })
+
+        socket.on('session:restarted', ({ session }) => {
+            console.log(`🔄 Session restarted: ${session.id}`)
+            // Reset timer state
+            raceStartTimeRef.current = null
+            baseElapsedRef.current = 0
+            setElapsedTime(0)
+            setSessionDriverData({})
+            // Refresh data
+            loadData()
+        })
+
         return () => {
             socket.disconnect()
         }
+    }, [loadData])
+
+    // Fetch CU status periodically
+    useEffect(() => {
+        const fetchCuStatus = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/bluetooth/status`)
+                const data = await res.json()
+                setCuConnected(data.connected)
+                if (data.lastStatus) setCuStatus(data.lastStatus)
+            } catch { /* ignore */ }
+        }
+        fetchCuStatus()
+        const interval = setInterval(fetchCuStatus, 2000)
+        return () => clearInterval(interval)
     }, [])
+
+    // CU status helpers
+    const getRaceState = () => {
+        if (!cuStatus) return { text: 'Unknown', color: 'gray' }
+        const start = cuStatus.start
+        if (start === 0) return { text: 'Racing', color: 'green' }
+        if (start >= 1 && start <= 5) return { text: `Lights ${start}/5`, color: 'yellow' }
+        if (start === 6) return { text: 'False Start', color: 'red' }
+        if (start === 7) return { text: 'Go!', color: 'green' }
+        if (start >= 8) return { text: 'Stopped', color: 'red' }
+        return { text: `State ${start}`, color: 'gray' }
+    }
+
+    const cuModes = useMemo(() => {
+        if (!cuStatus) return []
+        const modes = []
+        if (cuStatus.mode & 1) modes.push('Fuel')
+        if (cuStatus.mode & 2) modes.push('Real')
+        if (cuStatus.mode & 4) modes.push('Pit')
+        if (cuStatus.mode & 8) modes.push('Laps')
+        return modes
+    }, [cuStatus])
 
     // Reset session driver data when session changes
     useEffect(() => {
         setSessionDriverData({})
+        setElapsedTime(0)
+        raceStartTimeRef.current = null
+        baseElapsedRef.current = 0
     }, [selectedSessionId])
+
+    // Calculate max laps from session driver data
+    const maxLapsCompleted = useMemo(() => {
+        const laps = Object.values(sessionDriverData).map(d => d.laps || 0)
+        return laps.length > 0 ? Math.max(...laps) : 0
+    }, [sessionDriverData])
+
+    // Format elapsed time as MM:SS
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
 
     async function fetchTrackRecords(trackId) {
         try {
@@ -175,35 +321,6 @@ export default function ChampionshipDetail() {
         }
     }
 
-    async function loadData() {
-        try {
-            const [champRes, driversRes, carsRes] = await Promise.all([
-                fetch(`${API_URL}/api/championships/${id}`),
-                fetch(`${API_URL}/api/drivers`),
-                fetch(`${API_URL}/api/cars`)
-            ])
-            const [champData, driversData, carsData] = await Promise.all([
-                champRes.json(),
-                driversRes.json(),
-                carsRes.json()
-            ])
-
-            if (!champData.success) {
-                setError('Championnat introuvable')
-                return
-            }
-
-            setChampionship(champData.data)
-            setDrivers(driversData.data || [])
-            setCars(carsData.data || [])
-        } catch (err) {
-            console.error('Failed to load championship:', err)
-            setError('Erreur lors du chargement')
-        } finally {
-            setLoading(false)
-        }
-    }
-
     // Compute session label (Q1, Q2, R1, R2, etc.)
     const getSessionLabel = (session, sessions) => {
         const sameType = sessions.filter(s => s.type === session.type)
@@ -219,11 +336,60 @@ export default function ChampionshipDetail() {
         )
     }, [championship?.sessions])
 
+    // Validate saved session still exists
+    useEffect(() => {
+        if (selectedSessionId && sortedSessions.length > 0) {
+            const exists = sortedSessions.some(s => s.id === selectedSessionId)
+            if (!exists) {
+                setSelectedSessionId(null)
+            }
+        }
+    }, [selectedSessionId, sortedSessions])
+
     // Selected session object
     const selectedSession = useMemo(() => {
         if (!selectedSessionId) return null
         return sortedSessions.find(s => s.id === selectedSessionId)
     }, [selectedSessionId, sortedSessions])
+
+    // Timer for active session - only runs when CU is Racing (start === 0)
+    const isRacing = cuStatus?.start === 0
+
+    // Timer update - only when racing
+    useEffect(() => {
+        if (!isRacing) {
+            // Save current elapsed time as base for next start
+            if (raceStartTimeRef.current) {
+                baseElapsedRef.current = elapsedTime
+                raceStartTimeRef.current = null
+            }
+            return
+        }
+
+        // Start racing - set start time if not set
+        if (!raceStartTimeRef.current) {
+            raceStartTimeRef.current = Date.now()
+        }
+
+        const updateTimer = () => {
+            const now = Date.now()
+            const elapsed = Math.floor((now - raceStartTimeRef.current) / 1000) + baseElapsedRef.current
+            setElapsedTime(elapsed)
+        }
+
+        updateTimer() // Initial update
+        const interval = setInterval(updateTimer, 1000)
+
+        return () => clearInterval(interval)
+    }, [isRacing])
+
+    // Calculate remaining time
+    const remainingTime = useMemo(() => {
+        if (!selectedSession?.duration) return null
+        const totalSeconds = selectedSession.duration * 60
+        const remaining = totalSeconds - elapsedTime
+        return remaining > 0 ? remaining : 0
+    }, [selectedSession?.duration, elapsedTime])
 
     // Auto-switch standings tab based on selected session type
     useEffect(() => {
@@ -444,7 +610,6 @@ export default function ChampionshipDetail() {
 
     // Delete session
     async function handleDeleteSession(sessionId) {
-        if (!confirm('Supprimer cette session ?')) return
 
         try {
             const res = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
@@ -459,7 +624,7 @@ export default function ChampionshipDetail() {
         }
     }
 
-    // Start session
+    // Start session (puts CU in Lights 1)
     async function handleStartSession(sessionId) {
         try {
             const res = await fetch(`${API_URL}/api/sessions/${sessionId}/start`, {
@@ -470,6 +635,17 @@ export default function ChampionshipDetail() {
             }
         } catch (err) {
             console.error('Failed to start session:', err)
+        }
+    }
+
+    // Launch race countdown (START button on CU)
+    async function handleLaunchRace() {
+        try {
+            await fetch(`${API_URL}/api/bluetooth/start-race`, {
+                method: 'POST'
+            })
+        } catch (err) {
+            console.error('Failed to launch race:', err)
         }
     }
 
@@ -484,6 +660,25 @@ export default function ChampionshipDetail() {
             }
         } catch (err) {
             console.error('Failed to stop session:', err)
+        }
+    }
+
+    // Restart session (delete results and reset)
+    async function handleRestartSession(sessionId) {
+        try {
+            const res = await fetch(`${API_URL}/api/sessions/${sessionId}/restart`, {
+                method: 'POST'
+            })
+            if (res.ok) {
+                // Reset all local state
+                setSessionDriverData({})
+                setElapsedTime(0)
+                raceStartTimeRef.current = null
+                baseElapsedRef.current = 0
+                loadData()
+            }
+        } catch (err) {
+            console.error('Failed to restart session:', err)
         }
     }
 
@@ -596,6 +791,37 @@ export default function ChampionshipDetail() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* CU Status */}
+                        <div className="flex items-center gap-2">
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                cuConnected ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                <BoltIcon className="w-3.5 h-3.5" />
+                                {cuConnected ? 'CU' : 'CU Off'}
+                            </div>
+                            {cuConnected && cuStatus && (
+                                <>
+                                    <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                        getRaceState().color === 'green' ? 'bg-green-100 text-green-700' :
+                                        getRaceState().color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
+                                        getRaceState().color === 'red' ? 'bg-red-100 text-red-700' :
+                                        'bg-gray-100 text-gray-600'
+                                    }`}>
+                                        {getRaceState().text}
+                                    </div>
+                                    {cuModes.length > 0 && (
+                                        <div className="flex gap-1">
+                                            {cuModes.map(m => (
+                                                <span key={m} className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded">
+                                                    {m}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
                         {/* Session selector */}
                         <div className="relative">
                             <button
@@ -713,36 +939,115 @@ export default function ChampionshipDetail() {
                     <main className="flex-1 overflow-auto p-6 bg-gray-50">
                         <div>
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                    {getSessionLabel(selectedSession, sortedSessions)} - {selectedSession.name || 'Session'}
-                                </h2>
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        {getSessionLabel(selectedSession, sortedSessions)} - {selectedSession.name || 'Session'}
+                                    </h2>
+                                    {/* End conditions - live counters when active, badges otherwise */}
+                                    <div className="flex items-center gap-2">
+                                        {selectedSession.status === 'active' ? (
+                                            <>
+                                                {selectedSession.duration > 0 && (
+                                                    <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                                        remainingTime !== null && remainingTime <= 60
+                                                            ? 'bg-red-500 text-white animate-pulse'
+                                                            : 'bg-blue-500 text-white'
+                                                    }`}>
+                                                        <ClockIcon className="w-4 h-4" />
+                                                        {remainingTime !== null ? formatTime(remainingTime) : formatTime(elapsedTime)}
+                                                    </span>
+                                                )}
+                                                {selectedSession.maxLaps > 0 && (
+                                                    <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${
+                                                        maxLapsCompleted >= selectedSession.maxLaps
+                                                            ? 'bg-red-500 text-white animate-pulse'
+                                                            : 'bg-green-500 text-white'
+                                                    }`}>
+                                                        <ArrowPathIcon className="w-4 h-4" />
+                                                        {maxLapsCompleted} / {selectedSession.maxLaps}
+                                                    </span>
+                                                )}
+                                                {!selectedSession.duration && !selectedSession.maxLaps && (
+                                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-white rounded-lg text-sm font-bold">
+                                                        <ClockIcon className="w-4 h-4" />
+                                                        {formatTime(elapsedTime)}
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {selectedSession.duration > 0 && (
+                                                    <span className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                                        <ClockIcon className="w-3.5 h-3.5" />
+                                                        {selectedSession.duration} min
+                                                    </span>
+                                                )}
+                                                {selectedSession.maxLaps > 0 && (
+                                                    <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                                        <ArrowPathIcon className="w-3.5 h-3.5" />
+                                                        {selectedSession.maxLaps} tours
+                                                    </span>
+                                                )}
+                                                {!selectedSession.duration && !selectedSession.maxLaps && (
+                                                    <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                                        Pas de limite
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                                         selectedSession.status === 'finished' ? 'bg-blue-100 text-blue-700' :
+                                        selectedSession.status === 'finishing' ? 'bg-orange-100 text-orange-700 animate-pulse' :
                                         selectedSession.status === 'active' ? 'bg-green-100 text-green-700' :
                                         'bg-gray-100 text-gray-700'
                                     }`}>
                                         {selectedSession.status === 'finished' ? 'Terminé' :
+                                         selectedSession.status === 'finishing' ? '🏁 Fin de session...' :
                                          selectedSession.status === 'active' ? 'En cours' : selectedSession.status}
                                     </span>
-                                    {selectedSession.status !== 'finished' && (
-                                        selectedSession.status === 'active' ? (
-                                            <button
-                                                onClick={() => handleStopSession(selectedSession.id)}
-                                                className="px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
-                                            >
-                                                Arrêter
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleStartSession(selectedSession.id)}
-                                                className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors flex items-center gap-1"
-                                            >
-                                                <PlayIcon className="w-4 h-4" />
-                                                Démarrer
-                                            </button>
-                                        )
+                                    {selectedSession.status !== 'active' && selectedSession.status !== 'finishing' ? (
+                                        // Session not started - show "Démarrer"
+                                        <button
+                                            onClick={() => handleStartSession(selectedSession.id)}
+                                            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors flex items-center gap-1"
+                                        >
+                                            <PlayIcon className="w-4 h-4" />
+                                            Démarrer
+                                        </button>
+                                    ) : selectedSession.status === 'finishing' ? (
+                                        // Session finishing - show disabled "Fin..."
+                                        <span className="px-3 py-1.5 bg-orange-500 text-white text-sm font-medium rounded-lg flex items-center gap-1">
+                                            <FlagIcon className="w-4 h-4" />
+                                            Attente fin...
+                                        </span>
+                                    ) : cuStatus?.start >= 1 && cuStatus?.start <= 5 ? (
+                                        // Session active, CU in lights - show "START"
+                                        <button
+                                            onClick={handleLaunchRace}
+                                            className="px-3 py-1.5 bg-yellow-500 text-white text-sm font-bold rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-1 animate-pulse"
+                                        >
+                                            <PlayIcon className="w-4 h-4" />
+                                            START
+                                        </button>
+                                    ) : (
+                                        // Session active, CU racing or other - show "Arrêter"
+                                        <button
+                                            onClick={() => handleStopSession(selectedSession.id)}
+                                            className="px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+                                        >
+                                            Arrêter
+                                        </button>
                                     )}
+                                    <button
+                                        onClick={() => handleRestartSession(selectedSession.id)}
+                                        className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
+                                        title="Redémarrer (supprimer les résultats)"
+                                    >
+                                        <ArrowUturnLeftIcon className="w-4 h-4" />
+                                    </button>
                                     <button
                                         onClick={() => handleDeleteSession(selectedSession.id)}
                                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
@@ -766,11 +1071,78 @@ export default function ChampionshipDetail() {
                         </div>
                     </main>
                 ) : (
-                    <FreePracticeLeaderboard
-                        freePracticeBoard={freePracticeBoard}
-                        configs={configs}
-                        onReset={resetFreePracticeBoard}
-                    />
+                    <main className="flex-1 overflow-auto p-6 bg-gray-50">
+                        <div>
+                            {/* Free Practice Header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        Essais Libres
+                                    </h2>
+                                    {/* Live timer when racing */}
+                                    {cuStatus?.start === 0 && (
+                                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-white rounded-lg text-sm font-bold">
+                                            <ClockIcon className="w-4 h-4" />
+                                            {formatTime(elapsedTime)}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {/* CU Control Buttons */}
+                                    {cuStatus?.start >= 1 && cuStatus?.start <= 5 ? (
+                                        <button
+                                            onClick={handleLaunchRace}
+                                            className="px-3 py-1.5 bg-yellow-500 text-white text-sm font-bold rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-1 animate-pulse"
+                                        >
+                                            <PlayIcon className="w-4 h-4" />
+                                            START
+                                        </button>
+                                    ) : cuStatus?.start === 0 ? (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await fetch(`${API_URL}/api/bluetooth/esc`, { method: 'POST' })
+                                                } catch (err) {
+                                                    console.error('Failed to stop:', err)
+                                                }
+                                            }}
+                                            className="px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+                                        >
+                                            Arrêter
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await fetch(`${API_URL}/api/bluetooth/start-race`, { method: 'POST' })
+                                                } catch (err) {
+                                                    console.error('Failed to start:', err)
+                                                }
+                                            }}
+                                            className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors flex items-center gap-1"
+                                        >
+                                            <PlayIcon className="w-4 h-4" />
+                                            Démarrer
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={resetFreePracticeBoard}
+                                        className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
+                                        title="Réinitialiser les temps"
+                                    >
+                                        <ArrowUturnLeftIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Free Practice Leaderboard */}
+                            <FreePracticeLeaderboard
+                                freePracticeBoard={freePracticeBoard}
+                                configs={configs}
+                                onReset={resetFreePracticeBoard}
+                            />
+                        </div>
+                    </main>
                 )}
 
                 {/* Toggle button for standings panel */}

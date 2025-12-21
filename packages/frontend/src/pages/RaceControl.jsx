@@ -26,7 +26,6 @@ export default function RaceControl() {
   const { start, pause, resume, finish, stop, dismiss, cuConnected } = useRace()
   const {
     state,
-    session,
     leaderboard,
     isIdle,
     isPending,

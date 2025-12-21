@@ -202,8 +202,6 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
 
   const handleDelete = async () => {
     if (!session) return
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) return
-
     setSaving(true)
     setError('')
 
@@ -490,21 +488,13 @@ export default function Sessions() {
   const [editingSession, setEditingSession] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
 
-  useEffect(() => {
-    fetchSessions()
-    fetchTracks()
-    fetchChampionships()
-    fetchDrivers()
-    fetchCars()
-  }, [])
-
   const fetchSessions = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/sessions')
       const data = await response.json()
       setSessions(data.data || [])
-    } catch (error) {
-      console.error('Error fetching sessions:', error)
+    } catch (err) {
+      console.error('Error fetching sessions:', err)
     }
   }
 
@@ -513,8 +503,8 @@ export default function Sessions() {
       const response = await fetch('http://localhost:3000/api/tracks')
       const data = await response.json()
       setTracks(data.data || [])
-    } catch (error) {
-      console.error('Error fetching tracks:', error)
+    } catch (err) {
+      console.error('Error fetching tracks:', err)
     }
   }
 
@@ -523,8 +513,8 @@ export default function Sessions() {
       const response = await fetch('http://localhost:3000/api/championships')
       const data = await response.json()
       setChampionships(data.data || [])
-    } catch (error) {
-      console.error('Error fetching championships:', error)
+    } catch (err) {
+      console.error('Error fetching championships:', err)
     }
   }
 
@@ -533,8 +523,8 @@ export default function Sessions() {
       const response = await fetch('http://localhost:3000/api/drivers')
       const data = await response.json()
       setDrivers(data.data || [])
-    } catch (error) {
-      console.error('Error fetching drivers:', error)
+    } catch (err) {
+      console.error('Error fetching drivers:', err)
     }
   }
 
@@ -543,10 +533,18 @@ export default function Sessions() {
       const response = await fetch('http://localhost:3000/api/cars')
       const data = await response.json()
       setCars(data.data || [])
-    } catch (error) {
-      console.error('Error fetching cars:', error)
+    } catch (err) {
+      console.error('Error fetching cars:', err)
     }
   }
+
+  useEffect(() => {
+    fetchSessions()
+    fetchTracks()
+    fetchChampionships()
+    fetchDrivers()
+    fetchCars()
+  }, [])
 
   const handleEdit = (session) => {
     setEditingSession(session)

@@ -241,7 +241,7 @@ model TrackRecord {
   track   Track    @relation(fields: [trackId], references: [id])
   driver  Driver   @relation(fields: [driverId], references: [id])
   car     Car      @relation(fields: [carId], references: [id])
-  session Session? @relation(fields: [sessionId], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@unique([trackId, driverId, carId])
 }
