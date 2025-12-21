@@ -20,7 +20,8 @@ import {
     BoltIcon,
     SignalIcon,
     SignalSlashIcon,
-    PencilIcon
+    PencilIcon,
+    BeakerIcon
 } from '@heroicons/react/24/outline'
 import Leaderboard from '../components/race/Leaderboard'
 import LapTime from '../components/race/LapTime'
@@ -328,6 +329,7 @@ export default function ChampionshipDetail() {
 
     // Compute session label (Q1, Q2, R1, R2, etc.)
     const getSessionLabel = (session, sessions) => {
+        if (session.type === 'practice') return 'EL'
         const sameType = sessions.filter(s => s.type === session.type)
         const index = sameType.findIndex(s => s.id === session.id) + 1
         const prefix = session.type === 'qualifying' ? 'Q' : 'R'
@@ -341,15 +343,25 @@ export default function ChampionshipDetail() {
         )
     }, [championship?.sessions])
 
-    // Validate saved session still exists
+    // Find practice session
+    const practiceSession = useMemo(() => {
+        return sortedSessions.find(s => s.type === 'practice')
+    }, [sortedSessions])
+
+    // Validate saved session still exists, or auto-select practice session
     useEffect(() => {
-        if (selectedSessionId && sortedSessions.length > 0) {
+        if (sortedSessions.length === 0) return
+
+        if (selectedSessionId) {
             const exists = sortedSessions.some(s => s.id === selectedSessionId)
             if (!exists) {
-                setSelectedSessionId(null)
+                setSelectedSessionId(practiceSession?.id || null)
             }
+        } else if (practiceSession) {
+            // Auto-select practice session if none selected
+            setSelectedSessionId(practiceSession.id)
         }
-    }, [selectedSessionId, sortedSessions])
+    }, [selectedSessionId, sortedSessions, practiceSession])
 
     // Selected session object
     const selectedSession = useMemo(() => {
@@ -398,7 +410,7 @@ export default function ChampionshipDetail() {
 
     // Auto-switch standings tab based on selected session type
     useEffect(() => {
-        if (!selectedSession) {
+        if (!selectedSession || selectedSession.type === 'practice') {
             setStandingsTab('libre')
         } else if (selectedSession.type === 'qualifying') {
             setStandingsTab('qualif')
@@ -952,39 +964,28 @@ export default function ChampionshipDetail() {
                                         onClick={() => setSessionDropdownOpen(false)}
                                     />
                                     <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-20 min-w-[180px]">
-                                        <button
-                                            onClick={() => {
-                                                setSelectedSessionId(null)
-                                                setSessionDropdownOpen(false)
-                                            }}
-                                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${!selectedSessionId ? 'bg-yellow-50 text-yellow-700' : ''}`}
-                                        >
-                                            Free Practice
-                                        </button>
-                                        {sortedSessions.length > 0 && (
-                                            <div className="border-t">
-                                                {sortedSessions.map(session => (
-                                                    <button
-                                                        key={session.id}
-                                                        onClick={() => {
-                                                            setSelectedSessionId(session.id)
-                                                            setSessionDropdownOpen(false)
-                                                        }}
-                                                        className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 ${selectedSessionId === session.id ? 'bg-yellow-50 text-yellow-700' : ''}`}
-                                                    >
-                                                        {session.type === 'qualifying' ? (
-                                                            <ClockIcon className="w-4 h-4 text-blue-500" />
-                                                        ) : (
-                                                            <FlagIcon className="w-4 h-4 text-green-500" />
-                                                        )}
-                                                        <span>{getSessionLabel(session, sortedSessions)}</span>
-                                                        <span className="text-xs text-gray-400 ml-auto">
-                                                            {session.status === 'finished' ? 'Termine' : session.status}
-                                                        </span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {sortedSessions.map(session => (
+                                            <button
+                                                key={session.id}
+                                                onClick={() => {
+                                                    setSelectedSessionId(session.id)
+                                                    setSessionDropdownOpen(false)
+                                                }}
+                                                className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 ${selectedSessionId === session.id ? 'bg-yellow-50 text-yellow-700' : ''}`}
+                                            >
+                                                {session.type === 'practice' ? (
+                                                    <BeakerIcon className="w-4 h-4 text-purple-500" />
+                                                ) : session.type === 'qualifying' ? (
+                                                    <ClockIcon className="w-4 h-4 text-blue-500" />
+                                                ) : (
+                                                    <FlagIcon className="w-4 h-4 text-green-500" />
+                                                )}
+                                                <span>{getSessionLabel(session, sortedSessions)}</span>
+                                                <span className="text-xs text-gray-400 ml-auto">
+                                                    {session.status === 'finished' ? 'Terminé' : session.status}
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </>
                             )}
@@ -1154,13 +1155,15 @@ export default function ChampionshipDetail() {
                                             Arrêter
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => handleEditSession(selectedSession)}
-                                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                                        title="Modifier la session"
-                                    >
-                                        <PencilIcon className="w-4 h-4" />
-                                    </button>
+                                    {selectedSession.type !== 'practice' && (
+                                        <button
+                                            onClick={() => handleEditSession(selectedSession)}
+                                            className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                            title="Modifier la session"
+                                        >
+                                            <PencilIcon className="w-4 h-4" />
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => handleRestartSession(selectedSession.id)}
                                         className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
@@ -1168,13 +1171,15 @@ export default function ChampionshipDetail() {
                                     >
                                         <ArrowUturnLeftIcon className="w-4 h-4" />
                                     </button>
-                                    <button
-                                        onClick={() => handleDeleteSession(selectedSession.id)}
-                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                        title="Supprimer la session"
-                                    >
-                                        <TrashIcon className="w-4 h-4" />
-                                    </button>
+                                    {selectedSession.type !== 'practice' && (
+                                        <button
+                                            onClick={() => handleDeleteSession(selectedSession.id)}
+                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                            title="Supprimer la session"
+                                        >
+                                            <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             {sessionLeaderboard.length > 0 ? (
