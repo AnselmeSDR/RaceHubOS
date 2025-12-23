@@ -173,11 +173,10 @@ export class ChampionshipSessionManager extends EventEmitter {
    * Check if session should end based on duration or laps
    */
   async checkSessionEndCondition(session) {
-    // Check duration limit
+    // Check duration limit (duration is in ms)
     if (session.duration && session.startedAt) {
       const elapsed = Date.now() - new Date(session.startedAt).getTime();
-      const durationMs = session.duration * 60 * 1000;
-      if (elapsed >= durationMs) {
+      if (elapsed >= session.duration) {
         return { reason: 'time_elapsed' };
       }
     }
@@ -687,7 +686,7 @@ export class ChampionshipSessionManager extends EventEmitter {
 
       let remainingTime = null;
       if (currentSession.duration) {
-        remainingTime = Math.max(0, currentSession.duration * 60 * 1000 - elapsedTime);
+        remainingTime = Math.max(0, currentSession.duration - elapsedTime);
       }
 
       let remainingLaps = null;

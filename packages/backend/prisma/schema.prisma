@@ -115,7 +115,7 @@ model Session {
   championshipId String?
   fuelMode       String          @default("OFF")
   status         String          @default("draft") // draft, ready, active, finishing, finished
-  duration       Int?            // Session duration in minutes
+  duration       Int?            // Session duration in ms
   maxLaps        Int?
   gracePeriod    Int?            // Grace period after leader finishes (ms), default 30000
   startedAt      DateTime?
