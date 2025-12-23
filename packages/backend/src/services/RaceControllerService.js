@@ -657,8 +657,7 @@ export class RaceControllerService extends EventEmitter {
 
   getRemainingTime() {
     if (!this.currentSession?.duration) return null;
-    const totalMs = this.currentSession.duration * 60 * 1000;
-    const remaining = totalMs - this.getElapsedTime();
+    const remaining = this.currentSession.duration - this.getElapsedTime();
     return Math.max(0, remaining);
   }
 

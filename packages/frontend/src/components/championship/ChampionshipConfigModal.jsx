@@ -116,7 +116,7 @@ export default function ChampionshipConfigModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newSessionForm.name || undefined,
-          duration: newSessionForm.useTime ? newSessionForm.duration : null,
+          duration: newSessionForm.useTime ? newSessionForm.duration * 60 * 1000 : null, // minutes → ms
           maxLaps: newSessionForm.useLaps ? newSessionForm.maxLaps : null,
           championshipId: championship.id,
           order: qrSessions.length
@@ -165,7 +165,7 @@ export default function ChampionshipConfigModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: sessionForm.name || null,
-          duration: sessionForm.useTime ? sessionForm.duration : null,
+          duration: sessionForm.useTime ? sessionForm.duration * 60 * 1000 : null, // minutes → ms
           maxLaps: sessionForm.useLaps ? sessionForm.maxLaps : null
         })
       })
@@ -221,7 +221,7 @@ export default function ChampionshipConfigModal({
     setEditingSession(session.id)
     setSessionForm({
       name: session.name || '',
-      duration: session.duration || 5,
+      duration: session.duration ? Math.round(session.duration / 60000) : 5, // ms → minutes
       maxLaps: session.maxLaps || 10,
       useTime: !!session.duration,
       useLaps: !!session.maxLaps
@@ -414,7 +414,7 @@ export default function ChampionshipConfigModal({
                             {session.name || config.label}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {session.duration ? `${session.duration} min` : ''}
+                            {session.duration ? `${Math.round(session.duration / 60000)} min` : ''}
                             {session.duration && session.maxLaps ? ' / ' : ''}
                             {session.maxLaps ? `${session.maxLaps} tours` : ''}
                           </span>

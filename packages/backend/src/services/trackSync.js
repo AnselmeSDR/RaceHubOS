@@ -545,14 +545,13 @@ export class TrackSyncService extends EventEmitter {
 
       const lapCountMap = new Map(lapCounts.map(l => [l.controller, l._count.id]));
 
-      // Vérifier le temps écoulé
+      // Vérifier le temps écoulé (duration is in ms)
       if (session.duration && session.startedAt) {
         const elapsed = Date.now() - new Date(session.startedAt).getTime();
-        const durationMs = session.duration * 60 * 1000;
 
-        if (elapsed >= durationMs) {
+        if (elapsed >= session.duration) {
           shouldStop = true;
-          reason = `Temps écoulé (${session.duration}min)`;
+          reason = `Temps écoulé (${Math.round(session.duration / 60000)}min)`;
         }
       }
 

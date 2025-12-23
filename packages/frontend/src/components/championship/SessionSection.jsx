@@ -53,10 +53,10 @@ export default function SessionSection({
     return `${prefix}${index}`
   }, [session, sessions])
 
-  // Calculate progress for time
+  // Calculate progress for time (duration is in ms, elapsedTime is in seconds)
   const timeProgress = useMemo(() => {
     if (!session || !session.duration || session.duration <= 0) return null
-    const totalSeconds = session.duration * 60
+    const totalSeconds = session.duration / 1000
     const percentage = Math.min((elapsedTime / totalSeconds) * 100, 100)
     const remaining = Math.max(totalSeconds - elapsedTime, 0)
     return {
@@ -173,7 +173,7 @@ export default function SessionSection({
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-gray-600">
                   <ClockIcon className="w-4 h-4" />
-                  {isActive ? formatTime(timeProgress.remaining) : `${session.duration} min`}
+                  {isActive ? formatTime(timeProgress.remaining) : `${Math.round(session.duration / 60000)} min`}
                 </span>
                 {isActive && (
                   <span className={`font-bold ${timeProgress.isComplete ? 'text-red-600' : 'text-gray-900'}`}>
