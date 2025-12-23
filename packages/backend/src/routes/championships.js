@@ -10,11 +10,6 @@ router.get('/', async (req, res) => {
     const championships = await prisma.championship.findMany({
       include: {
         track: true,
-        standings: {
-          orderBy: {
-            position: 'asc',
-          },
-        },
         sessions: {
           select: {
             id: true,
@@ -70,11 +65,6 @@ router.get('/:id', async (req, res) => {
             createdAt: 'asc',
           },
         },
-        standings: {
-          orderBy: {
-            position: 'asc',
-          },
-        },
       },
     });
 
@@ -122,34 +112,15 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Valider le système de points (doit être un objet JSON valide)
-    let validatedPointsSystem = pointsSystem;
-    if (pointsSystem) {
-      try {
-        if (typeof pointsSystem === 'string') {
-          JSON.parse(pointsSystem); // Vérifie que c'est du JSON valide
-        } else {
-          validatedPointsSystem = JSON.stringify(pointsSystem);
-        }
-      } catch (e) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid points system format',
-        });
-      }
-    }
-
     const championship = await prisma.championship.create({
       data: {
         name: name.trim(),
         season: season.trim(),
-        pointsSystem: validatedPointsSystem || JSON.stringify({ 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 }),
         status: status || 'planned',
         trackId: trackId || null,
       },
       include: {
         track: true,
-        standings: true,
         sessions: true,
       },
     });
@@ -170,7 +141,6 @@ router.post('/', async (req, res) => {
       where: { id: championship.id },
       include: {
         track: true,
-        standings: true,
         sessions: true,
       },
     });
@@ -230,11 +200,6 @@ router.put('/:id', async (req, res) => {
       where: { id },
       data: updateData,
       include: {
-        standings: {
-          orderBy: {
-            position: 'asc',
-          },
-        },
         sessions: true,
       },
     });
@@ -294,12 +259,7 @@ router.delete('/:id', async (req, res) => {
       where: { championshipId: id },
     });
 
-    // 6. Delete standings
-    await prisma.championshipStanding.deleteMany({
-      where: { championshipId: id },
-    });
-
-    // 7. Delete championship
+    // 6. Delete championship
     await prisma.championship.delete({
       where: { id },
     });
@@ -318,25 +278,16 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/championships/:id/standings - Récupère le classement d'un championnat
-// Query param: ?type=qualif|race|practice (runtime calculation)
+// Query param: ?type=qualif|race|practice (required)
 router.get('/:id/standings', async (req, res) => {
   try {
     const { id } = req.params;
     const { type } = req.query;
 
-    // If no type specified, return stored standings (legacy behavior)
     if (!type) {
-      const standings = await prisma.championshipStanding.findMany({
-        where: { championshipId: id },
-        orderBy: {
-          position: 'asc',
-        },
-      });
-
-      return res.json({
-        success: true,
-        data: standings,
-        count: standings.length,
+      return res.status(400).json({
+        success: false,
+        error: 'Type parameter is required. Must be one of: qualif, race, practice',
       });
     }
 
@@ -502,151 +453,6 @@ router.get('/:id/standings', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch standings',
-    });
-  }
-});
-
-// POST /api/championships/:id/recalculate - Recalcule le classement
-router.post('/:id/recalculate', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const championship = await prisma.championship.findUnique({
-      where: { id },
-      include: {
-        sessions: {
-          where: {
-            status: 'finished',
-          },
-          include: {
-            drivers: {
-              include: {
-                driver: true,
-              },
-            },
-            laps: true,
-            phases: true,
-          },
-        },
-      },
-    });
-
-    if (!championship) {
-      return res.status(404).json({
-        success: false,
-        error: 'Championship not found',
-      });
-    }
-
-    // Parse points system
-    const pointsSystem = JSON.parse(championship.pointsSystem);
-
-    // Calculer les stats par pilote
-    const driverStats = {};
-
-    const initDriver = (driverId) => {
-      if (!driverStats[driverId]) {
-        driverStats[driverId] = {
-          points: 0,
-          wins: 0,
-          podiums: 0,
-          qualifBestTime: null,
-          raceTotalLaps: 0,
-          raceTotalTime: 0,
-        };
-      }
-    };
-
-    championship.sessions.forEach(session => {
-      // Points-based stats from session drivers
-      session.drivers.forEach(sd => {
-        if (sd.finalPos !== null) {
-          const driverId = sd.driverId;
-          initDriver(driverId);
-          const points = pointsSystem[sd.finalPos] || 0;
-
-          driverStats[driverId].points += points;
-          if (sd.finalPos === 1) driverStats[driverId].wins++;
-          if (sd.finalPos <= 3) driverStats[driverId].podiums++;
-        }
-      });
-
-      // Time-based stats from laps
-      session.laps.forEach(lap => {
-        const driverId = lap.driverId;
-        initDriver(driverId);
-
-        const lapTimeMs = Math.round(lap.lapTime);
-
-        // Qualifying: track best lap time
-        if (lap.phase === 'qualif') {
-          if (driverStats[driverId].qualifBestTime === null || lapTimeMs < driverStats[driverId].qualifBestTime) {
-            driverStats[driverId].qualifBestTime = lapTimeMs;
-          }
-        }
-
-        // Race: accumulate laps and time
-        if (lap.phase === 'race') {
-          driverStats[driverId].raceTotalLaps++;
-          driverStats[driverId].raceTotalTime += lapTimeMs;
-        }
-      });
-    });
-
-    // Trier par points (puis victoires en cas d'égalité)
-    const sortedDrivers = Object.entries(driverStats)
-      .sort((a, b) => {
-        if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-        return b[1].wins - a[1].wins;
-      })
-      .map(([driverId, stats], index) => ({
-        driverId,
-        position: index + 1,
-        points: stats.points,
-        wins: stats.wins,
-        podiums: stats.podiums,
-        qualifBestTime: stats.qualifBestTime,
-        raceTotalLaps: stats.raceTotalLaps,
-        raceTotalTime: stats.raceTotalTime,
-      }));
-
-    // Supprimer les anciens standings
-    await prisma.championshipStanding.deleteMany({
-      where: { championshipId: id },
-    });
-
-    // Créer les nouveaux standings
-    await prisma.championshipStanding.createMany({
-      data: sortedDrivers.map(s => ({
-        championshipId: id,
-        driverId: s.driverId,
-        position: s.position,
-        points: s.points,
-        wins: s.wins,
-        podiums: s.podiums,
-        qualifBestTime: s.qualifBestTime,
-        raceTotalLaps: s.raceTotalLaps,
-        raceTotalTime: s.raceTotalTime,
-      })),
-    });
-
-    // Retourner les nouveaux standings
-    const newStandings = await prisma.championshipStanding.findMany({
-      where: { championshipId: id },
-      orderBy: {
-        position: 'asc',
-      },
-    });
-
-    res.json({
-      success: true,
-      data: newStandings,
-    });
-  } catch (error) {
-    console.error('Error recalculating standings:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to recalculate standings',
     });
   }
 });

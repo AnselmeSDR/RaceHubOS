@@ -78,33 +78,15 @@ model Team {
 }
 
 model Championship {
-  id           String                 @id @default(cuid())
-  name         String
-  season       String
-  pointsSystem String
-  status       String                 @default("planned")
-  trackId      String?
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  standings    ChampionshipStanding[]
-  sessions     Session[]
-  track        Track?                 @relation(fields: [trackId], references: [id])
-}
-
-model ChampionshipStanding {
-  id             String       @id @default(cuid())
-  championshipId String
-  driverId       String
-  position       Int
-  points         Int          @default(0)
-  wins           Int          @default(0)
-  podiums        Int          @default(0)
-  qualifBestTime Int?
-  raceTotalLaps  Int          @default(0)
-  raceTotalTime  Int          @default(0)
-  championship   Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
-
-  @@unique([championshipId, driverId])
+  id        String    @id @default(cuid())
+  name      String
+  season    String
+  status    String    @default("planned")
+  trackId   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+  track     Track?    @relation(fields: [trackId], references: [id])
 }
 
 model Session {

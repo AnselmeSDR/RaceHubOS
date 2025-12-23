@@ -326,28 +326,9 @@ router.get('/leaderboard/drivers', async (req, res) => {
           .map((entry, index) => ({ ...entry, position: index + 1 }));
       }
     } else if (championshipId) {
-      // Get championship standings
-      const standings = await prisma.championshipStanding.findMany({
-        where: { championshipId },
-        include: {
-          driver: true,
-        },
-        orderBy: [
-          { points: 'desc' },
-          { wins: 'desc' },
-          { podiums: 'desc' },
-        ],
-        take: parseInt(limit),
-      });
-
-      leaderboard = standings.map((standing, index) => ({
-        position: index + 1,
-        driver: standing.driver,
-        points: standing.points,
-        wins: standing.wins,
-        podiums: standing.podiums,
-        gap: index > 0 ? standings[0].points - standing.points : null,
-      }));
+      // Championship standings are now calculated on-demand via GET /championships/:id/standings?type=
+      // This endpoint returns empty for backwards compatibility
+      leaderboard = [];
     } else {
       // Get overall leaderboard based on all-time stats
       const drivers = await prisma.driver.findMany({
