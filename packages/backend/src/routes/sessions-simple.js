@@ -288,6 +288,127 @@ router.post('/:id/start', async (req, res) => {
 });
 
 /**
+ * POST /api/sessions/:id/pause
+ * Met en pause une session active
+ */
+router.post('/:id/pause', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: { championship: true }
+    });
+
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    if (session.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        error: `Session must be 'active' to pause, current: ${session.status}`
+      });
+    }
+
+    // Update session status
+    const updatedSession = await sessionManager.prisma.session.update({
+      where: { id },
+      data: { status: 'paused' },
+      include: {
+        track: true,
+        championship: true,
+        drivers: { include: { driver: true, car: true } }
+      }
+    });
+
+    // Stop CU/Simulator (but keep state)
+    sessionManager.stopRace();
+
+    sessionManager.io?.emit('session:paused', { session: updatedSession });
+    sessionManager.io?.emit('session_status_changed', {
+      sessionId: id,
+      status: 'paused',
+      previousStatus: 'active'
+    });
+
+    res.json({
+      success: true,
+      data: updatedSession,
+      message: 'Session mise en pause'
+    });
+  } catch (error) {
+    console.error('Error pausing session:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/sessions/:id/resume
+ * Reprend une session en pause
+ */
+router.post('/:id/resume', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: {
+        championship: true,
+        drivers: { include: { driver: true, car: true } }
+      }
+    });
+
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    if (session.status !== 'paused') {
+      return res.status(400).json({
+        success: false,
+        error: `Session must be 'paused' to resume, current: ${session.status}`
+      });
+    }
+
+    // Update session status
+    const updatedSession = await sessionManager.prisma.session.update({
+      where: { id },
+      data: { status: 'active' },
+      include: {
+        track: true,
+        championship: true,
+        drivers: { include: { driver: true, car: true } }
+      }
+    });
+
+    // Resume CU/Simulator
+    sessionManager.startRace();
+
+    sessionManager.io?.emit('session:resumed', { session: updatedSession });
+    sessionManager.io?.emit('session_status_changed', {
+      sessionId: id,
+      status: 'active',
+      previousStatus: 'paused'
+    });
+
+    res.json({
+      success: true,
+      data: updatedSession,
+      message: 'Session reprise'
+    });
+  } catch (error) {
+    console.error('Error resuming session:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * POST /api/sessions/:id/stop
  * Arrête une session (passe en status 'finished')
  * Gère automatiquement le CU/Simulateur et le ChampionshipSessionManager
@@ -603,7 +724,7 @@ router.patch('/:id/status', async (req, res) => {
       });
     }
 
-    const validStatuses = ['draft', 'ready', 'active', 'finishing', 'finished'];
+    const validStatuses = ['draft', 'ready', 'active', 'paused', 'finishing', 'finished'];
     if (!validStatuses.includes(newStatus)) {
       return res.status(400).json({
         success: false,
@@ -636,7 +757,8 @@ router.patch('/:id/status', async (req, res) => {
     const allowedTransitions = {
       'draft': ['ready'],
       'ready': ['draft', 'active'],
-      'active': ['finishing', 'finished'],
+      'active': ['paused', 'finishing', 'finished'],
+      'paused': ['active', 'finished'],
       'finishing': ['finished'],
       'finished': ['draft']
     };

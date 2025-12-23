@@ -447,6 +447,89 @@ export function RaceProvider({ children }) {
     setFinishingSession(null)
   }, [])
 
+  // ==================== Session API Methods ====================
+  // These methods use /api/sessions/:id endpoints (aligned with SyncService)
+
+  // Start a session by ID
+  const startSessionById = useCallback(async (sessionId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/start`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        setSession(data.data)
+        setState(RACE_STATES.RUNNING)
+      }
+      return data
+    } catch (error) {
+      console.error('[RaceContext] Error starting session:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
+  // Pause active session
+  const pauseSessionById = useCallback(async (sessionId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/pause`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        setSession(data.data)
+        setState(RACE_STATES.PAUSED)
+      }
+      return data
+    } catch (error) {
+      console.error('[RaceContext] Error pausing session:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
+  // Resume paused session
+  const resumeSessionById = useCallback(async (sessionId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/resume`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        setSession(data.data)
+        setState(RACE_STATES.RUNNING)
+      }
+      return data
+    } catch (error) {
+      console.error('[RaceContext] Error resuming session:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
+  // Stop session (finish)
+  const stopSessionById = useCallback(async (sessionId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/stop`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        setSession(data.data)
+        setState(RACE_STATES.RESULTS)
+      }
+      return data
+    } catch (error) {
+      console.error('[RaceContext] Error stopping session:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
+  // Restart session (reset data, back to ready)
+  const restartSessionById = useCallback(async (sessionId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/restart`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        setSession(data.data)
+        setState(RACE_STATES.PENDING)
+      }
+      return data
+    } catch (error) {
+      console.error('[RaceContext] Error restarting session:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
+
   const value = {
     // State
     state,
@@ -476,7 +559,7 @@ export function RaceProvider({ children }) {
     clearSessionResults,
     clearFinishingSession,
 
-    // Actions
+    // Actions (legacy /api/race endpoints)
     startQualifying,
     startRace,
     start,
@@ -488,6 +571,13 @@ export function RaceProvider({ children }) {
     dismiss,
     refreshState,
     updateConfig,
+
+    // Session actions (/api/sessions/:id endpoints)
+    startSessionById,
+    pauseSessionById,
+    resumeSessionById,
+    stopSessionById,
+    restartSessionById,
 
     // Constants
     RACE_STATES
