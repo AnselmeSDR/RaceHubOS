@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
+// Default grace period after leader finishes (ms)
+const DEFAULT_GRACE_PERIOD_MS = 30000;
+
 /**
  * SyncService - Service unifie de synchronisation CU/Simulateur
  *
@@ -425,10 +428,11 @@ export class SyncService {
             reason = `Tous les pilotes ont termine ${session.maxLaps} tours`;
           }
         } else {
-          // Race: 30s grace period
-          if (this.raceFinishTime && Date.now() - this.raceFinishTime >= 30000) {
+          // Race: grace period (configurable, default 30s)
+          const gracePeriod = session.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
+          if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
             shouldStop = true;
-            reason = 'Delai de grace ecoule (30s)';
+            reason = `Delai de grace ecoule (${gracePeriod / 1000}s)`;
           }
         }
       }
