@@ -47,7 +47,7 @@ export default function ChampionshipDetail() {
         race: []
     })
 
-    // Get WebSocket state from RaceContext
+    // Get WebSocket state and session actions from RaceContext
     const {
         freePracticeBoard,
         lastServerTime,
@@ -57,7 +57,12 @@ export default function ChampionshipDetail() {
         setCurrentTrackId,
         setControllerConfigs,
         sessionLeaderboard,
-        socketConnected
+        socketConnected,
+        // Session actions
+        startSessionById,
+        pauseSessionById,
+        resumeSessionById,
+        stopSessionById
     } = useRace()
 
     // Local timer - only counts when CU is racing (cuStatus.start === 0)
@@ -360,24 +365,39 @@ export default function ChampionshipDetail() {
         setChampionship(updatedChampionship)
     }, [])
 
-    // Handle status change (start/stop)
-    const handleStatusChange = useCallback(async (action) => {
+    // Session control handlers using RaceContext
+    const handleStartSession = useCallback(async () => {
         if (!selectedSession) return
-
-        try {
-            const endpoint = action === 'start'
-                ? `${API_URL}/api/sessions/${selectedSession.id}/start`
-                : `${API_URL}/api/sessions/${selectedSession.id}/stop`
-
-            const res = await fetch(endpoint, { method: 'POST' })
-
-            if (res.ok) {
-                fetchSessions()
-            }
-        } catch (err) {
-            console.error('Error changing status:', err)
+        const result = await startSessionById(selectedSession.id)
+        if (result.success) {
+            fetchSessions()
         }
-    }, [selectedSession, fetchSessions])
+    }, [selectedSession, startSessionById, fetchSessions])
+
+    const handlePauseSession = useCallback(async () => {
+        if (!selectedSession) return
+        const result = await pauseSessionById(selectedSession.id)
+        if (result.success) {
+            fetchSessions()
+        }
+    }, [selectedSession, pauseSessionById, fetchSessions])
+
+    const handleResumeSession = useCallback(async () => {
+        if (!selectedSession) return
+        const result = await resumeSessionById(selectedSession.id)
+        if (result.success) {
+            fetchSessions()
+        }
+    }, [selectedSession, resumeSessionById, fetchSessions])
+
+    const handleStopSession = useCallback(async () => {
+        if (!selectedSession) return
+        const result = await stopSessionById(selectedSession.id)
+        if (result.success) {
+            fetchSessions()
+            fetchStandings()
+        }
+    }, [selectedSession, stopSessionById, fetchSessions, fetchStandings])
 
     // Handle save session config
     const handleSaveSessionConfig = useCallback(async (data) => {
@@ -517,7 +537,10 @@ export default function ChampionshipDetail() {
                             maxLapsCompleted={maxLapsCompleted}
                             cuStatus={cuStatus}
                             socketConnected={socketConnected}
-                            onStatusChange={handleStatusChange}
+                            onStart={handleStartSession}
+                            onPause={handlePauseSession}
+                            onResume={handleResumeSession}
+                            onStop={handleStopSession}
                             onTriggerCuStart={triggerCuStart}
                             onConfig={handleSessionConfig}
                         />

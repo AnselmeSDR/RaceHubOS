@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import {
   Cog6ToothIcon,
   PlayIcon,
+  PauseIcon,
   StopIcon,
   ClockIcon,
   ArrowPathIcon,
@@ -27,7 +28,7 @@ const SESSION_TYPE_ICONS = {
  * Shows: Title (Q1 - Qualifications) | Config button
  * Condition: Progress bar with time/laps (animated if active)
  * Config Controllers table (if draft/ready)
- * Status buttons: [Start] if ready, [Stop] if active, etc.
+ * Status buttons: [Start] if ready, [Pause/Resume] if active, [Stop] to finish
  */
 export default function SessionSection({
   session,
@@ -38,7 +39,10 @@ export default function SessionSection({
   maxLapsCompleted = 0,
   cuStatus = { start: 8 },
   socketConnected = true,
-  onStatusChange,
+  onStart,
+  onPause,
+  onResume,
+  onStop,
   onTriggerCuStart,
   onConfig
 }) {
@@ -107,6 +111,8 @@ export default function SessionSection({
     switch (status) {
       case 'active':
         return { label: 'En cours', color: 'bg-green-100 text-green-700', pulse: true }
+      case 'paused':
+        return { label: 'En pause', color: 'bg-yellow-100 text-yellow-700', pulse: false }
       case 'finishing':
         return { label: 'Fin de session...', color: 'bg-orange-100 text-orange-700', pulse: true }
       case 'finished':
@@ -131,14 +137,17 @@ export default function SessionSection({
   const TypeIcon = SESSION_TYPE_ICONS[session.type] || FlagIcon
   const statusConfig = getStatusConfig(session.status)
   const isActive = session.status === 'active'
+  const isPaused = session.status === 'paused'
   const isFinishing = session.status === 'finishing'
   const isFinished = session.status === 'finished'
   const canStart = session.status === 'ready' // Session ready, can click "Démarrer"
   const isLights = isActive && cuStatus?.start >= 1 && cuStatus?.start <= 5 // CU in lights mode
   const isRacing = isActive && cuStatus?.start === 0 // CU racing
-  const isStopped = isActive && cuStatus?.start >= 8 // CU stopped but session still active
-  const canStop = isRacing // Can only stop when racing
-  const canResume = isStopped && socketConnected // Can resume if stopped and connected
+  const isCuStopped = isActive && cuStatus?.start >= 8 // CU stopped but session still active
+  const canPause = isRacing && socketConnected // Can pause when racing
+  const canResumeFromPause = isPaused && socketConnected // Can resume from paused state
+  const canResumeCu = isCuStopped && socketConnected // Can resume CU if stopped
+  const canStop = (isRacing || isPaused) && socketConnected // Can stop (finish) when racing or paused
   const showControllers = session.status === 'draft' || session.status === 'ready'
 
   return (
@@ -299,10 +308,15 @@ export default function SessionSection({
               En course
             </span>
           )}
-          {isStopped && (
+          {isCuStopped && (
             <span className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
               <ExclamationTriangleIcon className="w-4 h-4" />
-              Arrete
+              CU arrete
+            </span>
+          )}
+          {isPaused && (
+            <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium">
+              Session en pause
             </span>
           )}
         </div>
@@ -311,7 +325,7 @@ export default function SessionSection({
           {/* Démarrer - session ready */}
           {canStart && (
             <button
-              onClick={() => onStatusChange('start')}
+              onClick={onStart}
               className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
             >
               <PlayIcon className="w-4 h-4" />
@@ -330,25 +344,47 @@ export default function SessionSection({
             </button>
           )}
 
-          {/* Reprendre - CU stopped but session active */}
-          {canResume && (
+          {/* Reprendre CU - CU stopped but session still active */}
+          {canResumeCu && (
             <button
               onClick={onTriggerCuStart}
               className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-lg hover:bg-orange-600 transition-colors"
             >
               <ArrowPathIcon className="w-4 h-4" />
+              Reprendre CU
+            </button>
+          )}
+
+          {/* Pause - while racing */}
+          {canPause && (
+            <button
+              onClick={onPause}
+              className="flex items-center gap-1.5 px-4 py-2 bg-yellow-500 text-yellow-900 text-sm font-medium rounded-lg hover:bg-yellow-400 transition-colors"
+            >
+              <PauseIcon className="w-4 h-4" />
+              Pause
+            </button>
+          )}
+
+          {/* Reprendre - session paused */}
+          {canResumeFromPause && (
+            <button
+              onClick={onResume}
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-lg hover:bg-green-600 transition-colors"
+            >
+              <PlayIcon className="w-4 h-4" />
               Reprendre
             </button>
           )}
 
-          {/* Arrêter - CU racing */}
+          {/* Arrêter (finish) - while racing or paused */}
           {canStop && (
             <button
-              onClick={() => onStatusChange('stop')}
+              onClick={onStop}
               className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
             >
-              <StopIcon className="w-4 h-4" />
-              Arreter
+              <FlagIcon className="w-4 h-4" />
+              Terminer
             </button>
           )}
 
