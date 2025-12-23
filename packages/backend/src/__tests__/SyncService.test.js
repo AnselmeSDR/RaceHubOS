@@ -409,6 +409,96 @@ describe('SyncService.handleTimerEvent', () => {
     });
   });
 
+  describe('practice mode positioning', () => {
+    beforeEach(async () => {
+      // Change session type to practice
+      await prisma.session.update({
+        where: { id: testSession.id },
+        data: { type: 'practice' },
+      });
+      // Reload session to update currentPhase
+      await syncService.loadSession(testSession.id);
+    });
+
+    it('should sort by best lap time in practice mode', async () => {
+      // Driver 0: best lap 30s
+      mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 0, timestamp: 40000, sector: 1 }); // 30s lap
+      await new Promise(r => setTimeout(r, 100));
+
+      // Driver 1: best lap 25s (faster)
+      mockSource.emit('timer', { controller: 1, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 1, timestamp: 35000, sector: 1 }); // 25s lap
+      await new Promise(r => setTimeout(r, 100));
+
+      const leaderboard = syncService.getLeaderboard();
+
+      // Driver 1 should be P1 (faster best lap)
+      expect(leaderboard[0].controller).toBe(1);
+      expect(leaderboard[0].position).toBe(1);
+      expect(leaderboard[0].bestLapTime).toBe(25000);
+
+      // Driver 0 should be P2
+      expect(leaderboard[1].controller).toBe(0);
+      expect(leaderboard[1].position).toBe(2);
+      expect(leaderboard[1].bestLapTime).toBe(30000);
+    });
+
+    it('should calculate gap as time difference in practice mode', async () => {
+      // Driver 0: best lap 30s
+      mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 0, timestamp: 40000, sector: 1 });
+      await new Promise(r => setTimeout(r, 100));
+
+      // Driver 1: best lap 25s
+      mockSource.emit('timer', { controller: 1, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 1, timestamp: 35000, sector: 1 });
+      await new Promise(r => setTimeout(r, 100));
+
+      const leaderboard = syncService.getLeaderboard();
+
+      // Leader has no gap
+      expect(leaderboard[0].gap).toBeNull();
+
+      // Driver 0 is 5s behind (30s - 25s)
+      expect(leaderboard[1].gap).toBe(5000);
+    });
+
+    it('should ignore lap count in practice mode', async () => {
+      // Driver 0: 3 laps, best 30s
+      mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 0, timestamp: 40000, sector: 1 }); // 30s
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 0, timestamp: 72000, sector: 1 }); // 32s
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 0, timestamp: 103000, sector: 1 }); // 31s
+      await new Promise(r => setTimeout(r, 100));
+
+      // Driver 1: 1 lap, best 25s
+      mockSource.emit('timer', { controller: 1, timestamp: 10000, sector: 1 });
+      await new Promise(r => setTimeout(r, 50));
+      mockSource.emit('timer', { controller: 1, timestamp: 35000, sector: 1 }); // 25s
+      await new Promise(r => setTimeout(r, 100));
+
+      const leaderboard = syncService.getLeaderboard();
+
+      // Driver 1 should be P1 despite fewer laps (faster best lap)
+      expect(leaderboard[0].controller).toBe(1);
+      expect(leaderboard[0].totalLaps).toBe(1);
+      expect(leaderboard[0].bestLapTime).toBe(25000);
+
+      // Driver 0 should be P2 despite more laps
+      expect(leaderboard[1].controller).toBe(0);
+      expect(leaderboard[1].totalLaps).toBe(3);
+      expect(leaderboard[1].bestLapTime).toBe(30000);
+    });
+  });
+
   describe('adaptive polling', () => {
     it('should start with default 500ms poll interval', () => {
       expect(syncService.pollInterval).toBe(500);
