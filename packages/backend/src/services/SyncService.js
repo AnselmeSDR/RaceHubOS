@@ -30,6 +30,11 @@ export class SyncService extends EventEmitter {
     // Grace period tracking
     this.raceFinishTime = null;
 
+    // CU status & polling
+    this.cuStatus = null;
+    this.pollInterval = 500; // Default 500ms
+    this.pollTimer = null;
+
     // Setup listeners
     this.setupListeners();
   }
@@ -206,9 +211,109 @@ export class SyncService extends EventEmitter {
 
   /**
    * Handle status event from CU
+   * Adapts polling speed during lights sequence
    */
   handleStatus(status) {
+    const wasInLights = this.isInLightsSequence(this.cuStatus);
+    const isInLights = this.isInLightsSequence(status);
+
+    this.cuStatus = status;
     this.io?.emit('cu:status', status);
+
+    // Adaptive polling: faster during lights sequence
+    if (isInLights && !wasInLights) {
+      this.setPollInterval(100); // 100ms during lights
+    } else if (!isInLights && wasInLights) {
+      this.setPollInterval(500); // Back to 500ms
+    }
+  }
+
+  /**
+   * Check if CU is in lights sequence (LIGHTS_1 to GO, including FALSE_START)
+   * CU states: STOPPED(9), LIGHTS_1-5(1-5), FALSE_START(6), GO(7), RACING(0)
+   */
+  isInLightsSequence(status) {
+    if (!status) return false;
+    return status.start >= 1 && status.start <= 7;
+  }
+
+  /**
+   * Set polling interval and restart polling
+   */
+  setPollInterval(ms) {
+    if (this.pollInterval === ms) return;
+    this.pollInterval = ms;
+
+    // Restart polling if active
+    if (this.pollTimer) {
+      this.stopPolling();
+      this.startPolling();
+    }
+  }
+
+  /**
+   * Start polling CU status
+   */
+  startPolling() {
+    if (this.pollTimer) return;
+
+    const poll = async () => {
+      if (this.source.poll) {
+        await this.source.poll();
+      }
+      this.pollTimer = setTimeout(poll, this.pollInterval);
+    };
+
+    poll();
+  }
+
+  /**
+   * Stop polling
+   */
+  stopPolling() {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  // ==================== CU Control Methods ====================
+
+  /**
+   * Start race (press START button on CU)
+   */
+  async startRace() {
+    if (this.source.start) {
+      await this.source.start();
+    }
+  }
+
+  /**
+   * Stop/pause race (press ESC button on CU)
+   */
+  async stopRace() {
+    if (this.source.pressEsc) {
+      await this.source.pressEsc();
+    } else if (this.source.stop) {
+      await this.source.stop();
+    }
+  }
+
+  /**
+   * Press a button on CU
+   * @param {number} button - Button code (1=ESC, 2=START, 5=SPEED, 6=BRAKE, 7=FUEL, 8=CODE)
+   */
+  async pressButton(button) {
+    if (this.source.pressButton) {
+      await this.source.pressButton(button);
+    }
+  }
+
+  /**
+   * Get current CU status
+   */
+  getCuStatus() {
+    return this.cuStatus;
   }
 
   /**
@@ -499,6 +604,8 @@ export class SyncService extends EventEmitter {
       currentPhase: this.currentPhase,
       sessionDrivers: this.sessionDrivers,
       connected: this.source.isConnected?.() || false,
+      cuStatus: this.cuStatus,
+      pollInterval: this.pollInterval,
     };
   }
 
@@ -513,6 +620,7 @@ export class SyncService extends EventEmitter {
    * Close connections
    */
   async close() {
+    this.stopPolling();
     await this.prisma.$disconnect();
   }
 }
