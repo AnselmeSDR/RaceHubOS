@@ -19,7 +19,7 @@ export class SyncService extends EventEmitter {
     // Session state
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.currentPhase = 'free'; // 'free' | 'qualif' | 'race'
+    this.currentPhase = 'practice'; // 'practice' | 'qualif' | 'race'
 
     // Driver states - format unifie (RAM === DB === Emit)
     this.sessionDrivers = [];
@@ -338,7 +338,7 @@ export class SyncService extends EventEmitter {
     this.activeSessionId = session.id;
     this.activeTrackId = session.trackId;
     this.currentPhase = session.type === 'qualifying' ? 'qualif' :
-                        session.type === 'practice' ? 'free' : 'race';
+                        session.type === 'practice' ? 'practice' : 'race';
 
     // Initialize driver states from DB (unified format)
     this.sessionDrivers = session.drivers.map(sd => ({
@@ -376,7 +376,7 @@ export class SyncService extends EventEmitter {
     this.raceFinishTime = null;
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.currentPhase = 'free';
+    this.currentPhase = 'practice';
 
     // Reset source if it has reset method
     if (this.source.reset) {
