@@ -1,0 +1,230 @@
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
+import LapTime from './LapTime'
+import GapDisplay from './GapDisplay'
+
+/**
+ * SessionLeaderboard - Unified leaderboard for all session types
+ *
+ * @param {Array} entries - Unified format entries
+ * @param {string} sortBy - 'laps' | 'bestLap' | 'race'
+ * @param {Function} onSortChange - Callback for sort toggle (practice only)
+ * @param {string} sessionType - 'practice' | 'qualif' | 'race'
+ */
+export default function SessionLeaderboard({
+  entries = [],
+  sortBy = 'laps',
+  onSortChange,
+  sessionType = 'race'
+}) {
+  // Sort entries based on sortBy prop
+  const sortedEntries = [...entries].sort((a, b) => {
+    const statsA = a.stats || {}
+    const statsB = b.stats || {}
+
+    switch (sortBy) {
+      case 'bestLap':
+        // Best lap ascending (fastest first), null/0 last
+        const bestA = statsA.bestLap || Infinity
+        const bestB = statsB.bestLap || Infinity
+        return bestA - bestB
+
+      case 'race':
+        // Laps descending, then total time ascending
+        if ((statsB.laps || 0) !== (statsA.laps || 0)) {
+          return (statsB.laps || 0) - (statsA.laps || 0)
+        }
+        return (statsA.totalTime || Infinity) - (statsB.totalTime || Infinity)
+
+      case 'laps':
+      default:
+        // Laps descending, then best lap ascending
+        if ((statsB.laps || 0) !== (statsA.laps || 0)) {
+          return (statsB.laps || 0) - (statsA.laps || 0)
+        }
+        return (statsA.bestLap || Infinity) - (statsB.bestLap || Infinity)
+    }
+  })
+
+  // Assign positions after sorting
+  const entriesWithPositions = sortedEntries.map((entry, index) => ({
+    ...entry,
+    position: index + 1
+  }))
+
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">
+        No entries in the leaderboard
+      </div>
+    )
+  }
+
+  const fixColor = (c) => {
+    if (!c) return '#3B82F6'
+    const lower = c?.toLowerCase?.() || ''
+    if (['#fff', '#ffffff', 'white'].includes(lower)) return '#3B82F6'
+    if (['#3b82f6', 'blue', '#0000ff'].includes(lower)) return '#ffffff'
+    return c
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Sort Toggle - Only for practice sessions */}
+      {sessionType === 'practice' && onSortChange && (
+        <div className="flex justify-end mb-4">
+          <div className="inline-flex rounded-lg bg-gray-200 p-1">
+            <button
+              onClick={() => onSortChange('laps')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                sortBy === 'laps'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Tours
+            </button>
+            <button
+              onClick={() => onSortChange('bestLap')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                sortBy === 'bestLap'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Temps
+            </button>
+          </div>
+        </div>
+      )}
+
+      <AnimatePresence mode="popLayout">
+        {entriesWithPositions.map((entry) => {
+          const position = entry.position
+          const driver = entry.driver || {}
+          const car = entry.car || {}
+          const stats = entry.stats || {}
+          const driverColor = fixColor(driver.color) || fixColor(car.color) || '#3B82F6'
+          const key = entry.id || driver.id || `ctrl-${entry.controller}`
+
+          return (
+            <motion.div
+              key={key}
+              layout
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 200, damping: 30, mass: 1 },
+                opacity: { duration: 0.3 }
+              }}
+              className="flex items-center gap-3 p-3 rounded-lg shadow-md"
+              style={{
+                background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, white)`,
+                borderLeft: `5px solid ${driverColor}`,
+                boxShadow: `0 2px 12px ${driverColor}40`,
+              }}
+            >
+              {/* Position */}
+              <div className="w-14 flex-shrink-0 text-center">
+                <span className={`text-2xl font-black ${
+                  position === 1 ? 'text-yellow-500' :
+                  position === 2 ? 'text-gray-400' :
+                  position === 3 ? 'text-orange-500' :
+                  'text-gray-600'
+                }`}>
+                  {position}
+                </span>
+                {/* Position delta arrow */}
+                {entry.positionDelta !== 0 && entry.positionDelta !== undefined && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className={`flex items-center justify-center gap-0.5 text-xs font-bold ${
+                      entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
+                    }`}
+                  >
+                    {entry.positionDelta > 0 ? (
+                      <ArrowUpIcon className="w-3 h-3" />
+                    ) : (
+                      <ArrowDownIcon className="w-3 h-3" />
+                    )}
+                    <span>{Math.abs(entry.positionDelta)}</span>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Driver Photo */}
+              <div
+                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: driverColor }}
+              >
+                {driver.photo ? (
+                  <img
+                    src={driver.photo}
+                    alt={driver.name || 'Driver'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{(driver.name || 'D').charAt(0)}</span>
+                )}
+              </div>
+
+              {/* Number - Large NASCAR style */}
+              {driver.number && (
+                <div className="flex-shrink-0 w-16">
+                  <span
+                    className="text-5xl font-black italic opacity-20"
+                    style={{ color: driverColor }}
+                  >
+                    {driver.number}
+                  </span>
+                </div>
+              )}
+
+              {/* Name & Car */}
+              <div className="flex-1 min-w-0">
+                <div className="font-black text-xl text-gray-900 uppercase italic truncate">
+                  {(driver.name || 'Unknown').split(' ').pop()}
+                </div>
+                <div className="text-sm text-gray-500 truncate">
+                  {car.brand} {car.model || car.name || ''}
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-6 flex-shrink-0">
+                {/* Laps */}
+                <div className="text-center">
+                  <div className="text-xs text-gray-400 uppercase">Tours</div>
+                  <div className="font-mono font-bold text-lg text-gray-900">
+                    {stats.laps ?? 0}
+                  </div>
+                </div>
+
+                {/* Best Lap */}
+                <div className="text-center">
+                  <div className="text-xs text-gray-400 uppercase">Meilleur</div>
+                  <LapTime time={stats.bestLap} size="md" highlight={entry.hasFastestLap} />
+                </div>
+
+                {/* Last Lap */}
+                <div className="text-center">
+                  <div className="text-xs text-gray-400 uppercase">Dernier</div>
+                  <LapTime time={stats.lastLap} size="md" />
+                </div>
+
+                {/* Gap */}
+                <div className="text-center min-w-[80px]">
+                  <div className="text-xs text-gray-400 uppercase">Écart</div>
+                  <GapDisplay gap={stats.gap} position={position} />
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
+    </div>
+  )
+}

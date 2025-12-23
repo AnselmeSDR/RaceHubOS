@@ -3,6 +3,7 @@ import { SessionManager } from '../services/SessionManager.js';
 
 const router = express.Router();
 let sessionManager;
+let championshipSessionManager;
 
 /**
  * Recalculate championship standings after a session finishes
@@ -94,6 +95,10 @@ async function recalculateChampionshipStandings(prisma, championshipId) {
 
 export function setSessionManager(manager) {
   sessionManager = manager;
+}
+
+export function setChampionshipSessionManager(manager) {
+  championshipSessionManager = manager;
 }
 
 /**
@@ -247,7 +252,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type, trackId, championshipId, fuelMode, duration, maxLaps } = req.body;
+    const { name, type, trackId, championshipId, fuelMode, duration, maxLaps, order } = req.body;
 
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -262,6 +267,7 @@ router.put('/:id', async (req, res) => {
     if (fuelMode !== undefined) updateData.fuelMode = fuelMode;
     if (duration !== undefined) updateData.duration = duration || null;
     if (maxLaps !== undefined) updateData.maxLaps = maxLaps || null;
+    if (order !== undefined) updateData.order = order;
 
     const session = await sessionManager.prisma.session.update({
       where: { id },
@@ -303,104 +309,61 @@ router.put('/:id', async (req, res) => {
 /**
  * POST /api/sessions/:id/start
  * Démarre une session (passe en status 'active')
+ * Gère automatiquement le CU/Simulateur et le ChampionshipSessionManager
  */
 router.post('/:id/start', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check existing laps before starting
-    const existingLaps = await sessionManager.prisma.lap.count({
-      where: { sessionId: id }
-    });
-
-    // Always clear existing laps when starting a session (fresh start)
-    if (existingLaps > 0) {
-      await sessionManager.prisma.lap.deleteMany({
-        where: { sessionId: id }
-      });
-      // Also clear events
-      await sessionManager.prisma.raceEvent.deleteMany({
-        where: { sessionId: id }
-      });
-    }
-
-    const session = await sessionManager.prisma.session.update({
+    // Get session with drivers
+    const session = await sessionManager.prisma.session.findUnique({
       where: { id },
-      data: {
-        status: 'active',
-        startedAt: new Date()
-      },
       include: {
         track: true,
         championship: true,
-        drivers: {
-          include: {
-            driver: true,
-            car: true
-          }
-        }
+        drivers: { include: { driver: true, car: true } }
       }
     });
 
-    // Reset CU/Simulator before starting new session
-    if (sessionManager.trackSync?.resetForNewSession) {
-      await sessionManager.trackSync.resetForNewSession();
-    }
-    if (sessionManager.simulatorSync?.resetForNewSession) {
-      await sessionManager.simulatorSync.resetForNewSession();
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    // Configure TrackSync with active session (for real CU)
-    if (sessionManager.trackSync) {
-      sessionManager.trackSync.activeSessionId = id;
-      sessionManager.trackSync.sessionDrivers.clear();
-      for (const sd of session.drivers) {
-        sessionManager.trackSync.sessionDrivers.set(sd.controller, {
-          sessionDriverId: sd.id,
-          driverId: sd.driverId,
-          carId: sd.carId,
-          driver: sd.driver,
-          car: sd.car,
-          lapCount: 0,
-          lastLapTime: null,
-          position: sd.position || 0,
-        });
-      }
-      // Set phase based on session type
-      sessionManager.trackSync.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
+    if (session.status !== 'ready') {
+      return res.status(400).json({
+        success: false,
+        error: `Session must be in 'ready' status to start, current: ${session.status}`
+      });
     }
 
-    // Configure SimulatorSync with active session (for simulator)
-    if (sessionManager.simulatorSync) {
-      sessionManager.simulatorSync.activeSessionId = id;
-      sessionManager.simulatorSync.activeTrackId = session.trackId;
-      sessionManager.simulatorSync.sessionDrivers.clear();
-      sessionManager.simulatorSync.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
-      for (const sd of session.drivers) {
-        // Simulator uses carId (integer) as key
-        const carId = parseInt(sd.controller);
-        sessionManager.simulatorSync.sessionDrivers.set(carId, {
-          sessionDriverId: sd.id,
-          driverId: sd.driverId,
-          carId: sd.carId,
-          controller: sd.controller,
-          driver: sd.driver,
-          car: sd.car,
-        });
-      }
+    let updatedSession;
 
-      // Start the simulator
-      if (sessionManager.simulator) {
-        console.log('🏎️ Starting simulator for session');
-        sessionManager.simulator.start();
-      }
+    // Use ChampionshipSessionManager for championship sessions
+    if (championshipSessionManager && session.championshipId) {
+      updatedSession = await championshipSessionManager.startSession(id);
+    } else {
+      // Direct update for non-championship sessions
+      updatedSession = await sessionManager.prisma.session.update({
+        where: { id },
+        data: { status: 'active', startedAt: new Date() },
+        include: {
+          track: true,
+          championship: true,
+          drivers: { include: { driver: true, car: true } }
+        }
+      });
     }
 
-    sessionManager.io?.emit('session:started', { session });
+    // Reset, configure and start CU/Simulator via wrapper
+    await sessionManager.resetForNewSession();
+    sessionManager.configureActiveSession(updatedSession);
+    sessionManager.startRace();
+
+    sessionManager.io?.emit('session:started', { session: updatedSession });
 
     res.json({
       success: true,
-      data: session,
+      data: updatedSession,
       message: 'Session démarrée'
     });
   } catch (error) {
@@ -415,65 +378,73 @@ router.post('/:id/start', async (req, res) => {
 /**
  * POST /api/sessions/:id/stop
  * Arrête une session (passe en status 'finished')
+ * Gère automatiquement le CU/Simulateur et le ChampionshipSessionManager
  */
 router.post('/:id/stop', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await sessionManager.prisma.session.update({
+    // Get session
+    const session = await sessionManager.prisma.session.findUnique({
       where: { id },
-      data: {
-        status: 'finished',
-        finishedAt: new Date()
-      },
-      include: {
-        track: true,
-        championship: true,
-        drivers: {
-          include: {
-            driver: true,
-            car: true
-          }
-        }
-      }
+      include: { championship: true }
     });
 
-    // Clear TrackSync
-    if (sessionManager.trackSync) {
-      sessionManager.trackSync.activeSessionId = null;
-      sessionManager.trackSync.sessionDrivers.clear();
-      sessionManager.trackSync.currentPhase = 'free';
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    // Clear SimulatorSync and stop simulator
-    if (sessionManager.simulatorSync) {
-      sessionManager.simulatorSync.activeSessionId = null;
-      sessionManager.simulatorSync.activeTrackId = null;
-      sessionManager.simulatorSync.sessionDrivers.clear();
-      sessionManager.simulatorSync.currentPhase = 'free';
+    if (session.status !== 'active' && session.status !== 'finishing') {
+      return res.status(400).json({
+        success: false,
+        error: `Session must be 'active' or 'finishing' to stop, current: ${session.status}`
+      });
+    }
 
-      // Stop the simulator
-      if (sessionManager.simulator) {
-        console.log('🛑 Stopping simulator');
-        sessionManager.simulator.stop();
+    let updatedSession;
+
+    // Use ChampionshipSessionManager for championship sessions
+    if (championshipSessionManager && session.championshipId) {
+      await championshipSessionManager.forceFinish(id);
+      updatedSession = await sessionManager.prisma.session.findUnique({
+        where: { id },
+        include: {
+          track: true,
+          championship: true,
+          drivers: { include: { driver: true, car: true } }
+        }
+      });
+    } else {
+      // Direct update for non-championship sessions
+      updatedSession = await sessionManager.prisma.session.update({
+        where: { id },
+        data: { status: 'finished', finishedAt: new Date() },
+        include: {
+          track: true,
+          championship: true,
+          drivers: { include: { driver: true, car: true } }
+        }
+      });
+
+      // Recalculate standings for non-championship sessions
+      if (session.championshipId) {
+        try {
+          await recalculateChampionshipStandings(sessionManager.prisma, session.championshipId);
+        } catch (err) {
+          console.error('Error recalculating standings:', err);
+        }
       }
     }
 
-    sessionManager.io?.emit('session:stopped', { session });
+    // Stop and clear CU/Simulator via wrapper
+    sessionManager.stopRace();
+    sessionManager.clearActiveSession();
 
-    // Recalculate championship standings if session belongs to a championship
-    if (session.championshipId) {
-      try {
-        await recalculateChampionshipStandings(sessionManager.prisma, session.championshipId);
-        console.log(`📊 Championship standings recalculated for ${session.championshipId}`);
-      } catch (err) {
-        console.error('Error recalculating standings:', err);
-      }
-    }
+    sessionManager.io?.emit('session:stopped', { session: updatedSession });
 
     res.json({
       success: true,
-      data: session,
+      data: updatedSession,
       message: 'Session terminée'
     });
   } catch (error) {
@@ -515,18 +486,28 @@ router.post('/:id/restart', async (req, res) => {
       where: { sessionId: id }
     });
 
-    // Reset session driver positions
+    // Reset session driver stats
     await sessionManager.prisma.sessionDriver.updateMany({
       where: { sessionId: id },
-      data: { position: null, finalPos: null }
+      data: {
+        position: null,
+        finalPos: null,
+        totalLaps: 0,
+        totalTime: 0,
+        bestLapTime: null,
+        lastLapTime: null,
+        isDNF: false,
+        lapsAtFinishing: null
+      }
     });
 
-    // Reset session status to 'draft' (ready to configure and start again)
+    // Reset session status to 'ready' (ready to start again)
     const updatedSession = await sessionManager.prisma.session.update({
       where: { id },
       data: {
-        status: 'draft',
+        status: 'ready',
         startedAt: null,
+        finishingAt: null,
         finishedAt: null
       },
       include: {
@@ -553,9 +534,9 @@ router.post('/:id/restart', async (req, res) => {
     if (sessionManager.trackSync) {
       sessionManager.trackSync.activeSessionId = id;
       sessionManager.trackSync.activeTrackId = updatedSession.trackId;
-      sessionManager.trackSync.currentPhase = updatedSession.type === 'qualifying' ? 'qualif' : 'race';
+      sessionManager.trackSync.currentPhase = updatedSession.type === 'qualif' ? 'qualif' : 'race';
       for (const sd of updatedSession.drivers) {
-        sessionManager.trackSync.sessionDrivers.set(sd.controller, {
+        sessionManager.trackSync.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -572,10 +553,10 @@ router.post('/:id/restart', async (req, res) => {
     if (sessionManager.simulatorSync) {
       sessionManager.simulatorSync.activeSessionId = id;
       sessionManager.simulatorSync.activeTrackId = updatedSession.trackId;
-      sessionManager.simulatorSync.currentPhase = updatedSession.type === 'qualifying' ? 'qualif' : 'race';
+      sessionManager.simulatorSync.currentPhase = updatedSession.type === 'qualif' ? 'qualif' : 'race';
       for (const sd of updatedSession.drivers) {
-        const carId = parseInt(sd.controller);
-        sessionManager.simulatorSync.sessionDrivers.set(carId, {
+        // controller is now 0-indexed int, use directly as map key
+        sessionManager.simulatorSync.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -648,7 +629,7 @@ router.put('/:id/drivers', async (req, res) => {
           sessionId: id,
           driverId: d.driverId,
           carId: d.carId,
-          controller: String(d.controller),
+          controller: Number(d.controller), // 0-indexed int
           gridPos: idx + 1
         }))
       });
@@ -686,6 +667,510 @@ router.put('/:id/drivers', async (req, res) => {
 });
 
 /**
+ * PATCH /api/sessions/:id/status
+ * Change session status with validation
+ * Body: { status: "draft" | "ready" | "active" | "finishing" | "finished" }
+ * Transitions:
+ *   - draft <-> ready (bidirectional)
+ *   - ready -> active
+ *   - active -> finishing -> finished
+ *   - active -> finished (force stop)
+ *   - finished -> draft (reset for re-run)
+ */
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status: newStatus } = req.body;
+
+    if (!newStatus) {
+      return res.status(400).json({
+        success: false,
+        error: 'status is required'
+      });
+    }
+
+    const validStatuses = ['draft', 'ready', 'active', 'finishing', 'finished'];
+    if (!validStatuses.includes(newStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+      });
+    }
+
+    // Get current session
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: {
+        drivers: {
+          include: { driver: true, car: true }
+        },
+        championship: true,
+        track: true
+      }
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    const currentStatus = session.status;
+
+    // Validate transition
+    const allowedTransitions = {
+      'draft': ['ready'],
+      'ready': ['draft', 'active'],
+      'active': ['finishing', 'finished'],
+      'finishing': ['finished'],
+      'finished': ['draft']
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid transition from '${currentStatus}' to '${newStatus}'. Allowed: ${allowedTransitions[currentStatus]?.join(', ') || 'none'}`
+      });
+    }
+
+    // Use ChampionshipSessionManager for championship sessions if available
+    if (championshipSessionManager && session.championshipId) {
+      try {
+        let updatedSession;
+
+        if (newStatus === 'active' && currentStatus === 'ready') {
+          // Start session via ChampionshipSessionManager (handles heartbeat, etc.)
+          updatedSession = await championshipSessionManager.startSession(id);
+
+          // Configure and start CU/Simulator via SessionManager wrapper
+          sessionManager.configureActiveSession(updatedSession);
+          sessionManager.startRace();
+        } else if (newStatus === 'finished' && (currentStatus === 'active' || currentStatus === 'finishing')) {
+          // Force finish session
+          await championshipSessionManager.forceFinish(id);
+          updatedSession = await sessionManager.prisma.session.findUnique({
+            where: { id },
+            include: {
+              track: true,
+              championship: true,
+              drivers: { include: { driver: true, car: true } }
+            }
+          });
+
+          // Stop and clear CU/Simulator
+          sessionManager.stopRace();
+          sessionManager.clearActiveSession();
+        } else if (newStatus === 'draft' || newStatus === 'ready') {
+          // Status change via ChampionshipSessionManager
+          updatedSession = await championshipSessionManager.changeSessionStatus(id, newStatus);
+        } else {
+          // Fallback to direct update
+          updatedSession = await sessionManager.prisma.session.update({
+            where: { id },
+            data: { status: newStatus },
+            include: {
+              track: true,
+              championship: true,
+              drivers: { include: { driver: true, car: true } }
+            }
+          });
+        }
+
+        return res.json({
+          success: true,
+          data: updatedSession,
+          message: `Session status changed from '${currentStatus}' to '${newStatus}'`
+        });
+      } catch (err) {
+        console.error('Error via ChampionshipSessionManager:', err);
+        return res.status(500).json({
+          success: false,
+          error: err.message
+        });
+      }
+    }
+
+    // Fallback: direct update for non-championship sessions
+    const updateData = { status: newStatus };
+
+    if (newStatus === 'active') {
+      updateData.startedAt = new Date();
+    } else if (newStatus === 'finishing') {
+      updateData.finishingAt = new Date();
+    } else if (newStatus === 'finished') {
+      updateData.finishedAt = new Date();
+    } else if (newStatus === 'draft' && currentStatus === 'finished') {
+      // Reset for re-run
+      updateData.startedAt = null;
+      updateData.finishingAt = null;
+      updateData.finishedAt = null;
+    }
+
+    // Update session
+    const updatedSession = await sessionManager.prisma.session.update({
+      where: { id },
+      data: updateData,
+      include: {
+        track: true,
+        championship: true,
+        drivers: {
+          include: { driver: true, car: true },
+          orderBy: { controller: 'asc' }
+        }
+      }
+    });
+
+    // Handle side effects for status changes
+    if (newStatus === 'active') {
+      // Configure TrackSync with active session
+      if (sessionManager.trackSync) {
+        sessionManager.trackSync.activeSessionId = id;
+        sessionManager.trackSync.mapDriverByController.clear();
+        for (const sd of updatedSession.drivers) {
+          sessionManager.trackSync.mapDriverByController.set(sd.controller, {
+            sessionDriverId: sd.id,
+            driverId: sd.driverId,
+            carId: sd.carId,
+            driver: sd.driver,
+            car: sd.car,
+            lapCount: 0,
+            lastLapTime: null,
+            position: sd.position || 0,
+          });
+        }
+        sessionManager.trackSync.currentPhase = updatedSession.type === 'qualif' ? 'qualif' :
+                                                  updatedSession.type === 'practice' ? 'free' : 'race';
+      }
+
+      // Configure SimulatorSync
+      if (sessionManager.simulatorSync) {
+        sessionManager.simulatorSync.activeSessionId = id;
+        sessionManager.simulatorSync.activeTrackId = updatedSession.trackId;
+        sessionManager.simulatorSync.mapDriverByController.clear();
+        sessionManager.simulatorSync.currentPhase = updatedSession.type === 'qualif' ? 'qualif' :
+                                                     updatedSession.type === 'practice' ? 'free' : 'race';
+        for (const sd of updatedSession.drivers) {
+          // controller is now 0-indexed int, use directly as map key
+          sessionManager.simulatorSync.mapDriverByController.set(sd.controller, {
+            sessionDriverId: sd.id,
+            driverId: sd.driverId,
+            carId: sd.carId,
+            controller: sd.controller,
+            driver: sd.driver,
+            car: sd.car,
+          });
+        }
+
+        if (sessionManager.simulator) {
+          sessionManager.simulator.start();
+        }
+      }
+
+      sessionManager.io?.emit('session:started', { session: updatedSession });
+      sessionManager.io?.emit('session_status_changed', {
+        event: 'session_status_changed',
+        data: {
+          sessionId: id,
+          championshipId: updatedSession.championshipId,
+          previousStatus: currentStatus,
+          status: newStatus,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } else if (newStatus === 'finished') {
+      // Clear TrackSync
+      if (sessionManager.trackSync) {
+        sessionManager.trackSync.activeSessionId = null;
+        sessionManager.trackSync.mapDriverByController.clear();
+        sessionManager.trackSync.currentPhase = 'free';
+      }
+
+      // Clear SimulatorSync
+      if (sessionManager.simulatorSync) {
+        sessionManager.simulatorSync.activeSessionId = null;
+        sessionManager.simulatorSync.activeTrackId = null;
+        sessionManager.simulatorSync.mapDriverByController.clear();
+        sessionManager.simulatorSync.currentPhase = 'free';
+        sessionManager.simulator?.stop();
+      }
+
+      sessionManager.io?.emit('session:stopped', { session: updatedSession });
+      sessionManager.io?.emit('session_status_changed', {
+        event: 'session_status_changed',
+        data: {
+          sessionId: id,
+          championshipId: updatedSession.championshipId,
+          previousStatus: currentStatus,
+          status: newStatus,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      // Recalculate championship standings
+      if (updatedSession.championshipId) {
+        try {
+          await recalculateChampionshipStandings(sessionManager.prisma, updatedSession.championshipId);
+          sessionManager.io?.emit('standings_changed', {
+            event: 'standings_changed',
+            data: {
+              championshipId: updatedSession.championshipId,
+              types: [updatedSession.type === 'qualif' ? 'qualif' : updatedSession.type]
+            }
+          });
+        } catch (err) {
+          console.error('Error recalculating standings:', err);
+        }
+      }
+    } else {
+      // draft <-> ready transitions
+      sessionManager.io?.emit('session_status_changed', {
+        event: 'session_status_changed',
+        data: {
+          sessionId: id,
+          championshipId: updatedSession.championshipId,
+          previousStatus: currentStatus,
+          status: newStatus,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: updatedSession,
+      message: `Session status changed from '${currentStatus}' to '${newStatus}'`
+    });
+  } catch (error) {
+    console.error('Error changing session status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/sessions/:id/leaderboard
+ * Get live leaderboard for a session
+ */
+router.get('/:id/leaderboard', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (championshipSessionManager) {
+      const leaderboard = await championshipSessionManager.getSessionLeaderboard(id);
+      return res.json({
+        success: true,
+        data: leaderboard
+      });
+    }
+
+    // Fallback: basic leaderboard calculation
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: {
+        drivers: { include: { driver: true, car: true } }
+      }
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    const entries = [];
+    for (const sd of session.drivers) {
+      const laps = await sessionManager.prisma.lap.findMany({
+        where: {
+          sessionId: id,
+          controller: sd.controller,
+          softDeletedAt: null
+        },
+        orderBy: { timestamp: 'desc' }
+      });
+
+      const totalLaps = laps.length;
+      const totalTime = laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0);
+      const bestLap = laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null;
+      const lastLap = laps.length > 0 ? laps[0].lapTime : null;
+
+      entries.push({
+        controller: sd.controller,
+        driverId: sd.driverId,
+        driver: sd.driver,
+        car: sd.car,
+        totalLaps,
+        totalTime,
+        bestLap,
+        lastLap,
+        position: 0,
+        gap: null
+      });
+    }
+
+    // Sort entries
+    if (session.type === 'qualif') {
+      entries.sort((a, b) => {
+        if (a.bestLap === null && b.bestLap === null) return 0;
+        if (a.bestLap === null) return 1;
+        if (b.bestLap === null) return -1;
+        return a.bestLap - b.bestLap;
+      });
+    } else {
+      entries.sort((a, b) => {
+        if (a.totalLaps !== b.totalLaps) return b.totalLaps - a.totalLaps;
+        return a.totalTime - b.totalTime;
+      });
+    }
+
+    // Calculate positions
+    for (let i = 0; i < entries.length; i++) {
+      entries[i].position = i + 1;
+    }
+
+    res.json({
+      success: true,
+      data: entries
+    });
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/sessions/:id/reset
+ * Reset a session - behavior depends on session type:
+ * - practice: soft delete laps (keeps history)
+ * - qualifying/race: hard delete laps + reset stats + status to 'ready'
+ */
+router.post('/:id/reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: { championship: true }
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    if (session.type === 'practice') {
+      // Practice: soft delete laps
+      if (championshipSessionManager) {
+        await championshipSessionManager.resetPractice(id);
+      } else {
+        await sessionManager.prisma.lap.updateMany({
+          where: { sessionId: id, softDeletedAt: null },
+          data: { softDeletedAt: new Date() }
+        });
+
+        sessionManager.io?.emit('practice_reset', {
+          event: 'practice_reset',
+          data: {
+            sessionId: id,
+            championshipId: session.championshipId,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      if (session.championshipId) {
+        sessionManager.io?.emit('standings_changed', {
+          event: 'standings_changed',
+          data: { championshipId: session.championshipId, types: ['practice'] }
+        });
+      }
+
+      return res.json({ success: true, message: 'Practice session reset' });
+    }
+
+    // Qualifying/Race: hard delete + full reset
+    await sessionManager.prisma.lap.deleteMany({ where: { sessionId: id } });
+    await sessionManager.prisma.raceEvent.deleteMany({ where: { sessionId: id } });
+
+    await sessionManager.prisma.sessionDriver.updateMany({
+      where: { sessionId: id },
+      data: {
+        position: null,
+        finalPos: null,
+        totalLaps: 0,
+        totalTime: 0,
+        bestLapTime: null,
+        lastLapTime: null,
+        isDNF: false,
+        lapsAtFinishing: null
+      }
+    });
+
+    const updatedSession = await sessionManager.prisma.session.update({
+      where: { id },
+      data: {
+        status: 'ready',
+        startedAt: null,
+        finishingAt: null,
+        finishedAt: null
+      },
+      include: {
+        track: true,
+        championship: true,
+        drivers: { include: { driver: true, car: true } }
+      }
+    });
+
+    // Emit status change
+    sessionManager.io?.emit('session_status_changed', {
+      event: 'session_status_changed',
+      data: {
+        sessionId: id,
+        championshipId: session.championshipId,
+        previousStatus: session.status,
+        status: 'ready',
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    if (session.championshipId) {
+      // Recalculate standings
+      if (championshipSessionManager) {
+        await championshipSessionManager.recalculateStandings(session.championshipId);
+      }
+
+      sessionManager.io?.emit('standings_changed', {
+        event: 'standings_changed',
+        data: {
+          championshipId: session.championshipId,
+          types: [session.type === 'qualif' ? 'qualif' : 'race']
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Session reset to ready`,
+      data: updatedSession
+    });
+  } catch (error) {
+    console.error('Error resetting session:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * DELETE /api/sessions/:id
  * Supprime une session
  * Query param: ?keepLaps=true to preserve laps as free practice laps (sessionId = null)
@@ -695,6 +1180,29 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     const { keepLaps } = req.query;
 
+    // Get session info for standings update
+    const session = await sessionManager.prisma.session.findUnique({
+      where: { id },
+      include: { championship: true }
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Use ChampionshipSessionManager for championship sessions
+    if (championshipSessionManager && session.championshipId && keepLaps !== 'true') {
+      await championshipSessionManager.deleteSession(id);
+      return res.json({
+        success: true,
+        message: 'Session deleted successfully'
+      });
+    }
+
+    // Fallback: manual deletion
     // If keepLaps=true, update laps to remove session reference before deleting
     if (keepLaps === 'true') {
       await sessionManager.prisma.lap.updateMany({
@@ -712,12 +1220,12 @@ router.delete('/:id', async (req, res) => {
     // Clear sync services if this was the active session
     if (sessionManager.trackSync?.activeSessionId === id) {
       sessionManager.trackSync.activeSessionId = null;
-      sessionManager.trackSync.sessionDrivers.clear();
+      sessionManager.trackSync.mapDriverByController.clear();
       sessionManager.trackSync.currentPhase = 'free';
     }
     if (sessionManager.simulatorSync?.activeSessionId === id) {
       sessionManager.simulatorSync.activeSessionId = null;
-      sessionManager.simulatorSync.sessionDrivers.clear();
+      sessionManager.simulatorSync.mapDriverByController.clear();
       sessionManager.simulatorSync.currentPhase = 'free';
       sessionManager.simulator?.stop();
     }
@@ -725,6 +1233,28 @@ router.delete('/:id', async (req, res) => {
     await sessionManager.prisma.session.delete({
       where: { id }
     });
+
+    // Emit session_deleted event
+    sessionManager.io?.emit('session_deleted', {
+      event: 'session_deleted',
+      data: {
+        sessionId: id,
+        championshipId: session.championshipId,
+        type: session.type
+      }
+    });
+
+    // Emit standings_changed if championship session
+    if (session.championshipId) {
+      await recalculateChampionshipStandings(sessionManager.prisma, session.championshipId);
+      sessionManager.io?.emit('standings_changed', {
+        event: 'standings_changed',
+        data: {
+          championshipId: session.championshipId,
+          types: [session.type === 'qualif' ? 'qualif' : session.type]
+        }
+      });
+    }
 
     res.json({
       success: true,

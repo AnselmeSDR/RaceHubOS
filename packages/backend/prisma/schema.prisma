@@ -114,10 +114,11 @@ model Session {
   trackId        String
   championshipId String?
   fuelMode       String          @default("OFF")
-  status         String          @default("draft")
+  status         String          @default("draft") // draft, ready, active, finishing, finished
   duration       Int?
   maxLaps        Int?
   startedAt      DateTime?
+  finishingAt    DateTime?       // When grace period started
   finishedAt     DateTime?
   syncedAt       DateTime?
   cuVersion      String?
@@ -126,6 +127,7 @@ model Session {
   cuPitLane      Boolean?
   cuLapCounter   Boolean?
   cuNumCars      Int?
+  order          Int             @default(0)       // Display order within championship
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   laps           Lap[]
@@ -155,49 +157,52 @@ model SessionPhase {
 }
 
 model SessionDriver {
-  id         String  @id @default(cuid())
-  sessionId  String
-  driverId   String
-  carId      String
-  controller String
-  position   Int?
-  gridPos    Int?
-  finalPos   Int?
-  car        Car     @relation(fields: [carId], references: [id])
-  driver     Driver  @relation(fields: [driverId], references: [id])
-  session    Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  sessionId       String
+  driverId        String
+  carId           String
+  controller      Int      // 0-5 (CU address)
+  position        Int?
+  gridPos         Int?
+  finalPos        Int?
+  lapsAtFinishing Int?     // Snapshot of laps when grace period started
+  totalLaps       Int      @default(0)
+  totalTime       Int      @default(0) // ms
+  bestLapTime     Int?     // Best lap time in ms
+  lastLapTime     Int?     // Last lap time in ms
+  isDNF           Boolean  @default(false)
+  car             Car      @relation(fields: [carId], references: [id])
+  driver          Driver   @relation(fields: [driverId], references: [id])
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, driverId])
   @@unique([sessionId, controller])
 }
 
 model Lap {
-  id          String   @id @default(cuid())
-  sessionId   String?
-  trackId     String
-  driverId    String
-  carId       String
-  controller  String
-  phase       String
-  lapNumber   Int
-  lapTime     Float
-  speed       Float?
-  sector1     Float?
-  sector2     Float?
-  sector3     Float?
-  fuelBefore  Int?
-  fuelAfter   Int?
-  isPitLap    Boolean  @default(false)
-  pitDuration Float?
-  timestamp   DateTime @default(now())
-  car         Car      @relation(fields: [carId], references: [id])
-  driver      Driver   @relation(fields: [driverId], references: [id])
-  session     Session? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  track       Track    @relation(fields: [trackId], references: [id])
+  id            String    @id @default(cuid())
+  sessionId     String
+  trackId       String
+  driverId      String
+  carId         String
+  controller    Int       // 0-5 (CU address)
+  phase         String
+  lapNumber     Int
+  lapTime       Float
+  sector1       Float?
+  sector2       Float?
+  sector3       Float?
+  softDeletedAt DateTime? // For practice reset (null = active)
+  timestamp     DateTime  @default(now())
+  car           Car       @relation(fields: [carId], references: [id])
+  driver        Driver    @relation(fields: [driverId], references: [id])
+  session       Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  track         Track     @relation(fields: [trackId], references: [id])
 
   @@index([sessionId, driverId])
   @@index([sessionId, lapTime])
   @@index([sessionId, phase])
+  @@index([sessionId, softDeletedAt])
   @@index([trackId, driverId, lapTime])
 }
 
@@ -214,7 +219,7 @@ model RaceEvent {
 
 model ControllerConfig {
   id         String   @id @default(cuid())
-  controller String   // "1" to "6"
+  controller Int      // 0-5 (CU address)
   driverId   String?
   carId      String?
   trackId    String

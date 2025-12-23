@@ -10,17 +10,17 @@ import Modal, { ModalFooter, ModalButton } from '../../ui/Modal'
  * @param {boolean} props.open - Modal visibility
  * @param {function} props.onClose - Close handler
  * @param {function} props.onStart - Start session handler
- * @param {'qualifying' | 'race'} props.type - Session type
+ * @param {'qualif' | 'race'} props.type - Session type
  * @param {object} props.initialValues - Initial form values
  */
 export default function SessionModal({
   open,
   onClose,
   onStart,
-  type = 'qualifying',
+  type = 'qualif',
   initialValues = {}
 }) {
-  const isQualifying = type === 'qualifying'
+  const isQualifying = type === 'qualif'
 
   const [form, setForm] = useState({
     name: initialValues.name || '',

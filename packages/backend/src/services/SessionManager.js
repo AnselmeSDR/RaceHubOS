@@ -45,6 +45,118 @@ export class SessionManager {
   }
 
   /**
+   * Get the active sync service (trackSync or simulatorSync)
+   */
+  getActiveSync() {
+    return this.trackSync || this.simulatorSync;
+  }
+
+  /**
+   * Configure active session on CU or Simulator
+   */
+  configureActiveSession(session) {
+    const phase = session.type === 'qualif' ? 'qualif' : 'race';
+
+    if (this.trackSync) {
+      this.trackSync.activeSessionId = session.id;
+      this.trackSync.activeTrackId = session.trackId;
+      this.trackSync.mapDriverByController.clear();
+      this.trackSync.currentPhase = phase;
+      for (const sd of session.drivers) {
+        this.trackSync.mapDriverByController.set(sd.controller, {
+          sessionDriverId: sd.id,
+          driverId: sd.driverId,
+          carId: sd.carId,
+          driver: sd.driver,
+          car: sd.car,
+          lapCount: 0,
+          lastLapTime: null,
+          position: sd.gridPos || 0
+        });
+      }
+    }
+
+    if (this.simulatorSync) {
+      this.simulatorSync.activeSessionId = session.id;
+      this.simulatorSync.activeTrackId = session.trackId;
+      this.simulatorSync.mapDriverByController.clear();
+      this.simulatorSync.currentPhase = phase;
+      for (const sd of session.drivers) {
+        // controller is now 0-indexed int, use directly as map key
+        this.simulatorSync.mapDriverByController.set(sd.controller, {
+          sessionDriverId: sd.id,
+          driverId: sd.driverId,
+          carId: sd.carId,
+          controller: sd.controller,
+          driver: sd.driver,
+          car: sd.car,
+          lapCount: 0,
+          lastLapTime: null,
+          bestLapTime: null
+        });
+      }
+    }
+  }
+
+  /**
+   * Start race on CU or Simulator
+   */
+  startRace() {
+    if (this.trackSync?.controlUnit?.isConnected()) {
+      console.log('🏁 Starting race on CU');
+      this.trackSync.controlUnit.start();
+    }
+    if (this.simulator) {
+      console.log('🏎️ Starting simulator');
+      this.simulator.start();
+    }
+  }
+
+  /**
+   * Stop race on CU or Simulator
+   */
+  stopRace() {
+    if (this.trackSync?.controlUnit?.isConnected()) {
+      console.log('🛑 Stopping race on CU');
+      this.trackSync.controlUnit.start(); // Toggle to lights mode
+    }
+    if (this.simulator) {
+      console.log('🛑 Stopping simulator');
+      this.simulator.stop();
+    }
+  }
+
+  /**
+   * Clear active session from sync services
+   */
+  clearActiveSession() {
+    if (this.trackSync) {
+      this.trackSync.activeSessionId = null;
+      this.trackSync.activeTrackId = null;
+      this.trackSync.mapDriverByController.clear();
+      this.trackSync.currentPhase = 'free';
+    }
+    if (this.simulatorSync) {
+      this.simulatorSync.activeSessionId = null;
+      this.simulatorSync.activeTrackId = null;
+      this.simulatorSync.mapDriverByController.clear();
+      this.simulatorSync.currentPhase = 'free';
+    }
+  }
+
+  /**
+   * Reset sync services for new session
+   */
+  async resetForNewSession() {
+    if (this.trackSync?.resetForNewSession) {
+      await this.trackSync.resetForNewSession();
+    }
+    if (this.simulatorSync?.resetForNewSession) {
+      await this.simulatorSync.resetForNewSession();
+    }
+  }
+
+  /**
    * Créer une nouvelle session avec ses phases
    */
   async createSession({ name, type, trackId, championshipId, fuelMode, drivers, phases, duration, maxLaps }) {
@@ -174,9 +286,9 @@ export class SessionManager {
     // Configurer le TrackSync avec la session active
     if (this.trackSync) {
       this.trackSync.activeSessionId = sessionId;
-      this.trackSync.sessionDrivers.clear();
+      this.trackSync.mapDriverByController.clear();
       for (const sd of session.drivers) {
-        this.trackSync.sessionDrivers.set(sd.controller, {
+        this.trackSync.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -299,7 +411,7 @@ export class SessionManager {
     // Nettoyer le TrackSync
     if (this.trackSync) {
       this.trackSync.activeSessionId = null;
-      this.trackSync.sessionDrivers.clear();
+      this.trackSync.mapDriverByController.clear();
       this.trackSync.lastTimestamps.clear();
       this.trackSync.raceStartTime = null;
     }
@@ -319,7 +431,7 @@ export class SessionManager {
   /**
    * Enregistrer un tour
    */
-  async recordLap(sessionId, phaseName, { driverId, carId, controller, lapTime, lapNumber, speed }) {
+  async recordLap(sessionId, phaseName, { driverId, carId, controller, lapTime, lapNumber }) {
     const lap = await this.prisma.lap.create({
       data: {
         sessionId,
@@ -328,8 +440,7 @@ export class SessionManager {
         carId,
         controller,
         lapTime,
-        lapNumber,
-        speed
+        lapNumber
       },
       include: {
         driver: true,

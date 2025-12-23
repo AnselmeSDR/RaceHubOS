@@ -569,6 +569,482 @@ ORDER BY bestLap ASC
 | `finishing` → `finished` | Grace period (30s) écoulée |
 | `active` → `finished` | Bouton "Terminer" (force stop) |
 
+### Grace Period (30s)
+
+**Géré par le Backend** (source de vérité, pas de désync clients)
+
+```
+Condition atteinte (temps/tours)
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│  Backend:                               │
+│  1. session.status = "finishing"        │
+│  2. session.finishingAt = NOW()         │
+│  3. Émet WebSocket "session_finishing"  │
+│     { sessionId, endsAt: NOW()+30s }    │
+│  4. Démarre timer interne 30s           │
+└──────────┬──────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────┐
+│  Frontend:                              │
+│  - Affiche countdown 30s                │
+│  - Animation "DERNIER TOUR"             │
+│  - Son/alerte optionnel                 │
+└─────────────────────────────────────────┘
+           │
+           │ (30s écoulées OU tous fini)
+           ▼
+┌─────────────────────────────────────────┐
+│  Backend:                               │
+│  1. session.status = "finished"         │
+│  2. session.finishedAt = NOW()          │
+│  3. Calcule finalPos pour chaque driver │
+│  4. Marque DNF si tour non terminé      │
+│  5. Émet WebSocket "session_finished"   │
+│  6. Émet CU command "stop" (LED 1 off)  │
+│  7. Recalcule standings championnat     │
+└─────────────────────────────────────────┘
+```
+
+**Schema Session:**
+```js
+{
+  ...
+  finishingAt: DateTime?,  // quand la grace period a commencé
+  finishedAt: DateTime?,   // quand la session est vraiment terminée
+}
+```
+
+**WebSocket Events:**
+```js
+// Début grace period
+{
+  event: "session_finishing",
+  data: {
+    sessionId: "xxx",
+    reason: "leader_finished" | "time_elapsed",
+    endsAt: "2024-01-15T14:30:30Z",  // timestamp fin
+    remainingSeconds: 30
+  }
+}
+
+// Fin session
+{
+  event: "session_finished",
+  data: {
+    sessionId: "xxx",
+    results: [
+      { driverId, finalPos, totalLaps, totalTime, isDNF },
+      ...
+    ]
+  }
+}
+```
+
+**Fin anticipée:**
+- Si tous les pilotes ont terminé leur tour avant 30s → finish immédiat
+- Backend vérifie à chaque `lap_completed` si tout le monde a fini
+
+### Fraîcheur des données
+
+**Problème:** Si WebSocket lag ou déconnecte, les données affichées peuvent être obsolètes.
+
+**Solution: Heartbeat + Timestamp**
+
+```js
+// Chaque message WebSocket inclut un timestamp serveur
+{
+  event: "lap_completed",
+  serverTime: "2024-01-15T14:30:25.123Z",  // horloge serveur
+  data: { ... }
+}
+
+// Heartbeat toutes les 1s pendant session active
+{
+  event: "heartbeat",
+  serverTime: "2024-01-15T14:30:26.000Z",
+  sessionId: "xxx",
+  status: "active"
+}
+```
+
+**Frontend:**
+```js
+const [lastServerTime, setLastServerTime] = useState(null)
+const [isStale, setIsStale] = useState(false)
+
+// À chaque message reçu
+setLastServerTime(message.serverTime)
+
+// Check fraîcheur toutes les 500ms
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (!lastServerTime) return
+    const age = Date.now() - new Date(lastServerTime).getTime()
+    setIsStale(age > 2000)  // stale si > 2s sans update
+  }, 500)
+  return () => clearInterval(interval)
+}, [lastServerTime])
+```
+
+**UI Indicateur:**
+```
+┌─────────────────────────────────────────┐
+│  Q1 - Qualifications        🟢 Live     │  // vert = données fraîches
+│  Q1 - Qualifications        🟡 2s ago   │  // jaune = léger retard
+│  Q1 - Qualifications        🔴 Offline  │  // rouge = déconnecté
+└─────────────────────────────────────────┘
+```
+
+| Âge données | Indicateur | Action |
+|-------------|------------|--------|
+| < 2s | 🟢 Live | Normal |
+| 2-5s | 🟡 Delayed | Affiche "Xms ago" |
+| > 5s | 🔴 Offline | Tente reconnexion |
+
+**Countdown grace period:**
+- Calculé en local: `endsAt - Date.now()`
+- Indépendant du heartbeat (basé sur timestamp absolu)
+- Sync horloges: utiliser `serverTime` pour calculer le delta client/serveur
+
+### DNF (Did Not Finish)
+
+**Quand un pilote est DNF:**
+- En course uniquement (pas en qualif)
+- N'a pas terminé son tour actuel avant la fin de la grace period
+
+**Détection:**
+
+```
+Session passe en "finishing"
+         │
+         ▼
+┌─────────────────────────────────────────────────┐
+│  Backend enregistre pour chaque SessionDriver:  │
+│  - lastLapAt: timestamp du dernier lap_completed│
+│  - lapsAtFinishing: nombre de tours au moment   │
+│    où finishing commence                        │
+└─────────────────────────────────────────────────┘
+         │
+         │ (pendant grace period)
+         ▼
+┌─────────────────────────────────────────────────┐
+│  À chaque lap_completed:                        │
+│  - driver.lapsCompleted++                       │
+│  - driver.lastLapAt = NOW()                     │
+│  - Si tous ont fait >= 1 lap pendant finishing  │
+│    → finish anticipé                            │
+└─────────────────────────────────────────────────┘
+         │
+         │ (30s écoulées)
+         ▼
+┌─────────────────────────────────────────────────┐
+│  Pour chaque SessionDriver:                     │
+│  - hasCompletedDuringGrace =                    │
+│      lapsCompleted > lapsAtFinishing            │
+│  - isDNF = !hasCompletedDuringGrace             │
+│      AND lapsAtFinishing > 0 (était en course)  │
+└─────────────────────────────────────────────────┘
+```
+
+**Schema SessionDriver:**
+```js
+{
+  ...
+  lapsAtFinishing: number?,  // snapshot au début grace period
+  isDNF: boolean,            // true si n'a pas fini son tour
+  finalPos: number?,         // position finale (null si DNF)
+}
+```
+
+**Classement avec DNF:**
+```
+1. Pilote A - 15 tours - 5:23.456
+2. Pilote B - 15 tours - 5:25.789
+3. Pilote C - 14 tours - 5:18.123
+4. Pilote D - DNF (14 tours)      ← n'a pas terminé tour 15
+5. Pilote E - DNF (12 tours)      ← n'a pas terminé tour 13
+```
+
+**Règles de classement course:**
+1. Non-DNF avant DNF
+2. Parmi non-DNF: plus de tours > moins de tours
+3. À tours égaux: temps total plus court
+4. Parmi DNF: plus de tours > moins de tours
+
+```js
+results.sort((a, b) => {
+  // DNF en dernier
+  if (a.isDNF !== b.isDNF) return a.isDNF ? 1 : -1
+  // Plus de tours = mieux
+  if (a.totalLaps !== b.totalLaps) return b.totalLaps - a.totalLaps
+  // Temps plus court = mieux
+  return a.totalTime - b.totalTime
+})
+```
+
+### Classement Général
+
+Trois classements séparés par onglet:
+
+| Onglet | Source | Tri |
+|--------|--------|-----|
+| Essais Libres | Practice session (tous laps, incl. soft deleted) | Meilleur temps |
+| Qualifications | Toutes sessions qualifying finished | Meilleur temps |
+| Courses | Toutes sessions race finished | Tours puis temps |
+
+**Calcul Runtime (pas de stockage)**
+
+Les standings sont calculés à la volée à chaque requête. Pas de table ChampionshipStanding.
+
+```
+GET /api/championships/:id/standings?type=qualif|race|practice
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│  Backend calcule à partir de:           │
+│  - laps (pour qualif/practice)          │
+│  - sessionDrivers (pour race)           │
+└──────────┬──────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────┐
+│  Retourne standings calculés            │
+│  (pas de persistance)                   │
+└─────────────────────────────────────────┘
+```
+
+**Avantages:**
+- Toujours à jour, jamais de désync
+- Pas de triggers de recalcul à gérer
+- Code plus simple
+
+**Quand notifier les clients:**
+
+| Trigger | WebSocket event |
+|---------|-----------------|
+| Session → `finished` | `standings_changed` |
+| Session supprimée | `standings_changed` |
+| Practice reset | `standings_changed` |
+
+Le frontend refetch les standings après ces events.
+
+**Calcul Qualifications:**
+```sql
+-- Meilleur temps de chaque pilote sur TOUTES les qualifs
+SELECT
+  driverId,
+  MIN(lapTime) as bestTime
+FROM laps
+WHERE sessionId IN (
+  SELECT id FROM sessions
+  WHERE championshipId = :id
+    AND type = 'qualifying'
+    AND status = 'finished'
+)
+GROUP BY driverId
+ORDER BY bestTime ASC
+```
+
+**Calcul Courses:**
+```sql
+-- Total tours + temps de chaque pilote sur TOUTES les courses
+SELECT
+  sd.driverId,
+  SUM(CASE WHEN sd.isDNF THEN 0 ELSE 1 END) as finishedRaces,
+  SUM(sd.totalLaps) as totalLaps,
+  SUM(sd.totalTime) as totalTime
+FROM sessionDrivers sd
+JOIN sessions s ON sd.sessionId = s.id
+WHERE s.championshipId = :id
+  AND s.type = 'race'
+  AND s.status = 'finished'
+GROUP BY sd.driverId
+ORDER BY totalLaps DESC, totalTime ASC
+```
+
+**Calcul Essais Libres:**
+```sql
+-- Meilleur temps de chaque pilote (inclut soft deleted)
+SELECT
+  driverId,
+  MIN(lapTime) as bestTime
+FROM laps
+WHERE sessionId = :practiceSessionId
+  -- PAS de filtre softDeletedAt
+GROUP BY driverId
+ORDER BY bestTime ASC
+```
+
+**Réponse API:**
+```js
+// GET /api/championships/:id/standings?type=qualif
+{
+  type: "qualif",
+  standings: [
+    { position: 1, driverId: "xxx", driver: {...}, bestTime: 5234 },
+    { position: 2, driverId: "yyy", driver: {...}, bestTime: 5456 },
+    ...
+  ]
+}
+
+// GET /api/championships/:id/standings?type=race
+{
+  type: "race",
+  standings: [
+    { position: 1, driverId: "xxx", driver: {...}, totalLaps: 45, totalTime: 234567, finishedRaces: 3 },
+    { position: 2, driverId: "yyy", driver: {...}, totalLaps: 44, totalTime: 230000, finishedRaces: 2 },
+    ...
+  ]
+}
+
+// GET /api/championships/:id/standings?type=practice
+{
+  type: "practice",
+  standings: [
+    { position: 1, driverId: "xxx", driver: {...}, bestTime: 5100 },
+    { position: 2, driverId: "yyy", driver: {...}, bestTime: 5234 },
+    ...
+  ]
+}
+```
+
+---
+
+## WebSocket Events
+
+### Événements Session
+
+```js
+// Status changé (draft ↔ ready → active → finishing → finished)
+{
+  event: "session_status_changed",
+  data: {
+    sessionId: "xxx",
+    championshipId: "yyy",
+    previousStatus: "ready",
+    status: "active",
+    timestamp: "2024-01-15T14:00:00Z"
+  }
+}
+
+// Début grace period (active → finishing)
+{
+  event: "session_finishing",
+  data: {
+    sessionId: "xxx",
+    championshipId: "yyy",
+    reason: "leader_finished" | "time_elapsed",
+    endsAt: "2024-01-15T14:30:30Z",
+    remainingSeconds: 30
+  }
+}
+
+// Session terminée
+{
+  event: "session_finished",
+  data: {
+    sessionId: "xxx",
+    championshipId: "yyy",
+    type: "qualifying" | "race",
+    results: [
+      { driverId, finalPos, totalLaps, totalTime, bestLap, isDNF },
+      ...
+    ]
+  }
+}
+
+// Session supprimée
+{
+  event: "session_deleted",
+  data: {
+    sessionId: "xxx",
+    championshipId: "yyy",
+    type: "qualifying" | "race"
+  }
+}
+```
+
+### Événements Practice
+
+```js
+// Practice reset (soft delete laps)
+{
+  event: "practice_reset",
+  data: {
+    sessionId: "xxx",
+    championshipId: "yyy",
+    timestamp: "2024-01-15T14:00:00Z"
+  }
+}
+```
+
+### Événements Lap
+
+```js
+// Tour complété
+{
+  event: "lap_completed",
+  serverTime: "2024-01-15T14:30:25.123Z",
+  data: {
+    sessionId: "xxx",
+    controller: "1",
+    driverId: "yyy",
+    lapNumber: 12,
+    lapTime: 5234,
+    isBestLap: true,        // meilleur temps perso
+    isFastestLap: false,    // meilleur temps session
+    position: 2,            // position actuelle
+    gap: "+0.456"           // écart avec P1
+  }
+}
+```
+
+### Événements Standings
+
+```js
+// Standings ont changé (refetch nécessaire)
+{
+  event: "standings_changed",
+  data: {
+    championshipId: "yyy",
+    types: ["qualif"] | ["race"] | ["practice"] | ["qualif", "race"]
+  }
+}
+```
+
+### Événements Heartbeat
+
+```js
+// Heartbeat (1x/sec pendant session active)
+{
+  event: "heartbeat",
+  serverTime: "2024-01-15T14:30:26.000Z",
+  data: {
+    sessionId: "xxx",
+    status: "active" | "finishing",
+    elapsedTime: 185000,      // ms depuis startedAt
+    remainingTime: 115000,    // ms restant (si duration)
+    remainingLaps: null       // tours restants (si maxLaps)
+  }
+}
+```
+
+### Résumé des events
+
+| Event | Émis quand | Action frontend |
+|-------|------------|-----------------|
+| `session_status_changed` | Changement status | Update UI status |
+| `session_finishing` | Début grace period | Affiche countdown 30s |
+| `session_finished` | Fin session | Affiche résultats |
+| `session_deleted` | Suppression session | Remove de la liste |
+| `practice_reset` | Reset EL | Vide leaderboard |
+| `lap_completed` | Nouveau tour | Update leaderboard |
+| `standings_changed` | Standings modifiés | Refetch standings |
+| `heartbeat` | 1x/sec si active | Update timer + fraîcheur |
+
 ### UI Session Config
 
 ```

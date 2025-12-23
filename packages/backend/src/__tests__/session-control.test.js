@@ -138,7 +138,7 @@ describe('Session Control API', () => {
           phases: {
             create: [
               { phase: 'practice', status: 'waiting', duration: 10 },
-              { phase: 'qualifying', status: 'waiting', maxLaps: 5 },
+              { phase: 'qualif', status: 'waiting', maxLaps: 5 },
               { phase: 'race', status: 'waiting', maxLaps: 20 }
             ]
           }

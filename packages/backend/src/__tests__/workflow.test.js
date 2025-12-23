@@ -137,7 +137,7 @@ describe('Complete Session Workflow', () => {
           ],
           phases: [
             { phase: 'practice', duration: 10, maxLaps: null },
-            { phase: 'qualifying', duration: 15, maxLaps: null },
+            { phase: 'qualif', duration: 15, maxLaps: null },
             { phase: 'race', duration: null, maxLaps: 50 }
           ]
         });
@@ -230,7 +230,7 @@ describe('Complete Session Workflow', () => {
   describe('Step 4: Run Qualifying Phase', () => {
     it('should start qualifying phase', async () => {
       const response = await request(app)
-        .post(`/api/session-control/${sessionId}/phases/qualifying/start`);
+        .post(`/api/session-control/${sessionId}/phases/qualif/start`);
 
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('running');
@@ -247,7 +247,7 @@ describe('Complete Session Workflow', () => {
 
       for (const lap of laps) {
         const response = await request(app)
-          .post(`/api/session-control/${sessionId}/phases/qualifying/laps`)
+          .post(`/api/session-control/${sessionId}/phases/qualif/laps`)
           .send(lap);
 
         expect(response.status).toBe(200);
@@ -258,7 +258,7 @@ describe('Complete Session Workflow', () => {
 
     it('should finish qualifying phase', async () => {
       const response = await request(app)
-        .post(`/api/session-control/${sessionId}/phases/qualifying/finish`);
+        .post(`/api/session-control/${sessionId}/phases/qualif/finish`);
 
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('finished');

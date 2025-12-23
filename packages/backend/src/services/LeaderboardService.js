@@ -17,7 +17,7 @@ export class LeaderboardService extends EventEmitter {
     const session = await this.prisma.session.findUnique({
       where: { id: sessionId },
       include: {
-        participants: {
+        drivers: {
           include: {
             driver: true,
             car: true
@@ -31,11 +31,11 @@ export class LeaderboardService extends EventEmitter {
     // Get lap data for each participant
     const leaderboard = [];
 
-    for (const participant of session.participants) {
+    for (const sessionDriver of session.drivers) {
       const laps = await this.prisma.lap.findMany({
         where: {
           sessionId,
-          driverId: participant.driverId
+          driverId: sessionDriver.driverId
         },
         orderBy: { lapTime: 'asc' }
       });
@@ -47,9 +47,9 @@ export class LeaderboardService extends EventEmitter {
 
       leaderboard.push({
         position: 0, // Will be calculated
-        controller: participant.controller,
-        driver: participant.driver,
-        car: participant.car,
+        controller: sessionDriver.controller,
+        driver: sessionDriver.driver,
+        car: sessionDriver.car,
         lapCount,
         bestLap,
         lastLap,
@@ -60,7 +60,7 @@ export class LeaderboardService extends EventEmitter {
     }
 
     // Sort based on session type
-    if (session.type === 'qualifying') {
+    if (session.type === 'qualif') {
       // Qualifying: best lap time wins
       leaderboard.sort((a, b) => {
         if (!a.bestLap && !b.bestLap) return 0;
@@ -87,7 +87,7 @@ export class LeaderboardService extends EventEmitter {
         leaderboard[i].gap = null;
         leaderboard[i].interval = null;
       } else {
-        if (session.type === 'qualifying') {
+        if (session.type === 'qualif') {
           // Gap is time difference to leader's best lap
           leaderboard[i].gap = leader.bestLap ? leaderboard[i].bestLap - leader.bestLap : null;
           leaderboard[i].interval = prevEntry.bestLap ? leaderboard[i].bestLap - prevEntry.bestLap : null;

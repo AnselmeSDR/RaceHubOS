@@ -86,7 +86,7 @@ export default function DriverProfile() {
                     </div>
                     <div className="text-sm text-gray-500">
                       {sessionDriver.session.type === 'race' ? 'Course' :
-                       sessionDriver.session.type === 'qualifying' ? 'Qualifications' :
+                       sessionDriver.session.type === 'qualif' ? 'Qualifications' :
                        'Essais'}
                     </div>
                   </div>

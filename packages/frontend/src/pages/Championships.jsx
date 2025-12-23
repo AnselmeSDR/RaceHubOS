@@ -95,7 +95,7 @@ export default function Championships() {
 }
 
 function ChampionshipCard({ championship, track, onClick, onDelete }) {
-  const qualifCount = championship.sessions?.filter(s => s.type === 'qualifying').length || 0
+  const qualifCount = championship.sessions?.filter(s => s.type === 'qualif').length || 0
   const raceCount = championship.sessions?.filter(s => s.type === 'race').length || 0
 
   return (

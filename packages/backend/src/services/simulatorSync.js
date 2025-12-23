@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 /**
  * Service de synchronisation entre le Simulateur et la base de données
- * Similaire à TrackSyncService mais pour le simulateur
+ * Unifié avec TrackSyncService - écoute les mêmes événements 'timer' que le CU
  */
 export class SimulatorSyncService {
   constructor(simulator, io) {
@@ -11,16 +11,47 @@ export class SimulatorSyncService {
     this.prisma = new PrismaClient();
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.sessionDrivers = new Map(); // carId -> { driverId, carId, controller, lapCount, lastLapTime, bestLapTime }
+    this.mapDriverByController = new Map(); // controller -> { driverId, carId, lapCount, lastLapTime, bestLapTime }
+    this.lastTimestamps = new Map(); // controller -> last timestamp (like trackSync)
     this.currentPhase = 'free'; // 'free', 'qualif', 'race'
     this.raceFinishTime = null; // For 30s grace period in races
 
-    // Écouter les événements du simulateur
+    // Écouter les événements du simulateur (même format que CU)
     this.setupListeners();
   }
 
   setupListeners() {
-    // Le simulateur émet des événements via io, pas besoin de listeners ici
+    // Listen to 'timer' events from simulator (same format as CU)
+    this.simulator.on('timer', (timerEvent) => {
+      this.handleTimerEvent(timerEvent);
+    });
+  }
+
+  /**
+   * Handle timer event (same format as CU)
+   * Format: { controller: 0-5, timestamp: ms, sector: 1-3 }
+   */
+  async handleTimerEvent(timerEvent) {
+    const { controller, timestamp, sector } = timerEvent;
+
+    // Calculate lap time from timestamps
+    const lastTimestamp = this.lastTimestamps.get(controller) || 0;
+    const lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
+    this.lastTimestamps.set(controller, timestamp);
+
+    // Emit to frontend (like trackSync)
+    this.io?.emit('cu:timer', {
+      controller,
+      timestamp,
+      lapTime,
+      sector,
+    });
+
+    // Only process sector 1 (finish line) for lap recording
+    // Ignorer le premier passage (lapTime === 0) - ce n'est pas un vrai tour
+    if (sector === 1 && this.activeSessionId && lapTime > 0) {
+      await this.recordLapFromTimer(controller, lapTime);
+    }
   }
 
   /**
@@ -34,7 +65,8 @@ export class SimulatorSyncService {
     console.log('🔄 SimulatorSync: resetForNewSession called');
 
     // Reset internal state
-    this.sessionDrivers.clear();
+    this.mapDriverByController.clear();
+    this.lastTimestamps.clear();
     this.raceFinishTime = null;
     this.activeSessionId = null;
 
@@ -69,14 +101,12 @@ export class SimulatorSyncService {
     if (session) {
       this.activeSessionId = session.id;
       this.activeTrackId = session.trackId;
-      this.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
+      this.currentPhase = session.type === 'qualif' ? 'qualif' : 'race';
 
-      // Mapper les SessionDriver aux voitures du simulateur
-      this.sessionDrivers.clear();
+      // Mapper les SessionDriver par controller (0-indexed)
+      this.mapDriverByController.clear();
       for (const sd of session.drivers) {
-        // Le controller correspond à l'ID de la voiture dans le simulateur
-        const carId = parseInt(sd.controller);
-        this.sessionDrivers.set(carId, {
+        this.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -149,7 +179,7 @@ export class SimulatorSyncService {
 
     const sessionId = this.activeSessionId;
     this.activeSessionId = null;
-    this.sessionDrivers.clear();
+    this.mapDriverByController.clear();
 
     // Arrêter le simulateur
     this.simulator.stop();
@@ -158,19 +188,24 @@ export class SimulatorSyncService {
   }
 
   /**
-   * Enregistrer un tour
-   * Appelé par le simulateur via callback
+   * Enregistrer un tour depuis un événement timer
+   * Appelé par handleTimerEvent (même pattern que trackSync)
    */
-  async recordLap(carId, lapTime, lapNumber) {
+  async recordLapFromTimer(controller, lapTime) {
     if (!this.activeSessionId) {
       return;
     }
 
-    const driverData = this.sessionDrivers.get(carId);
+    // Map is keyed by controller (0-indexed int)
+    const driverData = this.mapDriverByController.get(controller);
+
     if (!driverData) {
-      console.warn(`⚠️  Voiture ${carId} non mappée à un pilote. Keys: ${[...this.sessionDrivers.keys()].join(', ')}`);
+      console.warn(`⚠️  Controller ${controller} non mappé à un pilote. Keys: ${[...this.mapDriverByController.keys()].join(', ')}`);
       return;
     }
+
+    // Increment lap count
+    const lapNumber = driverData.lapCount + 1;
 
     try {
       const lap = await this.prisma.lap.create({
@@ -186,7 +221,14 @@ export class SimulatorSyncService {
         },
       });
 
-      // Calculer les positions
+      // Update driver data BEFORE updatePositions so it has latest stats
+      driverData.lapCount = lapNumber;
+      driverData.lastLapTime = lapTime;
+      if (lapTime > 0 && (driverData.bestLapTime == null || lapTime < driverData.bestLapTime)) {
+        driverData.bestLapTime = lapTime;
+      }
+
+      // Calculer les positions (uses updated driverData)
       await this.updatePositions();
 
       const lapData = {
@@ -194,13 +236,6 @@ export class SimulatorSyncService {
         driver: driverData.driver,
         car: driverData.car,
       };
-
-      // Update driver data
-      driverData.lapCount = lapNumber;
-      driverData.lastLapTime = lapTime;
-      if (lapTime > 0 && (driverData.bestLapTime === null || lapTime < driverData.bestLapTime)) {
-        driverData.bestLapTime = lapTime;
-      }
 
       this.io?.emit('lap:completed', lapData);
       this.io?.emit('lap_completed', { ...lapData, sessionId: this.activeSessionId });
@@ -274,7 +309,7 @@ export class SimulatorSyncService {
       if (session.maxLaps && !shouldStop) {
         const maxLapsReached = lapCounts.filter(l => l._count.id >= session.maxLaps);
 
-        if (session.type === 'qualifying') {
+        if (session.type === 'qualif') {
           // QUALIF: Leader atteint X tours → autres peuvent finir leurs X tours
           if (maxLapsReached.length > 0 && session.status !== 'finishing') {
             // Au moins un pilote a atteint X tours, passer en mode "finishing"
@@ -341,13 +376,22 @@ export class SimulatorSyncService {
         // Arrêter le simulateur (passe en mode lights)
         this.simulator.stop();
 
-        this.io?.emit('session:auto-stopped', {
+        // Emit session_finished (for frontend to update)
+        this.io?.emit('session_finished', {
           sessionId: this.activeSessionId,
+          championshipId: session.championshipId,
           type: session.type,
           reason,
         });
 
-        console.log(`🛑 Session auto-stopped: ${reason}`);
+        // Also emit session_status_changed for status update
+        this.io?.emit('session_status_changed', {
+          sessionId: this.activeSessionId,
+          status: 'finished',
+          previousStatus: 'active',
+        });
+
+        console.log(`🏁 Session finished: ${reason}`);
 
         // Recalculate championship standings if session belongs to a championship
         if (session.championshipId) {
@@ -358,7 +402,7 @@ export class SimulatorSyncService {
         // Clear state
         this.activeSessionId = null;
         this.activeTrackId = null;
-        this.sessionDrivers.clear();
+        this.mapDriverByController.clear();
         this.raceFinishTime = null;
       }
     } catch (error) {
@@ -374,7 +418,7 @@ export class SimulatorSyncService {
 
     // Récupérer les statistiques de chaque pilote
     const drivers = [];
-    for (const [carId, driverData] of this.sessionDrivers) {
+    for (const [carId, driverData] of this.mapDriverByController) {
       const lapCount = await this.prisma.lap.count({
         where: {
           sessionId: this.activeSessionId,
@@ -397,32 +441,76 @@ export class SimulatorSyncService {
       });
     }
 
-    // Trier par nombre de tours puis par temps du dernier tour
-    drivers.sort((a, b) => {
-      if (b.lapCount !== a.lapCount) {
-        return b.lapCount - a.lapCount;
-      }
-      return (a.lastLapTime || Infinity) - (b.lastLapTime || Infinity);
-    });
+    // Trier selon le type de session
+    if (this.currentPhase === 'qualif') {
+      // Qualif: tri par meilleur temps (ascending)
+      drivers.sort((a, b) => {
+        const bestA = a.bestLapTime || Infinity;
+        const bestB = b.bestLapTime || Infinity;
+        return bestA - bestB;
+      });
+    } else {
+      // Race: tri par tours (desc) puis meilleur temps (asc)
+      drivers.sort((a, b) => {
+        if (b.lapCount !== a.lapCount) {
+          return b.lapCount - a.lapCount;
+        }
+        const bestA = a.bestLapTime || Infinity;
+        const bestB = b.bestLapTime || Infinity;
+        return bestA - bestB;
+      });
+    }
 
-    // Mettre à jour les positions
+    // Calculer les gaps
+    const leader = drivers[0];
+    const leaderBestLap = leader?.bestLapTime;
+    const leaderLaps = leader?.lapCount || 0;
+
+    // Mettre à jour les positions et stats
     for (let i = 0; i < drivers.length; i++) {
       const driver = drivers[i];
       await this.prisma.sessionDriver.update({
         where: { id: driver.sessionDriverId },
-        data: { position: i + 1 },
+        data: {
+          position: i + 1,
+          totalLaps: driver.lapCount,
+          bestLapTime: driver.bestLapTime,
+          lastLapTime: driver.lastLapTime,
+        },
       });
     }
 
-    const positions = drivers.map((d, i) => ({
-      controller: d.controller,
-      position: i + 1,
-      driverId: d.driverId,
-      driver: d.driver,
-      lapCount: d.lapCount,
-      lastLapTime: d.lastLapTime,
-      bestLapTime: d.bestLapTime,
-    }));
+    const positions = drivers.map((d, i) => {
+      let gap = null;
+
+      if (i === 0) {
+        gap = null; // Leader
+      } else if (this.currentPhase === 'qualif') {
+        // Qualif: écart en temps
+        if (leaderBestLap && d.bestLapTime) {
+          gap = d.bestLapTime - leaderBestLap;
+        }
+      } else {
+        // Race: écart en tours ou en temps
+        const lapDiff = leaderLaps - d.lapCount;
+        if (lapDiff > 0) {
+          gap = `+${lapDiff} tour${lapDiff > 1 ? 's' : ''}`;
+        } else if (leaderBestLap && d.bestLapTime) {
+          gap = d.bestLapTime - leaderBestLap;
+        }
+      }
+
+      return {
+        controller: d.controller,
+        position: i + 1,
+        driverId: d.driverId,
+        driver: d.driver,
+        lapCount: d.lapCount,
+        lastLapTime: d.lastLapTime,
+        bestLapTime: d.bestLapTime,
+        gap,
+      };
+    });
 
     this.io?.emit('positions:updated', positions);
   }
@@ -515,7 +603,7 @@ export class SimulatorSyncService {
   getState() {
     return {
       activeSessionId: this.activeSessionId,
-      drivers: Array.from(this.sessionDrivers.entries()).map(
+      drivers: Array.from(this.mapDriverByController.entries()).map(
         ([carId, data]) => ({
           carId,
           ...data,

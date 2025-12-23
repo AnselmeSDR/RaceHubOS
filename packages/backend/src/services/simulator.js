@@ -1,6 +1,9 @@
+import EventEmitter from 'events';
+
 /**
  * Carrera Control Unit Simulator
  * Simulates the AppConnect 30369 Bluetooth device for development
+ * Emits the same 'timer' events as the real Control Unit for unified handling.
  */
 
 // CU State values (matching real CU protocol)
@@ -24,8 +27,9 @@ const MODE_FLAGS = {
   LAP_COUNTER: 8,
 };
 
-export class CarreraSimulator {
+export class CarreraSimulator extends EventEmitter {
   constructor(io) {
+    super();
     this.io = io;
     this.isRunning = false;
     this.raceActive = false;
@@ -33,7 +37,6 @@ export class CarreraSimulator {
     this.raceTime = 0;
     this.interval = null;
     this.tickRate = 100; // Update every 100ms
-    this.onLapComplete = null; // Callback pour enregistrer les tours
 
     // CU status (simulated)
     this.cuState = CU_STATE.STOPPED; // start field
@@ -172,6 +175,7 @@ export class CarreraSimulator {
 
   /**
    * Handle lap completion
+   * Emits 'timer' event like the real CU for unified handling
    */
   completeLap(car) {
     const lapTime = car.sectorTimes.reduce((sum, time) => sum + time, 0);
@@ -184,6 +188,16 @@ export class CarreraSimulator {
       car.bestLapTime = lapTime;
     }
 
+    // Emit 'timer' event like real CU for unified handling
+    // Format: { controller: 0-5, timestamp: ms, sector: 1-3 }
+    // sector 1 = finish line
+    this.emit('timer', {
+      controller: car.id - 1, // 0-indexed (car.id is 1-indexed)
+      timestamp: car.totalTime, // Accumulated time as timestamp
+      sector: 1, // Finish line = sector 1
+    });
+
+    // Also emit to WebSocket for frontend
     this.io.emit('race:lap', {
       carId: car.id,
       lapNumber: car.totalLaps,
@@ -191,12 +205,6 @@ export class CarreraSimulator {
       bestLap: car.bestLapTime,
       timestamp: Date.now(),
     });
-
-
-    // Appeler le callback pour enregistrer le tour en base de données
-    if (this.onLapComplete) {
-      this.onLapComplete(car);
-    }
 
     // Reset sector times
     car.sectorTimes = [0, 0, 0];
@@ -393,6 +401,16 @@ export class CarreraSimulator {
     this.cuState = CU_STATE.RACING;
     this.raceActive = true;
     this.emitCuStatus();
+
+    // Émettre un event timer pour chaque voiture (comme le CU au franchissement initial)
+    // Ceci permet au sync de stocker le timestamp de départ
+    for (const car of this.cars) {
+      this.emit('timer', {
+        controller: car.id - 1, // 0-indexed
+        timestamp: this.raceTime, // ~0 au départ
+        sector: 1,
+      });
+    }
   }
 
   /**

@@ -14,7 +14,7 @@ export class ConfigService extends EventEmitter {
   async getConfig(controller, trackId) {
     const config = await this.prisma.controllerConfig.findUnique({
       where: {
-        trackId_controller: { trackId, controller: String(controller) }
+        trackId_controller: { trackId, controller: Number(controller) }
       },
       include: {
         driver: true,
@@ -47,12 +47,12 @@ export class ConfigService extends EventEmitter {
       orderBy: { controller: 'asc' }
     });
 
-    // Build full list of 6 slots
+    // Build full list of 6 slots (0-5, 0-indexed)
     const slots = [];
-    for (let i = 1; i <= 6; i++) {
-      const existing = configs.find(c => c.controller === String(i));
+    for (let i = 0; i < 6; i++) {
+      const existing = configs.find(c => c.controller === i);
       slots.push({
-        controller: String(i),
+        controller: i,
         driverId: existing?.driverId || null,
         carId: existing?.carId || null,
         driver: existing?.driver || null,
@@ -68,12 +68,13 @@ export class ConfigService extends EventEmitter {
    * Update configuration for a controller slot
    */
   async updateConfig(controller, trackId, driverId, carId) {
+    const controllerInt = Number(controller);
     const config = await this.prisma.controllerConfig.upsert({
       where: {
-        trackId_controller: { trackId, controller: String(controller) }
+        trackId_controller: { trackId, controller: controllerInt }
       },
       create: {
-        controller: String(controller),
+        controller: controllerInt,
         trackId,
         driverId: driverId || null,
         carId: carId || null
@@ -88,8 +89,8 @@ export class ConfigService extends EventEmitter {
       }
     });
 
-    this.emit('config:updated', { controller, config });
-    this.io?.emit('config:updated', { controller, config });
+    this.emit('config:updated', { controller: controllerInt, config });
+    this.io?.emit('config:updated', { controller: controllerInt, config });
 
     return config;
   }

@@ -19,7 +19,7 @@ export default function SessionDetail() {
   const [error, setError] = useState('')
   const [phaseLeaderboards, setPhaseLeaderboards] = useState({
     practice: [],
-    qualifying: [],
+    qualif: [],
     race: []
   })
   const [activePhaseTab, setActivePhaseTab] = useState('practice')
@@ -49,7 +49,7 @@ export default function SessionDetail() {
 
   async function loadAllLeaderboards() {
     try {
-      const phases = ['practice', 'qualifying', 'race']
+      const phases = ['practice', 'qualif', 'race']
       const results = await Promise.all(
         phases.map(phase =>
           fetch(`${API_URL}/stats/leaderboard/drivers?sessionId=${id}&phase=${phase}`)
@@ -153,10 +153,10 @@ export default function SessionDetail() {
               <div className="flex items-center gap-3 mb-3">
                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                   session.type === 'race' ? 'bg-green-500/30 border border-green-400' :
-                  session.type === 'qualifying' ? 'bg-purple-500/30 border border-purple-400' :
+                  session.type === 'qualif' ? 'bg-purple-500/30 border border-purple-400' :
                   'bg-blue-500/30 border border-blue-400'
                 }`}>
-                  {session.type === 'race' ? 'Course' : session.type === 'qualifying' ? 'Qualifications' : 'Essais'}
+                  {session.type === 'race' ? 'Course' : session.type === 'qualif' ? 'Qualifications' : 'Essais'}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                   session.status === 'finished' ? 'bg-blue-500/30 border border-blue-400' :
@@ -238,7 +238,7 @@ export default function SessionDetail() {
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200">
             <div className="flex">
-              {['practice', 'qualifying', 'race'].map((phase) => (
+              {['practice', 'qualif', 'race'].map((phase) => (
                 <button
                   key={phase}
                   onClick={() => setActivePhaseTab(phase)}
@@ -249,9 +249,9 @@ export default function SessionDetail() {
                   }`}
                 >
                   {phase === 'practice' && <ClockIcon className="w-5 h-5" />}
-                  {phase === 'qualifying' && <BoltIcon className="w-5 h-5" />}
+                  {phase === 'qualif' && <BoltIcon className="w-5 h-5" />}
                   {phase === 'race' && <FlagIcon className="w-5 h-5" />}
-                  {phase === 'practice' ? 'Essais' : phase === 'qualifying' ? 'Qualifications' : 'Course'}
+                  {phase === 'practice' ? 'Essais' : phase === 'qualif' ? 'Qualifications' : 'Course'}
                   {phaseLeaderboards[phase]?.length > 0 && (
                     <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
                       {phaseLeaderboards[phase].length}

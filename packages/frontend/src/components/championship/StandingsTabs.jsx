@@ -1,170 +1,202 @@
+import { useMemo } from 'react'
+import { PlayIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline'
 import LapTime from '../race/LapTime'
 
 /**
- * StandingsTabs - Two tabs for Qualifications and Courses standings
+ * StandingsTabs - Three tabs for Practice, Qualifications and Races standings
+ * Practice tab: sorted by best lap time from practice session
  * Qualif tab: sorted by qualifBestTime
- * Course tab: sorted by raceTotalLaps desc, then raceTotalTime asc
+ * Race tab: sorted by raceTotalLaps desc, then raceTotalTime asc
  */
-export default function StandingsTabs({ standings = [], activeTab = 'qualif', onTabChange }) {
+export default function StandingsTabs({
+  standings = {},
+  drivers = [],
+  activeTab = 'practice',
+  onTabChange
+}) {
   const tabs = [
-    { id: 'qualif', label: 'Qualifications' },
-    { id: 'race', label: 'Courses' }
+    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: PlayIcon, color: 'purple' },
+    { id: 'qualif', label: 'Qualifications', shortLabel: 'Qualif', icon: ClockIcon, color: 'blue' },
+    { id: 'race', label: 'Courses', shortLabel: 'Course', icon: FlagIcon, color: 'green' }
   ]
 
-  // Sort standings based on active tab
-  const sortedStandings = [...standings].sort((a, b) => {
-    if (activeTab === 'qualif') {
-      // Sort by qualifBestTime (ascending, null/0 at the end)
-      const aTime = a.qualifBestTime || Infinity
-      const bTime = b.qualifBestTime || Infinity
-      return aTime - bTime
+  // Get driver info by ID
+  const getDriver = (driverId) => {
+    return drivers.find(d => d.id === driverId) || { name: 'Pilote inconnu', color: '#6B7280' }
+  }
+
+  // Get sorted standings for current tab
+  const sortedStandings = useMemo(() => {
+    if (activeTab === 'practice') {
+      // Practice standings: array of { driverId, lapTime, driver, car, ... }
+      const practiceData = standings.practice || []
+      return [...practiceData].sort((a, b) => {
+        const aTime = a.lapTime || a.bestTime || Infinity
+        const bTime = b.lapTime || b.bestTime || Infinity
+        return aTime - bTime
+      })
+    } else if (activeTab === 'qualif') {
+      // Qualif standings from championship standings
+      const qualifData = standings.qualif || []
+      return [...qualifData]
+        .filter(s => s.qualifBestTime !== null && s.qualifBestTime > 0)
+        .sort((a, b) => a.qualifBestTime - b.qualifBestTime)
     } else {
-      // Sort by raceTotalLaps desc, then raceTotalTime asc
-      if ((b.raceTotalLaps || 0) !== (a.raceTotalLaps || 0)) {
-        return (b.raceTotalLaps || 0) - (a.raceTotalLaps || 0)
-      }
-      const aTime = a.raceTotalTime || Infinity
-      const bTime = b.raceTotalTime || Infinity
-      return aTime - bTime
+      // Race standings from championship standings
+      const raceData = standings.race || []
+      return [...raceData]
+        .filter(s => s.raceTotalLaps > 0 || s.points > 0)
+        .sort((a, b) => {
+          if ((b.raceTotalLaps || 0) !== (a.raceTotalLaps || 0)) {
+            return (b.raceTotalLaps || 0) - (a.raceTotalLaps || 0)
+          }
+          return (a.raceTotalTime || Infinity) - (b.raceTotalTime || Infinity)
+        })
     }
-  })
+  }, [standings, activeTab])
+
+  // Calculate gap to leader
+  const getGap = (standing, index) => {
+    if (index === 0) return null
+    const leader = sortedStandings[0]
+
+    if (activeTab === 'practice') {
+      const leaderTime = leader.lapTime || leader.bestTime
+      const currentTime = standing.lapTime || standing.bestTime
+      if (leaderTime && currentTime) {
+        return currentTime - leaderTime
+      }
+    } else if (activeTab === 'qualif') {
+      if (leader.qualifBestTime && standing.qualifBestTime) {
+        return standing.qualifBestTime - leader.qualifBestTime
+      }
+    }
+    return null
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
       {/* Tabs Header */}
       <div className="flex border-b">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`flex-1 px-6 py-3 text-sm font-semibold transition-colors ${
-              activeTab === tab.id
-                ? 'bg-yellow-50 text-yellow-700 border-b-2 border-yellow-500'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map(tab => {
+          const Icon = tab.icon
+          const isActive = activeTab === tab.id
+          const colorClasses = {
+            purple: isActive ? 'text-purple-600 border-purple-600' : 'text-gray-600 hover:text-purple-600',
+            blue: isActive ? 'text-blue-600 border-blue-600' : 'text-gray-600 hover:text-blue-600',
+            green: isActive ? 'text-green-600 border-green-600' : 'text-gray-600 hover:text-green-600'
+          }
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`flex-1 px-3 py-3 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                isActive
+                  ? `${colorClasses[tab.color]} border-b-2 bg-gray-50`
+                  : `${colorClasses[tab.color]} hover:bg-gray-50`
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.shortLabel}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Standings Table */}
-      <div className="overflow-x-auto">
+      {/* Standings List */}
+      <div className="max-h-[400px] overflow-y-auto">
         {sortedStandings.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 text-sm">
             Aucun classement disponible
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Pos</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Pilote</th>
-                {activeTab === 'qualif' ? (
-                  <>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Meilleur temps</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Ecart</th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Tours</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Temps total</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Points</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sortedStandings.map((standing, index) => {
-                const position = index + 1
-                const driver = standing.driver || {}
-                const bestTime = activeTab === 'qualif'
-                  ? (sortedStandings[0]?.qualifBestTime || 0)
-                  : null
-                const gap = activeTab === 'qualif' && standing.qualifBestTime && bestTime
-                  ? standing.qualifBestTime - bestTime
-                  : null
+          <div className="divide-y divide-gray-100">
+            {sortedStandings.map((standing, index) => {
+              const driver = standing.driver || getDriver(standing.driverId)
+              const gap = getGap(standing, index)
+              const position = index + 1
 
-                return (
-                  <tr key={standing.id || standing.driverId} className="hover:bg-gray-50">
-                    {/* Position */}
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                        position === 1 ? 'bg-yellow-100 text-yellow-700' :
-                        position === 2 ? 'bg-gray-200 text-gray-700' :
-                        position === 3 ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {position}
-                      </span>
-                    </td>
+              return (
+                <div
+                  key={standing.id || standing.driverId || index}
+                  className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 ${
+                    position === 1 ? 'bg-yellow-50' :
+                    position === 2 ? 'bg-gray-50' :
+                    position === 3 ? 'bg-orange-50' : ''
+                  }`}
+                >
+                  {/* Position */}
+                  <span className={`w-6 text-center font-bold text-sm ${
+                    position === 1 ? 'text-yellow-600' :
+                    position === 2 ? 'text-gray-500' :
+                    position === 3 ? 'text-orange-600' :
+                    'text-gray-700'
+                  }`}>
+                    {position}
+                  </span>
 
-                    {/* Driver */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden"
-                          style={{ backgroundColor: driver.color || '#3B82F6' }}
-                        >
-                          {driver.photo ? (
-                            <img src={driver.photo} alt={driver.name} className="w-full h-full object-cover" />
-                          ) : (
-                            (driver.name || 'D').charAt(0)
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{driver.name || 'Pilote inconnu'}</div>
-                          {driver.number && (
-                            <div className="text-xs text-gray-500">#{driver.number}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {activeTab === 'qualif' ? (
-                      <>
-                        {/* Best Time */}
-                        <td className="px-4 py-3 text-right">
-                          <LapTime
-                            time={standing.qualifBestTime}
-                            size="md"
-                            highlight={position === 1 && standing.qualifBestTime > 0}
-                          />
-                        </td>
-                        {/* Gap */}
-                        <td className="px-4 py-3 text-right">
-                          {position === 1 ? (
-                            <span className="text-gray-400">-</span>
-                          ) : gap ? (
-                            <span className="font-mono text-sm text-gray-600">+{(gap / 1000).toFixed(3)}</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </>
+                  {/* Driver avatar */}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
+                    style={{ backgroundColor: driver.color || '#6B7280' }}
+                  >
+                    {driver.photo || driver.photoUrl ? (
+                      <img
+                        src={driver.photo || driver.photoUrl}
+                        alt={driver.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
+                      driver.name?.charAt(0) || '?'
+                    )}
+                  </div>
+
+                  {/* Driver info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 text-sm truncate">
+                      {driver.name}
+                    </div>
+                    {activeTab === 'race' && standing.raceTotalLaps > 0 && (
+                      <div className="text-xs text-gray-500">
+                        {standing.raceTotalLaps} tours
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Stats */}
+                  <div className="text-right flex items-center gap-3">
+                    {activeTab === 'practice' && (
+                      <LapTime time={standing.lapTime || standing.bestTime} size="sm" />
+                    )}
+
+                    {activeTab === 'qualif' && (
                       <>
-                        {/* Total Laps */}
-                        <td className="px-4 py-3 text-right">
-                          <span className="font-mono font-semibold text-gray-900">
-                            {standing.raceTotalLaps || 0}
+                        <LapTime time={standing.qualifBestTime} size="sm" />
+                        {gap !== null && (
+                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                            +{(gap / 1000).toFixed(3)}
                           </span>
-                        </td>
-                        {/* Total Time */}
-                        <td className="px-4 py-3 text-right">
-                          <LapTime time={standing.raceTotalTime} size="sm" />
-                        </td>
-                        {/* Points */}
-                        <td className="px-4 py-3 text-right">
-                          <span className="font-bold text-gray-900">{standing.points || 0}</span>
-                        </td>
+                        )}
                       </>
                     )}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+
+                    {activeTab === 'race' && (
+                      <>
+                        <LapTime time={standing.raceTotalTime} size="sm" />
+                        {standing.points !== undefined && (
+                          <span className="font-bold text-gray-900 text-sm w-12 text-right">
+                            {standing.points} pts
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>

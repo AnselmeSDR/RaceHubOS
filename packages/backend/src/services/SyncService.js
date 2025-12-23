@@ -337,7 +337,7 @@ export class SyncService extends EventEmitter {
 
     this.activeSessionId = session.id;
     this.activeTrackId = session.trackId;
-    this.currentPhase = session.type === 'qualifying' ? 'qualif' :
+    this.currentPhase = session.type === 'qualif' ? 'qualif' :
                         session.type === 'practice' ? 'practice' : 'race';
 
     // Initialize driver states from DB (unified format)
@@ -424,7 +424,7 @@ export class SyncService extends EventEmitter {
           shouldStartFinishing = true;
           reason = `Leader a termine ${session.maxLaps} tours`;
           this.raceFinishTime = Date.now();
-        } else if (session.type === 'qualifying') {
+        } else if (session.type === 'qualif') {
           // Qualif: all must complete maxLaps
           const allFinished = this.sessionDrivers
             .filter(d => d.totalLaps > 0)

@@ -26,11 +26,11 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// POST /qualifying - Start a qualifying session
-router.post('/qualifying', async (req, res) => {
+// POST /qualif - Start a qualifying session
+router.post('/qualif', async (req, res) => {
   try {
-    const { name, trackId, duration, maxLaps, championshipId } = req.body;
-    const result = await raceController.startQualifying({ name, trackId, duration, maxLaps, championshipId });
+    const { name, trackId, duration, maxLaps, championshipId, order } = req.body;
+    const result = await raceController.startQualifying({ name, trackId, duration, maxLaps, championshipId, order });
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -40,8 +40,8 @@ router.post('/qualifying', async (req, res) => {
 // POST /race - Start a race session
 router.post('/race', async (req, res) => {
   try {
-    const { name, trackId, duration, maxLaps, championshipId, gridFromQualifying } = req.body;
-    const result = await raceController.startRace({ name, trackId, duration, maxLaps, championshipId, gridFromQualifying });
+    const { name, trackId, duration, maxLaps, championshipId, gridFromQualifying, order } = req.body;
+    const result = await raceController.startRace({ name, trackId, duration, maxLaps, championshipId, gridFromQualifying, order });
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

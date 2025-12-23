@@ -5,7 +5,7 @@ import { EventEmitter } from 'events';
 const STATES = {
   IDLE: 'IDLE',           // Free practice mode
   PENDING: 'PENDING',     // Session created, waiting to start
-  RUNNING: 'RUNNING',     // Race/qualifying in progress
+  RUNNING: 'RUNNING',     // Race/qualif in progress
   PAUSED: 'PAUSED',       // Session paused
   RESULTS: 'RESULTS'      // Session finished, showing results
 };
@@ -128,21 +128,40 @@ export class RaceControllerService extends EventEmitter {
    */
   async startQualifying(params) {
     if (this.state !== STATES.IDLE) {
-      throw new Error(`Cannot start qualifying: state is ${this.state}, expected IDLE`);
+      throw new Error(`Cannot start qualif: state is ${this.state}, expected IDLE`);
     }
 
-    const { name, trackId, championshipId, duration, maxLaps } = params;
+    let { name, trackId, championshipId, duration, maxLaps, order } = params;
+
+    // If championshipId is provided but no trackId, get it from the championship
+    if (championshipId && !trackId) {
+      const championship = await this.prisma.championship.findUnique({
+        where: { id: championshipId }
+      });
+      if (!championship) {
+        throw new Error('Championship not found');
+      }
+      if (!championship.trackId) {
+        throw new Error('Championship has no track assigned');
+      }
+      trackId = championship.trackId;
+    }
+
+    if (!trackId) {
+      throw new Error('trackId is required');
+    }
 
     // Create session
     const session = await this.prisma.session.create({
       data: {
         name: name || 'Qualifying',
-        type: 'qualifying',
-        status: 'pending',
+        type: 'qualif',
+        status: 'draft',
         trackId,
         championshipId,
         duration,
-        maxLaps
+        maxLaps,
+        order: order ?? 0
       },
       include: { track: true }
     });
@@ -200,19 +219,38 @@ export class RaceControllerService extends EventEmitter {
       throw new Error(`Cannot start race: state is ${this.state}, expected IDLE`);
     }
 
-    const { name, trackId, championshipId, duration, maxLaps, fuelMode, gridFromQualifying } = params;
+    let { name, trackId, championshipId, duration, maxLaps, fuelMode, gridFromQualifying, order } = params;
+
+    // If championshipId is provided but no trackId, get it from the championship
+    if (championshipId && !trackId) {
+      const championship = await this.prisma.championship.findUnique({
+        where: { id: championshipId }
+      });
+      if (!championship) {
+        throw new Error('Championship not found');
+      }
+      if (!championship.trackId) {
+        throw new Error('Championship has no track assigned');
+      }
+      trackId = championship.trackId;
+    }
+
+    if (!trackId) {
+      throw new Error('trackId is required');
+    }
 
     // Create session
     const session = await this.prisma.session.create({
       data: {
         name: name || 'Race',
         type: 'race',
-        status: 'pending',
+        status: 'draft',
         trackId,
         championshipId,
         duration,
         maxLaps,
-        fuelMode: fuelMode || 'OFF'
+        fuelMode: fuelMode || 'OFF',
+        order: order ?? 0
       },
       include: { track: true }
     });
@@ -227,7 +265,7 @@ export class RaceControllerService extends EventEmitter {
     let gridOrder = null;
     if (gridFromQualifying) {
       const lastQualifying = await this.prisma.session.findFirst({
-        where: { trackId, type: 'qualifying', status: 'finished' },
+        where: { trackId, type: 'qualif', status: 'finished' },
         orderBy: { finishedAt: 'desc' },
         include: {
           drivers: {
@@ -330,10 +368,10 @@ export class RaceControllerService extends EventEmitter {
     // Load session into TrackSync for lap recording
     if (this.trackSync) {
       this.trackSync.activeSessionId = this.currentSession.id;
-      this.trackSync.sessionDrivers.clear();
+      this.trackSync.mapDriverByController.clear();
 
       for (const sd of this.currentSession.drivers) {
-        this.trackSync.sessionDrivers.set(sd.controller, {
+        this.trackSync.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -435,7 +473,7 @@ export class RaceControllerService extends EventEmitter {
     // Clear TrackSync session
     if (this.trackSync) {
       this.trackSync.activeSessionId = null;
-      this.trackSync.sessionDrivers.clear();
+      this.trackSync.mapDriverByController.clear();
     }
 
     // Calculate final positions
@@ -464,7 +502,7 @@ export class RaceControllerService extends EventEmitter {
     // Clear TrackSync session
     if (this.trackSync) {
       this.trackSync.activeSessionId = null;
-      this.trackSync.sessionDrivers.clear();
+      this.trackSync.mapDriverByController.clear();
     }
 
     if (this.currentSession) {
