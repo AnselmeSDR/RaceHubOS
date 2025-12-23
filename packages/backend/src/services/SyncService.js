@@ -21,6 +21,8 @@ export class SyncService {
     this.activeSessionId = null;
     this.activeTrackId = null;
     this.currentPhase = 'practice'; // 'practice' | 'qualif' | 'race'
+    this.sessionConfig = null; // Cached session config (duration, maxLaps, etc.)
+    this.sessionStatus = null; // Cached session status
 
     // Driver states - format unifie (RAM === DB === Emit)
     this.sessionDrivers = [];
@@ -102,7 +104,7 @@ export class SyncService {
     this.recalculatePositions();
 
     // 3. Save Lap (source de verite)
-    const lap = await this.prisma.lap.create({
+    await this.prisma.lap.create({
       data: {
         sessionId: this.activeSessionId,
         trackId: this.activeTrackId,
@@ -334,6 +336,16 @@ export class SyncService {
     this.currentPhase = session.type === 'qualif' ? 'qualif' :
                         session.type === 'practice' ? 'practice' : 'race';
 
+    // Cache session config for checkSessionComplete (avoid repeated DB queries)
+    this.sessionConfig = {
+      duration: session.duration,
+      maxLaps: session.maxLaps,
+      gracePeriod: session.gracePeriod || DEFAULT_GRACE_PERIOD_MS,
+      startedAt: session.startedAt,
+      championshipId: session.championshipId,
+    };
+    this.sessionStatus = session.status;
+
     // Initialize driver states from DB (unified format)
     this.sessionDrivers = session.drivers.map(sd => ({
       // Identifiers
@@ -371,6 +383,8 @@ export class SyncService {
     this.activeSessionId = null;
     this.activeTrackId = null;
     this.currentPhase = 'practice';
+    this.sessionConfig = null;
+    this.sessionStatus = 'draft';
 
     // Reset source if it has reset method
     if (this.source.reset) {
@@ -382,53 +396,47 @@ export class SyncService {
   }
 
   /**
-   * Check if session should auto-complete
+   * Check if session should auto-complete (uses cached sessionConfig, no DB query)
    */
   async checkSessionComplete() {
-    if (!this.activeSessionId) return;
+    if (!this.activeSessionId || !this.sessionConfig) return;
+    if (this.sessionStatus !== 'active' && this.sessionStatus !== 'finishing') return;
 
-    const session = await this.prisma.session.findUnique({
-      where: { id: this.activeSessionId },
-      include: { championship: true },
-    });
-
-    if (!session) return;
-    if (session.status !== 'active' && session.status !== 'finishing') return;
+    const { duration, maxLaps, gracePeriod, startedAt, championshipId } = this.sessionConfig;
 
     let shouldStop = false;
     let shouldStartFinishing = false;
     let reason = '';
 
     // Check time limit
-    if (session.duration && session.startedAt) {
-      const elapsed = Date.now() - new Date(session.startedAt).getTime();
-      if (elapsed >= session.duration) {
+    if (duration && startedAt) {
+      const elapsed = Date.now() - new Date(startedAt).getTime();
+      if (elapsed >= duration) {
         shouldStop = true;
-        reason = `Temps ecoule (${Math.round(session.duration / 60000)}min)`;
+        reason = `Temps ecoule (${Math.round(duration / 60000)}min)`;
       }
     }
 
     // Check lap limit
-    if (session.maxLaps && !shouldStop) {
-      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= session.maxLaps);
+    if (maxLaps && !shouldStop) {
+      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
 
       if (maxLapsReached) {
-        if (session.status !== 'finishing') {
+        if (this.sessionStatus !== 'finishing') {
           shouldStartFinishing = true;
-          reason = `Leader a termine ${session.maxLaps} tours`;
+          reason = `Leader a termine ${maxLaps} tours`;
           this.raceFinishTime = Date.now();
-        } else if (session.type === 'qualif') {
+        } else if (this.currentPhase === 'qualif') {
           // Qualif: all must complete maxLaps
           const allFinished = this.sessionDrivers
             .filter(d => d.totalLaps > 0)
-            .every(d => d.totalLaps >= session.maxLaps);
+            .every(d => d.totalLaps >= maxLaps);
           if (allFinished) {
             shouldStop = true;
-            reason = `Tous les pilotes ont termine ${session.maxLaps} tours`;
+            reason = `Tous les pilotes ont termine ${maxLaps} tours`;
           }
         } else {
-          // Race: grace period (configurable, default 30s)
-          const gracePeriod = session.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
+          // Race: grace period
           if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
             shouldStop = true;
             reason = `Delai de grace ecoule (${gracePeriod / 1000}s)`;
@@ -443,6 +451,7 @@ export class SyncService {
         where: { id: this.activeSessionId },
         data: { status: 'finishing', finishingAt: new Date() },
       });
+      this.sessionStatus = 'finishing';
 
       this.io?.emit('session:finishing', {
         sessionId: this.activeSessionId,
@@ -452,47 +461,48 @@ export class SyncService {
 
     // Finish session
     if (shouldStop) {
-      await this.finishSession(reason, session.championshipId);
+      await this.finishSession(reason, championshipId);
     }
   }
 
   /**
-   * Finish session and save final positions
+   * Finish session and save final positions (batched transaction)
    */
   async finishSession(reason, championshipId = null) {
-    // Update final positions in DB
-    for (const driver of this.sessionDrivers) {
-      await this.prisma.sessionDriver.update({
-        where: { id: driver.id },
-        data: {
-          finalPos: driver.position,
-          totalLaps: driver.totalLaps,
-          totalTime: driver.totalTime,
-          bestLapTime: driver.bestLapTime,
-          lastLapTime: driver.lastLapTime,
-        },
-      });
-    }
+    const sessionId = this.activeSessionId;
+    const previousStatus = this.sessionStatus;
 
-    // Update session status
-    await this.prisma.session.update({
-      where: { id: this.activeSessionId },
-      data: {
-        status: 'finished',
-        finishedAt: new Date(),
-      },
-    });
+    // Batch all updates in a single transaction
+    await this.prisma.$transaction([
+      // Update all drivers at once
+      ...this.sessionDrivers.map(driver =>
+        this.prisma.sessionDriver.update({
+          where: { id: driver.id },
+          data: {
+            finalPos: driver.position,
+            totalLaps: driver.totalLaps,
+            totalTime: driver.totalTime,
+            bestLapTime: driver.bestLapTime,
+            lastLapTime: driver.lastLapTime,
+          },
+        })
+      ),
+      // Update session status
+      this.prisma.session.update({
+        where: { id: sessionId },
+        data: {
+          status: 'finished',
+          finishedAt: new Date(),
+        },
+      }),
+    ]);
 
     // Emit events
-    this.io?.emit('session:finished', {
-      sessionId: this.activeSessionId,
-      reason,
-    });
-
+    this.io?.emit('session:finished', { sessionId, reason });
     this.io?.emit('session_status_changed', {
-      sessionId: this.activeSessionId,
+      sessionId,
       status: 'finished',
-      previousStatus: 'active',
+      previousStatus,
     });
 
     // Recalculate championship standings
@@ -501,10 +511,11 @@ export class SyncService {
     }
 
     // Clear state
-    const sessionId = this.activeSessionId;
     this.activeSessionId = null;
     this.activeTrackId = null;
     this.sessionDrivers = [];
+    this.sessionConfig = null;
+    this.sessionStatus = null;
     this.raceFinishTime = null;
   }
 
