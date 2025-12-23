@@ -148,26 +148,31 @@ export class SyncService extends EventEmitter {
   /**
    * Recalculate positions and gaps
    * Modifies sessionDrivers in place
+   *
+   * Sorting rules:
+   * - practice/qualif: by bestLapTime (ascending, null last)
+   * - race: by totalLaps (desc), then totalTime (asc)
    */
   recalculatePositions() {
     if (this.sessionDrivers.length === 0) return;
 
-    // Sort based on phase
-    if (this.currentPhase === 'qualif') {
-      // Qualif: best lap time (ascending, null last)
-      this.sessionDrivers.sort((a, b) => {
-        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
-        if (a.bestLapTime === null) return 1;
-        if (b.bestLapTime === null) return -1;
-        return a.bestLapTime - b.bestLapTime;
-      });
-    } else {
-      // Race/Free: laps (desc), then total time (asc)
+    const isRace = this.currentPhase === 'race';
+
+    if (isRace) {
+      // Race: most laps first, then fastest total time
       this.sessionDrivers.sort((a, b) => {
         if (b.totalLaps !== a.totalLaps) {
           return b.totalLaps - a.totalLaps;
         }
         return a.totalTime - b.totalTime;
+      });
+    } else {
+      // Practice/Qualif: best lap time (ascending, null last)
+      this.sessionDrivers.sort((a, b) => {
+        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
+        if (a.bestLapTime === null) return 1;
+        if (b.bestLapTime === null) return -1;
+        return a.bestLapTime - b.bestLapTime;
       });
     }
 
@@ -180,20 +185,20 @@ export class SyncService extends EventEmitter {
 
       if (i === 0) {
         driver.gap = null;
-      } else if (this.currentPhase === 'qualif') {
-        // Gap = time difference to leader's best lap
-        if (leader.bestLapTime && driver.bestLapTime) {
-          driver.gap = driver.bestLapTime - leader.bestLapTime;
-        } else {
-          driver.gap = null;
-        }
-      } else {
+      } else if (isRace) {
         // Race: gap in laps or time
         const lapDiff = leader.totalLaps - driver.totalLaps;
         if (lapDiff > 0) {
           driver.gap = lapDiff; // Number = laps behind
         } else if (leader.totalTime && driver.totalTime) {
           driver.gap = driver.totalTime - leader.totalTime; // ms behind
+        } else {
+          driver.gap = null;
+        }
+      } else {
+        // Practice/Qualif: gap = time difference to leader's best lap
+        if (leader.bestLapTime && driver.bestLapTime) {
+          driver.gap = driver.bestLapTime - leader.bestLapTime;
         } else {
           driver.gap = null;
         }
