@@ -12,7 +12,7 @@ Le système de phases permet à une session de gérer plusieurs types d'activit�
 ```prisma
 model Session {
   // ...
-  currentPhase    String       @default("practice") // Phase active : practice, qualifying, race
+  currentPhase    String       @default("practice") // Phase active : practice, qualif, race
   // ...
 }
 ```
@@ -21,7 +21,7 @@ model Session {
 ```prisma
 model Lap {
   // ...
-  phase       String   @default("practice") // Phase du tour : practice, qualifying, race
+  phase       String   @default("practice") // Phase du tour : practice, qualif, race
   // ...
 
   @@index([sessionId, phase]) // Index pour optimiser les requêtes par phase
@@ -35,7 +35,7 @@ model Lap {
 
 **Paramètres :**
 - `sessionId` (requis) : ID de la session
-- `phase` (optionnel) : practice, qualifying, ou race
+- `phase` (optionnel) : practice, qualif, ou race
 
 **Tri par phase :**
 - **Practice/Qualifying** : Classement par meilleur temps au tour (croissant)
@@ -64,7 +64,7 @@ model Lap {
 **Body :**
 ```json
 {
-  "currentPhase": "qualifying"
+  "currentPhase": "qualif"
 }
 ```
 
@@ -75,7 +75,7 @@ model Lap {
 const [activePhaseTab, setActivePhaseTab] = useState('practice')
 const [phaseLeaderboards, setPhaseLeaderboards] = useState({
   practice: [],
-  qualifying: [],
+  qualif: [],
   race: []
 })
 ```
@@ -105,7 +105,7 @@ Lorsqu'un tour est enregistré, il est automatiquement associé à la phase acti
 {
   sessionId: "session-id",
   driverId: "driver-id",
-  phase: session.currentPhase, // "practice", "qualifying", ou "race"
+  phase: session.currentPhase, // "practice", "qualif", ou "race"
   lapTime: 45230,
   // ...
 }
@@ -114,14 +114,14 @@ Lorsqu'un tour est enregistré, il est automatiquement associé à la phase acti
 ### 3. Changement de phase
 L'utilisateur peut changer la phase via le sélecteur dans le header :
 ```javascript
-handlePhaseChange("qualifying")
-// Les nouveaux tours seront enregistrés en phase "qualifying"
+handlePhaseChange("qualif")
+// Les nouveaux tours seront enregistrés en phase "qualif"
 ```
 
 ### 4. Consultation des résultats
 Chaque onglet affiche le classement filtré par phase :
 - **Essais libres** : Tours avec `phase = "practice"`
-- **Qualifications** : Tours avec `phase = "qualifying"`
+- **Qualifications** : Tours avec `phase = "qualif"`
 - **Course** : Tours avec `phase = "race"`
 
 ## Interface utilisateur

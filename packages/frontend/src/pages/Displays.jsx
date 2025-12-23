@@ -593,7 +593,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           lastLap: 5200 + idx * 100,
           gap: idx === 0 ? null : `+${(idx * 0.8).toFixed(1)}s`,
         }))
-      case 'qualifying':
+      case 'qualif':
         return baseData.map((entry, idx) => ({
           ...entry,
           laps: 5,
@@ -632,7 +632,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
 
   const sessionTypeLabels = {
     practice: { label: 'Essais Libres', icon: BeakerIcon, color: 'bg-gray-500' },
-    qualifying: { label: 'Qualifications', icon: ClockIcon, color: 'bg-purple-500' },
+    qualif: { label: 'Qualifications', icon: ClockIcon, color: 'bg-purple-500' },
     race: { label: 'Course', icon: FlagIcon, color: 'bg-green-500' },
   }
 
@@ -647,7 +647,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           title="Types de Session"
           description="Sélectionnez le type de session pour voir les différents états"
           componentName="SessionType"
-          code="sessionType: 'practice' | 'qualifying' | 'race'"
+          code="sessionType: 'practice' | 'qualif' | 'race'"
         />
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex gap-3 mb-4">
@@ -706,7 +706,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           title={`Leaderboard - ${currentSession.label}`}
           description={
             sessionType === 'practice' ? 'Classement par nombre de tours, puis meilleur temps' :
-            sessionType === 'qualifying' ? 'Classement par meilleur temps au tour' :
+            sessionType === 'qualif' ? 'Classement par meilleur temps au tour' :
             'Classement par tours complétés, avec écarts'
           }
           componentName="Leaderboard"
@@ -716,11 +716,11 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           <div className="flex items-center gap-2 mb-4">
             <SessionIcon className={`w-5 h-5 ${
               sessionType === 'practice' ? 'text-gray-500' :
-              sessionType === 'qualifying' ? 'text-purple-500' :
+              sessionType === 'qualif' ? 'text-purple-500' :
               'text-green-500'
             }`} />
             <span className="font-semibold text-gray-700">{currentSession.label}</span>
-            {sessionType === 'qualifying' && (
+            {sessionType === 'qualif' && (
               <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
                 <ClockIcon className="w-3 h-3" />
                 5 tours max

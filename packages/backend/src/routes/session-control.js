@@ -227,12 +227,12 @@ router.post('/:id/finish', async (req, res) => {
 router.post('/:id/phases/:phase/laps', async (req, res) => {
   try {
     const { id, phase } = req.params;
-    const { driverId, carId, controller, lapTime, lapNumber, speed } = req.body;
+    const { driverId, carId, controller: rawController, lapTime, lapNumber, speed } = req.body;
 
     const lap = await sessionManager.recordLap(id, phase, {
       driverId,
       carId,
-      controller,
+      controller: Number(rawController), // 0-indexed int
       lapTime,
       lapNumber,
       speed

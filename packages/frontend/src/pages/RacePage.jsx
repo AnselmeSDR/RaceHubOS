@@ -67,7 +67,7 @@ export default function RacePage() {
     const [cars, setCars] = useState([])
     const [tracks, setTracks] = useState([])
     const [selectedTrack, setSelectedTrack] = useState(null)
-    const [trackRecords, setTrackRecords] = useState({ free: [], qualifying: [], race: [] })
+    const [trackRecords, setTrackRecords] = useState({ free: [], qualif: [], race: [] })
 
     // Controller config
     const {
@@ -82,7 +82,7 @@ export default function RacePage() {
 
     // UI state
     const [configExpanded, setConfigExpanded] = useState(false)
-    const [sessionModalType, setSessionModalType] = useState(null) // 'qualifying' | 'race' | null
+    const [sessionModalType, setSessionModalType] = useState(null) // 'qualif' | 'race' | null
     const [showResultsModal, setShowResultsModal] = useState(false)
     const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
@@ -121,17 +121,17 @@ export default function RacePage() {
         try {
             const response = await fetch(`${API_URL}/api/records/track/${trackId}`)
             if (!response.ok) {
-                setTrackRecords({ free: [], qualifying: [], race: [] })
+                setTrackRecords({ free: [], qualif: [], race: [] })
                 return
             }
             const data = await response.json()
             setTrackRecords({
                 free: data.data?.free || [],
-                qualifying: data.data?.qualifying || [],
+                qualif: data.data?.qualifying || [],
                 race: data.data?.race || []
             })
         } catch {
-            setTrackRecords({ free: [], qualifying: [], race: [] })
+            setTrackRecords({ free: [], qualif: [], race: [] })
         }
     }, [])
 
@@ -173,7 +173,7 @@ export default function RacePage() {
     }, [updateSlot])
 
     const handleStartSession = async (formData) => {
-        const isQualifyingSession = sessionModalType === 'qualifying'
+        const isQualifyingSession = sessionModalType === 'qualif'
         const params = {
             name: formData.name || (isQualifyingSession ? 'Qualifying' : 'Race'),
             trackId: selectedTrack?.id,
@@ -268,7 +268,7 @@ export default function RacePage() {
                 onTrackChange={setSelectedTrack}
                 cuConnected={cuConnected}
                 canStartSession={canStartSession}
-                onStartQualifying={() => setSessionModalType('qualifying')}
+                onStartQualifying={() => setSessionModalType('qualif')}
                 onStartRace={() => setSessionModalType('race')}
             />
 

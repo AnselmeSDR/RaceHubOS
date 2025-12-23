@@ -28,7 +28,7 @@ router.get('/track/:trackId', async (req, res) => {
 
     const [freeLaps, qualifyingLaps, raceLaps, track] = await Promise.all([
       getBestByPhase('free'),
-      getBestByPhase('qualifying'),
+      getBestByPhase('qualif'),
       getBestByPhase('race'),
       prisma.track.findUnique({ where: { id: trackId } })
     ]);
@@ -38,7 +38,7 @@ router.get('/track/:trackId', async (req, res) => {
       data: {
         track,
         free: freeLaps,
-        qualifying: qualifyingLaps,
+        qualif: qualifyingLaps,
         race: raceLaps
       }
     });

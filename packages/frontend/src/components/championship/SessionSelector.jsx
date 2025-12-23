@@ -12,7 +12,7 @@ export default function SessionSelector({ sessions = [], selectedSession, onSele
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 
     const orderIndex = sameTypeSessions.findIndex(s => s.id === session.id) + 1
-    const prefix = session.type === 'qualifying' ? 'Q' : session.type === 'race' ? 'R' : 'P'
+    const prefix = session.type === 'qualif' ? 'Q' : session.type === 'race' ? 'R' : 'P'
 
     return `${prefix}${orderIndex}`
   }

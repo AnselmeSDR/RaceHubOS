@@ -22,6 +22,7 @@ export function RaceProvider({ children }) {
   const [leaderboard, setLeaderboard] = useState([])
   const [config, setConfig] = useState({}) // Controller configurations (1-6)
   const [cuConnected, setCuConnected] = useState(false)
+  const [cuStatus, setCuStatus] = useState({ start: 8 }) // { start: 0-8, fuel, ... } - 8 = stopped by default
   const [elapsed, setElapsed] = useState(0)
   const [remaining, setRemaining] = useState(null)
 
@@ -29,6 +30,13 @@ export function RaceProvider({ children }) {
   const [currentTrackId, setCurrentTrackId] = useState(null)
   const [controllerConfigs, setControllerConfigs] = useState([])
   const [freePracticeBoard, setFreePracticeBoard] = useState({})
+
+  // Championship session state
+  const [lastServerTime, setLastServerTime] = useState(null)
+  const [isStale, setIsStale] = useState(false)
+  const [finishingSession, setFinishingSession] = useState(null) // { sessionId, endsAt, remainingSeconds }
+  const [sessionResults, setSessionResults] = useState(null) // Latest finished session results
+  const [sessionLeaderboard, setSessionLeaderboard] = useState([]) // Real-time leaderboard for Q/R sessions
 
   // Socket reference
   const socketRef = useRef(null)
@@ -81,23 +89,49 @@ export function RaceProvider({ children }) {
   // Keep ref updated for socket callback
   useEffect(() => { refreshStateRef.current = refreshState }, [refreshState])
 
+  // Check data freshness every 500ms
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!lastServerTime) {
+        setIsStale(false)
+        return
+      }
+      const age = Date.now() - new Date(lastServerTime).getTime()
+      setIsStale(age > 2000) // stale if > 2s without update
+    }, 500)
+    return () => clearInterval(interval)
+  }, [lastServerTime])
+
   // Initialize socket connection
   useEffect(() => {
     const socket = io(WS_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      timeout: 60000,        // Connection timeout
+      pingTimeout: 60000,    // Match server config
+      pingInterval: 25000    // Match server config
     })
     socketRef.current = socket
 
     socket.on('connect', () => {
+      console.log('[Socket] Connected')
       setSocketConnected(true)
       refreshStateRef.current?.()
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
+      console.warn('[Socket] Disconnected:', reason)
       setSocketConnected(false)
+    })
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log('[Socket] Reconnected after', attemptNumber, 'attempts')
+    })
+
+    socket.on('reconnect_error', (error) => {
+      console.error('[Socket] Reconnect error:', error.message)
     })
 
     // Race state events
@@ -130,8 +164,86 @@ export function RaceProvider({ children }) {
       setCuConnected(false)
     })
 
+    // CU status updates (start state: 0=racing, 1-5=lights, 6=false start, 7=go, 8+=stopped)
+    socket.on('cu:status', (status) => {
+      setCuStatus(status)
+    })
+
     // Ignore simulator events - handled by Home.jsx (/simulator page)
     socket.on('race:status', () => {})
+
+    // Championship session events
+    socket.on('session_status_changed', (data) => {
+      // Update session status in state
+      if (data.sessionId && data.status) {
+        setSession(prev => prev?.id === data.sessionId ? { ...prev, status: data.status } : prev)
+      }
+      if (data.serverTime) setLastServerTime(data.serverTime)
+    })
+
+    socket.on('session_finishing', (data) => {
+      // Trigger countdown, display "LAST LAP"
+      setFinishingSession({
+        sessionId: data.sessionId,
+        championshipId: data.championshipId,
+        endsAt: data.endsAt,
+        remainingSeconds: data.remainingSeconds,
+        reason: data.reason
+      })
+      if (data.serverTime) setLastServerTime(data.serverTime)
+    })
+
+    socket.on('session_finished', (data) => {
+      // Update session, display results
+      setSession(prev => prev?.id === data.sessionId ? { ...prev, status: 'finished' } : prev)
+      setFinishingSession(null)
+      setSessionResults({
+        sessionId: data.sessionId,
+        championshipId: data.championshipId,
+        type: data.type,
+        results: data.results
+      })
+      if (data.serverTime) setLastServerTime(data.serverTime)
+      // Notify components to refetch sessions
+      window.dispatchEvent(new CustomEvent('session_finished', { detail: data }))
+    })
+
+    socket.on('session_status_changed', (data) => {
+      // Notify components to refetch sessions when status changes
+      window.dispatchEvent(new CustomEvent('session_status_changed', { detail: data }))
+    })
+
+    socket.on('practice_reset', (data) => {
+      // Clear practice leaderboard
+      if (data.sessionId) {
+        setFreePracticeBoard({})
+      }
+      if (data.serverTime) setLastServerTime(data.serverTime)
+    })
+
+    socket.on('standings_changed', (data) => {
+      // This event notifies that standings need to be refetched
+      // Components listening should refetch standings via API
+      // We emit a custom event that components can subscribe to
+      window.dispatchEvent(new CustomEvent('standings_changed', { detail: data }))
+    })
+
+    // Real-time leaderboard updates for Q/R sessions
+    socket.on('positions:updated', (positions) => {
+      if (Array.isArray(positions)) {
+        setSessionLeaderboard(positions)
+      }
+    })
+
+    socket.on('heartbeat', (data) => {
+      // Update timer, calculate freshness
+      if (data.serverTime) setLastServerTime(data.serverTime)
+      if (data.data) {
+        // Convert from milliseconds to seconds
+        if (data.data.elapsedTime !== undefined) setElapsed(Math.floor(data.data.elapsedTime / 1000))
+        if (data.data.remainingTime !== undefined) setRemaining(Math.floor(data.data.remainingTime / 1000))
+      }
+    })
 
     // Free practice lap events - record laps even when not on /race page
     const handleLapEvent = async (lapData) => {
@@ -221,7 +333,7 @@ export function RaceProvider({ children }) {
   const startQualifying = useCallback(async (params) => {
     // Optimistic update
     setState(RACE_STATES.PENDING)
-    const data = await apiCall('/qualifying/start', 'POST', params)
+    const data = await apiCall('/qualif/start', 'POST', params)
     if (data.success === false) {
       // Revert on failure
       await refreshState()
@@ -240,7 +352,7 @@ export function RaceProvider({ children }) {
     return data
   }, [apiCall, refreshState])
 
-  // Start (green flag)
+  // Start (green flag) - legacy
   const start = useCallback(async () => {
     setState(RACE_STATES.RUNNING)
     const data = await apiCall('/start', 'POST')
@@ -249,6 +361,17 @@ export function RaceProvider({ children }) {
     }
     return data
   }, [apiCall, refreshState])
+
+  // Trigger CU start (sends START signal to CU - toggles lights/racing)
+  const triggerCuStart = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/bluetooth/start-race`, { method: 'POST' })
+      return await response.json()
+    } catch (error) {
+      console.error('[RaceContext] Error triggering CU start:', error)
+      return { success: false, error: error.message }
+    }
+  }, [])
 
   // Pause
   const pause = useCallback(async () => {
@@ -314,6 +437,16 @@ export function RaceProvider({ children }) {
     setFreePracticeBoard({})
   }, [])
 
+  // Clear session results (after viewing)
+  const clearSessionResults = useCallback(() => {
+    setSessionResults(null)
+  }, [])
+
+  // Clear finishing session state
+  const clearFinishingSession = useCallback(() => {
+    setFinishingSession(null)
+  }, [])
+
   const value = {
     // State
     state,
@@ -321,6 +454,7 @@ export function RaceProvider({ children }) {
     leaderboard,
     config,
     cuConnected,
+    cuStatus,
     elapsed,
     remaining,
     socketConnected,
@@ -333,10 +467,20 @@ export function RaceProvider({ children }) {
     freePracticeBoard,
     resetFreePracticeBoard,
 
+    // Championship session state
+    lastServerTime,
+    isStale,
+    finishingSession,
+    sessionResults,
+    sessionLeaderboard,
+    clearSessionResults,
+    clearFinishingSession,
+
     // Actions
     startQualifying,
     startRace,
     start,
+    triggerCuStart,
     pause,
     resume,
     finish,

@@ -176,7 +176,7 @@ export default function FreePractice() {
     const params = {
       name: qualifyingForm.name || 'Qualifying',
       trackId: selectedTrack?.id,
-      type: 'qualifying',
+      type: 'qualif',
       duration: qualifyingForm.duration > 0 ? qualifyingForm.duration * 60 * 1000 : null,
       maxLaps: qualifyingForm.maxLaps > 0 ? qualifyingForm.maxLaps : null,
       championshipId: qualifyingForm.championshipId || null,

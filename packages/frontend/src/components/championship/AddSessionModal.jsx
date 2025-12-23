@@ -5,10 +5,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 /**
  * AddSessionModal - Modal to add or edit a session
- * Create: POST /api/race/qualifying or /api/race/race with championshipId
+ * Create: POST /api/race/qualif or /api/race/race with championshipId
  * Edit: PUT /api/sessions/:id
  */
-export default function AddSessionModal({ type = 'qualifying', championshipId, session = null, onClose, onCreated }) {
+export default function AddSessionModal({ type = 'qualif', championshipId, session = null, onClose, onCreated }) {
   const isEditMode = !!session
 
   const [form, setForm] = useState({
@@ -21,7 +21,7 @@ export default function AddSessionModal({ type = 'qualifying', championshipId, s
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isQualifying = type === 'qualifying'
+  const isQualifying = type === 'qualif'
   const title = isEditMode
     ? (isQualifying ? 'Modifier Qualification' : 'Modifier Course')
     : (isQualifying ? 'Nouvelle Qualification' : 'Nouvelle Course')
@@ -56,8 +56,8 @@ export default function AddSessionModal({ type = 'qualifying', championshipId, s
         })
         data = await response.json()
       } else {
-        // Create mode: POST /api/race/qualifying or /api/race/race
-        const endpoint = isQualifying ? '/api/race/qualifying' : '/api/race/race'
+        // Create mode: POST /api/race/qualif or /api/race/race
+        const endpoint = isQualifying ? '/api/race/qualif' : '/api/race/race'
         response = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

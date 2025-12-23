@@ -15,7 +15,7 @@ export class TrackSyncService extends EventEmitter {
 
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.sessionDrivers = new Map(); // controller -> { driverId, carId, lapCount, lastLapTime, bestLapTime }
+    this.mapDriverByController = new Map(); // controller -> { driverId, carId, lapCount, lastLapTime, bestLapTime }
     this.lastStatus = null;
     this.raceFinishTime = null; // For 30s grace period in races
     this.raceStartTime = null;
@@ -95,7 +95,7 @@ export class TrackSyncService extends EventEmitter {
    */
   async resetForNewSession() {
     // Reset internal state
-    this.sessionDrivers.clear();
+    this.mapDriverByController.clear();
     this.positions.clear();
     this.lastTimestamps.clear();
     this.raceStartTime = null;
@@ -209,13 +209,13 @@ export class TrackSyncService extends EventEmitter {
     if (session) {
       this.activeSessionId = session.id;
       this.raceStartTime = session.startedAt;
-      this.currentPhase = session.type === 'qualifying' ? 'qualif' : 'race';
+      this.currentPhase = session.type === 'qualif' ? 'qualif' : 'race';
 
       // Charger les pilotes dans la map
-      this.sessionDrivers.clear();
+      this.mapDriverByController.clear();
       this.activeTrackId = session.trackId;
       for (const sd of session.drivers) {
-        this.sessionDrivers.set(sd.controller, {
+        this.mapDriverByController.set(sd.controller, {
           sessionDriverId: sd.id,
           driverId: sd.driverId,
           carId: sd.carId,
@@ -229,7 +229,7 @@ export class TrackSyncService extends EventEmitter {
       }
 
       // Compter les tours déjà enregistrés
-      for (const [controller, driverData] of this.sessionDrivers) {
+      for (const [controller, driverData] of this.mapDriverByController) {
         const lapCount = await this.prisma.lap.count({
           where: {
             sessionId: this.activeSessionId,
@@ -306,7 +306,7 @@ export class TrackSyncService extends EventEmitter {
 
     const sessionId = this.activeSessionId;
     this.activeSessionId = null;
-    this.sessionDrivers.clear();
+    this.mapDriverByController.clear();
     this.raceStartTime = null;
     this.currentPhase = 'free';
 
@@ -316,12 +316,10 @@ export class TrackSyncService extends EventEmitter {
 
   /**
    * Gérer un événement timer (passage sur la ligne)
+   * Format: { controller: 0-N, timestamp: ms, sector: 1-3 }
    */
   async handleTimerEvent(timerEvent) {
-    const { address, timestamp, sector } = timerEvent;
-
-    // Trouver le pilote correspondant
-    const controller = (address + 1).toString(); // Les addresses commencent à 0, les controllers à 1
+    const { controller, timestamp, sector } = timerEvent;
 
     // Calculer le temps du tour
     const lastTimestamp = this.lastTimestamps.get(controller) || 0;
@@ -331,14 +329,12 @@ export class TrackSyncService extends EventEmitter {
     // Émettre l'événement pour le frontend
     this.io?.emit('cu:timer', {
       controller,
-      address,
       timestamp,
       lapTime,
       sector,
-      raw: true
     });
 
-    const driverData = this.sessionDrivers.get(controller);
+    const driverData = this.mapDriverByController.get(controller);
 
     if (!driverData) {
       return;
@@ -346,6 +342,11 @@ export class TrackSyncService extends EventEmitter {
 
     // Enregistrer le tour en BDD
     if (this.activeSessionId && this.activeTrackId && sector === 1) {
+      // Ignorer le premier passage (lapTime === 0) - ce n'est pas un vrai tour
+      if (lapTime === 0) {
+        return;
+      }
+
       // Sector 1 = ligne de départ/arrivée
       try {
         const lap = await this.prisma.lap.create({
@@ -423,49 +424,94 @@ export class TrackSyncService extends EventEmitter {
 
   /**
    * Mettre à jour les positions des pilotes
+   * Calcul de gap unifié avec simulatorSync
    */
   async updatePositions() {
     if (!this.activeSessionId) return;
 
-    // Récupérer tous les tours pour calculer les positions
-    const drivers = Array.from(this.sessionDrivers.entries()).map(
+    // Récupérer tous les pilotes avec leurs données
+    const drivers = Array.from(this.mapDriverByController.entries()).map(
       ([controller, data]) => ({
         controller,
         ...data,
       })
     );
 
-    // Trier par nombre de tours puis par temps du dernier tour
-    drivers.sort((a, b) => {
-      if (b.lapCount !== a.lapCount) {
-        return b.lapCount - a.lapCount;
-      }
-      return (a.lastLapTime || Infinity) - (b.lastLapTime || Infinity);
-    });
-
-    // Mettre à jour les positions
-    for (let i = 0; i < drivers.length; i++) {
-      const driver = drivers[i];
-      driver.position = i + 1;
-      this.sessionDrivers.get(driver.controller).position = i + 1;
-
-      // Mettre à jour en BDD
-      await this.prisma.sessionDriver.update({
-        where: { id: driver.sessionDriverId },
-        data: { position: i + 1 },
+    // Trier selon le type de session (comme simulatorSync)
+    if (this.currentPhase === 'qualif') {
+      // Qualif: tri par meilleur temps (ascending)
+      drivers.sort((a, b) => {
+        const bestA = a.bestLapTime || Infinity;
+        const bestB = b.bestLapTime || Infinity;
+        return bestA - bestB;
+      });
+    } else {
+      // Race: tri par tours (desc) puis meilleur temps (asc)
+      drivers.sort((a, b) => {
+        if (b.lapCount !== a.lapCount) {
+          return b.lapCount - a.lapCount;
+        }
+        const bestA = a.bestLapTime || Infinity;
+        const bestB = b.bestLapTime || Infinity;
+        return bestA - bestB;
       });
     }
 
-    // Émettre les positions mises à jour
-    const positions = drivers.map((d) => ({
-      controller: d.controller,
-      position: d.position,
-      driverId: d.driverId,
-      driver: d.driver,
-      lapCount: d.lapCount,
-      lastLapTime: d.lastLapTime,
-      bestLapTime: d.bestLapTime,
-    }));
+    // Calculer les gaps
+    const leader = drivers[0];
+    const leaderBestLap = leader?.bestLapTime;
+    const leaderLaps = leader?.lapCount || 0;
+
+    // Mettre à jour les positions et stats en BDD
+    for (let i = 0; i < drivers.length; i++) {
+      const driver = drivers[i];
+      driver.position = i + 1;
+      this.mapDriverByController.get(driver.controller).position = i + 1;
+
+      // Mettre à jour en BDD avec bestLapTime et lastLapTime (comme simulatorSync)
+      await this.prisma.sessionDriver.update({
+        where: { id: driver.sessionDriverId },
+        data: {
+          position: i + 1,
+          totalLaps: driver.lapCount,
+          bestLapTime: driver.bestLapTime,
+          lastLapTime: driver.lastLapTime,
+        },
+      });
+    }
+
+    // Émettre les positions mises à jour avec gap (comme simulatorSync)
+    const positions = drivers.map((d, i) => {
+      let gap = null;
+
+      if (i === 0) {
+        gap = null; // Leader
+      } else if (this.currentPhase === 'qualif') {
+        // Qualif: écart en temps
+        if (leaderBestLap && d.bestLapTime) {
+          gap = d.bestLapTime - leaderBestLap;
+        }
+      } else {
+        // Race: écart en tours ou en temps
+        const lapDiff = leaderLaps - d.lapCount;
+        if (lapDiff > 0) {
+          gap = `+${lapDiff} tour${lapDiff > 1 ? 's' : ''}`;
+        } else if (leaderBestLap && d.bestLapTime) {
+          gap = d.bestLapTime - leaderBestLap;
+        }
+      }
+
+      return {
+        controller: d.controller,
+        position: i + 1,
+        driverId: d.driverId,
+        driver: d.driver,
+        lapCount: d.lapCount,
+        lastLapTime: d.lastLapTime,
+        bestLapTime: d.bestLapTime,
+        gap,
+      };
+    });
 
     this.emit('positions-updated', positions);
     this.io?.emit('positions:updated', positions);
@@ -514,7 +560,7 @@ export class TrackSyncService extends EventEmitter {
       if (session.maxLaps && !shouldStop) {
         const maxLapsReached = lapCounts.filter(l => l._count.id >= session.maxLaps);
 
-        if (session.type === 'qualifying') {
+        if (session.type === 'qualif') {
           // QUALIF: Leader atteint X tours → autres peuvent finir leurs X tours
           if (maxLapsReached.length > 0 && session.status !== 'finishing') {
             shouldStartFinishing = true;
@@ -579,13 +625,22 @@ export class TrackSyncService extends EventEmitter {
           await this.controlUnit.start(); // Toggle to lights mode
         }
 
-        this.io?.emit('session:auto-stopped', {
+        // Emit session_finished (for frontend to update) - unified with simulatorSync
+        this.io?.emit('session_finished', {
           sessionId: this.activeSessionId,
+          championshipId: session.championshipId,
           type: session.type,
           reason,
         });
 
-        console.log(`🛑 Session auto-stopped: ${reason}`);
+        // Also emit session_status_changed for status update
+        this.io?.emit('session_status_changed', {
+          sessionId: this.activeSessionId,
+          status: 'finished',
+          previousStatus: 'active',
+        });
+
+        console.log(`🏁 Session finished: ${reason}`);
 
         // Recalculate championship standings if session belongs to a championship
         if (session.championshipId) {
@@ -596,7 +651,7 @@ export class TrackSyncService extends EventEmitter {
         // Clear state
         this.activeSessionId = null;
         this.activeTrackId = null;
-        this.sessionDrivers.clear();
+        this.mapDriverByController.clear();
         this.raceFinishTime = null;
       }
     } catch (error) {
@@ -693,7 +748,7 @@ export class TrackSyncService extends EventEmitter {
     return {
       connected: this.controlUnit.isConnected(),
       activeSessionId: this.activeSessionId,
-      drivers: Array.from(this.sessionDrivers.entries()).map(
+      drivers: Array.from(this.mapDriverByController.entries()).map(
         ([controller, data]) => ({
           controller,
           ...data,
@@ -708,7 +763,7 @@ export class TrackSyncService extends EventEmitter {
   /**
    * Polling continu pour récupérer les événements
    */
-  startPolling(interval = 100) {
+  startPolling(interval = 500) {
     if (this.pollingTimer) {
       return;
     }

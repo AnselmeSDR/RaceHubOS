@@ -1,0 +1,366 @@
+import { useState, useMemo } from 'react'
+import {
+  TrashIcon,
+  ArrowPathIcon,
+  ClockIcon,
+  FlagIcon,
+  BeakerIcon
+} from '@heroicons/react/24/outline'
+import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
+
+const SESSION_TYPE_LABELS = {
+  practice: 'Essais Libres',
+  qualif: 'Qualifications',
+  race: 'Course'
+}
+
+const SESSION_TYPE_ICONS = {
+  practice: BeakerIcon,
+  qualif: ClockIcon,
+  race: FlagIcon
+}
+
+const CONTROLLER_COLORS = {
+  1: 'bg-red-500',
+  2: 'bg-blue-500',
+  3: 'bg-yellow-500',
+  4: 'bg-green-500',
+  5: 'bg-purple-500',
+  6: 'bg-orange-500'
+}
+
+/**
+ * SessionConfigModal - Modal to configure a session
+ * Form: Name, Type (readonly), Duration OR Laps
+ * Controller config table (6 rows): Controller | Driver (select) | Car (select)
+ * Radio: Status - Draft / Ready
+ * Buttons: [Delete] [Reset] depending on status
+ * [Cancel] [Save]
+ */
+export default function SessionConfigModal({
+  session,
+  drivers = [],
+  cars = [],
+  sessionDrivers = [],
+  open,
+  onClose,
+  onSave,
+  onDelete,
+  onReset
+}) {
+  // Form state
+  const [name, setName] = useState(session?.name || '')
+  const [duration, setDuration] = useState(session?.duration || 0)
+  const [maxLaps, setMaxLaps] = useState(session?.maxLaps || 0)
+  const [status, setStatus] = useState(session?.status || 'draft')
+  const [controllerConfigs, setControllerConfigs] = useState(() => {
+    // Initialize from sessionDrivers
+    const configs = {}
+    for (let i = 1; i <= 6; i++) {
+      const sd = sessionDrivers.find(d => d.controller === String(i))
+      configs[i] = {
+        driverId: sd?.driverId || null,
+        carId: sd?.carId || null
+      }
+    }
+    return configs
+  })
+  const [saving, setSaving] = useState(false)
+
+  const TypeIcon = SESSION_TYPE_ICONS[session?.type] || FlagIcon
+  const isPractice = session?.type === 'practice'
+  const isActive = session?.status === 'active'
+  const isFinished = session?.status === 'finished'
+  const canEdit = ['draft', 'ready'].includes(session?.status)
+  const canDelete = canEdit || isFinished
+  const canReset = isActive || isFinished
+
+  // Get used driver/car IDs to prevent duplicates
+  const usedDriverIds = useMemo(() => {
+    return Object.values(controllerConfigs)
+      .map(c => c.driverId)
+      .filter(Boolean)
+  }, [controllerConfigs])
+
+  const usedCarIds = useMemo(() => {
+    return Object.values(controllerConfigs)
+      .map(c => c.carId)
+      .filter(Boolean)
+  }, [controllerConfigs])
+
+  // Handle controller config change
+  const handleControllerChange = (controller, field, value) => {
+    setControllerConfigs(prev => ({
+      ...prev,
+      [controller]: {
+        ...prev[controller],
+        [field]: value || null
+      }
+    }))
+  }
+
+  // Get available drivers for a controller (excluding already used)
+  const getAvailableDrivers = (controller) => {
+    const currentDriverId = controllerConfigs[controller]?.driverId
+    return drivers.filter(d =>
+      d.id === currentDriverId || !usedDriverIds.includes(d.id)
+    )
+  }
+
+  // Get available cars for a controller (excluding already used)
+  const getAvailableCars = (controller) => {
+    const currentCarId = controllerConfigs[controller]?.carId
+    return cars.filter(c =>
+      c.id === currentCarId || !usedCarIds.includes(c.id)
+    )
+  }
+
+  // Handle save
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      // Build drivers array from configs
+      const driversPayload = Object.entries(controllerConfigs)
+        .filter(([, config]) => config.driverId && config.carId)
+        .map(([controller, config]) => ({
+          controller: String(controller),
+          driverId: config.driverId,
+          carId: config.carId
+        }))
+
+      await onSave({
+        name: name || null,
+        duration: duration > 0 ? duration : null,
+        maxLaps: maxLaps > 0 ? maxLaps : null,
+        status,
+        drivers: driversPayload
+      })
+      onClose()
+    } catch (err) {
+      console.error('Failed to save session config:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Handle delete
+  const handleDelete = async () => {
+    try {
+      await onDelete(session.id)
+      onClose()
+    } catch (err) {
+      console.error('Failed to delete session:', err)
+    }
+  }
+
+  // Handle reset
+  const handleReset = async () => {
+    try {
+      await onReset(session.id)
+      onClose()
+    } catch (err) {
+      console.error('Failed to reset session:', err)
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Configuration Session"
+      icon={<TypeIcon className="w-5 h-5 text-gray-500" />}
+      size="2xl"
+    >
+      <div className="space-y-6">
+        {/* Session info */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nom
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={SESSION_TYPE_LABELS[session?.type]}
+              disabled={!canEdit}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {/* Type (readonly) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
+            <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700">
+              {SESSION_TYPE_LABELS[session?.type]}
+            </div>
+          </div>
+        </div>
+
+        {/* Duration / MaxLaps (not for practice) */}
+        {!isPractice && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Duree (minutes)
+              </label>
+              <input
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                min="0"
+                disabled={!canEdit}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max tours
+              </label>
+              <input
+                type="number"
+                value={maxLaps}
+                onChange={(e) => setMaxLaps(parseInt(e.target.value) || 0)}
+                min="0"
+                disabled={!canEdit}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Controller config table */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Configuration Controllers
+          </label>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr className="text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 py-2">Ctrl</th>
+                  <th className="px-3 py-2">Pilote</th>
+                  <th className="px-3 py-2">Voiture</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[1, 2, 3, 4, 5, 6].map(controller => (
+                  <tr key={controller}>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[controller]}`}>
+                        {controller}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <select
+                        value={controllerConfigs[controller]?.driverId || ''}
+                        onChange={(e) => handleControllerChange(controller, 'driverId', e.target.value)}
+                        disabled={!canEdit}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">---</option>
+                        {getAvailableDrivers(controller).map(driver => (
+                          <option key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <select
+                        value={controllerConfigs[controller]?.carId || ''}
+                        onChange={(e) => handleControllerChange(controller, 'carId', e.target.value)}
+                        disabled={!canEdit}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">---</option>
+                        {getAvailableCars(controller).map(car => (
+                          <option key={car.id} value={car.id}>
+                            {car.brand} {car.model}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Status radio (only for draft/ready) */}
+        {canEdit && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Statut
+            </label>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="status"
+                  value="draft"
+                  checked={status === 'draft'}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
+                />
+                <span className="text-sm text-gray-700">Brouillon</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="status"
+                  value="ready"
+                  checked={status === 'ready'}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Pret</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons row */}
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center gap-2">
+            {canDelete && !isPractice && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"
+              >
+                <TrashIcon className="w-4 h-4" />
+                Supprimer
+              </button>
+            )}
+            {canReset && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors text-sm"
+              >
+                <ArrowPathIcon className="w-4 h-4" />
+                Reinitialiser
+              </button>
+            )}
+          </div>
+
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={onClose}>
+              Annuler
+            </ModalButton>
+            <ModalButton
+              variant="primary"
+              onClick={handleSave}
+              disabled={saving || (!canEdit && !isFinished)}
+            >
+              {saving ? 'Sauvegarde...' : 'Enregistrer'}
+            </ModalButton>
+          </ModalFooter>
+        </div>
+      </div>
+    </Modal>
+  )
+}

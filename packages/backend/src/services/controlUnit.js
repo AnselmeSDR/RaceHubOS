@@ -135,7 +135,7 @@ export class ControlUnit extends EventEmitter {
     const [address, timestamp, sector] = protocol.unpack('xYIYC', data);
 
     return {
-      address: address - 1, // Les adresses commencent à 0
+      controller: address - 1, // 0-indexed
       timestamp,
       sector,
     };

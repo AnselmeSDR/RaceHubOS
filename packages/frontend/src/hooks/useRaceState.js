@@ -61,7 +61,7 @@ export function useRaceState() {
     // Session helpers
     const sessionType = session?.type
     const sessionName = session?.name
-    const isQualifying = sessionType === 'qualifying'
+    const isQualifying = sessionType === 'qualif'
     const isRace = sessionType === 'race'
 
     return {

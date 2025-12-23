@@ -74,7 +74,7 @@ describe('Sessions CRUD API', () => {
       // Check default phases
       const phaseNames = response.body.data.phases.map(p => p.phase);
       expect(phaseNames).toContain('practice');
-      expect(phaseNames).toContain('qualifying');
+      expect(phaseNames).toContain('qualif');
       expect(phaseNames).toContain('race');
 
       // Check phase status
@@ -215,12 +215,12 @@ describe('Sessions CRUD API', () => {
       const response = await request(app)
         .put(`/api/sessions/${sessionId}`)
         .send({
-          type: 'qualifying',
+          type: 'qualif',
           fuelMode: 'ON'
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.type).toBe('qualifying');
+      expect(response.body.data.type).toBe('qualif');
       expect(response.body.data.fuelMode).toBe('ON');
     });
 

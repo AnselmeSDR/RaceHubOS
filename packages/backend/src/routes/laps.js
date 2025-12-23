@@ -44,14 +44,17 @@ router.delete('/by-phase', async (req, res) => {
  */
 router.post('/free', async (req, res) => {
   try {
-    const { trackId, driverId, carId, controller, lapTime } = req.body;
+    const { trackId, driverId, carId, controller: rawController, lapTime } = req.body;
 
-    if (!trackId || !driverId || !carId || !controller || !lapTime) {
+    if (!trackId || !driverId || !carId || rawController == null || !lapTime) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: trackId, driverId, carId, controller, lapTime'
       });
     }
+
+    // controller is now 0-indexed int
+    const controller = Number(rawController);
 
     // Find existing free practice lap for this combo
     const existing = await prisma.lap.findFirst({
