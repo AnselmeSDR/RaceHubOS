@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import EventEmitter from 'events';
 
 /**
  * SyncService - Service unifie de synchronisation CU/Simulateur
@@ -9,9 +8,8 @@ import EventEmitter from 'events';
  *
  * @see sync-flow-from-sim-or-cu.md
  */
-export class SyncService extends EventEmitter {
+export class SyncService {
   constructor(eventSource, io) {
-    super();
     this.source = eventSource; // ControlUnit ou Simulator
     this.io = io;
     this.prisma = new PrismaClient();
@@ -48,11 +46,9 @@ export class SyncService extends EventEmitter {
 
     if (this.source.on) {
       this.source.on('connected', () => {
-        this.emit('connected');
         this.io?.emit('cu:connected');
       });
       this.source.on('disconnected', () => {
-        this.emit('disconnected');
         this.io?.emit('cu:disconnected');
       });
     }
@@ -131,8 +127,7 @@ export class SyncService extends EventEmitter {
     // 5. Emit leaderboard (meme format que DB)
     this.emitLeaderboard();
 
-    // Emit lap completed event
-    this.emit('lap-completed', { ...lap, controller });
+    // Emit lap completed to frontend
     this.io?.emit('lap:completed', {
       sessionId: this.activeSessionId,
       controller,
@@ -517,8 +512,6 @@ export class SyncService extends EventEmitter {
     this.activeTrackId = null;
     this.sessionDrivers = [];
     this.raceFinishTime = null;
-
-    this.emit('session-finished', sessionId);
   }
 
   /**
