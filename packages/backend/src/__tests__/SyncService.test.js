@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { SyncService } from '../services/SyncService.js';
 import EventEmitter from 'events';
@@ -407,6 +406,62 @@ describe('SyncService.handleTimerEvent', () => {
       // Driver 0 is 1 lap behind
       expect(leaderboard[1].controller).toBe(0);
       expect(leaderboard[1].gap).toBe(1); // 1 lap behind (number = laps)
+    });
+  });
+
+  describe('adaptive polling', () => {
+    it('should start with default 500ms poll interval', () => {
+      expect(syncService.pollInterval).toBe(500);
+    });
+
+    it('should switch to 100ms during lights sequence', () => {
+      // STOPPED -> LIGHTS_1
+      mockSource.emit('status', { start: 9 }); // STOPPED
+      expect(syncService.pollInterval).toBe(500);
+
+      mockSource.emit('status', { start: 1 }); // LIGHTS_1
+      expect(syncService.pollInterval).toBe(100);
+    });
+
+    it('should stay at 100ms through all light stages', () => {
+      mockSource.emit('status', { start: 1 }); // LIGHTS_1
+      expect(syncService.pollInterval).toBe(100);
+
+      mockSource.emit('status', { start: 2 }); // LIGHTS_2
+      expect(syncService.pollInterval).toBe(100);
+
+      mockSource.emit('status', { start: 5 }); // LIGHTS_5
+      expect(syncService.pollInterval).toBe(100);
+
+      mockSource.emit('status', { start: 6 }); // FALSE_START
+      expect(syncService.pollInterval).toBe(100);
+
+      mockSource.emit('status', { start: 7 }); // GO
+      expect(syncService.pollInterval).toBe(100);
+    });
+
+    it('should switch back to 500ms when race starts', () => {
+      mockSource.emit('status', { start: 1 }); // LIGHTS_1
+      expect(syncService.pollInterval).toBe(100);
+
+      mockSource.emit('status', { start: 0 }); // RACING
+      expect(syncService.pollInterval).toBe(500);
+    });
+
+    it('should emit cu:status to frontend', () => {
+      mockIo.clear();
+      mockSource.emit('status', { start: 5, fuel: 1 });
+
+      const statusEvents = mockIo.getEmitted().filter(e => e.event === 'cu:status');
+      expect(statusEvents.length).toBe(1);
+      expect(statusEvents[0].data).toEqual({ start: 5, fuel: 1 });
+    });
+
+    it('should store cuStatus', () => {
+      expect(syncService.getCuStatus()).toBeNull();
+
+      mockSource.emit('status', { start: 3, mode: 0 });
+      expect(syncService.getCuStatus()).toEqual({ start: 3, mode: 0 });
     });
   });
 
