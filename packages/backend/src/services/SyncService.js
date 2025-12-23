@@ -273,6 +273,163 @@ export class SyncService {
     }
   }
 
+  // ==================== Session Control Methods ====================
+
+  /**
+   * Start a session - updates DB, loads state, starts source
+   */
+  async startSession(sessionId) {
+    // Get source info (CU version, fuel mode, etc.)
+    const sourceInfo = this.source.getInfo?.() || {
+      version: 'UNKNOWN',
+      fuelMode: false,
+      realMode: false,
+      pitLane: false,
+      lapCounter: false,
+      numCars: 0,
+    };
+
+    // Update session in DB
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        status: 'active',
+        startedAt: new Date(),
+        cuVersion: sourceInfo.version,
+        cuFuelMode: sourceInfo.fuelMode,
+        cuRealMode: sourceInfo.realMode,
+        cuPitLane: sourceInfo.pitLane,
+        cuLapCounter: sourceInfo.lapCounter,
+        cuNumCars: sourceInfo.numCars,
+      },
+    });
+
+    // Load session state
+    await this.loadSession(sessionId);
+    this.sessionStatus = 'active';
+
+    // Start source and race
+    if (this.source.start) {
+      this.source.start();
+    }
+    if (this.source.startRace) {
+      await this.source.startRace();
+    }
+
+    // Start polling
+    this.startPolling();
+
+    // Emit event
+    this.io?.emit('session:started', { sessionId });
+    this.io?.emit('session_status_changed', {
+      sessionId,
+      status: 'active',
+      previousStatus: 'draft',
+    });
+
+    return this.getState();
+  }
+
+  /**
+   * Pause a session (can be resumed)
+   */
+  async pauseSession() {
+    if (!this.activeSessionId) {
+      return null;
+    }
+
+    const sessionId = this.activeSessionId;
+
+    // Update DB status
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { status: 'paused' },
+    });
+    this.sessionStatus = 'paused';
+
+    // Stop source (but keep state)
+    if (this.source.stop) {
+      this.source.stop();
+    }
+
+    // Stop polling
+    this.stopPolling();
+
+    // Emit event
+    this.io?.emit('session:paused', { sessionId });
+    this.io?.emit('session_status_changed', {
+      sessionId,
+      status: 'paused',
+      previousStatus: 'active',
+    });
+
+    return { sessionId };
+  }
+
+  /**
+   * Resume a paused session
+   */
+  async resumeSession() {
+    if (!this.activeSessionId || this.sessionStatus !== 'paused') {
+      return null;
+    }
+
+    const sessionId = this.activeSessionId;
+
+    // Update DB status
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { status: 'active' },
+    });
+    this.sessionStatus = 'active';
+
+    // Restart source
+    if (this.source.start) {
+      this.source.start();
+    }
+
+    // Restart polling
+    this.startPolling();
+
+    // Emit event
+    this.io?.emit('session:resumed', { sessionId });
+    this.io?.emit('session_status_changed', {
+      sessionId,
+      status: 'active',
+      previousStatus: 'paused',
+    });
+
+    return { sessionId };
+  }
+
+  /**
+   * Stop a session manually (finishes and saves results)
+   */
+  async stopSession() {
+    if (!this.activeSessionId) {
+      return null;
+    }
+
+    const sessionId = this.activeSessionId;
+    const championshipId = this.sessionConfig?.championshipId;
+
+    // Finalize positions and save to DB
+    await this.finishSession('Arret manuel', championshipId);
+
+    // Stop source
+    if (this.source.stop) {
+      this.source.stop();
+    }
+
+    // Stop polling
+    this.stopPolling();
+
+    // Emit stopped event
+    this.io?.emit('session:stopped', { sessionId });
+
+    return { sessionId };
+  }
+
   // ==================== CU Control Methods ====================
 
   /**
@@ -281,6 +438,9 @@ export class SyncService {
   async startRace() {
     if (this.source.start) {
       await this.source.start();
+    }
+    if (this.source.startRace) {
+      await this.source.startRace();
     }
   }
 
