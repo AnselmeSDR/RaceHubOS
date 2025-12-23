@@ -127,15 +127,6 @@ export class SyncService {
     // 5. Emit leaderboard (meme format que DB)
     this.emitLeaderboard();
 
-    // Emit lap completed to frontend
-    this.io?.emit('lap:completed', {
-      sessionId: this.activeSessionId,
-      controller,
-      driverId: state.driverId,
-      lapNumber: state.totalLaps,
-      lapTime,
-    });
-
     // Check session completion
     await this.checkSessionComplete();
   }

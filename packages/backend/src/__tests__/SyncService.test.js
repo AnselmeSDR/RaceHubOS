@@ -155,51 +155,26 @@ describe('SyncService.handleTimerEvent', () => {
       });
     });
 
-    it('should emit lap:completed event', async () => {
-      // First crossing
-      mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 1 });
-      await new Promise(r => setTimeout(r, 50));
-
-      mockIo.clear();
-
-      // Second crossing
-      mockSource.emit('timer', { controller: 0, timestamp: 35000, sector: 1 });
-      await new Promise(r => setTimeout(r, 50));
-
-      const lapEvents = mockIo.getEmitted().filter(e => e.event === 'lap:completed');
-      expect(lapEvents.length).toBe(1);
-      expect(lapEvents[0].data).toMatchObject({
-        sessionId: testSession.id,
-        controller: 0,
-        driverId: testDrivers[0].id,
-        lapNumber: 1,
-        lapTime: 25000,
-      });
-    });
-
-    it('should not emit lap events for first crossing (lapTime = 0)', async () => {
+    it('should not emit leaderboard for first crossing (lapTime = 0)', async () => {
       mockIo.clear();
 
       // First crossing only
       mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 1 });
       await new Promise(r => setTimeout(r, 50));
 
-      const lapEvents = mockIo.getEmitted().filter(e => e.event === 'lap:completed');
       const leaderboardEvents = mockIo.getEmitted().filter(e => e.event === 'leaderboard');
-
-      expect(lapEvents.length).toBe(0);
       expect(leaderboardEvents.length).toBe(0);
     });
 
-    it('should not emit lap events for non-finish sectors', async () => {
+    it('should not emit leaderboard for non-finish sectors', async () => {
       mockIo.clear();
 
       // Sector 2 crossing
       mockSource.emit('timer', { controller: 0, timestamp: 10000, sector: 2 });
       await new Promise(r => setTimeout(r, 50));
 
-      const lapEvents = mockIo.getEmitted().filter(e => e.event === 'lap:completed');
-      expect(lapEvents.length).toBe(0);
+      const leaderboardEvents = mockIo.getEmitted().filter(e => e.event === 'leaderboard');
+      expect(leaderboardEvents.length).toBe(0);
     });
   });
 
@@ -565,8 +540,8 @@ describe('SyncService.handleTimerEvent', () => {
       mockSource.emit('timer', { controller: 5, timestamp: 35000, sector: 1 });
       await new Promise(r => setTimeout(r, 100));
 
-      const lapEvents = mockIo.getEmitted().filter(e => e.event === 'lap:completed');
-      expect(lapEvents.length).toBe(0);
+      const leaderboardEvents = mockIo.getEmitted().filter(e => e.event === 'leaderboard');
+      expect(leaderboardEvents.length).toBe(0);
 
       const laps = await prisma.lap.findMany({
         where: { sessionId: testSession.id },
@@ -587,8 +562,8 @@ describe('SyncService.handleTimerEvent', () => {
       mockSource.emit('timer', { controller: 1, timestamp: 35500, sector: 1 });
       await new Promise(r => setTimeout(r, 200));
 
-      const lapEvents = mockIo.getEmitted().filter(e => e.event === 'lap:completed');
-      expect(lapEvents.length).toBe(2);
+      const leaderboardEvents = mockIo.getEmitted().filter(e => e.event === 'leaderboard');
+      expect(leaderboardEvents.length).toBe(2);
 
       const laps = await prisma.lap.findMany({
         where: { sessionId: testSession.id },
