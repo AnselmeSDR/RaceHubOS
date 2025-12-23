@@ -505,9 +505,9 @@ export class SyncService {
       previousStatus,
     });
 
-    // Recalculate championship standings
+    // Notify frontend to refetch standings (calculated on-demand by API)
     if (championshipId) {
-      await this.recalculateChampionshipStandings(championshipId);
+      this.io?.emit('standings_changed', { championshipId });
     }
 
     // Clear state
@@ -517,84 +517,6 @@ export class SyncService {
     this.sessionConfig = null;
     this.sessionStatus = null;
     this.raceFinishTime = null;
-  }
-
-  /**
-   * Recalculate championship standings
-   */
-  async recalculateChampionshipStandings(championshipId) {
-    const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
-      include: {
-        sessions: {
-          where: { status: 'finished' },
-          include: {
-            drivers: true,
-            laps: true,
-          },
-        },
-      },
-    });
-
-    if (!championship) return;
-
-    const pointsSystem = JSON.parse(championship.pointsSystem || '{}');
-    const driverStats = {};
-
-    const initDriver = (driverId) => {
-      if (!driverStats[driverId]) {
-        driverStats[driverId] = {
-          points: 0,
-          wins: 0,
-          podiums: 0,
-          qualifBestTime: null,
-          raceTotalLaps: 0,
-          raceTotalTime: 0,
-        };
-      }
-    };
-
-    for (const session of championship.sessions) {
-      for (const sd of session.drivers) {
-        if (sd.finalPos !== null) {
-          initDriver(sd.driverId);
-          driverStats[sd.driverId].points += pointsSystem[sd.finalPos] || 0;
-          if (sd.finalPos === 1) driverStats[sd.driverId].wins++;
-          if (sd.finalPos <= 3) driverStats[sd.driverId].podiums++;
-        }
-      }
-
-      for (const lap of session.laps) {
-        initDriver(lap.driverId);
-        const lapTimeMs = Math.round(lap.lapTime);
-
-        if (lap.phase === 'qualif') {
-          const current = driverStats[lap.driverId].qualifBestTime;
-          if (current === null || lapTimeMs < current) {
-            driverStats[lap.driverId].qualifBestTime = lapTimeMs;
-          }
-        }
-
-        if (lap.phase === 'race') {
-          driverStats[lap.driverId].raceTotalLaps++;
-          driverStats[lap.driverId].raceTotalTime += lapTimeMs;
-        }
-      }
-    }
-
-    const sorted = Object.entries(driverStats)
-      .sort((a, b) => b[1].points - a[1].points || b[1].wins - a[1].wins)
-      .map(([driverId, stats], i) => ({
-        championshipId,
-        driverId,
-        position: i + 1,
-        ...stats,
-      }));
-
-    await this.prisma.championshipStanding.deleteMany({ where: { championshipId } });
-    if (sorted.length > 0) {
-      await this.prisma.championshipStanding.createMany({ data: sorted });
-    }
   }
 
   /**
