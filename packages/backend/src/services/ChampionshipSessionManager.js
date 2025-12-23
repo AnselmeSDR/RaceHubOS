@@ -348,10 +348,8 @@ export class ChampionshipSessionManager extends EventEmitter {
     // Emit status change
     this.emitSessionStatusChanged(updatedSession, previousStatus);
 
-    // Emit standings_changed if championship session
+    // Notify frontend to refetch standings (calculated on-demand by API)
     if (session.championshipId) {
-      await this.recalculateStandings(session.championshipId);
-
       this.io?.emit('standings_changed', {
         event: 'standings_changed',
         data: {
@@ -562,88 +560,6 @@ export class ChampionshipSessionManager extends EventEmitter {
   }
 
   /**
-   * Recalculate championship standings
-   */
-  async recalculateStandings(championshipId) {
-    const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
-      include: {
-        sessions: {
-          where: { status: 'finished' },
-          include: {
-            drivers: { include: { driver: true } },
-            laps: true,
-          },
-        },
-      },
-    });
-
-    if (!championship) return;
-
-    const pointsSystem = JSON.parse(championship.pointsSystem || '{}');
-    const driverStats = {};
-
-    const initDriver = (driverId) => {
-      if (!driverStats[driverId]) {
-        driverStats[driverId] = {
-          points: 0,
-          wins: 0,
-          podiums: 0,
-          qualifBestTime: null,
-          raceTotalLaps: 0,
-          raceTotalTime: 0,
-        };
-      }
-    };
-
-    for (const session of championship.sessions) {
-      for (const sd of session.drivers) {
-        if (sd.finalPos !== null) {
-          initDriver(sd.driverId);
-          const points = pointsSystem[sd.finalPos] || 0;
-          driverStats[sd.driverId].points += points;
-          if (sd.finalPos === 1) driverStats[sd.driverId].wins++;
-          if (sd.finalPos <= 3) driverStats[sd.driverId].podiums++;
-        }
-      }
-
-      for (const lap of session.laps) {
-        initDriver(lap.driverId);
-        const lapTimeMs = Math.round(lap.lapTime);
-
-        if (lap.phase === 'qualif') {
-          const current = driverStats[lap.driverId].qualifBestTime;
-          if (current === null || lapTimeMs < current) {
-            driverStats[lap.driverId].qualifBestTime = lapTimeMs;
-          }
-        }
-
-        if (lap.phase === 'race') {
-          driverStats[lap.driverId].raceTotalLaps++;
-          driverStats[lap.driverId].raceTotalTime += lapTimeMs;
-        }
-      }
-    }
-
-    const sortedDrivers = Object.entries(driverStats)
-      .sort((a, b) => {
-        if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-        return b[1].wins - a[1].wins;
-      })
-      .map(([driverId, stats], index) => ({
-        championshipId,
-        driverId,
-        position: index + 1,
-        ...stats,
-      }));
-
-    await this.prisma.championshipStanding.deleteMany({ where: { championshipId } });
-    if (sortedDrivers.length > 0) {
-      await this.prisma.championshipStanding.createMany({ data: sortedDrivers });
-    }
-  }
-
-  /**
    * Emit session_status_changed event
    */
   emitSessionStatusChanged(session, previousStatus) {
@@ -816,10 +732,8 @@ export class ChampionshipSessionManager extends EventEmitter {
       },
     });
 
-    // Emit standings_changed if championship session
+    // Notify frontend to refetch standings (calculated on-demand by API)
     if (championshipId) {
-      await this.recalculateStandings(championshipId);
-
       this.io?.emit('standings_changed', {
         event: 'standings_changed',
         data: {
