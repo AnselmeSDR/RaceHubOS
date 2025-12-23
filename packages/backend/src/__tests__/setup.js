@@ -9,7 +9,6 @@ beforeAll(async () => {
   await prisma.sessionPhase.deleteMany();
   await prisma.sessionDriver.deleteMany();
   await prisma.session.deleteMany();
-  await prisma.championshipStanding.deleteMany();
   await prisma.championship.deleteMany();
   await prisma.driver.deleteMany();
   await prisma.car.deleteMany();
