@@ -20,14 +20,15 @@ const SESSION_TYPE_ICONS = {
   race: FlagIcon
 }
 
-const CONTROLLER_COLORS = {
-  1: 'bg-red-500',
-  2: 'bg-blue-500',
-  3: 'bg-yellow-500',
-  4: 'bg-green-500',
-  5: 'bg-purple-500',
-  6: 'bg-orange-500'
-}
+// Controllers are 0-indexed in DB (0-5), displayed as 1-6
+const CONTROLLER_COLORS = [
+  'bg-red-500',    // 0 -> displayed as 1
+  'bg-blue-500',   // 1 -> displayed as 2
+  'bg-yellow-500', // 2 -> displayed as 3
+  'bg-green-500',  // 3 -> displayed as 4
+  'bg-purple-500', // 4 -> displayed as 5
+  'bg-orange-500'  // 5 -> displayed as 6
+]
 
 /**
  * SessionConfigModal - Modal to configure a session
@@ -50,14 +51,16 @@ export default function SessionConfigModal({
 }) {
   // Form state
   const [name, setName] = useState(session?.name || '')
-  const [duration, setDuration] = useState(session?.duration || 0)
+  // Duration in DB is ms, UI shows minutes
+  const [durationMinutes, setDurationMinutes] = useState(session?.duration ? Math.round(session.duration / 60000) : 0)
   const [maxLaps, setMaxLaps] = useState(session?.maxLaps || 0)
   const [status, setStatus] = useState(session?.status || 'draft')
   const [controllerConfigs, setControllerConfigs] = useState(() => {
     // Initialize from sessionDrivers
+    // Controllers in DB are 0-indexed (0-5), UI shows 1-6
     const configs = {}
-    for (let i = 1; i <= 6; i++) {
-      const sd = sessionDrivers.find(d => d.controller === String(i))
+    for (let i = 0; i < 6; i++) {
+      const sd = sessionDrivers.find(d => Number(d.controller) === i)
       configs[i] = {
         driverId: sd?.driverId || null,
         carId: sd?.carId || null
@@ -73,7 +76,7 @@ export default function SessionConfigModal({
   const isFinished = session?.status === 'finished'
   const canEdit = ['draft', 'ready'].includes(session?.status)
   const canDelete = canEdit || isFinished
-  const canReset = isActive || isFinished
+  const canReset = session?.status === 'ready' || isActive || isFinished
 
   // Get used driver/car IDs to prevent duplicates
   const usedDriverIds = useMemo(() => {
@@ -119,18 +122,18 @@ export default function SessionConfigModal({
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Build drivers array from configs
+      // Build drivers array from configs (controller is 0-indexed)
       const driversPayload = Object.entries(controllerConfigs)
         .filter(([, config]) => config.driverId && config.carId)
         .map(([controller, config]) => ({
-          controller: String(controller),
+          controller: Number(controller), // 0-indexed
           driverId: config.driverId,
           carId: config.carId
         }))
 
       await onSave({
         name: name || null,
-        duration: duration > 0 ? duration : null,
+        duration: durationMinutes > 0 ? durationMinutes * 60000 : null, // Convert minutes to ms
         maxLaps: maxLaps > 0 ? maxLaps : null,
         status,
         drivers: driversPayload
@@ -209,8 +212,8 @@ export default function SessionConfigModal({
               </label>
               <input
                 type="number"
-                value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
                 min="0"
                 disabled={!canEdit}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -247,11 +250,11 @@ export default function SessionConfigModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {[1, 2, 3, 4, 5, 6].map(controller => (
+                {[0, 1, 2, 3, 4, 5].map(controller => (
                   <tr key={controller}>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[controller]}`}>
-                        {controller}
+                        {controller + 1}
                       </span>
                     </td>
                     <td className="px-3 py-2">

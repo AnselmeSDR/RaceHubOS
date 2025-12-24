@@ -118,25 +118,7 @@ model Session {
   championship   Championship?   @relation(fields: [championshipId], references: [id])
   track          Track           @relation(fields: [trackId], references: [id])
   drivers        SessionDriver[]
-  phases         SessionPhase[]
   trackRecords   TrackRecord[]
-}
-
-model SessionPhase {
-  id         String    @id @default(cuid())
-  sessionId  String
-  phase      String
-  status     String    @default("waiting")
-  duration   Int?
-  maxLaps    Int?
-  startedAt  DateTime?
-  pausedAt   DateTime?
-  finishedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  session    Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@unique([sessionId, phase])
 }
 
 model SessionDriver {

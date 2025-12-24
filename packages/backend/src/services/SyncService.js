@@ -254,8 +254,14 @@ export class SyncService {
     if (this.pollTimer) return;
 
     const poll = async () => {
-      if (this.source.poll) {
-        await this.source.poll();
+      try {
+        // Check if source is connected before polling
+        if (this.source.poll && this.source.connected) {
+          await this.source.poll();
+        }
+      } catch (error) {
+        // Log error but continue polling - CU may reconnect
+        console.warn('⚠️ SyncService poll error:', error.message);
       }
       this.pollTimer = setTimeout(poll, this.pollInterval);
     };
