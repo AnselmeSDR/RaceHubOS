@@ -5,8 +5,6 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { CarreraSimulator } from './services/simulator.js';
-import { TrackSyncService } from './services/trackSync.js';
-import { SimulatorSyncService } from './services/simulatorSync.js';
 import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
 
@@ -19,11 +17,10 @@ import championshipsRouter from './routes/championships.js';
 import statsRouter from './routes/stats.js';
 import lapsRouter from './routes/laps.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
-import bluetoothRouter, { setTrackSync, setSimulator } from './routes/bluetooth.js';
+import bluetoothRouter, { setControlUnit, setSimulator } from './routes/bluetooth.js';
 
-// Import new simplified routes
-import sessionsSimpleRouter, { setSessionManager as setSimpleSessionManager, setChampionshipSessionManager as setSimpleChampionshipSessionManager } from './routes/sessions-simple.js';
-import sessionControlRouter, { setSessionManager as setControlSessionManager } from './routes/session-control.js';
+// Import session routes
+import sessionsRouter, { setSessionManager, setChampionshipSessionManager } from './routes/sessions.js';
 
 // Import new v2 routes
 import configRouter, { setConfigService } from './routes/config.js';
@@ -39,7 +36,6 @@ import { ConfigService } from './services/ConfigService.js';
 import { LeaderboardService } from './services/LeaderboardService.js';
 import { RaceControllerService } from './services/RaceControllerService.js';
 import { ChampionshipSessionManager } from './services/ChampionshipSessionManager.js';
-// Note: LapRecorderService not needed - TrackSyncService handles lap recording directly
 
 const app = express();
 const httpServer = createServer(app);
@@ -47,10 +43,9 @@ const prisma = new PrismaClient();
 
 // Configure SQLite for performance (WAL mode)
 async function configureSQLite() {
-  // Use $queryRawUnsafe for PRAGMA commands that return results
   await prisma.$queryRawUnsafe('PRAGMA journal_mode = WAL');
   await prisma.$queryRawUnsafe('PRAGMA synchronous = NORMAL');
-  await prisma.$queryRawUnsafe('PRAGMA cache_size = -8000');   // 8MB cache
+  await prisma.$queryRawUnsafe('PRAGMA cache_size = -8000');
   await prisma.$queryRawUnsafe('PRAGMA temp_store = MEMORY');
   console.log('✅ SQLite configured: WAL mode enabled');
 }
@@ -61,8 +56,8 @@ const io = new Server(httpServer, {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     methods: ['GET', 'POST'],
   },
-  pingTimeout: 60000,    // 60s before considering connection dead
-  pingInterval: 25000,   // Send ping every 25s
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 // Initialize SessionManager (legacy)
@@ -73,77 +68,55 @@ const configService = new ConfigService(io);
 const leaderboardService = new LeaderboardService();
 const raceControllerService = new RaceControllerService(io, leaderboardService);
 const championshipSessionManager = new ChampionshipSessionManager(io);
-// Note: LapRecorderService not used - TrackSyncService handles lap recording
 
-// Initialize services
+// Initialize services based on mode
 const useMockDevice = process.env.USE_MOCK_DEVICE === 'true';
-let trackSync = null;
+let controlUnit = null;
 let simulator = null;
-let simulatorSync = null;
 let syncService = null;
-let eventSource = null; // CU or Simulator
 
 if (useMockDevice) {
-  // Mode simulateur
+  // Simulator mode
   simulator = new CarreraSimulator(io);
-  simulator.init(6); // 6 cars by default
-  eventSource = simulator;
+  simulator.init(6);
+  syncService = new SyncService(simulator, io);
 
-  // Legacy: SimulatorSync (kept for backward compatibility)
-  simulatorSync = new SimulatorSyncService(simulator, io);
-  simulatorSync.loadActiveSession();
-
-  // Connect SessionManager to SimulatorSync and Simulator
-  sessionManager.setSimulatorSync(simulatorSync);
   sessionManager.setSimulator(simulator);
+  setSimulator(simulator);
+
+  simulator.startStatusPolling(200);
+  console.log('🎮 Simulator mode: SyncService initialized');
 } else {
-  // Mode Control Unit réel
-  trackSync = new TrackSyncService(io);
-  eventSource = trackSync.controlUnit; // CU instance from trackSync
+  // Real Control Unit mode
+  controlUnit = new ControlUnit();
+  syncService = new SyncService(controlUnit, io);
+
+  setControlUnit(controlUnit);
+  sessionManager.setSyncService(syncService);
+  raceControllerService.setSyncService(syncService);
+  championshipSessionManager.setSyncService(syncService);
+
+  syncService.startPolling();
+  console.log('🔌 CU mode: SyncService polling started');
 }
 
-// New unified SyncService (works with both CU and Simulator)
-syncService = new SyncService(eventSource, io);
-console.log(`🔄 SyncService initialized with ${useMockDevice ? 'Simulator' : 'ControlUnit'}`);
-
 // Export syncService for routes
-export { syncService };
+export { syncService, controlUnit };
 
 // Pass io to settings
 setSettingsIo(io);
 
-// Pass SessionManager to new routes
-setSimpleSessionManager(sessionManager);
-setControlSessionManager(sessionManager);
-setSimpleChampionshipSessionManager(championshipSessionManager);
+// Pass SessionManager to routes
+setSessionManager(sessionManager);
+setChampionshipSessionManager(championshipSessionManager);
 
 // Pass v2 services to routes
 setConfigService(configService);
 setRaceController(raceControllerService);
 
-// Pass services to routes
-if (trackSync) {
-  setTrackSync(trackSync);
-  // Connect SessionManager to TrackSync for CU control (legacy)
-  sessionManager.setTrackSync(trackSync);
-  // Connect RaceControllerService to TrackSync for CU control (v2)
-  raceControllerService.setTrackSync(trackSync);
-  // Connect ChampionshipSessionManager to TrackSync
-  championshipSessionManager.setTrackSync(trackSync);
-  // Start SyncService polling for CU (adaptive: 500ms normal, 100ms during lights)
-  syncService.startPolling();
-  console.log('🔌 CU mode: SyncService polling started (adaptive)');
-} else if (simulator) {
-  // In simulator mode, use simulator for bluetooth routes
-  setSimulator(simulator);
-  // Start CU status polling to emit cu:status events
-  simulator.startStatusPolling(200);
-  console.log('🎮 Simulator mode: CU status polling started');
-}
-
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Augmenté pour supporter les images base64
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 
@@ -162,24 +135,20 @@ app.get('/api', (req, res) => {
     name: 'RaceHubOS API',
     version: '0.2.0',
     endpoints: {
-      // Core CRUD
       drivers: '/api/drivers',
       cars: '/api/cars',
       tracks: '/api/tracks',
       teams: '/api/teams',
       championships: '/api/championships',
       sessions: '/api/sessions',
-      // Race control v2
       race: '/api/race',
       config: '/api/config',
       records: '/api/records',
-      // Utils
       stats: '/api/stats',
       laps: '/api/laps',
       bluetooth: '/api/bluetooth',
       settings: '/api/settings',
-      // Legacy
-      sessionControl: '/api/session-control (legacy)',
+      sync: '/api/sync',
       simulator: '/api/simulator',
     },
   });
@@ -195,18 +164,13 @@ app.use('/api/stats', statsRouter);
 app.use('/api/laps', lapsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bluetooth', bluetoothRouter);
-
-// New simplified session routes
-app.use('/api/sessions', sessionsSimpleRouter);
-app.use('/api/session-control', sessionControlRouter);
-
-// New v2 routes
+app.use('/api/sessions', sessionsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/race', raceRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 
-// SyncService endpoints (new unified API)
+// SyncService endpoints
 app.get('/api/sync/state', (req, res) => {
   res.json(syncService.getState());
 });
@@ -229,7 +193,6 @@ app.post('/api/sync/reset', async (req, res) => {
   res.json({ success: true });
 });
 
-// CU control via SyncService
 app.post('/api/sync/start', async (req, res) => {
   await syncService.startRace();
   res.json({ success: true });
@@ -253,16 +216,9 @@ app.get('/api/sync/cu-status', (req, res) => {
 // Simulator control endpoints
 app.get('/api/simulator', (req, res) => {
   if (useMockDevice && simulator) {
-    const state = simulator.getState();
-    res.json({
-      ...state,
-      isMockDevice: true
-    });
+    res.json({ ...simulator.getState(), isMockDevice: true });
   } else {
-    res.json({
-      isMockDevice: false,
-      message: 'Using real Control Unit'
-    });
+    res.json({ isMockDevice: false, message: 'Using real Control Unit' });
   }
 });
 
@@ -306,15 +262,11 @@ io.on('connection', (socket) => {
       carCount: simulator.cars.length,
       isMockDevice: true
     });
-  } else if (trackSync) {
-    const cuState = trackSync.getState();
+  } else if (controlUnit) {
     socket.emit('cu:status', {
-      connected: cuState.connected,
-      activeSession: cuState.activeSessionId,
+      connected: controlUnit.isConnected(),
       isMockDevice: false
     });
-
-    // Send race state for v2 pages
     raceControllerService.getState().then(raceState => {
       socket.emit('race:state', raceState);
     });
@@ -353,30 +305,23 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Simulator control via WebSocket
   socket.on('simulator:start', () => {
-    if (useMockDevice && simulator) {
-      simulator.start();
-    }
+    if (useMockDevice && simulator) simulator.start();
   });
 
   socket.on('simulator:stop', () => {
-    if (useMockDevice && simulator) {
-      simulator.stop();
-    }
+    if (useMockDevice && simulator) simulator.stop();
   });
 
   socket.on('simulator:pause', () => {
-    if (useMockDevice && simulator) {
-      simulator.togglePause();
-    }
+    if (useMockDevice && simulator) simulator.togglePause();
   });
 
   socket.on('simulator:getState', () => {
     if (useMockDevice && simulator) {
       socket.emit('simulator:state', simulator.getState());
-    } else if (trackSync) {
-      socket.emit('cu:state', trackSync.getState());
+    } else if (controlUnit) {
+      socket.emit('cu:state', { connected: controlUnit.isConnected() });
     }
   });
 });
@@ -390,7 +335,7 @@ httpServer.listen(PORT, () => {
 ╠═══════════════════════════════════════╣
 ║  HTTP: http://localhost:${PORT}       ║
 ║  WebSocket: Ready                     ║
-║  Database: SQLite (${process.env.USE_MOCK_DEVICE === 'true' ? 'Mock' : 'Real'})          ║
+║  Mode: ${useMockDevice ? 'Simulator' : 'Control Unit'}                   ║
 ╚═══════════════════════════════════════╝
   `);
 });
@@ -407,16 +352,15 @@ function gracefulShutdown(signal) {
   isClosing = true;
   console.log(`\n⚠️  ${signal} received, closing server...`);
 
-  // Fermer tout immédiatement sans attendre
   try {
     io.close();
     if (simulator) simulator.stop();
+    if (controlUnit) controlUnit.disconnect();
     httpServer.close();
   } catch (error) {
-    // Ignorer les erreurs
+    // Ignore errors
   }
 
-  // Exit immédiatement
   console.log('✅ Server closed');
   process.exit(0);
 }

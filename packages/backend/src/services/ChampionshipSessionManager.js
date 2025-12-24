@@ -18,28 +18,19 @@ export class ChampionshipSessionManager extends EventEmitter {
     super();
     this.prisma = new PrismaClient();
     this.io = io;
-    this.trackSync = null;
+    this.syncService = null;
 
     // Active session state
     this.activeSessionId = null;
     this.heartbeatInterval = null;
     this.gracePeriodTimer = null;
     this.gracePeriodEndsAt = null;
-    this.waitingForRaceStart = false; // True when session is active but CU not racing yet
+    this.waitingForRaceStart = false;
   }
 
-  /**
-   * Connect to TrackSyncService for CU control and lap events
-   */
-  setTrackSync(trackSync) {
-    this.trackSync = trackSync;
-
-    // Listen to lap events
-    trackSync.on('lap-completed', (lapData) => {
-      this.handleLapCompleted(lapData);
-    });
-
-    console.log('[ChampionshipSessionManager] Connected to TrackSyncService');
+  setSyncService(syncService) {
+    this.syncService = syncService;
+    console.log('[ChampionshipSessionManager] Connected to SyncService');
   }
 
   /**
@@ -360,9 +351,9 @@ export class ChampionshipSessionManager extends EventEmitter {
     }
 
     // Stop CU (toggle to lights mode)
-    if (this.trackSync?.controlUnit?.isConnected()) {
+    if (this.syncService?.source?.isConnected?.()) {
       try {
-        await this.trackSync.controlUnit.start();
+        await this.syncService.source.start();
       } catch (e) {
         console.error('[ChampionshipSessionManager] Failed to stop CU:', e);
       }

@@ -8,13 +8,11 @@ import GapDisplay from './GapDisplay'
  *
  * @param {Array} entries - Unified format entries
  * @param {string} sortBy - 'laps' | 'bestLap' | 'race'
- * @param {Function} onSortChange - Callback for sort toggle (practice only)
  * @param {string} sessionType - 'practice' | 'qualif' | 'race'
  */
 export default function SessionLeaderboard({
   entries = [],
   sortBy = 'laps',
-  onSortChange,
   sessionType = 'race'
 }) {
   // Sort entries based on sortBy prop
@@ -70,34 +68,6 @@ export default function SessionLeaderboard({
 
   return (
     <div className="space-y-2">
-      {/* Sort Toggle - Only for practice sessions */}
-      {sessionType === 'practice' && onSortChange && (
-        <div className="flex justify-end mb-4">
-          <div className="inline-flex rounded-lg bg-gray-200 p-1">
-            <button
-              onClick={() => onSortChange('laps')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                sortBy === 'laps'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Tours
-            </button>
-            <button
-              onClick={() => onSortChange('bestLap')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                sortBy === 'bestLap'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Temps
-            </button>
-          </div>
-        </div>
-      )}
-
       <AnimatePresence mode="popLayout">
         {entriesWithPositions.map((entry) => {
           const position = entry.position

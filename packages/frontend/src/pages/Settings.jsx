@@ -111,8 +111,9 @@ export default function Settings() {
       // Charger l'état de connexion BT depuis le backend
       const btResponse = await fetch(`${API_URL}/bluetooth/status`)
       const btData = await btResponse.json()
-      if (btData.connected) {
-        setConnectedDeviceId('Control_Unit')
+      if (btData.connected && devicesData.data?.length > 0) {
+        // Use first known device ID when connected
+        setConnectedDeviceId(devicesData.data[0].id)
       } else {
         setConnectedDeviceId(null)
       }
@@ -190,10 +191,10 @@ export default function Settings() {
         // Recharger la liste
         await loadSettings()
       } else {
-        alert(data.error || 'Échec de connexion')
+        console.warn('Connexion:', data.error || 'Échec de connexion')
       }
     } catch (error) {
-      alert('Erreur de connexion: ' + error.message)
+      console.warn('Erreur de connexion:', error.message)
     }
 
     setConnecting(null)
