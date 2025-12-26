@@ -1,7 +1,9 @@
 import express from 'express';
+import { PrismaClient } from '@prisma/client';
 import { SIMULATOR_ADDRESS } from '../services/simulator.js';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Device references (set from index.js)
 let controlUnit = null;
@@ -138,11 +140,24 @@ router.post('/connect', async (req, res) => {
       syncService?.startPolling();
     }
 
+    // Persist device to DB (upsert)
+    const savedDevice = await prisma.device.upsert({
+      where: { address },
+      update: { lastConnected: new Date() },
+      create: {
+        address,
+        name: deviceType === 'simulator' ? 'Simulateur' : 'Control Unit',
+        type: deviceType === 'simulator' ? 'simulator' : 'cu',
+        lastConnected: new Date(),
+      },
+    });
+
     res.json({
       success: true,
       message: `Connected to ${deviceType}`,
       deviceType,
       address,
+      device: savedDevice,
     });
   } catch (error) {
     if (error.message === 'Already connected' || error.message === 'Connection already in progress') {
