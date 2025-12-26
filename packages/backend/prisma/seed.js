@@ -5,6 +5,19 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
+  // Create Simulator Device
+  console.log('Creating simulator device...');
+  await prisma.device.upsert({
+    where: { address: 'SIMULATOR' },
+    update: {},
+    create: {
+      address: 'SIMULATOR',
+      name: 'Simulateur',
+      type: 'simulator',
+    },
+  });
+  console.log('✅ Simulator device created');
+
   // Create Teams
   console.log('Creating teams...');
   const redBull = await prisma.team.create({

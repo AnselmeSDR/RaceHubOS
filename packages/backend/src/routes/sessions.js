@@ -15,10 +15,17 @@ const prisma = () => sessionService.prisma;
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, championshipId } = req.query;
+    const { status, championshipId, trackId, type } = req.query;
     const where = {};
     if (status && status !== 'all') where.status = status;
-    if (championshipId) where.championshipId = championshipId;
+    if (trackId) where.trackId = trackId;
+    if (type) where.type = type;
+    // Handle championshipId=null explicitly (free sessions)
+    if (championshipId === 'null') {
+      where.championshipId = null;
+    } else if (championshipId) {
+      where.championshipId = championshipId;
+    }
 
     const sessions = await prisma().session.findMany({
       where,
