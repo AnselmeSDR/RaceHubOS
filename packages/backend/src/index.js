@@ -16,7 +16,7 @@ import teamsRouter from './routes/teams.js';
 import championshipsRouter, { setChampionshipService } from './routes/championships.js';
 import statsRouter from './routes/stats.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
-import bluetoothRouter, { setControlUnit, setSimulator } from './routes/bluetooth.js';
+import bluetoothRouter, { setControlUnit, setSimulator, setSyncService } from './routes/bluetooth.js';
 import sessionsRouter, { setSessionService } from './routes/sessions.js';
 import configRouter, { setConfigService } from './routes/config.js';
 import recordsRouter from './routes/records.js';
@@ -55,31 +55,18 @@ const sessionService = new SessionService(io);
 const configService = new ConfigService(io);
 const championshipService = new ChampionshipService(io);
 
-// Initialize hardware based on mode
-const useMockDevice = process.env.USE_MOCK_DEVICE === 'true';
-let controlUnit = null;
-let simulator = null;
-let syncService = null;
+// Initialize hardware (both always available, user chooses which to connect)
+const controlUnit = new ControlUnit();
+const simulator = new CarreraSimulator(io);
+const syncService = new SyncService(io);
 
-if (useMockDevice) {
-  // Simulator mode
-  simulator = new CarreraSimulator(io);
-  simulator.init(6);
-  syncService = new SyncService(simulator, io);
+// Pass references to bluetooth router
+setControlUnit(controlUnit);
+setSimulator(simulator);
+setSyncService(syncService);
 
-  setSimulator(simulator);
-  simulator.startStatusPolling(200);
-  console.log('🎮 Simulator mode: SyncService initialized');
-} else {
-  // Real Control Unit mode
-  controlUnit = new ControlUnit();
-  syncService = new SyncService(controlUnit, io);
-
-  setControlUnit(controlUnit);
-
-  syncService.startPolling();
-  console.log('🔌 CU mode: SyncService polling started');
-}
+console.log('🔌 Hardware initialized: ControlUnit + Simulator available');
+console.log('   Connect via POST /api/bluetooth/connect { address: "SIMULATOR" | "<CU_ADDRESS>" }');
 
 // Connect services
 syncService.setSessionService(sessionService);
@@ -97,9 +84,6 @@ sessionService.on('sessionReset', ({ sessionId, championshipId }) => {
 sessionService.on('sessionDeleted', ({ sessionId, championshipId }) => {
   championshipService.onStandingsChanged(championshipId, sessionId, 'session_deleted');
 });
-
-// Export for routes
-export { syncService, controlUnit };
 
 // Pass io to settings
 setSettingsIo(io);
@@ -210,112 +194,113 @@ app.get('/api/sync/cu-status', (req, res) => {
   res.json(syncService.getCuStatus() || { error: 'No status yet' });
 });
 
-// Simulator control endpoints
+// Simulator control endpoints (for direct simulator control)
 app.get('/api/simulator', (req, res) => {
-  if (useMockDevice && simulator) {
-    res.json({ ...simulator.getState(), isMockDevice: true });
-  } else {
-    res.json({ isMockDevice: false, message: 'Using real Control Unit' });
-  }
+  const currentDevice = syncService.getDevice();
+  const isSimulatorConnected = currentDevice === simulator;
+  res.json({
+    ...simulator.getState(),
+    isConnected: isSimulatorConnected,
+  });
 });
 
 app.post('/api/simulator/start', (req, res) => {
-  if (useMockDevice && simulator) {
-    simulator.start();
-    res.json({ status: 'started' });
-  } else {
-    res.status(400).json({ error: 'Not in simulator mode' });
+  if (!simulator.isConnected()) {
+    return res.status(400).json({ error: 'Simulator not connected' });
   }
+  simulator.start();
+  res.json({ status: 'started' });
 });
 
 app.post('/api/simulator/stop', (req, res) => {
-  if (useMockDevice && simulator) {
-    simulator.stop();
-    res.json({ status: 'stopped' });
-  } else {
-    res.status(400).json({ error: 'Not in simulator mode' });
+  if (!simulator.isConnected()) {
+    return res.status(400).json({ error: 'Simulator not connected' });
   }
+  simulator.stop();
+  res.json({ status: 'stopped' });
 });
 
 app.post('/api/simulator/pause', (req, res) => {
-  if (useMockDevice && simulator) {
-    simulator.togglePause();
-    res.json({ status: 'toggled' });
-  } else {
-    res.status(400).json({ error: 'Not in simulator mode' });
+  if (!simulator.isConnected()) {
+    return res.status(400).json({ error: 'Simulator not connected' });
   }
+  simulator.togglePause();
+  res.json({ status: 'toggled' });
 });
 
 // WebSocket connection
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
 
-  // Send current state on connection
-  if (useMockDevice && simulator) {
+  // Send current device state on connection
+  const currentDevice = syncService.getDevice();
+  if (currentDevice === simulator && simulator.isConnected()) {
     socket.emit('race:status', {
       running: simulator.isRunning,
       active: simulator.raceActive,
       raceTime: simulator.raceTime,
       carCount: simulator.cars.length,
-      isMockDevice: true
+      deviceType: 'simulator'
     });
-  } else if (controlUnit) {
+  } else if (currentDevice === controlUnit && controlUnit.isConnected()) {
     socket.emit('cu:status', {
-      connected: controlUnit.isConnected(),
-      isMockDevice: false
+      connected: true,
+      deviceType: 'controlUnit'
     });
+  } else {
+    socket.emit('cu:status', { connected: false, deviceType: null });
   }
 
   socket.on('disconnect', () => {
     console.log(`❌ Client disconnected: ${socket.id}`);
   });
 
-  // Race control events
-  socket.on('race:start', (data) => {
+  // Race control events (use SyncService for device-agnostic control)
+  socket.on('race:start', async (data) => {
     console.log('▶️  Race start requested:', data);
-    if (useMockDevice && simulator) {
-      simulator.start();
-    }
+    await syncService.startRace();
   });
 
-  socket.on('race:pause', () => {
+  socket.on('race:pause', async () => {
     console.log('⏸️  Race pause requested');
-    if (useMockDevice && simulator) {
+    if (simulator.isConnected()) {
       simulator.togglePause();
     }
   });
 
-  socket.on('race:stop', () => {
+  socket.on('race:stop', async () => {
     console.log('⏹️  Race stop requested');
-    if (useMockDevice && simulator) {
-      simulator.stop();
-    }
+    await syncService.stopRace();
   });
 
   socket.on('car:setSpeed', (data) => {
     console.log('🏎️  Set speed:', data);
-    if (useMockDevice && simulator) {
+    if (simulator.isConnected()) {
       simulator.setCarSpeed(data.carId, data.speed);
     }
   });
 
+  // Direct simulator control (legacy, prefer using SyncService)
   socket.on('simulator:start', () => {
-    if (useMockDevice && simulator) simulator.start();
+    if (simulator.isConnected()) simulator.start();
   });
 
   socket.on('simulator:stop', () => {
-    if (useMockDevice && simulator) simulator.stop();
+    if (simulator.isConnected()) simulator.stop();
   });
 
   socket.on('simulator:pause', () => {
-    if (useMockDevice && simulator) simulator.togglePause();
+    if (simulator.isConnected()) simulator.togglePause();
   });
 
   socket.on('simulator:getState', () => {
-    if (useMockDevice && simulator) {
+    const device = syncService.getDevice();
+    if (device === simulator) {
       socket.emit('simulator:state', simulator.getState());
-    } else if (controlUnit) {
+    } else if (device === controlUnit) {
       socket.emit('cu:state', { connected: controlUnit.isConnected() });
+    } else {
+      socket.emit('cu:state', { connected: false });
     }
   });
 });
@@ -329,7 +314,7 @@ httpServer.listen(PORT, () => {
 ╠═══════════════════════════════════════╣
 ║  HTTP: http://localhost:${PORT}       ║
 ║  WebSocket: Ready                     ║
-║  Mode: ${useMockDevice ? 'Simulator' : 'Control Unit'}                   ║
+║  Devices: Simulator + Control Unit    ║
 ╚═══════════════════════════════════════╝
   `);
 });
@@ -348,8 +333,9 @@ function gracefulShutdown(signal) {
 
   try {
     io.close();
-    if (simulator) simulator.stop();
-    if (controlUnit) controlUnit.disconnect();
+    syncService.close();
+    simulator.disconnect();
+    controlUnit.disconnect();
     httpServer.close();
   } catch (error) {
     // Ignore errors

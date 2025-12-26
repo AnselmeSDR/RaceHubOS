@@ -27,10 +27,14 @@ const MODE_FLAGS = {
   LAP_COUNTER: 8,
 };
 
+// Virtual device address
+export const SIMULATOR_ADDRESS = 'SIMULATOR';
+
 export class CarreraSimulator extends EventEmitter {
   constructor(io) {
     super();
     this.io = io;
+    this.connected = false; // Connection state
     this.isRunning = false;
     this.raceActive = false;
     this.cars = [];
@@ -43,6 +47,68 @@ export class CarreraSimulator extends EventEmitter {
     this.cuMode = MODE_FLAGS.LAP_COUNTER; // Default: Lap Counter only (no fuel)
     this.cuDisplay = 6; // Number of cars to display
     this.statusInterval = null;
+  }
+
+  // ==================== Device Interface (aligned with ControlUnit) ====================
+
+  /**
+   * Check if simulator is connected
+   */
+  isConnected() {
+    return this.connected;
+  }
+
+  /**
+   * Connect to simulator (virtual)
+   */
+  async connect() {
+    if (this.connected) {
+      return { success: true, message: 'Already connected' };
+    }
+
+    this.connected = true;
+    this.init(6);
+    this.startStatusPolling(200);
+    this.emit('connected');
+
+    return { success: true, message: 'Connected to Simulator' };
+  }
+
+  /**
+   * Disconnect from simulator
+   */
+  async disconnect() {
+    if (!this.connected) {
+      return { success: true, message: 'Already disconnected' };
+    }
+
+    this.stop();
+    this.stopStatusPolling();
+    this.connected = false;
+    this.emit('disconnected');
+
+    return { success: true, message: 'Disconnected from Simulator' };
+  }
+
+  /**
+   * Get simulator version
+   */
+  async version() {
+    return 'SIMULATOR-1.0';
+  }
+
+  /**
+   * Get device info (aligned with ControlUnit.getInfo)
+   */
+  async getInfo() {
+    return {
+      version: await this.version(),
+      fuelMode: (this.cuMode & MODE_FLAGS.FUEL) !== 0,
+      realMode: (this.cuMode & MODE_FLAGS.REAL) !== 0,
+      pitLane: (this.cuMode & MODE_FLAGS.PIT_LANE) !== 0,
+      lapCounter: (this.cuMode & MODE_FLAGS.LAP_COUNTER) !== 0,
+      numCars: this.cuDisplay,
+    };
   }
 
   /**
@@ -321,7 +387,7 @@ export class CarreraSimulator extends EventEmitter {
       active: this.raceActive,
       raceTime: this.raceTime,
       cars: this.cars,
-      connected: true, // Simulator is always "connected"
+      connected: this.connected,
       lastStatus: this.getCuStatus(),
     };
   }

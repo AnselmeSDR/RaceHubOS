@@ -8,8 +8,8 @@
  * - Appelle SessionService pour la logique session
  */
 export class SyncService {
-  constructor(eventSource, io) {
-    this.source = eventSource; // ControlUnit ou Simulator
+  constructor(io) {
+    this.source = null; // ControlUnit ou Simulator (set via setDevice)
     this.io = io;
     this.sessionService = null;
 
@@ -21,27 +21,61 @@ export class SyncService {
     this.pollInterval = 500;
     this.pollTimer = null;
 
-    this.setupListeners();
+    // Bound handlers for cleanup
+    this._onTimer = (event) => this.handleTimerEvent(event);
+    this._onStatus = (status) => this.handleStatus(status);
+    this._onConnected = () => this.io?.emit('cu:connected');
+    this._onDisconnected = () => this.io?.emit('cu:disconnected');
   }
 
   setSessionService(sessionService) {
     this.sessionService = sessionService;
   }
 
+  // ==================== Device Management ====================
+
+  /**
+   * Set active device (hot-swap support)
+   * @param {ControlUnit|CarreraSimulator} device
+   */
+  setDevice(device) {
+    // Remove listeners from old device
+    if (this.source) {
+      this.stopPolling();
+      this.source.off('timer', this._onTimer);
+      this.source.off('status', this._onStatus);
+      this.source.off('connected', this._onConnected);
+      this.source.off('disconnected', this._onDisconnected);
+    }
+
+    // Clear state
+    this.lastTimestamps.clear();
+    this.cuStatus = null;
+
+    // Set new device
+    this.source = device;
+
+    if (device) {
+      this.setupListeners();
+    }
+  }
+
+  /**
+   * Get current device
+   */
+  getDevice() {
+    return this.source;
+  }
+
   // ==================== Event Listeners ====================
 
   setupListeners() {
-    this.source.on('timer', (event) => this.handleTimerEvent(event));
-    this.source.on('status', (status) => this.handleStatus(status));
+    if (!this.source) return;
 
-    if (this.source.on) {
-      this.source.on('connected', () => {
-        this.io?.emit('cu:connected');
-      });
-      this.source.on('disconnected', () => {
-        this.io?.emit('cu:disconnected');
-      });
-    }
+    this.source.on('timer', this._onTimer);
+    this.source.on('status', this._onStatus);
+    this.source.on('connected', this._onConnected);
+    this.source.on('disconnected', this._onDisconnected);
   }
 
   // ==================== Hardware Event Handlers ====================
@@ -103,11 +137,11 @@ export class SyncService {
   }
 
   startPolling() {
-    if (this.pollTimer) return;
+    if (this.pollTimer || !this.source) return;
 
     const poll = async () => {
       try {
-        if (this.source.poll && this.source.connected) {
+        if (this.source?.poll && this.source?.isConnected?.()) {
           await this.source.poll();
         }
       } catch (error) {
@@ -129,6 +163,7 @@ export class SyncService {
   // ==================== CU Control ====================
 
   async startRace() {
+    if (!this.source) return;
     if (this.source.start) {
       await this.source.start();
     }
@@ -138,6 +173,7 @@ export class SyncService {
   }
 
   async stopRace() {
+    if (!this.source) return;
     if (this.source.pressEsc) {
       await this.source.pressEsc();
     } else if (this.source.stop) {
@@ -146,17 +182,17 @@ export class SyncService {
   }
 
   async pressButton(button) {
-    if (this.source.pressButton) {
+    if (this.source?.pressButton) {
       await this.source.pressButton(button);
     }
   }
 
   async reset() {
     this.lastTimestamps.clear();
-    if (this.source.reset) {
+    if (this.source?.reset) {
       await this.source.reset();
     }
-    if (this.source.clearPosition) {
+    if (this.source?.clearPosition) {
       await this.source.clearPosition();
     }
   }
@@ -168,12 +204,12 @@ export class SyncService {
   }
 
   isConnected() {
-    return this.source.isConnected?.() || false;
+    return this.source?.isConnected?.() || false;
   }
 
   getInfo() {
-    return this.source.getInfo?.() || {
-      version: 'UNKNOWN',
+    return this.source?.getInfo?.() || {
+      version: 'NOT CONNECTED',
       fuelMode: false,
       realMode: false,
       pitLane: false,
