@@ -1,23 +1,17 @@
 import express from 'express';
 
 const router = express.Router();
-let sessionManager;
-let championshipSessionManager;
+let sessionService;
 
-export function setSessionManager(manager) {
-  sessionManager = manager;
-}
-
-export function setChampionshipSessionManager(manager) {
-  championshipSessionManager = manager;
+export function setSessionService(service) {
+  sessionService = service;
 }
 
 // Helper: get prisma instance
-const prisma = () => sessionManager.prisma;
+const prisma = () => sessionService.prisma;
 
 /**
  * GET /api/sessions
- * List all sessions
  */
 router.get('/', async (req, res) => {
   try {
@@ -46,7 +40,6 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/sessions/:id
- * Get session by ID
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -80,52 +73,21 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/sessions
- * Create a new session
+ * Create a standalone session (without championship)
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, type, trackId, championshipId, fuelMode, drivers, duration, maxLaps } = req.body;
-
-    if (!type || !trackId) {
-      return res.status(400).json({ success: false, error: 'type and trackId are required' });
-    }
-
-    const session = await prisma().session.create({
-      data: {
-        name,
-        type,
-        trackId,
-        championshipId: championshipId || null,
-        fuelMode: fuelMode || 'OFF',
-        duration: duration || null,
-        maxLaps: maxLaps || null,
-        status: 'draft',
-        drivers: {
-          create: drivers?.map((d, idx) => ({
-            driverId: d.driverId,
-            carId: d.carId,
-            controller: Number(d.controller),
-            gridPos: d.gridPos || idx + 1
-          })) || []
-        }
-      },
-      include: {
-        track: true,
-        championship: true,
-        drivers: { include: { driver: true, car: true } }
-      }
-    });
-
+    const session = await sessionService.createSession(req.body);
     res.status(201).json({ success: true, data: session });
   } catch (error) {
     console.error('Error creating session:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 
+
 /**
  * PUT /api/sessions/:id
- * Update a session
  */
 router.put('/:id', async (req, res) => {
   try {
@@ -163,50 +125,12 @@ router.put('/:id', async (req, res) => {
 
 /**
  * DELETE /api/sessions/:id
- * Delete a session
  */
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { championship: true }
-    });
-
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    // Use ChampionshipSessionManager for championship sessions
-    if (championshipSessionManager && session.championshipId) {
-      await championshipSessionManager.deleteSession(id);
-    } else {
-      // Clear TrackRecord references
-      await prisma().trackRecord.updateMany({
-        where: { sessionId: id },
-        data: { sessionId: null }
-      });
-
-      await prisma().session.delete({ where: { id } });
-    }
-
-    // Clear active session if needed
-    if (sessionManager.syncService?.activeSessionId === id) {
-      sessionManager.clearActiveSession();
-    }
-
-    sessionManager.io?.emit('session_deleted', {
-      event: 'session_deleted',
-      data: { sessionId: id, championshipId: session.championshipId, type: session.type }
-    });
-
-    if (session.championshipId) {
-      sessionManager.io?.emit('standings_changed', {
-        event: 'standings_changed',
-        data: { championshipId: session.championshipId, types: [session.type] }
-      });
-    }
+    await sessionService.deleteSession(id);
 
     res.json({ success: true, message: 'Session deleted' });
   } catch (error) {
@@ -217,7 +141,6 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * PUT /api/sessions/:id/drivers
- * Update session drivers
  */
 router.put('/:id/drivers', async (req, res) => {
   try {
@@ -233,7 +156,6 @@ router.put('/:id/drivers', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    // Replace all drivers
     await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
 
     const validDrivers = drivers.filter(d => d.driverId && d.carId && d.controller !== undefined);
@@ -267,7 +189,6 @@ router.put('/:id/drivers', async (req, res) => {
 
 /**
  * PATCH /api/sessions/:id/status
- * Change session status with validation
  */
 router.patch('/:id/status', async (req, res) => {
   try {
@@ -284,7 +205,7 @@ router.patch('/:id/status', async (req, res) => {
 
     const session = await prisma().session.findUnique({
       where: { id },
-      include: { drivers: { include: { driver: true, car: true } }, championship: true, track: true }
+      include: { drivers: { include: { driver: true, car: true } } }
     });
 
     if (!session) {
@@ -308,64 +229,29 @@ router.patch('/:id/status', async (req, res) => {
       });
     }
 
-    // Use ChampionshipSessionManager for championship sessions
-    if (championshipSessionManager && session.championshipId) {
-      let updatedSession;
-
-      if (newStatus === 'active' && currentStatus === 'ready') {
-        updatedSession = await championshipSessionManager.startSession(id);
-        sessionManager.configureActiveSession(updatedSession);
-        sessionManager.startRace();
-      } else if (newStatus === 'finished' && ['active', 'finishing'].includes(currentStatus)) {
-        await championshipSessionManager.forceFinish(id);
-        updatedSession = await prisma().session.findUnique({
-          where: { id },
-          include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-        });
-        sessionManager.stopRace();
-        sessionManager.clearActiveSession();
-      } else {
-        updatedSession = await championshipSessionManager.changeSessionStatus(id, newStatus);
-      }
-
-      return res.json({
-        success: true,
-        data: updatedSession,
-        message: `Status changed from '${currentStatus}' to '${newStatus}'`
-      });
-    }
-
-    // Direct update for non-championship sessions
-    const updateData = { status: newStatus };
-    if (newStatus === 'active') updateData.startedAt = new Date();
-    else if (newStatus === 'finishing') updateData.finishingAt = new Date();
-    else if (newStatus === 'finished') updateData.finishedAt = new Date();
-    else if (newStatus === 'draft' && currentStatus === 'finished') {
-      updateData.startedAt = null;
-      updateData.finishingAt = null;
-      updateData.finishedAt = null;
-    }
-
-    const updatedSession = await prisma().session.update({
-      where: { id },
-      data: updateData,
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-    });
-
-    // Handle side effects
-    if (newStatus === 'active') {
-      sessionManager.configureActiveSession(updatedSession);
-      sessionManager.startRace();
-      sessionManager.io?.emit('session:started', { session: updatedSession });
+    // Delegate to SessionService for lifecycle transitions
+    if (newStatus === 'active' && currentStatus === 'ready') {
+      await sessionService.startSession(id);
+    } else if (newStatus === 'paused' && currentStatus === 'active') {
+      await sessionService.pauseSession();
+    } else if (newStatus === 'active' && currentStatus === 'paused') {
+      await sessionService.resumeSession();
     } else if (newStatus === 'finished') {
-      sessionManager.stopRace();
-      sessionManager.clearActiveSession();
-      sessionManager.io?.emit('session:stopped', { session: updatedSession });
+      await sessionService.stopSession();
+    } else {
+      // Simple status update (draft <-> ready, finished -> draft)
+      const updateData = { status: newStatus };
+      if (newStatus === 'draft' && currentStatus === 'finished') {
+        updateData.startedAt = null;
+        updateData.finishingAt = null;
+        updateData.finishedAt = null;
+      }
+      await prisma().session.update({ where: { id }, data: updateData });
     }
 
-    sessionManager.io?.emit('session_status_changed', {
-      event: 'session_status_changed',
-      data: { sessionId: id, championshipId: updatedSession.championshipId, previousStatus: currentStatus, status: newStatus }
+    const updatedSession = await prisma().session.findUnique({
+      where: { id },
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
     });
 
     res.json({ success: true, data: updatedSession, message: `Status changed to '${newStatus}'` });
@@ -377,17 +263,12 @@ router.patch('/:id/status', async (req, res) => {
 
 /**
  * POST /api/sessions/:id/start
- * Start a session
  */
 router.post('/:id/start', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-    });
-
+    const session = await prisma().session.findUnique({ where: { id } });
     if (!session) {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
@@ -399,23 +280,12 @@ router.post('/:id/start', async (req, res) => {
       });
     }
 
-    let updatedSession;
+    await sessionService.startSession(id);
 
-    if (championshipSessionManager && session.championshipId) {
-      updatedSession = await championshipSessionManager.startSession(id);
-    } else {
-      updatedSession = await prisma().session.update({
-        where: { id },
-        data: { status: 'active', startedAt: new Date() },
-        include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-      });
-    }
-
-    await sessionManager.resetForNewSession();
-    sessionManager.configureActiveSession(updatedSession);
-    sessionManager.startRace();
-
-    sessionManager.io?.emit('session:started', { session: updatedSession });
+    const updatedSession = await prisma().session.findUnique({
+      where: { id },
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+    });
 
     res.json({ success: true, data: updatedSession, message: 'Session started' });
   } catch (error) {
@@ -426,14 +296,12 @@ router.post('/:id/start', async (req, res) => {
 
 /**
  * POST /api/sessions/:id/pause
- * Pause an active session
  */
 router.post('/:id/pause', async (req, res) => {
   try {
     const { id } = req.params;
 
     const session = await prisma().session.findUnique({ where: { id } });
-
     if (!session) {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
@@ -445,18 +313,11 @@ router.post('/:id/pause', async (req, res) => {
       });
     }
 
-    const updatedSession = await prisma().session.update({
+    await sessionService.pauseSession();
+
+    const updatedSession = await prisma().session.findUnique({
       where: { id },
-      data: { status: 'paused' },
       include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-    });
-
-    sessionManager.stopRace();
-
-    sessionManager.io?.emit('session:paused', { session: updatedSession });
-    sessionManager.io?.emit('session_status_changed', {
-      event: 'session_status_changed',
-      data: { sessionId: id, status: 'paused', previousStatus: 'active' }
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session paused' });
@@ -468,17 +329,12 @@ router.post('/:id/pause', async (req, res) => {
 
 /**
  * POST /api/sessions/:id/resume
- * Resume a paused session
  */
 router.post('/:id/resume', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { drivers: { include: { driver: true, car: true } } }
-    });
-
+    const session = await prisma().session.findUnique({ where: { id } });
     if (!session) {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
@@ -490,18 +346,11 @@ router.post('/:id/resume', async (req, res) => {
       });
     }
 
-    const updatedSession = await prisma().session.update({
+    await sessionService.resumeSession();
+
+    const updatedSession = await prisma().session.findUnique({
       where: { id },
-      data: { status: 'active' },
       include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-    });
-
-    sessionManager.startRace();
-
-    sessionManager.io?.emit('session:resumed', { session: updatedSession });
-    sessionManager.io?.emit('session_status_changed', {
-      event: 'session_status_changed',
-      data: { sessionId: id, status: 'active', previousStatus: 'paused' }
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session resumed' });
@@ -513,17 +362,12 @@ router.post('/:id/resume', async (req, res) => {
 
 /**
  * POST /api/sessions/:id/stop
- * Stop a session (finish it)
  */
 router.post('/:id/stop', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { championship: true }
-    });
-
+    const session = await prisma().session.findUnique({ where: { id } });
     if (!session) {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
@@ -535,33 +379,12 @@ router.post('/:id/stop', async (req, res) => {
       });
     }
 
-    let updatedSession;
+    await sessionService.stopSession();
 
-    if (championshipSessionManager && session.championshipId) {
-      await championshipSessionManager.forceFinish(id);
-      updatedSession = await prisma().session.findUnique({
-        where: { id },
-        include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-      });
-    } else {
-      updatedSession = await prisma().session.update({
-        where: { id },
-        data: { status: 'finished', finishedAt: new Date() },
-        include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-      });
-    }
-
-    sessionManager.stopRace();
-    sessionManager.clearActiveSession();
-
-    sessionManager.io?.emit('session:stopped', { session: updatedSession });
-
-    if (session.championshipId) {
-      sessionManager.io?.emit('standings_changed', {
-        event: 'standings_changed',
-        data: { championshipId: session.championshipId, types: [session.type] }
-      });
-    }
+    const updatedSession = await prisma().session.findUnique({
+      where: { id },
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+    });
 
     res.json({ success: true, data: updatedSession, message: 'Session stopped' });
   } catch (error) {
@@ -571,121 +394,23 @@ router.post('/:id/stop', async (req, res) => {
 });
 
 /**
- * POST /api/sessions/:id/restart
- * Restart a session (delete laps/events, reset to ready)
- */
-router.post('/:id/restart', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    // Delete laps and events
-    await prisma().lap.deleteMany({ where: { sessionId: id } });
-    await prisma().raceEvent.deleteMany({ where: { sessionId: id } });
-
-    // Reset driver stats
-    await prisma().sessionDriver.updateMany({
-      where: { sessionId: id },
-      data: {
-        position: null,
-        finalPos: null,
-        totalLaps: 0,
-        totalTime: 0,
-        bestLapTime: null,
-        lastLapTime: null,
-        isDNF: false,
-        lapsAtFinishing: null
-      }
-    });
-
-    // Reset session
-    const updatedSession = await prisma().session.update({
-      where: { id },
-      data: { status: 'ready', startedAt: null, finishingAt: null, finishedAt: null },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
-    });
-
-    await sessionManager.resetForNewSession();
-
-    sessionManager.io?.emit('session:restarted', { session: updatedSession });
-
-    res.json({ success: true, data: updatedSession, message: 'Session restarted' });
-  } catch (error) {
-    console.error('Error restarting session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
  * POST /api/sessions/:id/reset
- * Reset a session (soft delete laps, reset to draft)
+ * Reset session to ready
+ * - Practice: soft delete laps (for stats)
+ * - Qualif/Race: hard delete laps
  */
 router.post('/:id/reset', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const session = await prisma().session.findUnique({
+    await sessionService.resetSession(id);
+
+    const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { championship: true }
-    });
-
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    // Soft delete laps
-    await prisma().lap.updateMany({
-      where: { sessionId: id, softDeletedAt: null },
-      data: { softDeletedAt: new Date() }
-    });
-
-    // Delete events
-    await prisma().raceEvent.deleteMany({ where: { sessionId: id } });
-
-    // Reset driver stats
-    await prisma().sessionDriver.updateMany({
-      where: { sessionId: id },
-      data: {
-        position: null,
-        finalPos: null,
-        totalLaps: 0,
-        totalTime: 0,
-        bestLapTime: null,
-        lastLapTime: null,
-        isDNF: false,
-        lapsAtFinishing: null
-      }
-    });
-
-    // Reset to draft
-    const updatedSession = await prisma().session.update({
-      where: { id },
-      data: { status: 'draft', startedAt: null, finishingAt: null, finishedAt: null },
       include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
     });
 
-    sessionManager.io?.emit('session_reset', {
-      event: 'session_reset',
-      data: { sessionId: id, championshipId: session.championshipId, type: session.type }
-    });
-
-    sessionManager.io?.emit('session_status_changed', {
-      event: 'session_status_changed',
-      data: { sessionId: id, previousStatus: session.status, status: 'draft' }
-    });
-
-    if (session.championshipId) {
-      sessionManager.io?.emit('standings_changed', {
-        event: 'standings_changed',
-        data: { championshipId: session.championshipId, types: [session.type] }
-      });
-    }
-
-    res.json({ success: true, data: updatedSession, message: 'Session reset to draft' });
+    res.json({ success: true, data: updatedSession, message: 'Session reset' });
   } catch (error) {
     console.error('Error resetting session:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -694,18 +419,17 @@ router.post('/:id/reset', async (req, res) => {
 
 /**
  * GET /api/sessions/:id/leaderboard
- * Get live leaderboard
  */
 router.get('/:id/leaderboard', async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (championshipSessionManager) {
-      const leaderboard = await championshipSessionManager.getSessionLeaderboard(id);
-      return res.json({ success: true, data: leaderboard });
+    // If this is the active session, return live data
+    if (sessionService.activeSessionId === id) {
+      return res.json({ success: true, data: sessionService.getLeaderboard() });
     }
 
-    // Fallback: basic calculation
+    // Otherwise calculate from DB
     const session = await prisma().session.findUnique({
       where: { id },
       include: { drivers: { include: { driver: true, car: true } } }
@@ -755,7 +479,6 @@ router.get('/:id/leaderboard', async (req, res) => {
       });
     }
 
-    // Positions
     entries.forEach((e, i) => { e.position = i + 1; });
 
     res.json({ success: true, data: entries });

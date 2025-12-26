@@ -13,29 +13,19 @@ import driversRouter from './routes/drivers.js';
 import carsRouter from './routes/cars.js';
 import tracksRouter from './routes/tracks.js';
 import teamsRouter from './routes/teams.js';
-import championshipsRouter from './routes/championships.js';
+import championshipsRouter, { setChampionshipService } from './routes/championships.js';
 import statsRouter from './routes/stats.js';
-import lapsRouter from './routes/laps.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
 import bluetoothRouter, { setControlUnit, setSimulator } from './routes/bluetooth.js';
-
-// Import session routes
-import sessionsRouter, { setSessionManager, setChampionshipSessionManager } from './routes/sessions.js';
-
-// Import new v2 routes
+import sessionsRouter, { setSessionService } from './routes/sessions.js';
 import configRouter, { setConfigService } from './routes/config.js';
-import raceRouter, { setRaceController } from './routes/race.js';
 import recordsRouter from './routes/records.js';
 import uploadRouter from './routes/upload.js';
 
-// Import SessionManager service (legacy)
-import { SessionManager } from './services/SessionManager.js';
-
-// Import new v2 services
+// Import services
+import { SessionService } from './services/SessionService.js';
 import { ConfigService } from './services/ConfigService.js';
-import { LeaderboardService } from './services/LeaderboardService.js';
-import { RaceControllerService } from './services/RaceControllerService.js';
-import { ChampionshipSessionManager } from './services/ChampionshipSessionManager.js';
+import { ChampionshipService } from './services/ChampionshipService.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,16 +50,12 @@ const io = new Server(httpServer, {
   pingInterval: 25000,
 });
 
-// Initialize SessionManager (legacy)
-const sessionManager = new SessionManager(io);
-
-// Initialize new v2 services
+// Initialize services
+const sessionService = new SessionService(io);
 const configService = new ConfigService(io);
-const leaderboardService = new LeaderboardService();
-const raceControllerService = new RaceControllerService(io, leaderboardService);
-const championshipSessionManager = new ChampionshipSessionManager(io);
+const championshipService = new ChampionshipService(io);
 
-// Initialize services based on mode
+// Initialize hardware based on mode
 const useMockDevice = process.env.USE_MOCK_DEVICE === 'true';
 let controlUnit = null;
 let simulator = null;
@@ -81,9 +67,7 @@ if (useMockDevice) {
   simulator.init(6);
   syncService = new SyncService(simulator, io);
 
-  sessionManager.setSimulator(simulator);
   setSimulator(simulator);
-
   simulator.startStatusPolling(200);
   console.log('🎮 Simulator mode: SyncService initialized');
 } else {
@@ -92,27 +76,41 @@ if (useMockDevice) {
   syncService = new SyncService(controlUnit, io);
 
   setControlUnit(controlUnit);
-  sessionManager.setSyncService(syncService);
-  raceControllerService.setSyncService(syncService);
-  championshipSessionManager.setSyncService(syncService);
 
   syncService.startPolling();
   console.log('🔌 CU mode: SyncService polling started');
 }
 
-// Export syncService for routes
+// Connect services
+syncService.setSessionService(sessionService);
+sessionService.setSyncService(syncService);
+
+// SessionService -> ChampionshipService (event-based)
+sessionService.on('sessionFinished', ({ sessionId, championshipId }) => {
+  championshipService.onSessionFinished(sessionId, championshipId);
+});
+
+sessionService.on('sessionReset', ({ sessionId, championshipId }) => {
+  championshipService.onStandingsChanged(championshipId, sessionId, 'session_reset');
+});
+
+sessionService.on('sessionDeleted', ({ sessionId, championshipId }) => {
+  championshipService.onStandingsChanged(championshipId, sessionId, 'session_deleted');
+});
+
+// Export for routes
 export { syncService, controlUnit };
 
 // Pass io to settings
 setSettingsIo(io);
 
-// Pass SessionManager to routes
-setSessionManager(sessionManager);
-setChampionshipSessionManager(championshipSessionManager);
+// Connect services
+championshipService.setSessionService(sessionService);
 
-// Pass v2 services to routes
+// Pass services to routes
+setSessionService(sessionService);
+setChampionshipService(championshipService);
 setConfigService(configService);
-setRaceController(raceControllerService);
 
 // Middleware
 app.use(cors());
@@ -141,11 +139,9 @@ app.get('/api', (req, res) => {
       teams: '/api/teams',
       championships: '/api/championships',
       sessions: '/api/sessions',
-      race: '/api/race',
       config: '/api/config',
       records: '/api/records',
       stats: '/api/stats',
-      laps: '/api/laps',
       bluetooth: '/api/bluetooth',
       settings: '/api/settings',
       sync: '/api/sync',
@@ -161,27 +157,28 @@ app.use('/api/tracks', tracksRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/championships', championshipsRouter);
 app.use('/api/stats', statsRouter);
-app.use('/api/laps', lapsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bluetooth', bluetoothRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/config', configRouter);
-app.use('/api/race', raceRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 
-// SyncService endpoints
+// SyncService endpoints (hardware control)
 app.get('/api/sync/state', (req, res) => {
-  res.json(syncService.getState());
+  res.json({
+    ...syncService.getState(),
+    session: sessionService.getState(),
+  });
 });
 
 app.get('/api/sync/leaderboard', (req, res) => {
-  res.json(syncService.getLeaderboard());
+  res.json(sessionService.getLeaderboard());
 });
 
 app.post('/api/sync/load-session/:sessionId', async (req, res) => {
   try {
-    const session = await syncService.loadSession(req.params.sessionId);
+    const session = await sessionService.loadSession(req.params.sessionId);
     res.json({ success: true, session: { id: session.id, type: session.type } });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -189,7 +186,7 @@ app.post('/api/sync/load-session/:sessionId', async (req, res) => {
 });
 
 app.post('/api/sync/reset', async (req, res) => {
-  await syncService.resetForNewSession();
+  await sessionService.resetForNewSession();
   res.json({ success: true });
 });
 
@@ -266,9 +263,6 @@ io.on('connection', (socket) => {
     socket.emit('cu:status', {
       connected: controlUnit.isConnected(),
       isMockDevice: false
-    });
-    raceControllerService.getState().then(raceState => {
-      socket.emit('race:state', raceState);
     });
   }
 

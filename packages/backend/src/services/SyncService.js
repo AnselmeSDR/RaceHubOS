@@ -1,50 +1,35 @@
-import { PrismaClient } from '@prisma/client';
-
-// Default grace period after leader finishes (ms)
-const DEFAULT_GRACE_PERIOD_MS = 30000;
-
 /**
- * SyncService - Service unifie de synchronisation CU/Simulateur
+ * SyncService - Synchronisation hardware CU/Simulator
  *
- * Flow: Event → RAM → Emit → DB
- * Principe: emit === DB (meme structure)
- *
- * @see sync-flow-from-sim-or-cu.md
+ * Responsabilite unique : formater les donnees hardware et les transmettre
+ * - Ecoute CU/Simulator events
+ * - Formate les donnees (calcul lapTime depuis timestamps)
+ * - Emet cu:* events pour le frontend (logs/footer)
+ * - Appelle SessionService pour la logique session
  */
 export class SyncService {
   constructor(eventSource, io) {
     this.source = eventSource; // ControlUnit ou Simulator
     this.io = io;
-    this.prisma = new PrismaClient();
-
-    // Session state
-    this.activeSessionId = null;
-    this.activeTrackId = null;
-    this.currentPhase = 'practice'; // 'practice' | 'qualif' | 'race'
-    this.sessionConfig = null; // Cached session config (duration, maxLaps, etc.)
-    this.sessionStatus = null; // Cached session status
-
-    // Driver states - format unifie (RAM === DB === Emit)
-    this.sessionDrivers = [];
+    this.sessionService = null;
 
     // Timestamps pour calcul lapTime
     this.lastTimestamps = new Map(); // controller -> timestamp
 
-    // Grace period tracking
-    this.raceFinishTime = null;
-
     // CU status & polling
     this.cuStatus = null;
-    this.pollInterval = 500; // Default 500ms
+    this.pollInterval = 500;
     this.pollTimer = null;
 
-    // Setup listeners
     this.setupListeners();
   }
 
-  /**
-   * Setup event listeners on source (CU or Simulator)
-   */
+  setSessionService(sessionService) {
+    this.sessionService = sessionService;
+  }
+
+  // ==================== Event Listeners ====================
+
   setupListeners() {
     this.source.on('timer', (event) => this.handleTimerEvent(event));
     this.source.on('status', (status) => this.handleStatus(status));
@@ -59,12 +44,7 @@ export class SyncService {
     }
   }
 
-  /**
-   * Get driver state by controller (O(n) but n <= 10)
-   */
-  getDriverByController(controller) {
-    return this.sessionDrivers.find(d => d.controller === controller);
-  }
+  // ==================== Hardware Event Handlers ====================
 
   /**
    * Handle timer event from CU/Simulator
@@ -73,141 +53,22 @@ export class SyncService {
   async handleTimerEvent(event) {
     const { controller, timestamp, sector } = event;
 
-    // Calculate lap time
+    // Calculate lap time from timestamps
     const lastTimestamp = this.lastTimestamps.get(controller) || 0;
     const lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
     this.lastTimestamps.set(controller, timestamp);
 
-    // Emit raw timer event
+    // Emit raw timer (for frontend logs/footer)
     this.io?.emit('cu:timer', { controller, timestamp, lapTime, sector });
 
-    // Only process finish line (sector 1) with valid lap time
-    if (sector !== 1 || lapTime === 0) {
-      return;
+    // Forward formatted data to SessionService
+    if (this.sessionService?.isActive()) {
+      await this.sessionService.handleLap({ controller, timestamp, lapTime, sector });
     }
-
-    // Get driver for this controller
-    const state = this.getDriverByController(controller);
-    if (!state) {
-      return;
-    }
-
-    // 1. Update RAM
-    state.totalLaps++;
-    state.totalTime += Math.round(lapTime);
-    state.lastLapTime = Math.round(lapTime);
-    if (state.bestLapTime === null || lapTime < state.bestLapTime) {
-      state.bestLapTime = Math.round(lapTime);
-    }
-
-    // 2. Recalculate positions & gaps
-    this.recalculatePositions();
-
-    // 3. Save Lap (source de verite)
-    await this.prisma.lap.create({
-      data: {
-        sessionId: this.activeSessionId,
-        trackId: this.activeTrackId,
-        driverId: state.driverId,
-        carId: state.carId,
-        controller: state.controller,
-        phase: this.currentPhase,
-        lapNumber: state.totalLaps,
-        lapTime: lapTime,
-      },
-    });
-
-    // 4. Save SessionDriver (cache, meme structure que RAM)
-    await this.prisma.sessionDriver.update({
-      where: { id: state.id },
-      data: {
-        position: state.position,
-        totalLaps: state.totalLaps,
-        totalTime: state.totalTime,
-        bestLapTime: state.bestLapTime,
-        lastLapTime: state.lastLapTime,
-      },
-    });
-
-    // 5. Emit leaderboard (meme format que DB)
-    this.emitLeaderboard();
-
-    // Check session completion
-    await this.checkSessionComplete();
-  }
-
-  /**
-   * Recalculate positions and gaps
-   * Modifies sessionDrivers in place
-   *
-   * Sorting rules:
-   * - practice/qualif: by bestLapTime (ascending, null last)
-   * - race: by totalLaps (desc), then totalTime (asc)
-   */
-  recalculatePositions() {
-    if (this.sessionDrivers.length === 0) return;
-
-    const isRace = this.currentPhase === 'race';
-
-    if (isRace) {
-      // Race: most laps first, then fastest total time
-      this.sessionDrivers.sort((a, b) => {
-        if (b.totalLaps !== a.totalLaps) {
-          return b.totalLaps - a.totalLaps;
-        }
-        return a.totalTime - b.totalTime;
-      });
-    } else {
-      // Practice/Qualif: best lap time (ascending, null last)
-      this.sessionDrivers.sort((a, b) => {
-        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
-        if (a.bestLapTime === null) return 1;
-        if (b.bestLapTime === null) return -1;
-        return a.bestLapTime - b.bestLapTime;
-      });
-    }
-
-    // Update positions and calculate gaps
-    const leader = this.sessionDrivers[0];
-
-    for (let i = 0; i < this.sessionDrivers.length; i++) {
-      const driver = this.sessionDrivers[i];
-      driver.position = i + 1;
-
-      if (i === 0) {
-        driver.gap = null;
-      } else if (isRace) {
-        // Race: gap in laps or time
-        const lapDiff = leader.totalLaps - driver.totalLaps;
-        if (lapDiff > 0) {
-          driver.gap = lapDiff; // Number = laps behind
-        } else if (leader.totalTime && driver.totalTime) {
-          driver.gap = driver.totalTime - leader.totalTime; // ms behind
-        } else {
-          driver.gap = null;
-        }
-      } else {
-        // Practice/Qualif: gap = time difference to leader's best lap
-        if (leader.bestLapTime && driver.bestLapTime) {
-          driver.gap = driver.bestLapTime - leader.bestLapTime;
-        } else {
-          driver.gap = null;
-        }
-      }
-    }
-  }
-
-  /**
-   * Emit leaderboard to frontend
-   * Format matches SessionDriver DB structure
-   */
-  emitLeaderboard() {
-    this.io?.emit('leaderboard', this.sessionDrivers);
   }
 
   /**
    * Handle status event from CU
-   * Adapts polling speed during lights sequence
    */
   handleStatus(status) {
     const wasInLights = this.isInLightsSequence(this.cuStatus);
@@ -218,50 +79,39 @@ export class SyncService {
 
     // Adaptive polling: faster during lights sequence
     if (isInLights && !wasInLights) {
-      this.setPollInterval(100); // 100ms during lights
+      this.setPollInterval(100);
     } else if (!isInLights && wasInLights) {
-      this.setPollInterval(500); // Back to 500ms
+      this.setPollInterval(500);
     }
   }
 
-  /**
-   * Check if CU is in lights sequence (LIGHTS_1 to GO, including FALSE_START)
-   * CU states: STOPPED(9), LIGHTS_1-5(1-5), FALSE_START(6), GO(7), RACING(0)
-   */
   isInLightsSequence(status) {
     if (!status) return false;
     return status.start >= 1 && status.start <= 7;
   }
 
-  /**
-   * Set polling interval and restart polling
-   */
+  // ==================== Polling ====================
+
   setPollInterval(ms) {
     if (this.pollInterval === ms) return;
     this.pollInterval = ms;
 
-    // Restart polling if active
     if (this.pollTimer) {
       this.stopPolling();
       this.startPolling();
     }
   }
 
-  /**
-   * Start polling CU status
-   */
   startPolling() {
     if (this.pollTimer) return;
 
     const poll = async () => {
       try {
-        // Check if source is connected before polling
         if (this.source.poll && this.source.connected) {
           await this.source.poll();
         }
       } catch (error) {
-        // Log error but continue polling - CU may reconnect
-        console.warn('⚠️ SyncService poll error:', error.message);
+        console.warn('[SyncService] Poll error:', error.message);
       }
       this.pollTimer = setTimeout(poll, this.pollInterval);
     };
@@ -269,9 +119,6 @@ export class SyncService {
     poll();
   }
 
-  /**
-   * Stop polling
-   */
   stopPolling() {
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
@@ -279,168 +126,8 @@ export class SyncService {
     }
   }
 
-  // ==================== Session Control Methods ====================
+  // ==================== CU Control ====================
 
-  /**
-   * Start a session - updates DB, loads state, starts source
-   */
-  async startSession(sessionId) {
-    // Get source info (CU version, fuel mode, etc.)
-    const sourceInfo = this.source.getInfo?.() || {
-      version: 'UNKNOWN',
-      fuelMode: false,
-      realMode: false,
-      pitLane: false,
-      lapCounter: false,
-      numCars: 0,
-    };
-
-    // Update session in DB
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: {
-        status: 'active',
-        startedAt: new Date(),
-        cuVersion: sourceInfo.version,
-        cuFuelMode: sourceInfo.fuelMode,
-        cuRealMode: sourceInfo.realMode,
-        cuPitLane: sourceInfo.pitLane,
-        cuLapCounter: sourceInfo.lapCounter,
-        cuNumCars: sourceInfo.numCars,
-      },
-    });
-
-    // Load session state
-    await this.loadSession(sessionId);
-    this.sessionStatus = 'active';
-
-    // Start source and race
-    if (this.source.start) {
-      this.source.start();
-    }
-    if (this.source.startRace) {
-      await this.source.startRace();
-    }
-
-    // Start polling
-    this.startPolling();
-
-    // Emit event
-    this.io?.emit('session:started', { sessionId });
-    this.io?.emit('session_status_changed', {
-      sessionId,
-      status: 'active',
-      previousStatus: 'draft',
-    });
-
-    return this.getState();
-  }
-
-  /**
-   * Pause a session (can be resumed)
-   */
-  async pauseSession() {
-    if (!this.activeSessionId) {
-      return null;
-    }
-
-    const sessionId = this.activeSessionId;
-
-    // Update DB status
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { status: 'paused' },
-    });
-    this.sessionStatus = 'paused';
-
-    // Stop source (but keep state)
-    if (this.source.stop) {
-      this.source.stop();
-    }
-
-    // Stop polling
-    this.stopPolling();
-
-    // Emit event
-    this.io?.emit('session:paused', { sessionId });
-    this.io?.emit('session_status_changed', {
-      sessionId,
-      status: 'paused',
-      previousStatus: 'active',
-    });
-
-    return { sessionId };
-  }
-
-  /**
-   * Resume a paused session
-   */
-  async resumeSession() {
-    if (!this.activeSessionId || this.sessionStatus !== 'paused') {
-      return null;
-    }
-
-    const sessionId = this.activeSessionId;
-
-    // Update DB status
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { status: 'active' },
-    });
-    this.sessionStatus = 'active';
-
-    // Restart source
-    if (this.source.start) {
-      this.source.start();
-    }
-
-    // Restart polling
-    this.startPolling();
-
-    // Emit event
-    this.io?.emit('session:resumed', { sessionId });
-    this.io?.emit('session_status_changed', {
-      sessionId,
-      status: 'active',
-      previousStatus: 'paused',
-    });
-
-    return { sessionId };
-  }
-
-  /**
-   * Stop a session manually (finishes and saves results)
-   */
-  async stopSession() {
-    if (!this.activeSessionId) {
-      return null;
-    }
-
-    const sessionId = this.activeSessionId;
-    const championshipId = this.sessionConfig?.championshipId;
-
-    // Finalize positions and save to DB
-    await this.finishSession('Arret manuel', championshipId);
-
-    // Stop source
-    if (this.source.stop) {
-      this.source.stop();
-    }
-
-    // Stop polling
-    this.stopPolling();
-
-    // Emit stopped event
-    this.io?.emit('session:stopped', { sessionId });
-
-    return { sessionId };
-  }
-
-  // ==================== CU Control Methods ====================
-
-  /**
-   * Start race (press START button on CU)
-   */
   async startRace() {
     if (this.source.start) {
       await this.source.start();
@@ -450,9 +137,6 @@ export class SyncService {
     }
   }
 
-  /**
-   * Stop/pause race (press ESC button on CU)
-   */
   async stopRace() {
     if (this.source.pressEsc) {
       await this.source.pressEsc();
@@ -461,98 +145,14 @@ export class SyncService {
     }
   }
 
-  /**
-   * Press a button on CU
-   * @param {number} button - Button code (1=ESC, 2=START, 5=SPEED, 6=BRAKE, 7=FUEL, 8=CODE)
-   */
   async pressButton(button) {
     if (this.source.pressButton) {
       await this.source.pressButton(button);
     }
   }
 
-  /**
-   * Get current CU status
-   */
-  getCuStatus() {
-    return this.cuStatus;
-  }
-
-  /**
-   * Load session and initialize driver states
-   */
-  async loadSession(sessionId) {
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        drivers: {
-          include: { driver: true, car: true },
-          orderBy: { controller: 'asc' },
-        },
-        track: true,
-      },
-    });
-
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
-    }
-
-    this.activeSessionId = session.id;
-    this.activeTrackId = session.trackId;
-    this.currentPhase = session.type === 'qualif' ? 'qualif' :
-                        session.type === 'practice' ? 'practice' : 'race';
-
-    // Cache session config for checkSessionComplete (avoid repeated DB queries)
-    this.sessionConfig = {
-      duration: session.duration,
-      maxLaps: session.maxLaps,
-      gracePeriod: session.gracePeriod || DEFAULT_GRACE_PERIOD_MS,
-      startedAt: session.startedAt,
-      championshipId: session.championshipId,
-    };
-    this.sessionStatus = session.status;
-
-    // Initialize driver states from DB (unified format)
-    this.sessionDrivers = session.drivers.map(sd => ({
-      // Identifiers
-      id: sd.id,
-      controller: sd.controller,
-      driverId: sd.driverId,
-      carId: sd.carId,
-
-      // Stats (from DB or default)
-      position: sd.position || 0,
-      totalLaps: sd.totalLaps || 0,
-      totalTime: sd.totalTime || 0,
-      bestLapTime: sd.bestLapTime || null,
-      lastLapTime: sd.lastLapTime || null,
-      gap: null,
-    }));
-
-    // Reset timestamps
+  async reset() {
     this.lastTimestamps.clear();
-    this.raceFinishTime = null;
-
-    // Recalculate positions from current state
-    this.recalculatePositions();
-
-    return session;
-  }
-
-  /**
-   * Reset for new session
-   */
-  async resetForNewSession() {
-    this.sessionDrivers = [];
-    this.lastTimestamps.clear();
-    this.raceFinishTime = null;
-    this.activeSessionId = null;
-    this.activeTrackId = null;
-    this.currentPhase = 'practice';
-    this.sessionConfig = null;
-    this.sessionStatus = 'draft';
-
-    // Reset source if it has reset method
     if (this.source.reset) {
       await this.source.reset();
     }
@@ -561,158 +161,37 @@ export class SyncService {
     }
   }
 
-  /**
-   * Check if session should auto-complete (uses cached sessionConfig, no DB query)
-   */
-  async checkSessionComplete() {
-    if (!this.activeSessionId || !this.sessionConfig) return;
-    if (this.sessionStatus !== 'active' && this.sessionStatus !== 'finishing') return;
+  // ==================== Getters ====================
 
-    const { duration, maxLaps, gracePeriod, startedAt, championshipId } = this.sessionConfig;
-
-    let shouldStop = false;
-    let shouldStartFinishing = false;
-    let reason = '';
-
-    // Check time limit
-    if (duration && startedAt) {
-      const elapsed = Date.now() - new Date(startedAt).getTime();
-      if (elapsed >= duration) {
-        shouldStop = true;
-        reason = `Temps ecoule (${Math.round(duration / 60000)}min)`;
-      }
-    }
-
-    // Check lap limit
-    if (maxLaps && !shouldStop) {
-      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
-
-      if (maxLapsReached) {
-        if (this.sessionStatus !== 'finishing') {
-          shouldStartFinishing = true;
-          reason = `Leader a termine ${maxLaps} tours`;
-          this.raceFinishTime = Date.now();
-        } else if (this.currentPhase === 'qualif') {
-          // Qualif: all must complete maxLaps
-          const allFinished = this.sessionDrivers
-            .filter(d => d.totalLaps > 0)
-            .every(d => d.totalLaps >= maxLaps);
-          if (allFinished) {
-            shouldStop = true;
-            reason = `Tous les pilotes ont termine ${maxLaps} tours`;
-          }
-        } else {
-          // Race: grace period
-          if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
-            shouldStop = true;
-            reason = `Delai de grace ecoule (${gracePeriod / 1000}s)`;
-          }
-        }
-      }
-    }
-
-    // Start finishing mode
-    if (shouldStartFinishing && !shouldStop) {
-      await this.prisma.session.update({
-        where: { id: this.activeSessionId },
-        data: { status: 'finishing', finishingAt: new Date() },
-      });
-      this.sessionStatus = 'finishing';
-
-      this.io?.emit('session:finishing', {
-        sessionId: this.activeSessionId,
-        reason,
-      });
-    }
-
-    // Finish session
-    if (shouldStop) {
-      await this.finishSession(reason, championshipId);
-    }
+  getCuStatus() {
+    return this.cuStatus;
   }
 
-  /**
-   * Finish session and save final positions (batched transaction)
-   */
-  async finishSession(reason, championshipId = null) {
-    const sessionId = this.activeSessionId;
-    const previousStatus = this.sessionStatus;
-
-    // Batch all updates in a single transaction
-    await this.prisma.$transaction([
-      // Update all drivers at once
-      ...this.sessionDrivers.map(driver =>
-        this.prisma.sessionDriver.update({
-          where: { id: driver.id },
-          data: {
-            finalPos: driver.position,
-            totalLaps: driver.totalLaps,
-            totalTime: driver.totalTime,
-            bestLapTime: driver.bestLapTime,
-            lastLapTime: driver.lastLapTime,
-          },
-        })
-      ),
-      // Update session status
-      this.prisma.session.update({
-        where: { id: sessionId },
-        data: {
-          status: 'finished',
-          finishedAt: new Date(),
-        },
-      }),
-    ]);
-
-    // Emit events
-    this.io?.emit('session:finished', { sessionId, reason });
-    this.io?.emit('session_status_changed', {
-      sessionId,
-      status: 'finished',
-      previousStatus,
-    });
-
-    // Notify frontend to refetch standings (calculated on-demand by API)
-    if (championshipId) {
-      this.io?.emit('standings_changed', { championshipId });
-    }
-
-    // Clear state
-    this.activeSessionId = null;
-    this.activeTrackId = null;
-    this.sessionDrivers = [];
-    this.sessionConfig = null;
-    this.sessionStatus = null;
-    this.raceFinishTime = null;
+  isConnected() {
+    return this.source.isConnected?.() || false;
   }
 
-  /**
-   * Get current state
-   */
+  getInfo() {
+    return this.source.getInfo?.() || {
+      version: 'UNKNOWN',
+      fuelMode: false,
+      realMode: false,
+      pitLane: false,
+      lapCounter: false,
+      numCars: 0,
+    };
+  }
+
   getState() {
     return {
-      activeSessionId: this.activeSessionId,
-      activeTrackId: this.activeTrackId,
-      currentPhase: this.currentPhase,
-      sessionDrivers: this.sessionDrivers,
-      connected: this.source.isConnected?.() || false,
+      connected: this.isConnected(),
       cuStatus: this.cuStatus,
       pollInterval: this.pollInterval,
     };
   }
 
-  /**
-   * Get leaderboard (same format as emit)
-   */
-  getLeaderboard() {
-    return this.sessionDrivers;
-  }
-
-  /**
-   * Close connections
-   */
-  async close() {
+  close() {
     this.stopPolling();
-    await this.prisma.$disconnect();
   }
 }
 

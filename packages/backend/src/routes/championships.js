@@ -4,6 +4,12 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+let championshipService;
+
+export function setChampionshipService(service) {
+  championshipService = service;
+}
+
 // GET /api/championships - Liste tous les championnats
 router.get('/', async (req, res) => {
   try {
@@ -274,6 +280,30 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete championship',
     });
+  }
+});
+
+/**
+ * POST /api/championships/:id/sessions
+ * Create a new session in this championship
+ * Body: { type, name, duration, maxLaps, order, gridFromQualifying }
+ */
+router.post('/:id/sessions', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify championship exists
+    const championship = await prisma.championship.findUnique({ where: { id } });
+    if (!championship) {
+      return res.status(404).json({ success: false, error: 'Championship not found' });
+    }
+
+    const session = await championshipService.createSession(id, req.body);
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 

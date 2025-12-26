@@ -6,30 +6,35 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/records/track/:trackId
- * Get all records for a specific track
+ * Get best laps for a specific track, grouped by session type
  */
 router.get('/track/:trackId', async (req, res) => {
   try {
     const { trackId } = req.params;
 
-    // Get best laps by phase (free, qualifying, race)
-    const getBestByPhase = async (phase) => {
+    // Get best laps by session type (practice, qualif, race)
+    const getBestByType = async (type) => {
       return prisma.lap.findMany({
-        where: { trackId, phase },
+        where: {
+          trackId,
+          softDeletedAt: null,
+          session: { type }
+        },
         orderBy: { lapTime: 'asc' },
         take: 5,
         distinct: ['driverId'],
         include: {
           driver: true,
-          car: true
+          car: true,
+          session: { select: { id: true, type: true, name: true } }
         }
       });
     };
 
-    const [freeLaps, qualifyingLaps, raceLaps, track] = await Promise.all([
-      getBestByPhase('free'),
-      getBestByPhase('qualif'),
-      getBestByPhase('race'),
+    const [practiceLaps, qualifLaps, raceLaps, track] = await Promise.all([
+      getBestByType('practice'),
+      getBestByType('qualif'),
+      getBestByType('race'),
       prisma.track.findUnique({ where: { id: trackId } })
     ]);
 
@@ -37,22 +42,19 @@ router.get('/track/:trackId', async (req, res) => {
       success: true,
       data: {
         track,
-        free: freeLaps,
-        qualif: qualifyingLaps,
+        practice: practiceLaps,
+        qualif: qualifLaps,
         race: raceLaps
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * GET /api/records/driver/:driverId
- * Get all records for a specific driver across all tracks
+ * Get all track records for a specific driver
  */
 router.get('/driver/:driverId', async (req, res) => {
   try {
@@ -64,7 +66,7 @@ router.get('/driver/:driverId', async (req, res) => {
       include: {
         track: true,
         car: true,
-        session: true
+        session: { select: { id: true, type: true, name: true } }
       }
     });
 
@@ -74,24 +76,16 @@ router.get('/driver/:driverId', async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        driver,
-        records,
-        count: records.length
-      }
+      data: { driver, records, count: records.length }
     });
   } catch (error) {
-    console.error('Error fetching driver records:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * GET /api/records/car/:carId
- * Get all records for a specific car across all tracks
+ * Get all track records for a specific car
  */
 router.get('/car/:carId', async (req, res) => {
   try {
@@ -103,7 +97,7 @@ router.get('/car/:carId', async (req, res) => {
       include: {
         track: true,
         driver: true,
-        session: true
+        session: { select: { id: true, type: true, name: true } }
       }
     });
 
@@ -113,24 +107,16 @@ router.get('/car/:carId', async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        car,
-        records,
-        count: records.length
-      }
+      data: { car, records, count: records.length }
     });
   } catch (error) {
-    console.error('Error fetching car records:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * GET /api/records/leaderboard
- * Get global leaderboard of fastest laps across all tracks
+ * Get global leaderboard of track records
  */
 router.get('/leaderboard', async (req, res) => {
   try {
@@ -146,41 +132,25 @@ router.get('/leaderboard', async (req, res) => {
       }
     });
 
-    res.json({
-      success: true,
-      data: records
-    });
+    res.json({ success: true, data: records });
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 /**
  * DELETE /api/records/:id
- * Delete a specific record (admin only)
+ * Delete a specific track record
  */
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.trackRecord.delete({
-      where: { id }
-    });
+    await prisma.trackRecord.delete({ where: { id } });
 
-    res.json({
-      success: true,
-      message: 'Record deleted'
-    });
+    res.json({ success: true, message: 'Record deleted' });
   } catch (error) {
-    console.error('Error deleting record:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
