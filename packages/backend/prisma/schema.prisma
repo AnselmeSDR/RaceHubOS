@@ -215,3 +215,12 @@ model TrackRecord {
 
   @@unique([trackId, driverId, carId])
 }
+
+model BluetoothDevice {
+  id            String    @id @default(cuid())
+  address       String    @unique
+  name          String?
+  lastConnected DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

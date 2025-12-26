@@ -1,13 +1,14 @@
 import express from 'express';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
-// Store settings in memory (could be moved to DB later)
-let settings = {
+// Live connection state (in-memory, not persisted)
+let connectionState = {
   useMockDevice: process.env.USE_MOCK_DEVICE === 'true',
   connectedDevice: null,
-  connectionStatus: 'disconnected',
-  knownDevices: [] // Liste des appareils connus
+  connectionStatus: 'disconnected'
 };
 
 // Store io instance for emitting events
@@ -17,24 +18,26 @@ export function setSettingsIo(io) {
   ioInstance = io;
 }
 
-// Mock Bluetooth devices for development
-const mockDevices = [
-  { id: 'CARRERA-30369-001', name: 'Carrera AppConnect 30369' },
-  { id: 'CARRERA-30369-002', name: 'Carrera AppConnect 30369 (2)' }
-];
+// Update connection state (called by bluetooth.js or controlUnit)
+export function updateConnectionState(updates) {
+  connectionState = { ...connectionState, ...updates };
+  if (ioInstance && updates.connectionStatus) {
+    ioInstance.emit('cu:connection', {
+      status: connectionState.connectionStatus,
+      device: connectionState.connectedDevice
+    });
+  }
+}
 
 // GET /api/settings - Get current settings
 router.get('/', async (req, res) => {
   try {
     res.json({
       success: true,
-      data: settings
+      data: connectionState
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get settings'
-    });
+    res.status(500).json({ success: false, error: 'Failed to get settings' });
   }
 });
 
@@ -43,17 +46,14 @@ router.post('/mock-device', async (req, res) => {
   try {
     const { enabled } = req.body;
 
-    // Update environment variable (for current session only)
     process.env.USE_MOCK_DEVICE = enabled ? 'true' : 'false';
-    settings.useMockDevice = enabled;
+    connectionState.useMockDevice = enabled;
 
-    // If disabling mock device and was connected to mock, disconnect
-    if (!enabled && settings.connectedDevice?.isMock) {
-      settings.connectedDevice = null;
-      settings.connectionStatus = 'disconnected';
+    if (!enabled && connectionState.connectedDevice?.isMock) {
+      connectionState.connectedDevice = null;
+      connectionState.connectionStatus = 'disconnected';
     }
 
-    // Emit update to all connected clients
     if (ioInstance) {
       ioInstance.emit('race:status', {
         running: false,
@@ -64,205 +64,91 @@ router.post('/mock-device', async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      data: { useMockDevice: enabled }
-    });
+    res.json({ success: true, data: { useMockDevice: enabled } });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to toggle mock device'
-    });
+    res.status(500).json({ success: false, error: 'Failed to toggle mock device' });
   }
 });
 
-// POST /api/bluetooth/scan - Scan for Bluetooth devices
-router.post('/scan', async (req, res) => {
-  try {
-    // If using mock device, return mock devices
-    if (settings.useMockDevice) {
-      setTimeout(() => {
-        res.json({
-          success: true,
-          devices: mockDevices.map(d => ({ ...d, isMock: true }))
-        });
-      }, 1500); // Simulate scan delay
-      return;
-    }
-
-    // TODO: Implement real Bluetooth scanning
-    // For now, return empty array for real mode
-    res.json({
-      success: true,
-      devices: []
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to scan for devices'
-    });
-  }
-});
-
-// POST /api/bluetooth/connect - Connect to a Bluetooth device
-router.post('/connect', async (req, res) => {
-  try {
-    const { deviceId } = req.body;
-
-    if (!deviceId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Device ID is required'
-      });
-    }
-
-    // If using mock device
-    if (settings.useMockDevice) {
-      const device = mockDevices.find(d => d.id === deviceId);
-      if (device) {
-        settings.connectedDevice = { ...device, isMock: true };
-        settings.connectionStatus = 'connected';
-
-        res.json({
-          success: true,
-          data: {
-            device: settings.connectedDevice,
-            status: 'connected'
-          }
-        });
-      } else {
-        res.status(404).json({
-          success: false,
-          error: 'Device not found'
-        });
-      }
-      return;
-    }
-
-    // TODO: Implement real Bluetooth connection
-    res.status(501).json({
-      success: false,
-      error: 'Real Bluetooth connection not yet implemented'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to connect to device'
-    });
-  }
-});
-
-// POST /api/bluetooth/disconnect - Disconnect from Bluetooth device
-router.post('/disconnect', async (req, res) => {
-  try {
-    settings.connectedDevice = null;
-    settings.connectionStatus = 'disconnected';
-
-    res.json({
-      success: true,
-      data: {
-        status: 'disconnected'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to disconnect device'
-    });
-  }
-});
-
-// POST /api/settings/bluetooth-device - Set bluetooth device info
-router.post('/bluetooth-device', async (req, res) => {
-  try {
-    const { deviceId, deviceName, connected } = req.body;
-
-    if (connected) {
-      settings.connectedDevice = { id: deviceId, name: deviceName };
-      settings.connectionStatus = 'connected';
-    } else {
-      settings.connectedDevice = null;
-      settings.connectionStatus = 'disconnected';
-    }
-
-    res.json({
-      success: true,
-      data: {
-        device: settings.connectedDevice,
-        status: settings.connectionStatus
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update bluetooth device'
-    });
-  }
-});
-
-// GET /api/settings/bluetooth-device - Get bluetooth device info
+// GET /api/settings/bluetooth-device - Get current connection info
 router.get('/bluetooth-device', async (req, res) => {
   try {
     res.json({
       success: true,
       data: {
-        device: settings.connectedDevice,
-        status: settings.connectionStatus
+        device: connectionState.connectedDevice,
+        status: connectionState.connectionStatus
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get bluetooth device'
-    });
+    res.status(500).json({ success: false, error: 'Failed to get bluetooth device' });
   }
 });
 
-// GET /api/settings/known-devices - Get list of known devices
-router.get('/known-devices', async (req, res) => {
+// POST /api/settings/bluetooth-device - Update connection info (internal use)
+router.post('/bluetooth-device', async (req, res) => {
   try {
-    res.json({
-      success: true,
-      data: settings.knownDevices
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get known devices'
-    });
-  }
-});
+    const { deviceId, deviceName, connected } = req.body;
 
-// POST /api/settings/known-devices - Add a known device
-router.post('/known-devices', async (req, res) => {
-  try {
-    const { id, name, address } = req.body;
-
-    // Check if device already exists
-    const existingIndex = settings.knownDevices.findIndex(d => d.id === id || d.address === address);
-
-    const device = {
-      id: id || address,
-      name: name || 'Control_Unit',
-      address: address || id,
-      lastConnected: new Date().toISOString()
-    };
-
-    if (existingIndex >= 0) {
-      settings.knownDevices[existingIndex] = device;
+    if (connected) {
+      connectionState.connectedDevice = { id: deviceId, name: deviceName };
+      connectionState.connectionStatus = 'connected';
     } else {
-      settings.knownDevices.push(device);
+      connectionState.connectedDevice = null;
+      connectionState.connectionStatus = 'disconnected';
     }
 
     res.json({
       success: true,
-      data: device
+      data: {
+        device: connectionState.connectedDevice,
+        status: connectionState.connectionStatus
+      }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to add known device'
+    res.status(500).json({ success: false, error: 'Failed to update bluetooth device' });
+  }
+});
+
+// ==================== Known Devices (Persisted) ====================
+
+// GET /api/settings/known-devices - Get list of known devices
+router.get('/known-devices', async (req, res) => {
+  try {
+    const devices = await prisma.bluetoothDevice.findMany({
+      orderBy: { lastConnected: 'desc' }
     });
+    res.json({ success: true, data: devices });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to get known devices' });
+  }
+});
+
+// POST /api/settings/known-devices - Add/update a known device
+router.post('/known-devices', async (req, res) => {
+  try {
+    const { address, name } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ success: false, error: 'Address is required' });
+    }
+
+    const device = await prisma.bluetoothDevice.upsert({
+      where: { address },
+      update: {
+        name: name || undefined,
+        lastConnected: new Date()
+      },
+      create: {
+        address,
+        name: name || 'Control_Unit',
+        lastConnected: new Date()
+      }
+    });
+
+    res.json({ success: true, data: device });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to add known device' });
   }
 });
 
@@ -270,16 +156,10 @@ router.post('/known-devices', async (req, res) => {
 router.delete('/known-devices/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    settings.knownDevices = settings.knownDevices.filter(d => d.id !== id && d.address !== id);
-
-    res.json({
-      success: true
-    });
+    await prisma.bluetoothDevice.delete({ where: { id } });
+    res.json({ success: true });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to remove known device'
-    });
+    res.status(500).json({ success: false, error: 'Failed to remove known device' });
   }
 });
 
