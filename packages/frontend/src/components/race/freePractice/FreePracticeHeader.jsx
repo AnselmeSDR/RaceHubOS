@@ -2,7 +2,7 @@ import { SignalIcon, SignalSlashIcon, ChevronDownIcon, ClockIcon, FlagIcon } fro
 import StateChip from '../StateChip'
 
 export default function FreePracticeHeader({
-    state,
+    status,
     tracks,
     selectedTrack,
     onTrackChange,
@@ -16,7 +16,7 @@ export default function FreePracticeHeader({
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold text-gray-800">Mode Libre</h1>
-                    <StateChip state={state} />
+                    <StateChip status={status} />
                 </div>
 
                 <div className="flex items-center gap-3">

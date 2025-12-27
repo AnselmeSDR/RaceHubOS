@@ -97,9 +97,10 @@ model Session {
   championshipId String?
   fuelMode       String          @default("OFF")
   status         String          @default("draft") // draft, ready, active, finishing, finished
-  duration       Int?            // Session duration in ms
+  maxDuration    Int?            // Session max duration in ms
   maxLaps        Int?
   gracePeriod    Int?            // Grace period after leader finishes (ms), default 30000
+  pauses         String?         // JSON: [{ start: timestamp, end: timestamp | null }]
   startedAt      DateTime?
   finishingAt    DateTime?       // When grace period started
   finishedAt     DateTime?
@@ -114,7 +115,6 @@ model Session {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   laps           Lap[]
-  events         RaceEvent[]
   championship   Championship?   @relation(fields: [championshipId], references: [id])
   track          Track           @relation(fields: [trackId], references: [id])
   drivers        SessionDriver[]
@@ -171,16 +171,6 @@ model Lap {
   @@index([trackId, driverId, lapTime])
 }
 
-model RaceEvent {
-  id        String   @id @default(cuid())
-  sessionId String
-  type      String
-  data      String
-  timestamp DateTime @default(now())
-  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId, timestamp])
-}
 
 model ControllerConfig {
   id         String   @id @default(cuid())

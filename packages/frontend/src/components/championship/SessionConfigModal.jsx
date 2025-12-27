@@ -52,8 +52,10 @@ export default function SessionConfigModal({
   // Form state
   const [name, setName] = useState(session?.name || '')
   // Duration in DB is ms, UI shows minutes
-  const [durationMinutes, setDurationMinutes] = useState(session?.duration ? Math.round(session.duration / 60000) : 0)
+  const [durationMinutes, setDurationMinutes] = useState(session?.maxDuration ? Math.round(session.maxDuration / 60000) : 0)
   const [maxLaps, setMaxLaps] = useState(session?.maxLaps || 0)
+  // Grace period in DB is ms, UI shows seconds (default 30s)
+  const [gracePeriodSeconds, setGracePeriodSeconds] = useState(session?.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30)
   const [status, setStatus] = useState(session?.status || 'draft')
   const [controllerConfigs, setControllerConfigs] = useState(() => {
     // Initialize from sessionDrivers
@@ -133,8 +135,9 @@ export default function SessionConfigModal({
 
       await onSave({
         name: name || null,
-        duration: durationMinutes > 0 ? durationMinutes * 60000 : null, // Convert minutes to ms
+        maxDuration: durationMinutes > 0 ? durationMinutes * 60000 : null, // Convert minutes to ms
         maxLaps: maxLaps > 0 ? maxLaps : null,
+        gracePeriod: gracePeriodSeconds > 0 ? gracePeriodSeconds * 1000 : 30000, // Convert seconds to ms
         status,
         drivers: driversPayload
       })
@@ -203,9 +206,9 @@ export default function SessionConfigModal({
           </div>
         </div>
 
-        {/* Duration / MaxLaps (not for practice) */}
+        {/* Duration / MaxLaps / GracePeriod (not for practice) */}
         {!isPractice && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Duree (minutes)
@@ -228,6 +231,20 @@ export default function SessionConfigModal({
                 value={maxLaps}
                 onChange={(e) => setMaxLaps(parseInt(e.target.value) || 0)}
                 min="0"
+                disabled={!canEdit}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Grace period (sec)
+              </label>
+              <input
+                type="number"
+                value={gracePeriodSeconds}
+                onChange={(e) => setGracePeriodSeconds(parseInt(e.target.value) || 30)}
+                min="5"
+                max="300"
                 disabled={!canEdit}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               />

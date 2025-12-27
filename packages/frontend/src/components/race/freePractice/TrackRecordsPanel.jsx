@@ -1,7 +1,7 @@
 import { TrophyIcon } from '@heroicons/react/24/outline'
 import LapTime from '../LapTime'
 
-function RecordSection({ title, colorClass, records }) {
+function RecordSection({ title, colorClass, records = [] }) {
     return (
         <div>
             <h3 className={`text-xs font-semibold uppercase mb-2 ${colorClass}`}>{title}</h3>
@@ -28,7 +28,7 @@ function RecordSection({ title, colorClass, records }) {
     )
 }
 
-export default function TrackRecordsPanel({ selectedTrack, trackRecords }) {
+export default function TrackRecordsPanel({ selectedTrack, trackRecords = {} }) {
     return (
         <div className="w-80 border-l bg-white overflow-y-auto p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -45,12 +45,12 @@ export default function TrackRecordsPanel({ selectedTrack, trackRecords }) {
                     <RecordSection
                         title="Libre"
                         colorClass="text-gray-500"
-                        records={trackRecords.free}
+                        records={trackRecords.practice}
                     />
                     <RecordSection
                         title="Qualifications"
                         colorClass="text-blue-600"
-                        records={trackRecords.qualifying}
+                        records={trackRecords.qualif}
                     />
                     <RecordSection
                         title="Course"

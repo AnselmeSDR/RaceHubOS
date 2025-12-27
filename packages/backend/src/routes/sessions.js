@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
         track: true,
         championship: true,
         drivers: { include: { driver: true, car: true } },
-        _count: { select: { laps: true, events: true } }
+        _count: { select: { laps: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -62,8 +62,7 @@ router.get('/:id', async (req, res) => {
         laps: {
           include: { driver: true },
           orderBy: { timestamp: 'asc' }
-        },
-        events: { orderBy: { timestamp: 'asc' } }
+        }
       }
     });
 
@@ -98,7 +97,7 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const { name, type, trackId, championshipId, fuelMode, duration, maxLaps, order } = req.body;
+    const { name, type, trackId, championshipId, fuelMode, maxDuration, maxLaps, gracePeriod, order } = req.body;
 
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -106,8 +105,9 @@ router.put('/:id', async (req, res) => {
     if (trackId !== undefined) updateData.trackId = trackId;
     if (championshipId !== undefined) updateData.championshipId = championshipId === '' ? null : championshipId;
     if (fuelMode !== undefined) updateData.fuelMode = fuelMode;
-    if (duration !== undefined) updateData.duration = duration || null;
+    if (maxDuration !== undefined) updateData.maxDuration = maxDuration || null;
     if (maxLaps !== undefined) updateData.maxLaps = maxLaps || null;
+    if (gracePeriod !== undefined) updateData.gracePeriod = gracePeriod || null;
     if (order !== undefined) updateData.order = order;
 
     const session = await prisma().session.update({

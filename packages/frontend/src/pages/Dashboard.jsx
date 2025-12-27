@@ -11,14 +11,16 @@ import {
   ArrowRightIcon,
   CogIcon,
 } from '@heroicons/react/24/outline'
-import { useRace } from '../context/RaceContext'
+import { useDevice } from '../context/DeviceContext'
+import { useSession } from '../context/SessionContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { state, cuConnected, socketConnected, RACE_STATES } = useRace()
+  const { connected: cuConnected, socketConnected } = useDevice()
+  const { session, isActive: isSessionActive } = useSession()
 
   const [stats, setStats] = useState({
     drivers: 0,
@@ -90,7 +92,7 @@ export default function Dashboard() {
     }
   }, [])
 
-  const isSessionActive = state !== RACE_STATES.IDLE
+  // isSessionActive comes from useSession()
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -142,7 +144,7 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold mb-2">Session en cours</h2>
               <div className="flex items-center gap-4">
                 <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/20">
-                  {state}
+                  {session?.status || 'Active'}
                 </span>
               </div>
             </div>
@@ -273,17 +275,6 @@ export default function Dashboard() {
                 <div className={`w-2 h-2 rounded-full ${cuConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
                 <span className={`text-sm font-medium ${cuConnected ? 'text-green-600' : 'text-gray-600'}`}>
                   {cuConnected ? 'Connecté' : 'Non connecté'}
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Simulateur</span>
-              <span className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${circuitStatus.isMockDevice && circuitStatus.carCount > 0 ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'}`}></div>
-                <span className={`text-sm font-medium ${circuitStatus.isMockDevice && circuitStatus.carCount > 0 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                  {circuitStatus.isMockDevice && circuitStatus.carCount > 0
-                    ? `Actif (${circuitStatus.carCount} voitures)`
-                    : 'Inactif'}
                 </span>
               </span>
             </div>

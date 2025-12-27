@@ -16,6 +16,7 @@ import {
   TextField,
   SelectField
 } from '../components/crud'
+import { ConfirmModal } from '../components/ui/Modal'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const PRIMARY_COLOR = '#EAB308'
@@ -25,14 +26,26 @@ export default function Championships() {
   const { data: championships = [], loading, refetch } = useFetch('/api/championships')
   const { data: tracks = [] } = useFetch('/api/tracks')
   const [showForm, setShowForm] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
-  async function deleteChampionship(id, e) {
+  function handleDeleteClick(id, e) {
     e.stopPropagation()
+    setDeleteTarget(id)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
     try {
-      await fetch(`${API_URL}/api/championships/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${API_URL}/api/championships/${deleteTarget}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        console.error('Delete failed:', data.error)
+      }
       refetch()
     } catch (error) {
       console.error('Failed to delete:', error)
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -78,7 +91,7 @@ export default function Championships() {
               championship={champ}
               track={tracks.find(t => t.id === champ.trackId)}
               onClick={() => navigate(`/championships/${champ.id}`)}
-              onDelete={(e) => deleteChampionship(champ.id, e)}
+              onDelete={(e) => handleDeleteClick(champ.id, e)}
             />
           ))}
         </div>
@@ -90,6 +103,15 @@ export default function Championships() {
           onClose={handleFormClose}
         />
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Supprimer le championnat"
+        message="Cette action est irréversible. Toutes les sessions et données associées seront supprimées."
+        confirmLabel="Supprimer"
+      />
     </div>
   )
 }

@@ -15,7 +15,7 @@
     "@heroicons/react": "^2.2.0",
     "framer-motion": "^12.23.26",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.2.3",
     "react-easy-crop": "^5.5.5",
     "react-router-dom": "^6.21.0",
     "recharts": "^2.10.3",

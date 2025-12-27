@@ -95,7 +95,6 @@ describe('SyncService.handleTimerEvent', () => {
     // Cleanup test data
     await prisma.lap.deleteMany({ where: { sessionId: testSession.id } });
     await prisma.sessionDriver.deleteMany({ where: { sessionId: testSession.id } });
-    await prisma.raceEvent.deleteMany({ where: { sessionId: testSession.id } });
     await prisma.session.delete({ where: { id: testSession.id } });
     await prisma.driver.deleteMany({ where: { id: { in: testDrivers.map(d => d.id) } } });
     await prisma.car.deleteMany({ where: { id: { in: testCars.map(c => c.id) } } });

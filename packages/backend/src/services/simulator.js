@@ -405,11 +405,11 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Emit CU status to clients
+   * Emit CU status to SyncService (which forwards to frontend)
    */
   emitCuStatus() {
     const status = this.getCuStatus();
-    this.io.emit('cu:status', status);
+    this.emit('status', status);
   }
 
   /**
@@ -422,7 +422,7 @@ export class CarreraSimulator extends EventEmitter {
     this.statusInterval = setInterval(() => {
       this.emitCuStatus();
     }, interval);
-    this.io.emit('cu:connected');
+    this.emit('connected');
   }
 
   /**
@@ -433,12 +433,14 @@ export class CarreraSimulator extends EventEmitter {
       clearInterval(this.statusInterval);
       this.statusInterval = null;
     }
-    this.io.emit('cu:disconnected');
+    this.emit('disconnected');
   }
 
   /**
    * Start race (simulate START button press)
-   * Cycles through: LIGHTS 1-5 -> GO -> RACING
+   * Matches real CU behavior:
+   * - From STOPPED: first START → LIGHTS_1 (wait for second START)
+   * - From LIGHTS_1: second START → auto countdown 2→3→4→5→GO→RACING
    */
   async startRace() {
     if (this.cuState === CU_STATE.RACING) {
@@ -449,33 +451,40 @@ export class CarreraSimulator extends EventEmitter {
       return;
     }
 
-    // Start or continue light sequence from current state
-    const startLight = (this.cuState >= CU_STATE.LIGHTS_1 && this.cuState <= CU_STATE.LIGHTS_5)
-      ? this.cuState
-      : CU_STATE.LIGHTS_1;
-
-    for (let light = startLight; light <= 5; light++) {
-      this.cuState = light;
+    if (this.cuState === CU_STATE.STOPPED || this.cuState >= 8) {
+      // From stopped, go to first light and wait
+      this.cuState = CU_STATE.LIGHTS_1;
       this.emitCuStatus();
-      await this.delay(500);
+      return;
     }
-    // GO!
-    this.cuState = CU_STATE.GO;
-    this.emitCuStatus();
-    await this.delay(300);
-    // Racing
-    this.cuState = CU_STATE.RACING;
-    this.raceActive = true;
-    this.emitCuStatus();
 
-    // Émettre un event timer pour chaque voiture (comme le CU au franchissement initial)
-    // Ceci permet au sync de stocker le timestamp de départ
-    for (const car of this.cars) {
-      this.emit('timer', {
-        controller: car.id - 1, // 0-indexed
-        timestamp: this.raceTime, // ~0 au départ
-        sector: 1,
-      });
+    // From LIGHTS_1 (or any light state), do automatic countdown
+    if (this.cuState >= CU_STATE.LIGHTS_1 && this.cuState <= CU_STATE.LIGHTS_5) {
+      // Auto countdown: 2 → 3 → 4 → 5 → GO → RACING
+      for (let light = CU_STATE.LIGHTS_2; light <= CU_STATE.LIGHTS_5; light++) {
+        this.cuState = light;
+        this.emitCuStatus();
+        await this.delay(1000);
+      }
+
+      // GO!
+      this.cuState = CU_STATE.GO;
+      this.emitCuStatus();
+      await this.delay(300);
+
+      // Racing
+      this.cuState = CU_STATE.RACING;
+      this.raceActive = true;
+      this.emitCuStatus();
+
+      // Emit timer event for each car (like CU at race start)
+      for (const car of this.cars) {
+        this.emit('timer', {
+          controller: car.id - 1, // 0-indexed
+          timestamp: this.raceTime, // ~0 at start
+          sector: 1,
+        });
+      }
     }
   }
 
@@ -513,6 +522,16 @@ export class CarreraSimulator extends EventEmitter {
       default:
         break;
     }
+  }
+
+  /**
+   * Full reset - puts CU back to STOPPED state and clears all data
+   * Called by SyncService.reset() before starting a new session
+   */
+  reset() {
+    this.cuState = CU_STATE.STOPPED;
+    this.raceActive = false;
+    this.resetTimer();
   }
 
   /**

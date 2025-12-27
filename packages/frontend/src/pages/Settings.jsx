@@ -1,523 +1,260 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import io from 'socket.io-client'
+import { io } from 'socket.io-client'
+import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import {
   ArrowLeftIcon,
   WifiIcon,
   CpuChipIcon,
   CheckCircleIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon,
   ArrowPathIcon,
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
   TrashIcon,
+  SignalIcon,
 } from '@heroicons/react/24/outline'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
 
 export default function Settings() {
-  const [knownDevices, setKnownDevices] = useState([])
-  const [scanning, setScanning] = useState(false)
-  const [connectedDeviceId, setConnectedDeviceId] = useState(null)
-  const [connecting, setConnecting] = useState(null) // ID du device en cours de connexion
-  const [useMockDevice, setUseMockDevice] = useState(true)
+  const {
+    connected,
+    deviceAddress,
+    devices,
+    scanResults,
+    cuStatus,
+    scanning,
+    connecting,
+    scan,
+    connect,
+    disconnect,
+    removeDevice,
+  } = useDevice()
 
-  // Simulator state
-  const [simulatorState, setSimulatorState] = useState(null)
+  // Logs
   const [logs, setLogs] = useState([])
   const logsEndRef = useRef(null)
-  const socketRef = useRef(null)
 
-  // Helper to add log
   const addLogEntry = (message) => {
     const timestamp = new Date().toLocaleTimeString()
     setLogs(prev => [...prev.slice(-99), { time: timestamp, message }])
   }
 
+  // Socket for logs
   useEffect(() => {
-    loadSettings()
-    loadSimulatorState()
-
-    // Connect to WebSocket for simulator events
     const socket = io(WS_URL)
-    socketRef.current = socket
-
-    socket.on('race:status', (data) => {
-      setSimulatorState(prev => {
-        const wasRunning = prev?.running
-        const isNowRunning = data.running
-
-        // Log state changes
-        if (wasRunning !== isNowRunning) {
-          if (isNowRunning) {
-            addLogEntry('▶️ Simulateur démarré')
-          } else {
-            addLogEntry('⏹️ Simulateur arrêté')
-          }
-        }
-
-        if (data.active !== prev?.active && wasRunning) {
-          if (data.active) {
-            addLogEntry('▶️ Course en cours')
-          } else {
-            addLogEntry('⏸️ Course en pause')
-          }
-        }
-
-        return { ...prev, ...data }
-      })
-    })
 
     socket.on('race:lap', (data) => {
-      addLogEntry(`🏁 Voiture ${data.carId} - Tour ${data.lapNumber}: ${(data.lapTime / 1000).toFixed(3)}s`)
+      addLogEntry(`Voiture ${data.carId} - Tour ${data.lapNumber}: ${(data.lapTime / 1000).toFixed(3)}s`)
     })
 
-    socket.on('race:sector', (data) => {
-      addLogEntry(`📍 Voiture ${data.carId} - Secteur ${data.sector}: ${(data.time / 1000).toFixed(3)}s`)
+    socket.on('cu:timer', (data) => {
+      if (data.lapTime > 0) {
+        addLogEntry(`Controller ${data.controller + 1}: ${(data.lapTime / 1000).toFixed(3)}s`)
+      }
     })
 
-    socket.on('race:pitStop', (data) => {
-      addLogEntry(`🔧 Voiture ${data.carId} - Arrêt au stand: ${(data.duration / 1000).toFixed(1)}s`)
-    })
-
-    socket.on('race:carData', () => {
-      // Optional: log car data periodically
-    })
-
-    return () => {
-      socket.disconnect()
-    }
+    return () => socket.disconnect()
   }, [])
 
-  async function loadSettings() {
-    try {
-      // Charger les paramètres généraux
-      const response = await fetch(`${API_URL}/settings`)
-      const data = await response.json()
-      if (data.success) {
-        setUseMockDevice(data.data.useMockDevice || false)
-      }
-
-      // Charger la liste des appareils connus
-      const devicesResponse = await fetch(`${API_URL}/settings/known-devices`)
-      const devicesData = await devicesResponse.json()
-      if (devicesData.success) {
-        setKnownDevices(devicesData.data || [])
-      }
-
-      // Charger l'état de connexion BT depuis le backend
-      const btResponse = await fetch(`${API_URL}/bluetooth/status`)
-      const btData = await btResponse.json()
-      if (btData.connected && devicesData.data?.length > 0) {
-        // Use first known device ID when connected
-        setConnectedDeviceId(devicesData.data[0].id)
-      } else {
-        setConnectedDeviceId(null)
-      }
-    } catch {
-      // Error loading settings
-    }
-  }
-
-  async function scanForDevices() {
-    setScanning(true)
-    try {
-      // Utiliser le backend pour scanner via Noble (avec auto-connect)
-      const response = await fetch(`${API_URL}/bluetooth/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeout: 15000, autoConnect: true })
-      })
-      const data = await response.json()
-
-      if (data.success && data.address) {
-        const device = {
-          id: data.address,
-          name: 'Control_Unit',
-          address: data.address
-        }
-
-        // Ajouter aux appareils connus
-        await fetch(`${API_URL}/settings/known-devices`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(device)
-        })
-
-        // Si auto-connecté, mettre à jour l'état
-        if (data.connected) {
-          setConnectedDeviceId(device.id)
-          setUseMockDevice(false)
-        }
-
-        // Recharger la liste
-        await loadSettings()
-      } else {
-        alert(data.error || 'Control Unit non trouvé. Assurez-vous que le circuit est allumé.')
-      }
-    } catch (error) {
-      alert('Erreur de scan: ' + error.message)
-    } finally {
-      setScanning(false)
-    }
-  }
-
-  async function connectToDevice(device) {
-    setConnecting(device.id)
-
-    try {
-      // Connexion via le backend (Noble)
-      const response = await fetch(`${API_URL}/bluetooth/connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: device.address || device.id })
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setConnectedDeviceId(device.id)
-        setUseMockDevice(false)
-
-        // Mettre à jour la date de dernière connexion
-        await fetch(`${API_URL}/settings/known-devices`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(device)
-        })
-
-        // Recharger la liste
-        await loadSettings()
-      } else {
-        console.warn('Connexion:', data.error || 'Échec de connexion')
-      }
-    } catch (error) {
-      console.warn('Erreur de connexion:', error.message)
-    }
-
-    setConnecting(null)
-  }
-
-  async function removeDevice(device) {
-    try {
-      // Si connecté, déconnecter d'abord
-      if (connectedDeviceId === device.id) {
-        await disconnectDevice()
-      }
-
-      await fetch(`${API_URL}/settings/known-devices/${encodeURIComponent(device.id)}`, {
-        method: 'DELETE'
-      })
-
-      // Recharger la liste
-      await loadSettings()
-    } catch (error) {
-      alert('Erreur de suppression: ' + error.message)
-    }
-  }
-
-  async function disconnectDevice() {
-    try {
-      const response = await fetch(`${API_URL}/bluetooth/disconnect`, {
-        method: 'POST'
-      })
-      const data = await response.json()
-      if (data.success) {
-        setConnectedDeviceId(null)
-      }
-    } catch {
-      // Error disconnecting device
-    }
-  }
-
-  async function toggleMockDevice() {
-    const newValue = !useMockDevice
-    setUseMockDevice(newValue)
-    try {
-      const response = await fetch(`${API_URL}/settings/mock-device`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: newValue })
-      })
-      const data = await response.json()
-      if (!data.success) {
-        setUseMockDevice(!newValue) // Revert on error
-      }
-    } catch {
-      // Error toggling mock device
-      setUseMockDevice(!newValue) // Revert on error
-    }
-  }
-
-  async function loadSimulatorState() {
-    try {
-      const response = await fetch(`${API_URL}/simulator`)
-      const data = await response.json()
-      setSimulatorState(data)
-
-      if (data.isMockDevice) {
-        addLogEntry(`🔄 État: ${data.running ? 'En cours' : 'Arrêté'}, ${data.cars?.length || 0} voitures`)
-      }
-    } catch (error) {
-      addLogEntry('❌ Erreur: ' + error.message)
-    }
-  }
-
-  async function handleSimulatorControl(action) {
-    try {
-      const response = await fetch(`${API_URL}/simulator/${action}`, {
-        method: 'POST'
-      })
-      const data = await response.json()
-      addLogEntry(`✅ ${action}: ${data.status}`)
-      loadSimulatorState()
-    } catch (error) {
-      addLogEntry(`❌ Erreur ${action}: ${error.message}`)
-    }
-  }
-
-  function clearLogs() {
-    setLogs([])
-  }
-
-  // Auto-scroll when logs change
+  // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
 
+  // Handle device connection
+  async function handleConnect(address) {
+    const result = await connect(address)
+    if (result.success) {
+      addLogEntry(`Connecté à ${address === SIMULATOR_ADDRESS ? 'Simulateur' : address}`)
+    } else {
+      addLogEntry(`Erreur: ${result.error}`)
+    }
+  }
+
+  // Handle scan
+  async function handleScan() {
+    addLogEntry('Scan en cours...')
+    const foundDevices = await scan(15000)
+    addLogEntry(`${foundDevices.length} appareil(s) trouvé(s)`)
+  }
+
+  // Handle delete
+  async function handleDelete(device) {
+    const result = await removeDevice(device.id)
+    if (result.success) {
+      addLogEntry(`Device ${device.name} supprimé`)
+    } else {
+      addLogEntry(`Erreur: ${result.error}`)
+    }
+  }
+
+  // Merge devices from DB with scan results (avoid duplicates)
+  const allDevices = [...devices]
+  for (const scanDevice of scanResults) {
+    if (!allDevices.find(d => d.address === scanDevice.address)) {
+      allDevices.push({
+        ...scanDevice,
+        isNew: true, // Mark as not yet in DB
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <Link
-            to="/dashboard"
+            to="/"
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            <span>Retour au tableau de bord</span>
+            <span>Retour</span>
           </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Paramètres</h1>
 
-          {/* Mode Simulateur */}
-          <div className="mb-8 pb-8 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <CpuChipIcon className="h-6 w-6 text-purple-500" />
-              Mode Simulateur
-            </h2>
-
-            {/* Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-4">
+          {/* Connection Status Banner */}
+          <div className={`mb-8 p-4 rounded-lg flex items-center justify-between ${
+            connected ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
               <div>
-                <p className="font-medium text-gray-800">Utiliser le simulateur</p>
-                <p className="text-sm text-gray-600">
-                  Active le simulateur de circuit pour tester l'application sans circuit physique
+                <p className="font-medium text-gray-800">
+                  {connected
+                    ? `Connecté: ${deviceAddress === SIMULATOR_ADDRESS ? 'Simulateur' : deviceAddress}`
+                    : 'Aucun appareil connecté'}
                 </p>
               </div>
-              <button
-                onClick={toggleMockDevice}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  useMockDevice ? 'bg-yellow-500' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    useMockDevice ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
             </div>
-
-            {/* Simulator Controls & Logs */}
-            {useMockDevice && (
-              <div className="space-y-4">
-                {/* Controls */}
-                <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
-                  <button
-                    onClick={() => handleSimulatorControl('start')}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                  >
-                    <PlayIcon className="w-4 h-4" />
-                    Démarrer
-                  </button>
-                  <button
-                    onClick={() => handleSimulatorControl('pause')}
-                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                  >
-                    <PauseIcon className="w-4 h-4" />
-                    Pause
-                  </button>
-                  <button
-                    onClick={() => handleSimulatorControl('stop')}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    <StopIcon className="w-4 h-4" />
-                    Stop
-                  </button>
-
-                  {simulatorState && (
-                    <div className="ml-auto text-sm text-gray-700">
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${
-                        simulatorState.running ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full ${
-                          simulatorState.running ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                        }`}></div>
-                        {simulatorState.running ? 'En cours' : 'Arrêté'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Logs */}
-                <div className="bg-gray-900 text-gray-100 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
-                    <h3 className="text-sm font-semibold">Logs du simulateur</h3>
-                    <button
-                      onClick={clearLogs}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-                    >
-                      <TrashIcon className="w-3 h-3" />
-                      Effacer
-                    </button>
-                  </div>
-                  <div className="h-64 overflow-y-auto p-4 font-mono text-xs space-y-1">
-                    {logs.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">Aucun log pour le moment...</p>
-                    ) : (
-                      logs.map((log, idx) => (
-                        <div key={idx} className="flex gap-3">
-                          <span className="text-gray-500">[{log.time}]</span>
-                          <span>{log.message}</span>
-                        </div>
-                      ))
-                    )}
-                    <div ref={logsEndRef} />
-                  </div>
-                </div>
-              </div>
+            {connected && (
+              <button
+                onClick={disconnect}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Déconnecter
+              </button>
             )}
           </div>
 
-          {/* Connexion Bluetooth */}
-          <div>
+          {/* Device Selection */}
+          <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <WifiIcon className="h-6 w-6 text-blue-500" />
-              Connexion Circuit Carrera
+              Sélectionner un appareil
             </h2>
 
-            {/* Liste des circuits connus */}
-            {knownDevices.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Circuits enregistrés :</h3>
-                <div className="space-y-2">
-                  {knownDevices.map((device) => {
-                    const isConnected = connectedDeviceId === device.id
-                    const isConnecting = connecting === device.id
-
-                    return (
-                      <div
-                        key={device.id}
-                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                          isConnected
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
+            <div className="space-y-2">
+              {allDevices.map((device) => (
+                <div
+                  key={device.id || device.address}
+                  className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                    connected && deviceAddress === device.address
+                      ? 'border-green-500 bg-green-50'
+                      : device.isNew
+                        ? 'border-blue-300 bg-blue-50/50'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <SignalIcon className={`h-6 w-6 ${device.type === 'simulator' ? 'text-purple-500' : 'text-blue-500'}`} />
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {device.name}
+                        {device.isNew && <span className="ml-2 text-xs text-blue-600">(nouveau)</span>}
+                      </p>
+                      <p className="text-sm text-gray-500">{device.address}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {connected && deviceAddress === device.address ? (
+                      <CheckCircleIcon className="h-6 w-6 text-green-500" />
+                    ) : (
+                      <button
+                        onClick={() => handleConnect(device.address)}
+                        disabled={connecting || connected}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors text-sm"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
-                          }`} />
-                          <div>
-                            <p className="font-medium text-gray-800">{device.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {device.address}
-                              {device.lastConnected && (
-                                <span className="ml-2">
-                                  · Dernière connexion: {new Date(device.lastConnected).toLocaleDateString()}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {isConnected ? (
-                            <>
-                              <span className="flex items-center gap-1 text-sm text-green-600 mr-2">
-                                <CheckCircleIcon className="h-4 w-4" />
-                                Connecté
-                              </span>
-                              <button
-                                onClick={disconnectDevice}
-                                className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
-                              >
-                                Déconnecter
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => connectToDevice(device)}
-                              disabled={isConnecting || connecting}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                                isConnecting || connecting
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  : 'bg-blue-500 text-white hover:bg-blue-600'
-                              }`}
-                            >
-                              {isConnecting && <ArrowPathIcon className="h-3 w-3 animate-spin" />}
-                              {isConnecting ? 'Connexion...' : 'Connecter'}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => removeDevice(device)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                            title="Supprimer"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
+                        {connecting ? 'Connexion...' : 'Connecter'}
+                      </button>
+                    )}
+                    {device.type !== 'simulator' && (
+                      <button
+                        onClick={() => handleDelete(device)}
+                        className="p-2 text-gray-400 hover:text-red-500"
+                        title="Supprimer"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
 
-            {/* Message si aucun circuit */}
-            {knownDevices.length === 0 && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center text-gray-500">
-                <p>Aucun circuit enregistré</p>
-                <p className="text-sm mt-1">Cliquez sur le bouton ci-dessous pour rechercher un circuit</p>
-              </div>
-            )}
-
-            {/* Bouton de scan */}
             <button
-              onClick={scanForDevices}
-              disabled={scanning}
-              className={`mb-4 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                scanning
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
+              onClick={handleScan}
+              disabled={scanning || connected}
+              className="mt-4 w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
-              {scanning && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
+              {scanning && <ArrowPathIcon className="h-5 w-5 animate-spin" />}
               {scanning ? 'Recherche en cours...' : 'Rechercher un nouveau circuit'}
             </button>
+          </div>
 
-            {/* Info pour AppConnect */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">Circuit compatible :</h3>
-              <p className="text-sm text-blue-800">
-                Carrera Digital 132/124 avec Control Unit
-              </p>
-              <p className="text-sm text-blue-700 mt-1">
-                Assurez-vous que le circuit est allumé et que le Bluetooth est activé sur votre Mac.
-              </p>
+          {/* CU Status (when connected) */}
+          {connected && cuStatus && (
+            <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <CpuChipIcon className="h-5 w-5 text-gray-600" />
+                État du Device
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Start</p>
+                  <p className="font-mono">{cuStatus.start}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Mode</p>
+                  <p className="font-mono">{cuStatus.mode || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Display</p>
+                  <p className="font-mono">{cuStatus.display || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Fuel</p>
+                  <p className="font-mono">{cuStatus.fuel?.join(', ') || '-'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Logs */}
+          <div className="bg-gray-900 text-gray-100 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+              <h3 className="text-sm font-semibold">Logs</h3>
+              <button
+                onClick={() => setLogs([])}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              >
+                <TrashIcon className="w-3 h-3" />
+                Effacer
+              </button>
+            </div>
+            <div className="h-48 overflow-y-auto p-4 font-mono text-xs space-y-1">
+              {logs.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Aucun log</p>
+              ) : (
+                logs.map((log, idx) => (
+                  <div key={idx} className="flex gap-3">
+                    <span className="text-gray-500">[{log.time}]</span>
+                    <span>{log.message}</span>
+                  </div>
+                ))
+              )}
+              <div ref={logsEndRef} />
             </div>
           </div>
         </div>

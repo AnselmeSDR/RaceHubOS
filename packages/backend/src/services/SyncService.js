@@ -107,9 +107,16 @@ export class SyncService {
   handleStatus(status) {
     const wasInLights = this.isInLightsSequence(this.cuStatus);
     const isInLights = this.isInLightsSequence(status);
+    const isNowRacing = status?.start === 0;
+    const wasNotRacing = this.cuStatus?.start !== 0;
 
     this.cuStatus = status;
     this.io?.emit('cu:status', status);
+
+    // Detect transition to racing (GO!) - start the timer
+    if (isNowRacing && wasNotRacing && wasInLights) {
+      this.sessionService?.onRaceStart();
+    }
 
     // Adaptive polling: faster during lights sequence
     if (isInLights && !wasInLights) {
@@ -162,11 +169,21 @@ export class SyncService {
 
   // ==================== CU Control ====================
 
-  async startRace() {
+  /**
+   * Prepare race - puts CU in L1 state and waits
+   */
+  async prepareRace() {
     if (!this.source) return;
     if (this.source.start) {
       await this.source.start();
     }
+  }
+
+  /**
+   * Start race - triggers START button (advances lights or starts countdown)
+   */
+  async startRace() {
+    if (!this.source) return;
     if (this.source.startRace) {
       await this.source.startRace();
     }
