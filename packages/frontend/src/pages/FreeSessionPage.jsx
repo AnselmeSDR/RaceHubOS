@@ -3,6 +3,7 @@ import { ChevronDownIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import Session from '../components/session/Session'
+import TrackRecordsPanel from '../components/race/freePractice/TrackRecordsPanel'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -35,6 +36,7 @@ export default function FreeSessionPage() {
   const [selectedTrackId, setSelectedTrackId] = useState(null)
   const [selectedType, setSelectedType] = useState('practice')
   const [loading, setLoading] = useState(false)
+  const [trackRecords, setTrackRecords] = useState({})
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -62,6 +64,28 @@ export default function FreeSessionPage() {
       handleLoadSession()
     }
   }, [selectedTrackId, selectedType])
+
+  // Fetch track records
+  const fetchTrackRecords = useCallback(async () => {
+    if (!selectedTrackId) {
+      setTrackRecords({})
+      return
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/records/track/${selectedTrackId}?free=true`)
+      const data = await res.json()
+      if (data.success) {
+        setTrackRecords(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching track records:', error)
+    }
+  }, [selectedTrackId])
+
+  // Fetch track records when track changes (free sessions only)
+  useEffect(() => {
+    fetchTrackRecords()
+  }, [fetchTrackRecords])
 
   const handleLoadSession = useCallback(async () => {
     if (!selectedTrackId || !selectedType) return
@@ -151,7 +175,8 @@ export default function FreeSessionPage() {
 
   const handleDismiss = async () => {
     clearSession()
-    // Load a new session of the same type
+    // Refresh records and load a new session
+    await fetchTrackRecords()
     await handleLoadSession()
   }
 
@@ -218,27 +243,36 @@ export default function FreeSessionPage() {
         </div>
       </div>
 
-      {/* Session component */}
-      <div className="flex-1">
-        {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-          </div>
-        ) : (
-          <Session
-            session={session}
-            leaderboard={leaderboard}
-            elapsed={elapsed}
-            remaining={remaining}
-            cuConnected={cuConnected}
-            onStart={handleStart}
-            onPause={handlePause}
-            onResume={handleResume}
-            onStop={handleStop}
-            onReset={handleReset}
-            onDismiss={handleDismiss}
-          />
-        )}
+      {/* Main content: Session + Records panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Session component */}
+        <div className="flex-1">
+          {loading ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+            </div>
+          ) : (
+            <Session
+              session={session}
+              leaderboard={leaderboard}
+              elapsed={elapsed}
+              remaining={remaining}
+              cuConnected={cuConnected}
+              onStart={handleStart}
+              onPause={handlePause}
+              onResume={handleResume}
+              onStop={handleStop}
+              onReset={handleReset}
+              onDismiss={handleDismiss}
+            />
+          )}
+        </div>
+
+        {/* Track records panel */}
+        <TrackRecordsPanel
+          selectedTrack={selectedTrack}
+          trackRecords={trackRecords}
+        />
       </div>
     </div>
   )
