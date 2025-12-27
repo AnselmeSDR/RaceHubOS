@@ -72,7 +72,7 @@ export default function FreeSessionPage() {
       return
     }
     try {
-      const res = await fetch(`${API_URL}/api/records/track/${selectedTrackId}?free=true`)
+      const res = await fetch(`${API_URL}/api/records/track/${selectedTrackId}?championshipId=null`)
       const data = await res.json()
       if (data.success) {
         setTrackRecords(data.data)
