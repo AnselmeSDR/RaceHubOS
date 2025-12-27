@@ -62,7 +62,7 @@ const upload = multer({
  * Upload an image for drivers, cars, or tracks
  * Returns the URL path to access the image
  */
-router.post('/:type', upload.single('photo'), (req, res) => {
+router.post('/:type', upload.single('img'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({

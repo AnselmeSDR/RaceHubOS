@@ -131,8 +131,8 @@ function TeamCard({ team, onEdit }) {
               className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${teamColor} 0%, ${teamColor}CC 100%)` }}
             >
-              {team.logo ? (
-                <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
+              {team.img ? (
+                <img src={team.img} alt={team.name} className="w-full h-full object-cover" />
               ) : (
                 <UserGroupSolidIcon className="w-12 h-12 drop-shadow-lg" />
               )}
@@ -218,8 +218,8 @@ function TeamTable({ teams, onEdit }) {
                     className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md overflow-hidden"
                     style={{ background: `linear-gradient(135deg, ${team.color || '#F97316'} 0%, ${team.color || '#F97316'}CC 100%)` }}
                   >
-                    {team.logo ? (
-                      <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
+                    {team.img ? (
+                      <img src={team.img} alt={team.name} className="w-full h-full object-cover" />
                     ) : (
                       <UserGroupSolidIcon className="w-6 h-6" />
                     )}
@@ -257,7 +257,7 @@ function TeamFormModal({ team, onClose, onDelete }) {
   const [formData, setFormData] = useState({
     name: team?.name || '',
     color: team?.color || '#F97316',
-    logo: team?.logo || ''
+    img: team?.img || ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -316,8 +316,8 @@ function TeamFormModal({ team, onClose, onDelete }) {
 
       <PhotoUploadField
         label="Logo de l'équipe"
-        value={formData.logo}
-        onChange={(logo) => setFormData(f => ({ ...f, logo }))}
+        value={formData.img}
+        onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}

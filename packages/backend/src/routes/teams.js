@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -27,7 +28,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: teams,
+      data: teams.map(t => withNestedImageUrls(t)),
       count: teams.length,
     });
   } catch (error) {
@@ -64,7 +65,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: team,
+      data: withNestedImageUrls(team),
     });
   } catch (error) {
     console.error('Error fetching team:', error);
@@ -78,7 +79,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/teams - Create new team
 router.post('/', async (req, res) => {
   try {
-    const { name, color, logo } = req.body;
+    const { name, color, img } = req.body;
 
     // Validation
     if (!name || name.trim().length === 0) {
@@ -92,7 +93,7 @@ router.post('/', async (req, res) => {
       data: {
         name: name.trim(),
         color: color || null,
-        logo: logo || null,
+        img: img || null,
       },
       include: {
         drivers: true,
@@ -101,7 +102,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: team,
+      data: withNestedImageUrls(team),
     });
   } catch (error) {
     console.error('Error creating team:', error);
@@ -116,7 +117,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, color, logo } = req.body;
+    const { name, color, img } = req.body;
 
     // Check if team exists
     const exists = await prisma.team.findUnique({
@@ -134,7 +135,7 @@ router.put('/:id', async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (color !== undefined) updateData.color = color;
-    if (logo !== undefined) updateData.logo = logo;
+    if (img !== undefined) updateData.img = img;
 
     const team = await prisma.team.update({
       where: { id },
@@ -146,7 +147,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: team,
+      data: withNestedImageUrls(team),
     });
   } catch (error) {
     console.error('Error updating team:', error);

@@ -806,8 +806,8 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                   style={{ backgroundColor: driver.color || '#6B7280' }}
                 >
-                  {driver.photo ? (
-                    <img src={driver.photo} alt="" className="w-full h-full rounded-full object-cover" />
+                  {driver.img ? (
+                    <img src={driver.img} alt="" className="w-full h-full rounded-full object-cover" />
                   ) : (
                     driver.name?.charAt(0) || '?'
                   )}
@@ -900,7 +900,7 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
           {drivers.slice(0, 3).map(driver => (
             <EntityCard
               key={driver.id}
-              image={driver.photo}
+              image={driver.img}
               title={driver.name}
               subtitle={driver.team?.name || 'Sans équipe'}
               color={driver.color}
@@ -1180,7 +1180,7 @@ function UnusedDisplays({ drivers, cars, loading }) {
           {drivers.slice(0, 2).map(driver => (
             <EntityCard
               key={driver.id}
-              image={driver.photo}
+              image={driver.img}
               title={driver.name}
               subtitle="Exemple d'entité"
               color={driver.color}

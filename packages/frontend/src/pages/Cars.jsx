@@ -131,8 +131,8 @@ function CarCard({ car, onEdit }) {
               className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
             >
-              {car.photo ? (
-                <img src={car.photo} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
+              {car.img ? (
+                <img src={car.img} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
               ) : (
                 <span className="drop-shadow-lg">{car.brand.charAt(0)}</span>
               )}
@@ -266,7 +266,7 @@ function CarFormModal({ car, onClose, onDelete }) {
     maxSpeed: car?.maxSpeed || 100,
     brakeForce: car?.brakeForce || 50,
     fuelCapacity: car?.fuelCapacity || 100,
-    photo: car?.photo || ''
+    img: car?.img || ''
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -341,8 +341,8 @@ function CarFormModal({ car, onClose, onDelete }) {
 
       <PhotoUploadField
         label="Photo de la voiture"
-        value={formData.photo}
-        onChange={(photo) => setFormData(f => ({ ...f, photo }))}
+        value={formData.img}
+        onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}

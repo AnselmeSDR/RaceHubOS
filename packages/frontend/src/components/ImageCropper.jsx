@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Cropper from 'react-easy-crop'
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 
@@ -22,6 +23,7 @@ export default function ImageCropper({
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
+
   const onCropChange = useCallback((crop) => {
     setCrop(crop)
   }, [])
@@ -43,13 +45,23 @@ export default function ImageCropper({
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
+  const stopPropagation = (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black bg-opacity-90 z-[100] flex flex-col"
+      onClick={stopPropagation}
+      onMouseDown={stopPropagation}
+    >
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
         <h3 className="text-white font-bold text-lg">Recadrer l'image</h3>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={onCancel}
             className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
           >
@@ -57,6 +69,7 @@ export default function ImageCropper({
             Annuler
           </button>
           <button
+            type="button"
             onClick={handleComplete}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
@@ -104,7 +117,8 @@ export default function ImageCropper({
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

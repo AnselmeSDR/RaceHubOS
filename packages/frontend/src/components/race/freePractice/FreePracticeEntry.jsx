@@ -2,6 +2,13 @@ import { motion } from 'framer-motion'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from '../LapTime'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+const getImgUrl = (img) => {
+  if (!img) return null
+  return img.startsWith('http') ? img : `${API_URL}${img}`
+}
+
 export default function FreePracticeEntry({ entry, index }) {
     const driverColor = entry.driver?.color || 'grey'
 
@@ -58,9 +65,9 @@ export default function FreePracticeEntry({ entry, index }) {
                 className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
                 style={{ backgroundColor: driverColor }}
             >
-                {entry.driver?.photo ? (
+                {entry.driver?.img ? (
                     <img
-                        src={entry.driver.photo}
+                        src={getImgUrl(entry.driver.img)}
                         alt={entry.driver.name}
                         className="w-full h-full object-cover"
                     />

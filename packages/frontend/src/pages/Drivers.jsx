@@ -163,8 +163,8 @@ function DriverCard({ driver, onEdit, onClick }) {
               className="relative w-20 h-20 rounded-full flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)` }}
             >
-              {driver.photo ? (
-                <img src={driver.photo} alt={driver.name} className="w-full h-full object-cover" />
+              {driver.img ? (
+                <img src={driver.img.startsWith('http') ? driver.img : `${API_URL}${driver.img}`} alt={driver.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="drop-shadow-lg">{driver.name.charAt(0)}</span>
               )}
@@ -253,7 +253,7 @@ function DriverFormModal({ driver, teams, onClose, onDelete }) {
     name: driver?.name || '',
     number: driver?.number || '',
     email: driver?.email || '',
-    photo: driver?.photo || '',
+    img: driver?.img || '',
     color: driver?.color || '#3B82F6',
     teamId: driver?.teamId || ''
   })
@@ -333,8 +333,8 @@ function DriverFormModal({ driver, teams, onClose, onDelete }) {
 
       <PhotoUploadField
         label="Photo de profil"
-        value={formData.photo}
-        onChange={(photo) => setFormData(f => ({ ...f, photo }))}
+        value={formData.img}
+        onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="round"
         primaryColor={PRIMARY_COLOR}
         onError={setError}

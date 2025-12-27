@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: drivers,
+      data: drivers.map(d => withNestedImageUrls(d)),
       count: drivers.length,
     });
   } catch (error) {
@@ -78,7 +79,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: driver,
+      data: withNestedImageUrls(driver),
     });
   } catch (error) {
     console.error('Error fetching driver:', error);
@@ -92,7 +93,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/drivers - Create new driver
 router.post('/', async (req, res) => {
   try {
-    const { name, number, email, photo, color, teamId } = req.body;
+    const { name, number, email, img, color, teamId } = req.body;
 
     // Validation
     if (!name || name.trim().length === 0) {
@@ -107,7 +108,7 @@ router.post('/', async (req, res) => {
         name: name.trim(),
         number: number || null,
         email: email?.trim() || null,
-        photo: photo || null,
+        img: img || null,
         color: color || '#3B82F6',
         teamId: teamId || null,
       },
@@ -118,7 +119,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: driver,
+      data: withNestedImageUrls(driver),
     });
   } catch (error) {
     console.error('Error creating driver:', error);
@@ -143,7 +144,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, number, email, photo, color, teamId } = req.body;
+    const { name, number, email, img, color, teamId } = req.body;
 
     // Check if driver exists
     const exists = await prisma.driver.findUnique({
@@ -162,7 +163,7 @@ router.put('/:id', async (req, res) => {
     if (name !== undefined) updateData.name = name.trim();
     if (number !== undefined) updateData.number = number || null;
     if (email !== undefined) updateData.email = email?.trim() || null;
-    if (photo !== undefined) updateData.photo = photo;
+    if (img !== undefined) updateData.img = img;
     if (color !== undefined) updateData.color = color;
     if (teamId !== undefined) updateData.teamId = teamId || null;
 
@@ -176,7 +177,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: driver,
+      data: withNestedImageUrls(driver),
     });
   } catch (error) {
     console.error('Error updating driver:', error);

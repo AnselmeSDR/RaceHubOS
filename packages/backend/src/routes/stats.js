@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -65,8 +66,8 @@ router.get('/drivers', async (req, res) => {
         name: driver.name,
         number: driver.number,
         color: driver.color,
-        photo: driver.photo,
-        team: driver.team,
+        ...withImageUrl({ img: driver.img }),
+        team: withImageUrl(driver.team),
         statistics: {
           totalRaces: races.length,
           totalLaps: allLaps.length,
@@ -160,7 +161,7 @@ router.get('/cars', async (req, res) => {
         model: car.model,
         year: car.year,
         color: car.color,
-        photo: car.photo,
+        ...withImageUrl({ img: car.img }),
         statistics: {
           totalRaces: races.length,
           totalLaps: allLaps.length,
@@ -224,7 +225,7 @@ router.get('/tracks', async (req, res) => {
         id: track.id,
         name: track.name,
         color: track.color,
-        photo: track.photo,
+        ...withImageUrl({ img: track.img }),
         length: track.length,
         corners: track.corners,
         statistics: {
@@ -298,8 +299,8 @@ router.get('/leaderboard/drivers', async (req, res) => {
 
         return {
           position: sd.finalPos || sd.position || null,
-          driver: sd.driver,
-          car: sd.car,
+          driver: withImageUrl(sd.driver),
+          car: withImageUrl(sd.car),
           laps: driverLaps.length,
           bestLap,
           lastLap: driverLaps.length > 0
@@ -365,7 +366,7 @@ router.get('/leaderboard/drivers', async (req, res) => {
 
       leaderboard = driverStats.map((stat, index) => ({
         position: index + 1,
-        driver: stat.driver,
+        driver: withImageUrl(stat.driver),
         wins: stat.wins,
         podiums: stat.podiums,
         races: stat.races,
@@ -458,7 +459,7 @@ router.get('/leaderboard/teams', async (req, res) => {
 
     const leaderboard = teamStats.map((stat, index) => ({
       position: index + 1,
-      team: stat.team,
+      team: withImageUrl(stat.team),
       points: stat.points,
       wins: stat.wins,
       podiums: stat.podiums,
@@ -566,21 +567,21 @@ router.get('/records', async (req, res) => {
       data: {
         fastestLap: fastestLap ? {
           time: fastestLap.lapTime,
-          driver: fastestLap.driver,
-          car: fastestLap.car,
-          track: fastestLap.session.track,
+          driver: withImageUrl(fastestLap.driver),
+          car: withImageUrl(fastestLap.car),
+          track: withImageUrl(fastestLap.session.track),
           date: fastestLap.timestamp,
         } : null,
         mostWins: mostWinsDriver ? {
-          driver: mostWinsDriver.driver,
+          driver: withImageUrl(mostWinsDriver.driver),
           count: mostWinsDriver.wins,
         } : null,
         mostPodiums: mostPodiumsDriver ? {
-          driver: mostPodiumsDriver.driver,
+          driver: withImageUrl(mostPodiumsDriver.driver),
           count: mostPodiumsDriver.podiums,
         } : null,
         mostPolePositions: mostPolesDriver ? {
-          driver: mostPolesDriver.driver,
+          driver: withImageUrl(mostPolesDriver.driver),
           count: mostPolesDriver.poles,
         } : null,
       },

@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -23,7 +24,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: cars,
+      data: cars.map(c => withImageUrl(c)),
       count: cars.length,
     });
   } catch (error) {
@@ -70,7 +71,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: car,
+      data: withNestedImageUrls(car),
     });
   } catch (error) {
     console.error('Error fetching car:', error);
@@ -88,7 +89,7 @@ router.post('/', async (req, res) => {
       brand,
       model,
       year,
-      photo,
+      img,
       color,
       maxSpeed,
       brakeForce,
@@ -115,7 +116,7 @@ router.post('/', async (req, res) => {
         brand: brand.trim(),
         model: model.trim(),
         year: year || null,
-        photo: photo || null,
+        img: img || null,
         color: color || '#3B82F6',
         maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
         brakeForce: brakeForce !== undefined ? brakeForce : 50,
@@ -125,7 +126,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: car,
+      data: withImageUrl(car),
     });
   } catch (error) {
     console.error('Error creating car:', error);
@@ -144,7 +145,7 @@ router.put('/:id', async (req, res) => {
       brand,
       model,
       year,
-      photo,
+      img,
       color,
       maxSpeed,
       brakeForce,
@@ -168,7 +169,7 @@ router.put('/:id', async (req, res) => {
     if (brand !== undefined) updateData.brand = brand.trim();
     if (model !== undefined) updateData.model = model.trim();
     if (year !== undefined) updateData.year = year;
-    if (photo !== undefined) updateData.photo = photo;
+    if (img !== undefined) updateData.img = img;
     if (color !== undefined) updateData.color = color;
     if (maxSpeed !== undefined) updateData.maxSpeed = maxSpeed;
     if (brakeForce !== undefined) updateData.brakeForce = brakeForce;
@@ -181,7 +182,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: car,
+      data: withImageUrl(car),
     });
   } catch (error) {
     console.error('Error updating car:', error);

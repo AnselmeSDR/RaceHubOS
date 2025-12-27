@@ -2,6 +2,14 @@ import { useMemo } from 'react'
 import { PlayIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline'
 import LapTime from '../race/LapTime'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+// Backend now returns full URLs, but keep helper for backwards compatibility
+const getImgUrl = (img) => {
+  if (!img) return null
+  return img.startsWith('http') ? img : `${API_URL}${img}`
+}
+
 /**
  * StandingsTabs - Three tabs for Practice, Qualifications and Races standings
  * Practice tab: sorted by best lap time from practice session
@@ -152,9 +160,9 @@ export default function StandingsTabs({
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
                     style={{ backgroundColor: driver.color || '#6B7280' }}
                   >
-                    {driver.photo || driver.photoUrl ? (
+                    {driver.img ? (
                       <img
-                        src={driver.photo || driver.photoUrl}
+                        src={getImgUrl(driver.img)}
                         alt={driver.name}
                         className="w-full h-full object-cover"
                       />

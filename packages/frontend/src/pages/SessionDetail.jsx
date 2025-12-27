@@ -128,8 +128,8 @@ export default function SessionDetail() {
       <div
         className="relative"
         style={{
-          background: session.track?.photo
-            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${session.track.photo})`
+          background: session.track?.img
+            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${session.track.img})`
             : `linear-gradient(135deg, ${sessionColor} 0%, ${sessionColor}dd 100%)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
@@ -285,9 +285,9 @@ export default function SessionDetail() {
                         #{idx + 1}
                       </div>
                       <div className="flex items-center gap-3">
-                        {entry.driver?.photo ? (
+                        {entry.driver?.img ? (
                           <img
-                            src={entry.driver.photo}
+                            src={entry.driver.img}
                             alt={entry.driver.name}
                             className="w-12 h-12 rounded-full object-cover"
                           />
