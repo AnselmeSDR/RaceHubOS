@@ -11,7 +11,7 @@ model Driver {
   id                String             @id @default(cuid())
   name              String
   email             String?            @unique
-  photo             String?
+  img               String?
   color             String             @default("#3B82F6")
   teamId            String?
   totalRaces        Int                @default(0)
@@ -33,7 +33,7 @@ model Car {
   brand             String
   model             String
   year              Int?
-  photo             String?
+  img               String?
   color             String             @default("#3B82F6")
   maxSpeed          Int                @default(100)
   brakeForce        Int                @default(50)
@@ -51,7 +51,7 @@ model Car {
 model Track {
   id                String             @id @default(cuid())
   name              String
-  photo             String?
+  img               String?
   layout            String?
   length            Float?
   corners           Int?
@@ -71,7 +71,7 @@ model Team {
   id        String   @id @default(cuid())
   name      String
   color     String?
-  logo      String?
+  img       String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   drivers   Driver[]

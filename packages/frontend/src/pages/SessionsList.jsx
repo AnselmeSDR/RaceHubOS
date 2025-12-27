@@ -304,9 +304,9 @@ function SessionCard({
 
       {/* Header with track photo */}
       <div className="relative h-32 overflow-hidden">
-        {session.track?.photo ? (
+        {session.track?.img ? (
           <img
-            src={session.track.photo}
+            src={session.track.img}
             alt={session.track.name}
             className="w-full h-full object-cover"
           />

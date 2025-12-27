@@ -41,9 +41,9 @@ function SessionCard({ session, onEdit, onClick }) {
     >
       {/* Header with track photo */}
       <div className="h-32 bg-gradient-to-br from-indigo-500 to-purple-600 relative overflow-hidden">
-        {session.track?.photo && (
+        {session.track?.img && (
           <img
-            src={session.track.photo}
+            src={session.track.img}
             alt={session.track.name}
             className="w-full h-full object-cover opacity-50"
           />
@@ -787,9 +787,9 @@ export default function Sessions() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedSession.drivers.map((sd) => (
                     <div key={sd.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      {sd.driver?.photo && (
+                      {sd.driver?.img && (
                         <img
-                          src={sd.driver.photo}
+                          src={sd.driver.img}
                           alt={sd.driver.name}
                           className="w-10 h-10 rounded-full object-cover"
                         />

@@ -195,9 +195,9 @@ export default function Stats() {
                             {entry.position || index + 1}
                           </div>
                           <div className="flex items-center gap-3">
-                            {entry.driver?.photo ? (
+                            {entry.driver?.img ? (
                               <img
-                                src={entry.driver.photo}
+                                src={entry.driver.img}
                                 alt={entry.driver.name}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
@@ -282,9 +282,9 @@ export default function Stats() {
                             {entry.position}
                           </div>
                           <div className="flex items-center gap-3">
-                            {entry.team?.logo ? (
+                            {entry.team?.img ? (
                               <img
-                                src={entry.team.logo}
+                                src={entry.team.img}
                                 alt={entry.team.name}
                                 className="w-10 h-10 rounded object-cover"
                               />
@@ -350,9 +350,9 @@ export default function Stats() {
                     <tr key={driver.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          {driver.photo ? (
+                          {driver.img ? (
                             <img
-                              src={driver.photo}
+                              src={driver.img}
                               alt={driver.name}
                               className="w-10 h-10 rounded-full object-cover"
                             />
@@ -418,9 +418,9 @@ export default function Stats() {
                         <p className="text-gray-600">{car.model}</p>
                         {car.year && <p className="text-sm text-gray-500">{car.year}</p>}
                       </div>
-                      {car.photo && (
+                      {car.img && (
                         <img
-                          src={car.photo}
+                          src={car.img}
                           alt={`${car.brand} ${car.model}`}
                           className="w-16 h-16 rounded object-cover"
                         />

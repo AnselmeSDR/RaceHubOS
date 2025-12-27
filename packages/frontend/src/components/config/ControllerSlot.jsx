@@ -1,5 +1,12 @@
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+const getImgUrl = (img) => {
+  if (!img) return null
+  return img.startsWith('http') ? img : `${API_URL}${img}`
+}
+
 const CONTROLLER_COLORS = {
   1: 'bg-red-500',
   2: 'bg-blue-500',
@@ -71,18 +78,18 @@ export default function ControllerSlot({
       </div>
 
       {/* Photos row */}
-      {(selectedDriver?.photoUrl || selectedCar?.photoUrl) && (
+      {(selectedDriver?.img || selectedCar?.img) && (
         <div className="flex items-center gap-2 mb-3">
-          {selectedDriver?.photoUrl && (
+          {selectedDriver?.img && (
             <img
-              src={selectedDriver.photoUrl}
+              src={getImgUrl(selectedDriver.img)}
               alt={selectedDriver.name}
               className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
             />
           )}
-          {selectedCar?.photoUrl && (
+          {selectedCar?.img && (
             <img
-              src={selectedCar.photoUrl}
+              src={getImgUrl(selectedCar.img)}
               alt={`${selectedCar.brand} ${selectedCar.model}`}
               className="w-10 h-10 rounded object-cover border-2 border-gray-200"
             />

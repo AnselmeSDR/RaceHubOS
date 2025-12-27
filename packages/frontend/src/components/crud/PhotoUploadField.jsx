@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useId } from 'react'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../ImageCropper'
 
@@ -32,6 +32,7 @@ export default function PhotoUploadField({
   const [imageToCrop, setImageToCrop] = useState(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
+  const inputId = useId()
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
@@ -46,6 +47,9 @@ export default function PhotoUploadField({
     reader.onloadend = () => {
       setImageToCrop(reader.result)
       setShowCropper(true)
+    }
+    reader.onerror = () => {
+      onError?.('Erreur lors de la lecture du fichier')
     }
     reader.readAsDataURL(file)
   }
@@ -62,7 +66,7 @@ export default function PhotoUploadField({
 
       // Create form data
       const formData = new FormData()
-      formData.append('photo', blob, 'photo.jpg')
+      formData.append('img', blob, 'image.jpg')
 
       // Upload to server
       const uploadRes = await fetch(`${API_URL}/api/upload/${uploadType}`, {
@@ -141,11 +145,11 @@ export default function PhotoUploadField({
             accept="image/*"
             onChange={handleFileChange}
             className="hidden"
-            id="photo-upload"
+            id={inputId}
             disabled={uploading}
           />
           <label
-            htmlFor="photo-upload"
+            htmlFor={inputId}
             style={{ borderColor: primaryColor, color: uploading ? '#9CA3AF' : primaryColor }}
             className={`inline-block px-4 py-2 border-2 rounded-lg transition-colors text-sm font-medium ${uploading ? 'cursor-wait bg-gray-50' : 'cursor-pointer hover:bg-gray-50'}`}
           >

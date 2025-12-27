@@ -123,8 +123,8 @@ function TrackCard({ track, onEdit }) {
               className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${trackColor} 0%, ${trackColor}CC 100%)` }}
             >
-              {track.photo ? (
-                <img src={track.photo} alt={track.name} className="w-full h-full object-cover" />
+              {track.img ? (
+                <img src={track.img} alt={track.name} className="w-full h-full object-cover" />
               ) : (
                 <MapPinSolidIcon className="w-10 h-10 drop-shadow-lg" />
               )}
@@ -205,7 +205,7 @@ function TrackFormModal({ track, onClose, onDelete }) {
     name: track?.name || '',
     length: track?.length || '',
     corners: track?.corners || '',
-    photo: track?.photo || '',
+    img: track?.img || '',
     color: track?.color || '#9333EA'
   })
   const [saving, setSaving] = useState(false)
@@ -219,7 +219,7 @@ function TrackFormModal({ track, onClose, onDelete }) {
       const url = track ? `${API_URL}/api/tracks/${track.id}` : `${API_URL}/api/tracks`
       const payload = {
         name: formData.name,
-        photo: formData.photo || null,
+        img: formData.img || null,
         length: formData.length ? parseFloat(formData.length) : null,
         corners: formData.corners ? parseInt(formData.corners) : null,
         color: formData.color
@@ -272,8 +272,8 @@ function TrackFormModal({ track, onClose, onDelete }) {
 
       <PhotoUploadField
         label="Photo du circuit"
-        value={formData.photo}
-        onChange={(photo) => setFormData(f => ({ ...f, photo }))}
+        value={formData.img}
+        onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="rect"
         primaryColor={PRIMARY_COLOR}
         onError={setError}

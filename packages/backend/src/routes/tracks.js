@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: tracks,
+      data: tracks.map(t => withImageUrl(t)),
       count: tracks.length,
     });
   } catch (error) {
@@ -67,7 +68,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: track,
+      data: withNestedImageUrls(track),
     });
   } catch (error) {
     console.error('Error fetching track:', error);
@@ -83,7 +84,7 @@ router.post('/', async (req, res) => {
   try {
     const {
       name,
-      photo,
+      img,
       layout,
       length,
       corners,
@@ -101,7 +102,7 @@ router.post('/', async (req, res) => {
     const track = await prisma.track.create({
       data: {
         name: name.trim(),
-        photo: photo || null,
+        img: img || null,
         layout: layout || null,
         length: length || null,
         corners: corners || null,
@@ -111,7 +112,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: track,
+      data: withImageUrl(track),
     });
   } catch (error) {
     console.error('Error creating track:', error);
@@ -128,7 +129,7 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const {
       name,
-      photo,
+      img,
       layout,
       length,
       corners,
@@ -152,7 +153,7 @@ router.put('/:id', async (req, res) => {
     // Build update data
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
-    if (photo !== undefined) updateData.photo = photo;
+    if (img !== undefined) updateData.img = img;
     if (layout !== undefined) updateData.layout = layout;
     if (length !== undefined) updateData.length = length;
     if (corners !== undefined) updateData.corners = corners;
@@ -167,7 +168,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: track,
+      data: withImageUrl(track),
     });
   } catch (error) {
     console.error('Error updating track:', error);

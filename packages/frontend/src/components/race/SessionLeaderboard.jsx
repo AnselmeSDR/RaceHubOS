@@ -3,6 +3,8 @@ import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
  *
@@ -153,9 +155,9 @@ export default function SessionLeaderboard({
                 className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
                 style={{ backgroundColor: driverColor }}
               >
-                {driver.photo ? (
+                {driver.img ? (
                   <img
-                    src={driver.photo}
+                    src={driver.img.startsWith('http') ? driver.img : `${API_URL}${driver.img}`}
                     alt={driver.name || 'Driver'}
                     className="w-full h-full object-cover"
                   />
@@ -181,7 +183,13 @@ export default function SessionLeaderboard({
                 <div className="font-black text-xl text-gray-900 uppercase italic truncate">
                   {(driver.name || 'Unknown').split(' ').pop()}
                 </div>
-                <div className="text-sm text-gray-500 truncate">
+                <div className="text-sm text-gray-500 truncate flex items-center gap-1.5">
+                  {car.color && (
+                    <span
+                      className="w-3 h-3 rounded-full flex-shrink-0 border border-gray-300"
+                      style={{ backgroundColor: car.color }}
+                    />
+                  )}
                   {car.brand} {car.model || car.name || ''}
                 </div>
               </div>

@@ -1,6 +1,13 @@
 import { TrophyIcon, FlagIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+const getImgUrl = (img) => {
+  if (!img) return null
+  return img.startsWith('http') ? img : `${API_URL}${img}`
+}
+
 /**
  * DriverListItem - Format horizontal compact pour listes et sélections
  * Inspiré du style NASCAR Starting Grid
@@ -28,9 +35,9 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
           background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)`,
         }}
       >
-        {driver.photo ? (
+        {driver.img ? (
           <img
-            src={driver.photo}
+            src={getImgUrl(driver.img)}
             alt={driver.name}
             className="w-full h-full rounded-full object-cover"
           />
@@ -138,9 +145,9 @@ export function DriverGridPosition({ driver, side = 'left' }) {
           className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
           style={{ backgroundColor: driver.color }}
         >
-          {driver.photo ? (
+          {driver.img ? (
             <img
-              src={driver.photo}
+              src={getImgUrl(driver.img)}
               alt={driver.name}
               className="w-full h-full object-cover"
             />
@@ -215,9 +222,9 @@ export function DriverProfileHeader({ driver }) {
                 background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)`,
               }}
             >
-              {driver.photo ? (
+              {driver.img ? (
                 <img
-                  src={driver.photo}
+                  src={getImgUrl(driver.img)}
                   alt={driver.name}
                   className="w-full h-full object-cover"
                 />
@@ -411,9 +418,9 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
           className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-black text-2xl shadow-lg overflow-hidden flex-shrink-0"
           style={{ backgroundColor: driver.color }}
         >
-          {driver.photo ? (
+          {driver.img ? (
             <img
-              src={driver.photo}
+              src={getImgUrl(driver.img)}
               alt={driver.name}
               className="w-full h-full object-cover"
             />
