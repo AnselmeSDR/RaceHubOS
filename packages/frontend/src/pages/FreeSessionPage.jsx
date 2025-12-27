@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChevronDownIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
-import Session from '../components/session/Session'
+import SessionSection from '../components/championship/SessionSection'
+import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import TrackRecordsPanel from '../components/race/freePractice/TrackRecordsPanel'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -14,12 +15,10 @@ const SESSION_TYPES = [
 ]
 
 export default function FreeSessionPage() {
-  const { connected: cuConnected } = useDevice()
+  const { startRace: triggerCuStart } = useDevice()
   const {
     session,
-    leaderboard,
-    elapsed,
-    remaining,
+    entries,
     findOrCreateFreeSession,
     createSession,
     loadSession,
@@ -37,6 +36,7 @@ export default function FreeSessionPage() {
   const [selectedType, setSelectedType] = useState('practice')
   const [loading, setLoading] = useState(false)
   const [trackRecords, setTrackRecords] = useState({})
+  const [practiceSortBy, setPracticeSortBy] = useState('laps')
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -139,17 +139,6 @@ export default function FreeSessionPage() {
   // Session handlers
   const handleStart = async () => {
     if (!session?.id) return
-
-    // If draft, first set to ready then start
-    if (session.status === 'draft') {
-      // Update status to ready first
-      await fetch(`${API_URL}/api/sessions/${session.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ready' })
-      })
-    }
-
     await startSession(session.id)
   }
 
@@ -166,18 +155,12 @@ export default function FreeSessionPage() {
   const handleStop = async () => {
     if (!session?.id) return
     await stopSession(session.id)
-  }
-
-  const handleReset = async () => {
-    if (!session?.id) return
-    await resetSession(session.id)
-  }
-
-  const handleDismiss = async () => {
-    clearSession()
-    // Refresh records and load a new session
+    // Refresh records after session ends
     await fetchTrackRecords()
-    await handleLoadSession()
+  }
+
+  const handleConfig = () => {
+    // TODO: Open session config modal if needed
   }
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId)
@@ -243,32 +226,45 @@ export default function FreeSessionPage() {
         </div>
       </div>
 
-      {/* Main content: Session + Records panel */}
+      {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Session component */}
-        <div className="flex-1">
+        {/* Left: Session + Leaderboard */}
+        <div className="flex-1 overflow-auto p-4 space-y-4">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
           ) : (
-            <Session
-              session={session}
-              leaderboard={leaderboard}
-              elapsed={elapsed}
-              remaining={remaining}
-              cuConnected={cuConnected}
-              onStart={handleStart}
-              onPause={handlePause}
-              onResume={handleResume}
-              onStop={handleStop}
-              onReset={handleReset}
-              onDismiss={handleDismiss}
-            />
+            <>
+              {/* Session Section */}
+              <SessionSection
+                session={session}
+                sessions={[]}
+                drivers={[]}
+                cars={[]}
+                onStart={handleStart}
+                onPause={handlePause}
+                onResume={handleResume}
+                onStop={handleStop}
+                onTriggerCuStart={triggerCuStart}
+                onConfig={handleConfig}
+              />
+
+              {/* Leaderboard */}
+              {session && (
+                <SessionLeaderboard
+                  entries={entries}
+                  sortBy={session.type === 'practice' ? practiceSortBy :
+                    session.type === 'qualif' ? 'bestLap' : 'race'}
+                  onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
+                  sessionType={session.type}
+                />
+              )}
+            </>
           )}
         </div>
 
-        {/* Track records panel */}
+        {/* Right: Track records panel */}
         <TrackRecordsPanel
           selectedTrack={selectedTrack}
           trackRecords={trackRecords}
