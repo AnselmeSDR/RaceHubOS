@@ -9,17 +9,17 @@ const prisma = new PrismaClient();
  * GET /api/records/track/:trackId
  * Get best laps for a specific track, grouped by session type
  * Query params:
- *   - free=true: Only include sessions without championship (free mode)
- *   - championshipId: Filter by specific championship
+ *   - championshipId=null: Only include sessions without championship (free mode)
+ *   - championshipId=<id>: Filter by specific championship
  */
 router.get('/track/:trackId', async (req, res) => {
   try {
     const { trackId } = req.params;
-    const { free, championshipId } = req.query;
+    const { championshipId } = req.query;
 
     // Build session filter
     const sessionFilter = {};
-    if (free === 'true') {
+    if (championshipId === 'null') {
       sessionFilter.championshipId = null;
     } else if (championshipId) {
       sessionFilter.championshipId = championshipId;
