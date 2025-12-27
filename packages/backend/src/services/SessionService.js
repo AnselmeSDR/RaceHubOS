@@ -63,6 +63,16 @@ export class SessionService extends EventEmitter {
       return;
     }
 
+    // Track crossings - first crossing is start, doesn't count as lap
+    const isFirstCrossing = driver.crossings === 0;
+    driver.crossings++;
+
+    if (isFirstCrossing) {
+      // First crossing = crossing start line from grid, not a lap
+      this.emitLeaderboard();
+      return;
+    }
+
     // 1. Update RAM
     driver.totalLaps++;
     driver.totalTime += Math.round(lapTime);
@@ -113,11 +123,12 @@ export class SessionService extends EventEmitter {
                         session.type === 'practice' ? 'practice' : 'race';
 
     this.sessionConfig = {
-      duration: session.duration,
+      maxDuration: session.maxDuration,
       maxLaps: session.maxLaps,
       gracePeriod: session.gracePeriod || DEFAULT_GRACE_PERIOD_MS,
       startedAt: session.startedAt,
       championshipId: session.championshipId,
+      pauses: session.pauses ? JSON.parse(session.pauses) : [],
     };
     this.sessionStatus = session.status;
 
@@ -134,34 +145,70 @@ export class SessionService extends EventEmitter {
       totalTime: sd.totalTime || 0,
       bestLapTime: sd.bestLapTime || null,
       lastLapTime: sd.lastLapTime || null,
+      lapsAtFinishing: sd.lapsAtFinishing ?? null, // For checkered flag logic
       gap: null,
+      crossings: sd.totalLaps || 0, // Track line crossings (first doesn't count as lap)
     }));
 
     this.raceFinishTime = null;
     this.recalculatePositions();
+    this.emitLeaderboard();
+
+    // If session is in finishing state, recreate grace period timer
+    if (session.status === 'finishing' && session.finishingAt) {
+      const gracePeriod = this.sessionConfig.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
+      const elapsed = Date.now() - new Date(session.finishingAt).getTime();
+      const remaining = Math.max(0, gracePeriod - elapsed);
+
+      this.gracePeriodEndsAt = Date.now() + remaining;
+
+      if (remaining > 0) {
+        this.gracePeriodTimer = setTimeout(async () => {
+          if (this.sessionStatus === 'finishing') {
+            await this.finishSession('grace_period_elapsed');
+          }
+        }, remaining);
+      } else {
+        // Grace period already elapsed, finish immediately
+        setImmediate(async () => {
+          if (this.sessionStatus === 'finishing') {
+            await this.finishSession('grace_period_elapsed');
+          }
+        });
+      }
+    }
 
     return session;
   }
 
   /**
    * Start session
+   * Puts session in 'active' state and triggers CU lights (1/5).
+   * User must click START buttons to advance through lights (2/5...5/5) then race starts.
+   * Note: startedAt is set later by onRaceStart() when CU goes to racing (GO!)
    */
   async startSession(sessionId) {
+    // Check device connection
+    if (!this.syncService?.isConnected()) {
+      throw new Error('No device connected. Connect a CU or Simulator first.');
+    }
+
     // Reset sync service
     await this.syncService?.reset();
 
     await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'active', startedAt: new Date() },
+      data: { status: 'active' },
     });
 
     await this.loadSession(sessionId);
     this.sessionStatus = 'active';
-    this.sessionConfig.startedAt = new Date();
 
-    // Start CU/Simulator
-    await this.syncService?.startRace();
+    // Start polling to receive CU status and lap data
     this.syncService?.startPolling();
+
+    // Put CU in L1 state (waiting for START)
+    await this.syncService?.prepareRace();
 
     // Start heartbeat
     this.startHeartbeat();
@@ -178,9 +225,16 @@ export class SessionService extends EventEmitter {
   async pauseSession() {
     if (!this.activeSessionId) return null;
 
+    const now = Date.now();
+
+    // Add pause entry to history
+    const pauses = this.sessionConfig?.pauses || [];
+    pauses.push({ start: now, end: null });
+    this.sessionConfig.pauses = pauses;
+
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
-      data: { status: 'paused' },
+      data: { status: 'paused', pauses: JSON.stringify(pauses) },
     });
 
     const previousStatus = this.sessionStatus;
@@ -197,10 +251,12 @@ export class SessionService extends EventEmitter {
 
   /**
    * Resume session
+   * Puts CU in lights mode. Pause closes and chrono resumes at GO (via onRaceStart)
    */
   async resumeSession() {
     if (!this.activeSessionId || this.sessionStatus !== 'paused') return null;
 
+    // Set status to active but keep pause open until GO
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
       data: { status: 'active' },
@@ -208,8 +264,8 @@ export class SessionService extends EventEmitter {
 
     this.sessionStatus = 'active';
 
-    // Resume CU/Simulator
-    await this.syncService?.startRace();
+    // Start CU lights sequence (pause closes at GO via onRaceStart)
+    await this.syncService?.prepareRace();
 
     this.emit('session:resumed', { sessionId: this.activeSessionId });
     this.emitStatusChanged('active', 'paused');
@@ -265,6 +321,51 @@ export class SessionService extends EventEmitter {
 
   isConnected() {
     return this.syncService?.isConnected() || false;
+  }
+
+  /**
+   * Called by SyncService when CU transitions to racing (GO!)
+   * - First start: sets startedAt
+   * - Resume from pause: closes pause entry
+   */
+  async onRaceStart() {
+    if (!this.activeSessionId || this.sessionStatus !== 'active') return;
+
+    const now = Date.now();
+
+    // Check if resuming from pause (has open pause entry)
+    const pauses = this.sessionConfig?.pauses || [];
+    const lastPause = pauses[pauses.length - 1];
+    const isResumingFromPause = lastPause && lastPause.end === null;
+
+    if (isResumingFromPause) {
+      // Close the pause entry
+      lastPause.end = now;
+
+      await this.prisma.session.update({
+        where: { id: this.activeSessionId },
+        data: { pauses: JSON.stringify(pauses) },
+      });
+
+      this.emit('session:race_resumed', {
+        sessionId: this.activeSessionId,
+        resumedAt: new Date(now).toISOString(),
+      });
+    } else if (!this.sessionConfig.startedAt) {
+      // First start - set startedAt
+      const startedAt = new Date(now);
+      this.sessionConfig.startedAt = startedAt;
+
+      await this.prisma.session.update({
+        where: { id: this.activeSessionId },
+        data: { startedAt },
+      });
+
+      this.emit('session:race_started', {
+        sessionId: this.activeSessionId,
+        startedAt: startedAt.toISOString(),
+      });
+    }
   }
 
   // ==================== Position & Leaderboard ====================
@@ -326,19 +427,44 @@ export class SessionService extends EventEmitter {
   startHeartbeat() {
     this.stopHeartbeat();
 
-    this.heartbeatInterval = setInterval(() => {
+    this.heartbeatInterval = setInterval(async () => {
       if (!this.activeSessionId || !this.isActive()) {
         this.stopHeartbeat();
         return;
       }
 
-      const elapsedTime = this.sessionConfig?.startedAt
-        ? Date.now() - new Date(this.sessionConfig.startedAt).getTime()
-        : 0;
+      const now = Date.now();
+
+      // Calculate total pause duration from pauses array
+      const pauses = this.sessionConfig?.pauses || [];
+      let totalPauseDuration = 0;
+      let currentPauseDuration = null;
+
+      for (const p of pauses) {
+        if (p.end) {
+          totalPauseDuration += p.end - p.start;
+        } else {
+          // Open pause (currently paused)
+          currentPauseDuration = now - p.start;
+          totalPauseDuration += currentPauseDuration;
+        }
+      }
+
+      // Elapsed racing time = wall clock time - pause time
+      let elapsedTime = 0;
+      if (this.sessionConfig?.startedAt) {
+        const wallTime = now - new Date(this.sessionConfig.startedAt).getTime();
+        elapsedTime = wallTime - totalPauseDuration;
+      }
 
       let remainingTime = null;
-      if (this.sessionConfig?.duration) {
-        remainingTime = Math.max(0, this.sessionConfig.duration - elapsedTime);
+      if (this.sessionConfig?.maxDuration) {
+        remainingTime = Math.max(0, this.sessionConfig.maxDuration - elapsedTime);
+
+        // Checkered flag: start finishing phase when time is up
+        if (remainingTime === 0 && this.sessionStatus === 'active') {
+          await this.startFinishingPhase('time_elapsed');
+        }
       }
 
       let remainingLaps = null;
@@ -350,15 +476,21 @@ export class SessionService extends EventEmitter {
       let gracePeriodRemaining = null;
       if (this.sessionStatus === 'finishing' && this.gracePeriodEndsAt) {
         gracePeriodRemaining = Math.max(0, this.gracePeriodEndsAt - Date.now());
+        // Check if all drivers finished their lap during finishing phase
+        await this.checkSessionComplete();
       }
 
       this.emit('session:heartbeat', {
         sessionId: this.activeSessionId,
         status: this.sessionStatus,
+        startedAt: this.sessionConfig?.startedAt,
         elapsedTime,
         remainingTime,
         remainingLaps,
         gracePeriodRemaining,
+        pauseDuration: currentPauseDuration,
+        totalPauseDuration,
+        pauses,
       });
     }, 1000);
   }
@@ -376,46 +508,29 @@ export class SessionService extends EventEmitter {
     if (!this.activeSessionId || !this.sessionConfig) return;
     if (this.sessionStatus !== 'active' && this.sessionStatus !== 'finishing') return;
 
-    const { duration, maxLaps, gracePeriod, startedAt } = this.sessionConfig;
+    const { maxLaps } = this.sessionConfig;
 
     let shouldStop = false;
     let shouldStartFinishing = false;
     let reason = '';
 
-    // Check time limit
-    if (duration && startedAt) {
-      const elapsed = Date.now() - new Date(startedAt).getTime();
-      if (elapsed >= duration) {
-        if (this.sessionStatus !== 'finishing') {
-          shouldStartFinishing = true;
-          reason = 'time_elapsed';
-        }
+    // Note: time-based finishing is now handled in heartbeat
+
+    // Check lap limit (checkered flag when leader reaches maxLaps)
+    if (maxLaps && this.sessionStatus === 'active') {
+      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
+      if (maxLapsReached) {
+        shouldStartFinishing = true;
+        reason = 'leader_finished';
       }
     }
 
-    // Check lap limit
-    if (maxLaps && !shouldStop) {
-      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
-
-      if (maxLapsReached) {
-        if (this.sessionStatus !== 'finishing') {
-          shouldStartFinishing = true;
-          reason = 'leader_finished';
-          this.raceFinishTime = Date.now();
-        } else if (this.currentPhase === 'qualif') {
-          const allFinished = this.sessionDrivers
-            .filter(d => d.totalLaps > 0)
-            .every(d => d.totalLaps >= maxLaps);
-          if (allFinished) {
-            shouldStop = true;
-            reason = 'all_finished';
-          }
-        } else {
-          if (this.raceFinishTime && Date.now() - this.raceFinishTime >= gracePeriod) {
-            shouldStop = true;
-            reason = 'grace_period_elapsed';
-          }
-        }
+    // Checkered flag logic: check if all drivers finished their current lap
+    if (this.sessionStatus === 'finishing') {
+      const allFinishedCurrentLap = this.checkAllDriversFinishedCurrentLap();
+      if (allFinishedCurrentLap) {
+        shouldStop = true;
+        reason = 'all_finished_lap';
       }
     }
 
@@ -428,6 +543,26 @@ export class SessionService extends EventEmitter {
     }
   }
 
+  /**
+   * Check if all active drivers have completed their current lap after checkered flag
+   * A driver has finished if: totalLaps > lapsAtFinishing
+   * Skip drivers who haven't started (lapsAtFinishing === 0 or null)
+   */
+  checkAllDriversFinishedCurrentLap() {
+    const activeDrivers = this.sessionDrivers.filter(d => {
+      // Driver was active at checkered flag if they had completed at least 1 lap
+      return d.lapsAtFinishing !== null && d.lapsAtFinishing !== undefined && d.lapsAtFinishing > 0;
+    });
+
+    if (activeDrivers.length === 0) {
+      // No active drivers, finish immediately
+      return true;
+    }
+
+    // All active drivers must have completed at least one more lap
+    return activeDrivers.every(d => d.totalLaps > d.lapsAtFinishing);
+  }
+
   async startFinishingPhase(reason) {
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
@@ -437,8 +572,9 @@ export class SessionService extends EventEmitter {
     const previousStatus = this.sessionStatus;
     this.sessionStatus = 'finishing';
 
-    // Snapshot laps for DNF detection
+    // Snapshot laps for checkered flag logic (finish current lap)
     for (const driver of this.sessionDrivers) {
+      driver.lapsAtFinishing = driver.totalLaps; // RAM state
       await this.prisma.sessionDriver.update({
         where: { id: driver.id },
         data: { lapsAtFinishing: driver.totalLaps },
@@ -498,8 +634,13 @@ export class SessionService extends EventEmitter {
       }),
     ]);
 
-    // Broadcast to clients
-    this.emit('session:finished', { sessionId, reason, championshipId });
+    // Broadcast to clients with final leaderboard
+    this.emit('session:finished', {
+      sessionId,
+      reason,
+      championshipId,
+      leaderboard: this.sessionDrivers
+    });
     this.emitStatusChanged('finished', previousStatus);
 
     // Emit internal event for other services (ChampionshipManager)
@@ -564,10 +705,10 @@ export class SessionService extends EventEmitter {
 
   /**
    * Create a session with drivers from track's controller config
-   * @param {Object} params - { type, name, trackId, championshipId, duration, maxLaps, order, gridFromQualifying }
+   * @param {Object} params - { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying }
    */
   async createSession(params) {
-    const { type, name, trackId, championshipId, duration, maxLaps, order, gridFromQualifying } = params;
+    const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying } = params;
 
     if (!['practice', 'qualif', 'race'].includes(type)) {
       throw new Error('Invalid session type. Must be practice, qualif, or race');
@@ -595,7 +736,7 @@ export class SessionService extends EventEmitter {
         status: 'draft',
         trackId: finalTrackId,
         championshipId: championshipId || null,
-        duration: duration || null,
+        maxDuration: maxDuration || null,
         maxLaps: maxLaps || null,
         order: order ?? 0,
       },
@@ -673,6 +814,9 @@ export class SessionService extends EventEmitter {
       await this.resetForNewSession();
     }
 
+    // Send stop signal to CU/Simulator
+    await this.syncService?.stopRace();
+
     // Practice: soft delete (keep for stats)
     // Qualif/Race: hard delete
     if (session.type === 'practice') {
@@ -683,9 +827,6 @@ export class SessionService extends EventEmitter {
     } else {
       await this.prisma.lap.deleteMany({ where: { sessionId } });
     }
-
-    // Delete events
-    await this.prisma.raceEvent.deleteMany({ where: { sessionId } });
 
     // Reset session driver stats
     await this.prisma.sessionDriver.updateMany({
@@ -705,7 +846,7 @@ export class SessionService extends EventEmitter {
     // Reset session to ready
     await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'ready', startedAt: null, finishingAt: null, finishedAt: null },
+      data: { status: 'ready', startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
     });
 
     // Emit internal event for ChampionshipService
@@ -741,7 +882,6 @@ export class SessionService extends EventEmitter {
 
     // Delete related data
     await this.prisma.lap.deleteMany({ where: { sessionId } });
-    await this.prisma.raceEvent.deleteMany({ where: { sessionId } });
     await this.prisma.sessionDriver.deleteMany({ where: { sessionId } });
     await this.prisma.session.delete({ where: { id: sessionId } });
 
@@ -787,7 +927,7 @@ export class SessionService extends EventEmitter {
   }
 
   isActive() {
-    return this.sessionStatus === 'active' || this.sessionStatus === 'finishing';
+    return ['active', 'paused', 'finishing'].includes(this.sessionStatus);
   }
 
   async close() {

@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 /**
  * AddSessionModal - Modal to add or edit a session
- * Create: POST /api/race/qualif or /api/race/race with championshipId
+ * Create: POST /api/championships/:id/sessions
  * Edit: PUT /api/sessions/:id
  */
 export default function AddSessionModal({ type = 'qualif', championshipId, session = null, onClose, onCreated }) {
@@ -13,9 +13,9 @@ export default function AddSessionModal({ type = 'qualif', championshipId, sessi
 
   const [form, setForm] = useState({
     name: session?.name || '',
-    useTime: session ? !!session.duration : true,
+    useTime: session ? !!session.maxDuration : true,
     useLaps: session ? !!session.maxLaps : false,
-    duration: session?.duration || 5,
+    duration: session?.maxDuration || 5,
     maxLaps: session?.maxLaps || 10
   })
   const [loading, setLoading] = useState(false)
@@ -50,22 +50,21 @@ export default function AddSessionModal({ type = 'qualif', championshipId, sessi
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: form.name || null,
-            duration: form.useTime && form.duration > 0 ? form.duration : null,
+            maxDuration: form.useTime && form.duration > 0 ? form.duration : null,
             maxLaps: form.useLaps && form.maxLaps > 0 ? form.maxLaps : null
           })
         })
         data = await response.json()
       } else {
-        // Create mode: POST /api/race/qualif or /api/race/race
-        const endpoint = isQualifying ? '/api/race/qualif' : '/api/race/race'
-        response = await fetch(`${API_URL}${endpoint}`, {
+        // Create mode: POST /api/championships/:id/sessions
+        response = await fetch(`${API_URL}/api/championships/${championshipId}/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            type: isQualifying ? 'qualif' : 'race',
             name: form.name || undefined,
-            duration: form.useTime && form.duration > 0 ? form.duration : null,
+            maxDuration: form.useTime && form.duration > 0 ? form.duration : null,
             maxLaps: form.useLaps && form.maxLaps > 0 ? form.maxLaps : null,
-            championshipId
           })
         })
         data = await response.json()

@@ -4,7 +4,7 @@ import StateChip from '../StateChip'
 export default function SessionHeader({
     sessionName,
     sessionTypeLabel,
-    state,
+    status,
     cuConnected,
     elapsedFormatted,
     remaining,
@@ -23,7 +23,7 @@ export default function SessionHeader({
                         <span className="text-sm text-gray-400 uppercase tracking-wide">
                             {sessionTypeLabel}
                         </span>
-                        <StateChip state={state} />
+                        <StateChip status={status} />
                     </div>
                 </div>
 

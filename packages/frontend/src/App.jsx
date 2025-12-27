@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { RaceProvider } from './context/RaceContext'
+import { DeviceProvider } from './context/DeviceContext'
+import { SessionProvider } from './context/SessionContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Drivers from './pages/Drivers'
@@ -15,20 +16,21 @@ import SessionDetail from './pages/SessionDetail'
 import Stats from './pages/Stats'
 import Settings from './pages/Settings'
 import Test from './pages/Test'
-import RacePage from './pages/RacePage'
+import FreeSessionPage from './pages/FreeSessionPage'
 import Championships from './pages/Championships'
 import ChampionshipDetail from './pages/ChampionshipDetail'
 
 function App() {
   return (
     <BrowserRouter>
-      <RaceProvider>
-        <Routes>
+      <DeviceProvider>
+        <SessionProvider>
+          <Routes>
           {/* Main layout with sidebar */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
-            {/* Race - single page for free practice + sessions */}
-            <Route path="race" element={<RacePage />} />
+            {/* Free session mode */}
+            <Route path="race" element={<FreeSessionPage />} />
             {/* Championships */}
             <Route path="championships" element={<Championships />} />
             <Route path="championships/:id" element={<ChampionshipDetail />} />
@@ -58,8 +60,9 @@ function App() {
 
           {/* Redirect unknown routes */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </RaceProvider>
+          </Routes>
+        </SessionProvider>
+      </DeviceProvider>
     </BrowserRouter>
   )
 }

@@ -2,7 +2,28 @@
  * StateChip - Race state badge
  * Color-coded chip displaying current session state
  */
-export default function StateChip({ state }) {
+
+// Map backend status to display state
+const STATUS_MAP = {
+  draft: 'IDLE',
+  idle: 'IDLE',
+  ready: 'PENDING',
+  active: 'RUNNING',
+  paused: 'PAUSED',
+  finished: 'RESULTS',
+  // Also support uppercase for backwards compatibility
+  IDLE: 'IDLE',
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  PAUSED: 'PAUSED',
+  RESULTS: 'RESULTS',
+}
+
+export default function StateChip({ state, status }) {
+  // Support both 'state' and 'status' props
+  const rawValue = status || state
+  const normalizedState = STATUS_MAP[rawValue] || 'IDLE'
+
   const stateConfig = {
     IDLE: {
       label: 'Free Practice',
@@ -41,7 +62,7 @@ export default function StateChip({ state }) {
     },
   }
 
-  const config = stateConfig[state] || stateConfig.IDLE
+  const config = stateConfig[normalizedState] || stateConfig.IDLE
 
   return (
     <span
@@ -55,11 +76,11 @@ export default function StateChip({ state }) {
       <span
         className={`
           w-2 h-2 rounded-full
-          ${state === 'RUNNING' ? 'bg-green-500' : ''}
-          ${state === 'PENDING' ? 'bg-yellow-500' : ''}
-          ${state === 'PAUSED' ? 'bg-orange-500' : ''}
-          ${state === 'RESULTS' ? 'bg-blue-500' : ''}
-          ${state === 'IDLE' ? 'bg-gray-400' : ''}
+          ${normalizedState === 'RUNNING' ? 'bg-green-500' : ''}
+          ${normalizedState === 'PENDING' ? 'bg-yellow-500' : ''}
+          ${normalizedState === 'PAUSED' ? 'bg-orange-500' : ''}
+          ${normalizedState === 'RESULTS' ? 'bg-blue-500' : ''}
+          ${normalizedState === 'IDLE' ? 'bg-gray-400' : ''}
           ${config.pulse ? 'animate-pulse' : ''}
         `}
       />

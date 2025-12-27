@@ -33,6 +33,7 @@ router.get('/status', async (req, res) => {
     available: true,
     connected: syncService?.isConnected() || false,
     deviceType: currentDevice ? (isSimulator ? 'simulator' : 'controlUnit') : null,
+    deviceAddress: currentDevice ? (isSimulator ? 'SIMULATOR' : currentDevice.address) : null,
     lastStatus: syncService?.getCuStatus(),
   });
 });
@@ -299,6 +300,88 @@ router.post('/set-fuel', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// ==================== Simulator-specific routes ====================
+
+/**
+ * POST /api/bluetooth/simulator/state
+ * Set simulator CU state manually
+ */
+router.post('/simulator/state', async (req, res) => {
+  if (!simulator?.isConnected()) {
+    return res.status(400).json({ success: false, error: 'Simulator not connected' });
+  }
+
+  const { state } = req.body;
+  if (typeof state !== 'number' || state < 0 || state > 9) {
+    return res.status(400).json({ success: false, error: 'Invalid state (0-9)' });
+  }
+
+  try {
+    simulator.cuState = state;
+    simulator.raceActive = state === 0; // RACING
+    simulator.emitCuStatus();
+    res.json({ success: true, state });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/bluetooth/simulator/lap
+ * Manually trigger a lap for testing
+ */
+router.post('/simulator/lap', async (req, res) => {
+  if (!simulator?.isConnected()) {
+    return res.status(400).json({ success: false, error: 'Simulator not connected' });
+  }
+
+  const { controller } = req.body;
+  if (typeof controller !== 'number' || controller < 0 || controller > 5) {
+    return res.status(400).json({ success: false, error: 'Invalid controller (0-5)' });
+  }
+
+  try {
+    const car = simulator.cars[controller];
+    if (car) {
+      simulator.completeLap(car);
+      res.json({ success: true, message: `Lap triggered for controller ${controller}` });
+    } else {
+      res.status(400).json({ success: false, error: 'Car not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/bluetooth/simulator/reset
+ * Reset simulator state
+ */
+router.post('/simulator/reset', async (req, res) => {
+  if (!simulator) {
+    return res.status(400).json({ success: false, error: 'Simulator not available' });
+  }
+
+  try {
+    simulator.reset();
+    res.json({ success: true, message: 'Simulator reset' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/bluetooth/simulator/state
+ * Get full simulator state
+ */
+router.get('/simulator/state', async (req, res) => {
+  if (!simulator) {
+    return res.status(400).json({ success: false, error: 'Simulator not available' });
+  }
+
+  res.json({ success: true, data: simulator.getState() });
 });
 
 export default router;

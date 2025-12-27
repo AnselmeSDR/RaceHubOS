@@ -125,10 +125,6 @@ router.post('/', async (req, res) => {
         status: status || 'planned',
         trackId: trackId || null,
       },
-      include: {
-        track: true,
-        sessions: true,
-      },
     });
 
     // Create permanent free practice session for this championship
@@ -245,27 +241,17 @@ router.delete('/:id', async (req, res) => {
       where: { session: { championshipId: id } },
     });
 
-    // 2. Delete race events for all sessions
-    await prisma.raceEvent.deleteMany({
-      where: { session: { championshipId: id } },
-    });
-
-    // 3. Delete session drivers for all sessions
+    // 2. Delete session drivers for all sessions
     await prisma.sessionDriver.deleteMany({
       where: { session: { championshipId: id } },
     });
 
-    // 4. Delete session phases for all sessions
-    await prisma.sessionPhase.deleteMany({
-      where: { session: { championshipId: id } },
-    });
-
-    // 5. Delete all sessions
+    // 3. Delete all sessions
     await prisma.session.deleteMany({
       where: { championshipId: id },
     });
 
-    // 6. Delete championship
+    // 4. Delete championship
     await prisma.championship.delete({
       where: { id },
     });

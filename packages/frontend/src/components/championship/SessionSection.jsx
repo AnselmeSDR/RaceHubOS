@@ -10,6 +10,9 @@ import {
   BeakerIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
+import { StartLights } from '../ui'
+import { useDevice } from '../../context/DeviceContext'
+import { useSession } from '../../context/SessionContext'
 
 const SESSION_TYPE_LABELS = {
   practice: 'Essais Libres',
@@ -35,10 +38,6 @@ export default function SessionSection({
   sessions = [],
   drivers = [],
   cars = [],
-  elapsedTime = 0,
-  maxLapsCompleted = 0,
-  cuStatus = { start: 8 },
-  socketConnected = true,
   onStart,
   onPause,
   onResume,
@@ -46,6 +45,65 @@ export default function SessionSection({
   onTriggerCuStart,
   onConfig
 }) {
+  // Get device state from context
+  const { cuStatus, socketConnected, connected: deviceConnected } = useDevice()
+
+  // Get session real-time data from context
+  const {
+    elapsed: elapsedTime,
+    maxLapsCompleted,
+    gracePeriodRemaining,
+    pauseDuration,
+    totalPauseDuration,
+    pauses,
+    startedAt,
+    finishingSession,
+  } = useSession()
+
+  const gracePeriodTotal = finishingSession?.gracePeriodMs ? finishingSession.gracePeriodMs / 1000 : 30
+
+  // Build timeline segments from pauses array (alternating active/pause)
+  const timelineSegments = useMemo(() => {
+    if (!startedAt) return []
+
+    const startTime = new Date(startedAt).getTime()
+    // For finished sessions, use finishedAt; otherwise use now
+    const endTime = session?.finishedAt ? new Date(session.finishedAt).getTime() : Date.now()
+    const segments = []
+    let lastEnd = startTime
+
+    // Sort pauses by start time
+    const sortedPauses = [...(pauses || [])].sort((a, b) => a.start - b.start)
+
+    for (const pause of sortedPauses) {
+      // Active segment before this pause
+      if (pause.start > lastEnd) {
+        segments.push({ type: 'active', duration: pause.start - lastEnd })
+      }
+      // Pause segment
+      const pauseEnd = pause.end || endTime
+      segments.push({ type: 'pause', duration: pauseEnd - pause.start })
+      lastEnd = pauseEnd
+    }
+
+    // Final active segment (after last pause, if not currently paused)
+    const lastPause = sortedPauses[sortedPauses.length - 1]
+    const isCurrentlyPaused = lastPause && !lastPause.end
+    if (!isCurrentlyPaused) {
+      const finalDuration = endTime - lastEnd
+      if (finalDuration > 0) {
+        segments.push({ type: 'active', duration: finalDuration })
+      }
+    }
+
+    return segments
+  }, [startedAt, pauses, session?.finishedAt])
+
+  // Total wall-clock time for percentage calculation
+  const totalWallTime = useMemo(() => {
+    return timelineSegments.reduce((sum, seg) => sum + seg.duration, 0)
+  }, [timelineSegments])
+
   // Get session label (EL, Q1, Q2, R1, R2, etc.)
   const sessionLabel = useMemo(() => {
     if (!session) return ''
@@ -57,37 +115,88 @@ export default function SessionSection({
     return `${prefix}${index}`
   }, [session, sessions])
 
-  // Calculate progress for time (duration is in ms, elapsedTime is in seconds)
+  // Calculate progress for time (maxDuration is in ms, elapsedTime is in seconds)
   const timeProgress = useMemo(() => {
-    if (!session || !session.duration || session.duration <= 0) return null
-    const totalSeconds = session.duration / 1000
-    const percentage = Math.min((elapsedTime / totalSeconds) * 100, 100)
-    const remaining = Math.max(totalSeconds - elapsedTime, 0)
+    if (!session) return null
+
+    // For finished sessions, calculate from timestamps
+    let currentElapsed = elapsedTime
+    if (session.status === 'finished' && session.startedAt && session.finishedAt) {
+      currentElapsed = (new Date(session.finishedAt) - new Date(session.startedAt)) / 1000
+    }
+
+    // For active/paused sessions, always show time even without limit
+    const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
+
+    // No maxDuration set
+    if (!session.maxDuration || session.maxDuration <= 0) {
+      // Show counter mode for active sessions or finished with elapsed time
+      if ((isRunning && currentElapsed >= 0) || (session.status === 'finished' && currentElapsed > 0)) {
+        return {
+          type: 'time',
+          current: currentElapsed,
+          pauseTime: totalPauseDuration,
+          total: null,
+          remaining: null,
+          isComplete: session.status === 'finished'
+        }
+      }
+      return null
+    }
+
+    const totalSeconds = session.maxDuration / 1000
+    const remaining = Math.max(totalSeconds - currentElapsed, 0)
     return {
       type: 'time',
-      percentage,
-      current: elapsedTime,
+      current: currentElapsed,
+      pauseTime: totalPauseDuration,
       total: totalSeconds,
       remaining,
-      isComplete: elapsedTime >= totalSeconds
+      isComplete: currentElapsed >= totalSeconds
     }
-  }, [session, elapsedTime])
+  }, [session, elapsedTime, totalPauseDuration])
 
   // Calculate progress for laps
   const lapsProgress = useMemo(() => {
-    if (!session || !session.maxLaps || session.maxLaps <= 0) return null
-    const percentage = Math.min((maxLapsCompleted / session.maxLaps) * 100, 100)
+    if (!session) return null
+
+    // For finished sessions, calculate from session.drivers
+    let currentLaps = maxLapsCompleted
+    if (session.status === 'finished' && session.drivers?.length > 0) {
+      currentLaps = Math.max(...session.drivers.map(d => d.totalLaps || 0))
+    }
+
+    // For active/paused sessions, always show laps even without limit
+    const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
+
+    // No maxLaps set
+    if (!session.maxLaps || session.maxLaps <= 0) {
+      // Show counter mode for active sessions or finished with laps
+      if ((isRunning && currentLaps >= 0) || (session.status === 'finished' && currentLaps > 0)) {
+        return {
+          type: 'laps',
+          percentage: session.status === 'finished' ? 100 : 0,
+          current: currentLaps,
+          total: null,
+          remaining: null,
+          isComplete: session.status === 'finished'
+        }
+      }
+      return null
+    }
+
+    const percentage = Math.min((currentLaps / session.maxLaps) * 100, 100)
     return {
       type: 'laps',
       percentage,
-      current: maxLapsCompleted,
+      current: currentLaps,
       total: session.maxLaps,
-      remaining: Math.max(session.maxLaps - maxLapsCompleted, 0),
-      isComplete: maxLapsCompleted >= session.maxLaps
+      remaining: Math.max(session.maxLaps - currentLaps, 0),
+      isComplete: currentLaps >= session.maxLaps
     }
   }, [session, maxLapsCompleted])
 
-  const hasProgress = timeProgress || lapsProgress
+  const hasProgress = timeProgress || lapsProgress || (session?.status === 'finishing' && gracePeriodRemaining !== null)
 
   // Format time as MM:SS
   const formatTime = (seconds) => {
@@ -182,21 +291,35 @@ export default function SessionSection({
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-gray-600">
                   <ClockIcon className="w-4 h-4" />
-                  {isActive ? formatTime(timeProgress.remaining) : `${Math.round(session.duration / 60000)} min`}
+                  {formatTime(timeProgress.current)}
+                  {timeProgress.pauseTime > 0 && (
+                    <span className="text-yellow-600">(+{formatTime(timeProgress.pauseTime)} pause)</span>
+                  )}
+                  {timeProgress.total && ` / ${formatTime(timeProgress.total)}`}
+                  {isFinished && timeProgress.total && timeProgress.current > timeProgress.total && (
+                    <span className="text-orange-600 ml-1">(+{formatTime(timeProgress.current - timeProgress.total)})</span>
+                  )}
                 </span>
-                {isActive && (
+                {isActive && timeProgress.total && (
                   <span className={`font-bold ${timeProgress.isComplete ? 'text-red-600' : 'text-gray-900'}`}>
-                    {formatTime(elapsedTime)}
+                    {formatTime(timeProgress.remaining)} restant
                   </span>
                 )}
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    timeProgress.isComplete ? 'bg-red-500' : isActive ? 'bg-green-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${timeProgress.percentage}%` }}
-                />
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                {/* Render alternating segments */}
+                {timelineSegments.map((segment, idx) => {
+                  const percentage = totalWallTime > 0 ? (segment.duration / totalWallTime) * 100 : 0
+                  return (
+                    <div
+                      key={idx}
+                      className={`h-full transition-all duration-300 ${
+                        segment.type === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  )
+                })}
               </div>
             </div>
           )}
@@ -207,20 +330,50 @@ export default function SessionSection({
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-gray-600">
                   <ArrowPathIcon className="w-4 h-4" />
-                  {lapsProgress.current} / {lapsProgress.total} tours
+                  {lapsProgress.current} {lapsProgress.total ? `/ ${lapsProgress.total}` : ''} tours
+                  {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
+                    <span className="text-orange-600 ml-1">(+{lapsProgress.current - lapsProgress.total})</span>
+                  )}
                 </span>
-                {isActive && (
+                {isActive && lapsProgress.total && (
                   <span className={`font-bold ${lapsProgress.isComplete ? 'text-red-600' : 'text-gray-900'}`}>
-                    {lapsProgress.current} tours
+                    {lapsProgress.remaining} restants
                   </span>
                 )}
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
                 <div
                   className={`h-full transition-all duration-500 ${
-                    lapsProgress.isComplete ? 'bg-red-500' : isActive ? 'bg-green-500' : 'bg-blue-500'
+                    lapsProgress.isComplete ? 'bg-green-500' : isActive || isPaused ? 'bg-green-500' : 'bg-blue-500'
                   }`}
-                  style={{ width: `${lapsProgress.percentage}%` }}
+                  style={{ width: `${Math.min(lapsProgress.percentage, 100)}%` }}
+                />
+                {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
+                  <div
+                    className="h-full bg-orange-400"
+                    style={{ width: `${Math.min(((lapsProgress.current - lapsProgress.total) / lapsProgress.total) * 100, 20)}%` }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Grace period (checkered flag) */}
+          {isFinishing && gracePeriodRemaining !== null && (
+            <div>
+              <div className="flex items-center justify-between mb-1 text-sm">
+                <span className="flex items-center gap-1 text-orange-600 font-medium">
+                  <FlagIcon className="w-4 h-4" />
+                  Drapeau à damier - Finissez votre tour !
+                </span>
+                <span className="font-bold text-orange-700 animate-pulse">
+                  {formatTime(gracePeriodRemaining)}
+                </span>
+              </div>
+              <div className="h-2 bg-orange-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-500 transition-all duration-1000"
+                  style={{ width: `${Math.max(0, (gracePeriodRemaining / gracePeriodTotal) * 100)}%` }}
                 />
               </div>
             </div>
@@ -240,20 +393,14 @@ export default function SessionSection({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {[1, 2, 3, 4, 5, 6].map(controller => {
-                const sd = sessionDrivers.find(d => d.controller === String(controller))
+              {[0, 1, 2, 3, 4, 5].map(controller => {
+                const sd = sessionDrivers.find(d => Number(d.controller) === controller)
+                const colors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500']
                 return (
                   <tr key={controller} className="text-gray-700">
                     <td className="py-2">
-                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${
-                        controller === 1 ? 'bg-red-500' :
-                        controller === 2 ? 'bg-blue-500' :
-                        controller === 3 ? 'bg-yellow-500' :
-                        controller === 4 ? 'bg-green-500' :
-                        controller === 5 ? 'bg-purple-500' :
-                        'bg-orange-500'
-                      }`}>
-                        {controller}
+                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${colors[controller]}`}>
+                        {controller + 1}
                       </span>
                     </td>
                     <td className="py-2">
@@ -316,7 +463,7 @@ export default function SessionSection({
           )}
           {isPaused && (
             <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium">
-              Session en pause
+              Pause {pauseDuration !== null && formatTime(pauseDuration)}
             </span>
           )}
         </div>
@@ -324,13 +471,26 @@ export default function SessionSection({
         <div className="flex items-center gap-2">
           {/* Démarrer - session ready */}
           {canStart && (
-            <button
-              onClick={onStart}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <PlayIcon className="w-4 h-4" />
-              Demarrer
-            </button>
+            <>
+              {!deviceConnected && (
+                <span className="text-sm text-orange-600 flex items-center gap-1">
+                  <ExclamationTriangleIcon className="w-4 h-4" />
+                  Connecter un CU
+                </span>
+              )}
+              <button
+                onClick={onStart}
+                disabled={!deviceConnected}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  deviceConnected
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <PlayIcon className="w-4 h-4" />
+                Demarrer
+              </button>
+            </>
           )}
 
           {/* Start - CU in lights mode */}
@@ -400,6 +560,9 @@ export default function SessionSection({
           )}
         </div>
       </div>
+
+      {/* Start lights overlay */}
+      {isActive && <StartLights />}
     </div>
   )
 }

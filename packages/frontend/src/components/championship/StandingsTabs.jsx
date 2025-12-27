@@ -39,8 +39,8 @@ export default function StandingsTabs({
       // Qualif standings from championship standings
       const qualifData = standings.qualif || []
       return [...qualifData]
-        .filter(s => s.qualifBestTime !== null && s.qualifBestTime > 0)
-        .sort((a, b) => a.qualifBestTime - b.qualifBestTime)
+        .filter(s => s.bestTime !== null && s.bestTime > 0)
+        .sort((a, b) => a.bestTime - b.bestTime)
     } else {
       // Race standings from championship standings
       const raceData = standings.race || []
@@ -67,8 +67,8 @@ export default function StandingsTabs({
         return currentTime - leaderTime
       }
     } else if (activeTab === 'qualif') {
-      if (leader.qualifBestTime && standing.qualifBestTime) {
-        return standing.qualifBestTime - leader.qualifBestTime
+      if (leader.bestTime && standing.bestTime) {
+        return standing.bestTime - leader.bestTime
       }
     }
     return null
@@ -173,7 +173,7 @@ export default function StandingsTabs({
 
                     {activeTab === 'qualif' && (
                       <>
-                        <LapTime time={standing.qualifBestTime} size="sm" />
+                        <LapTime time={standing.bestTime} size="sm" />
                         {gap !== null && (
                           <span className="font-mono text-xs text-gray-500 w-16 text-right">
                             +{(gap / 1000).toFixed(3)}

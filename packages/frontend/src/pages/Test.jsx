@@ -14,19 +14,6 @@ import {
 } from '@heroicons/react/24/outline'
 import { API_URL, CONTROLLER_COLORS, CU_BUTTONS, MODE_FLAGS } from '../constants'
 
-// Load/save controller config from localStorage
-const loadControllerConfig = () => {
-  try {
-    const saved = localStorage.getItem('racehub_controllers')
-    if (saved) return JSON.parse(saved)
-  } catch { /* ignore */ }
-  return {}
-}
-
-const saveControllerConfig = (config) => {
-  localStorage.setItem('racehub_controllers', JSON.stringify(config))
-}
-
 // Auto-assign drivers/cars to controllers based on DB data
 const autoAssignControllers = (drivers, cars, currentConfig) => {
   // Only auto-assign if config is empty
@@ -43,9 +30,6 @@ const autoAssignControllers = (drivers, cars, currentConfig) => {
     }
   })
 
-  if (Object.keys(newConfig).length > 0) {
-    saveControllerConfig(newConfig)
-  }
   return newConfig
 }
 
@@ -60,7 +44,7 @@ export default function Test() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
   const [showConfig, setShowConfig] = useState(false)
-  const [controllerConfig, setControllerConfig] = useState(loadControllerConfig)
+  const [controllerConfig, setControllerConfig] = useState({})
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
   const socketRef = useRef(null)
@@ -148,7 +132,6 @@ export default function Test() {
           [field]: value
         }
       }
-      saveControllerConfig(newConfig)
       return newConfig
     })
   }

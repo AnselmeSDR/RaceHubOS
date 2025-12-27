@@ -41,8 +41,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.lap.deleteMany();
-  await prisma.raceEvent.deleteMany();
-  await prisma.sessionPhase.deleteMany();
   await prisma.sessionDriver.deleteMany();
   await prisma.session.deleteMany();
   await prisma.track.deleteMany();

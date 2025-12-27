@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   TrophyIcon,
   PlusIcon,
@@ -36,6 +36,14 @@ export default function ChampionshipConfigModal({
   const [trackId, setTrackId] = useState(championship?.trackId || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Sync state when championship changes or modal opens
+  useEffect(() => {
+    if (open && championship) {
+      setName(championship.name || '')
+      setTrackId(championship.trackId || '')
+    }
+  }, [open, championship])
 
   // Session being edited inline
   const [editingSession, setEditingSession] = useState(null)
@@ -110,15 +118,14 @@ export default function ChampionshipConfigModal({
     if (!showNewSession) return
 
     try {
-      const endpoint = showNewSession === 'qualif' ? '/api/race/qualif' : '/api/race/race'
-      const res = await fetch(`${API_URL}${endpoint}`, {
+      const res = await fetch(`${API_URL}/api/championships/${championship.id}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: showNewSession,
           name: newSessionForm.name || undefined,
-          duration: newSessionForm.useTime ? newSessionForm.duration * 60 * 1000 : null, // minutes → ms
+          maxDuration: newSessionForm.useTime ? newSessionForm.duration * 60 * 1000 : null, // minutes → ms
           maxLaps: newSessionForm.useLaps ? newSessionForm.maxLaps : null,
-          championshipId: championship.id,
           order: qrSessions.length
         })
       })
@@ -165,7 +172,7 @@ export default function ChampionshipConfigModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: sessionForm.name || null,
-          duration: sessionForm.useTime ? sessionForm.duration * 60 * 1000 : null, // minutes → ms
+          maxDuration: sessionForm.useTime ? sessionForm.duration * 60 * 1000 : null, // minutes → ms
           maxLaps: sessionForm.useLaps ? sessionForm.maxLaps : null
         })
       })
@@ -221,9 +228,9 @@ export default function ChampionshipConfigModal({
     setEditingSession(session.id)
     setSessionForm({
       name: session.name || '',
-      duration: session.duration ? Math.round(session.duration / 60000) : 5, // ms → minutes
+      duration: session.maxDuration ? Math.round(session.maxDuration / 60000) : 5, // ms → minutes
       maxLaps: session.maxLaps || 10,
-      useTime: !!session.duration,
+      useTime: !!session.maxDuration,
       useLaps: !!session.maxLaps
     })
   }
@@ -414,8 +421,8 @@ export default function ChampionshipConfigModal({
                             {session.name || config.label}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {session.duration ? `${Math.round(session.duration / 60000)} min` : ''}
-                            {session.duration && session.maxLaps ? ' / ' : ''}
+                            {session.maxDuration ? `${Math.round(session.maxDuration / 60000)} min` : ''}
+                            {session.maxDuration && session.maxLaps ? ' / ' : ''}
                             {session.maxLaps ? `${session.maxLaps} tours` : ''}
                           </span>
                           {session.status !== 'draft' && (

@@ -17,10 +17,26 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline'
 import BackendStatusPopup from './BackendStatusPopup'
+import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
+const CU_STATE_NAMES = {
+  0: 'Racing',
+  1: 'Lights 1/5',
+  2: 'Lights 2/5',
+  3: 'Lights 3/5',
+  4: 'Lights 4/5',
+  5: 'Lights 5/5',
+  6: 'False Start',
+  7: 'Go!',
+  8: 'Stopped',
+  9: 'Stopped'
+}
+
 export default function Layout() {
+  const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
+  const isSimulator = deviceAddress === SIMULATOR_ADDRESS
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen')
     return saved !== null ? saved === 'true' : true
@@ -154,8 +170,30 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
+        {/* CU Status Footer */}
+        <footer className="bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
+          <div className={`w-1.5 h-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-400') : 'text-red-400'}>
+            {cuConnected ? (isSimulator ? 'SIMULATOR' : 'CU') : 'NO CU'}
+          </span>
+          <span className="text-gray-600 mx-1">|</span>
+          <span className={cuStatus?.start === 0 ? 'text-green-400' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-400' : 'text-gray-500'}>
+            {CU_STATE_NAMES[cuStatus?.start] || 'Unknown'}
+          </span>
+          <span className="text-gray-600 mx-1">|</span>
+          <span>Mode {cuStatus?.mode ?? '-'}</span>
+          {lastTimer && (
+            <>
+              <span className="text-gray-600 mx-1">|</span>
+              <span className="text-blue-400">C{lastTimer.controller + 1}</span>
+              <span className="text-green-400 ml-1">{(lastTimer.lapTime / 1000).toFixed(3)}s</span>
+            </>
+          )}
+        </footer>
       </main>
 
       {/* Backend Status Popup */}

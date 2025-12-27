@@ -5,8 +5,6 @@ const prisma = new PrismaClient();
 beforeAll(async () => {
   // Clean database before tests
   await prisma.lap.deleteMany();
-  await prisma.raceEvent.deleteMany();
-  await prisma.sessionPhase.deleteMany();
   await prisma.sessionDriver.deleteMany();
   await prisma.session.deleteMany();
   await prisma.championship.deleteMany();
