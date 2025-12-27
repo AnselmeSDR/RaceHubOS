@@ -45,12 +45,16 @@ export default function StandingsTabs({
       // Race standings from championship standings
       const raceData = standings.race || []
       return [...raceData]
-        .filter(s => s.raceTotalLaps > 0 || s.points > 0)
+        .filter(s => (s.totalLaps || s.raceTotalLaps) > 0 || s.points > 0)
         .sort((a, b) => {
-          if ((b.raceTotalLaps || 0) !== (a.raceTotalLaps || 0)) {
-            return (b.raceTotalLaps || 0) - (a.raceTotalLaps || 0)
+          const aLaps = a.totalLaps || a.raceTotalLaps || 0
+          const bLaps = b.totalLaps || b.raceTotalLaps || 0
+          if (bLaps !== aLaps) {
+            return bLaps - aLaps
           }
-          return (a.raceTotalTime || Infinity) - (b.raceTotalTime || Infinity)
+          const aTime = a.totalTime || a.raceTotalTime || Infinity
+          const bTime = b.totalTime || b.raceTotalTime || Infinity
+          return aTime - bTime
         })
     }
   }, [standings, activeTab])
@@ -64,11 +68,17 @@ export default function StandingsTabs({
       const leaderTime = leader.lapTime || leader.bestTime
       const currentTime = standing.lapTime || standing.bestTime
       if (leaderTime && currentTime) {
-        return currentTime - leaderTime
+        return { type: 'time', value: currentTime - leaderTime }
       }
     } else if (activeTab === 'qualif') {
       if (leader.bestTime && standing.bestTime) {
-        return standing.bestTime - leader.bestTime
+        return { type: 'time', value: standing.bestTime - leader.bestTime }
+      }
+    } else if (activeTab === 'race') {
+      const leaderTime = leader.totalTime || leader.raceTotalTime || 0
+      const currentTime = standing.totalTime || standing.raceTotalTime || 0
+      if (leaderTime && currentTime) {
+        return { type: 'time', value: currentTime - leaderTime }
       }
     }
     return null
@@ -158,9 +168,9 @@ export default function StandingsTabs({
                     <div className="font-medium text-gray-900 text-sm truncate">
                       {driver.name}
                     </div>
-                    {activeTab === 'race' && standing.raceTotalLaps > 0 && (
+                    {(standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
                       <div className="text-xs text-gray-500">
-                        {standing.raceTotalLaps} tours
+                        {standing.totalLaps || standing.raceTotalLaps || standing.laps} tours
                       </div>
                     )}
                   </div>
@@ -168,7 +178,14 @@ export default function StandingsTabs({
                   {/* Stats */}
                   <div className="text-right flex items-center gap-3">
                     {activeTab === 'practice' && (
-                      <LapTime time={standing.lapTime || standing.bestTime} size="sm" />
+                      <>
+                        <LapTime time={standing.lapTime || standing.bestTime} size="sm" />
+                        {gap !== null && (
+                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                            +{(gap.value / 1000).toFixed(3)}
+                          </span>
+                        )}
+                      </>
                     )}
 
                     {activeTab === 'qualif' && (
@@ -176,7 +193,7 @@ export default function StandingsTabs({
                         <LapTime time={standing.bestTime} size="sm" />
                         {gap !== null && (
                           <span className="font-mono text-xs text-gray-500 w-16 text-right">
-                            +{(gap / 1000).toFixed(3)}
+                            +{(gap.value / 1000).toFixed(3)}
                           </span>
                         )}
                       </>
@@ -184,7 +201,12 @@ export default function StandingsTabs({
 
                     {activeTab === 'race' && (
                       <>
-                        <LapTime time={standing.raceTotalTime} size="sm" />
+                        <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
+                        {gap !== null && (
+                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                            +{(gap.value / 1000).toFixed(3)}
+                          </span>
+                        )}
                         {standing.points !== undefined && (
                           <span className="font-bold text-gray-900 text-sm w-12 text-right">
                             {standing.points} pts

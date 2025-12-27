@@ -341,34 +341,41 @@ router.get('/:id/standings', async (req, res) => {
 
     if (type === 'qualif') {
       // Qualifying standings: MIN(lapTime) grouped by driverId
-      const driverBestTimes = {};
+      const driverStats = {};
 
       championship.sessions.forEach(session => {
         session.laps.forEach(lap => {
           const lapTimeMs = Math.round(lap.lapTime);
-          if (!driverBestTimes[lap.driverId] || lapTimeMs < driverBestTimes[lap.driverId].bestTime) {
-            driverBestTimes[lap.driverId] = {
+          if (!driverStats[lap.driverId]) {
+            driverStats[lap.driverId] = {
               driverId: lap.driverId,
-              bestTime: lapTimeMs
+              bestTime: Infinity,
+              totalLaps: 0
             };
+          }
+          driverStats[lap.driverId].totalLaps++;
+          if (lapTimeMs < driverStats[lap.driverId].bestTime) {
+            driverStats[lap.driverId].bestTime = lapTimeMs;
           }
         });
       });
 
       // Get driver details
-      const driverIds = Object.keys(driverBestTimes);
+      const driverIds = Object.keys(driverStats);
       const drivers = await prisma.driver.findMany({
         where: { id: { in: driverIds } }
       });
       const driverMap = Object.fromEntries(drivers.map(d => [d.id, d]));
 
-      standings = Object.values(driverBestTimes)
+      standings = Object.values(driverStats)
+        .filter(entry => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
           driverId: entry.driverId,
           driver: driverMap[entry.driverId],
-          bestTime: entry.bestTime
+          bestTime: entry.bestTime,
+          totalLaps: entry.totalLaps
         }));
 
     } else if (type === 'race') {
@@ -423,32 +430,39 @@ router.get('/:id/standings', async (req, res) => {
         });
       }
 
-      const driverBestTimes = {};
+      const driverStats = {};
 
       practiceSession.laps.forEach(lap => {
         const lapTimeMs = Math.round(lap.lapTime);
-        if (!driverBestTimes[lap.driverId] || lapTimeMs < driverBestTimes[lap.driverId].bestTime) {
-          driverBestTimes[lap.driverId] = {
+        if (!driverStats[lap.driverId]) {
+          driverStats[lap.driverId] = {
             driverId: lap.driverId,
-            bestTime: lapTimeMs
+            bestTime: Infinity,
+            totalLaps: 0
           };
+        }
+        driverStats[lap.driverId].totalLaps++;
+        if (lapTimeMs < driverStats[lap.driverId].bestTime) {
+          driverStats[lap.driverId].bestTime = lapTimeMs;
         }
       });
 
       // Get driver details
-      const driverIds = Object.keys(driverBestTimes);
+      const driverIds = Object.keys(driverStats);
       const drivers = await prisma.driver.findMany({
         where: { id: { in: driverIds } }
       });
       const driverMap = Object.fromEntries(drivers.map(d => [d.id, d]));
 
-      standings = Object.values(driverBestTimes)
+      standings = Object.values(driverStats)
+        .filter(entry => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
           driverId: entry.driverId,
           driver: driverMap[entry.driverId],
-          bestTime: entry.bestTime
+          bestTime: entry.bestTime,
+          totalLaps: entry.totalLaps
         }));
 
     } else {

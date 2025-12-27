@@ -128,6 +128,12 @@ export class CarreraSimulator extends EventEmitter {
       totalTime: 0,
       sectorTimes: [0, 0, 0],
       currentSector: 0,
+      // Performance factor: 0.85 (fast) to 1.15 (slow) - creates gaps between cars
+      performance: 0.85 + Math.random() * 0.3,
+      // First crossing: cars start before finish line, first pass is very short
+      firstCrossing: true,
+      // Distance from start line (ms): varies by grid position
+      startDistance: 200 + i * 80 + Math.random() * 50,
     }));
 
   }
@@ -136,18 +142,17 @@ export class CarreraSimulator extends EventEmitter {
    * Start the simulator (prepare for race - Lights 1)
    */
   start() {
-    if (this.isRunning) {
-      return;
+    // Start the tick loop if not running
+    if (!this.isRunning) {
+      this.isRunning = true;
+      this.interval = setInterval(() => {
+        this.tick();
+      }, this.tickRate);
     }
 
-    this.isRunning = true;
-    this.raceActive = false; // Not racing yet, waiting for START
-    this.raceTime = 0;
-    this.cuState = CU_STATE.LIGHTS_1; // Ready, waiting for START
-
-    this.interval = setInterval(() => {
-      this.tick();
-    }, this.tickRate);
+    // Always set to LIGHTS_1 state (works for first start and resume)
+    this.raceActive = false;
+    this.cuState = CU_STATE.LIGHTS_1;
 
     this.emitRaceStatus();
     this.emitCuStatus();
@@ -212,7 +217,23 @@ export class CarreraSimulator extends EventEmitter {
    * Simulate car progressing through track sectors
    */
   simulateSectorProgress(car) {
-    const sectorDuration = 8000 + Math.random() * 4000; // 8-12 seconds per sector
+    // First crossing: cars start before finish line (200-700ms to cross)
+    if (car.firstCrossing) {
+      car.sectorTimes[0] += this.tickRate;
+      if (car.sectorTimes[0] >= car.startDistance) {
+        car.firstCrossing = false;
+        this.completeFirstCrossing(car);
+        car.sectorTimes = [0, 0, 0];
+        car.currentSector = 0;
+      }
+      return;
+    }
+
+    // Base: 2-4s per sector, adjusted by car performance (0.85-1.15)
+    // Fast car (0.85): 1.7-3.4s/sector → 5.1-10.2s/lap
+    // Slow car (1.15): 2.3-4.6s/sector → 6.9-13.8s/lap
+    const baseDuration = 2000 + Math.random() * 2000;
+    const sectorDuration = baseDuration * car.performance;
     car.sectorTimes[car.currentSector] += this.tickRate;
 
     if (car.sectorTimes[car.currentSector] >= sectorDuration) {
@@ -237,6 +258,30 @@ export class CarreraSimulator extends EventEmitter {
 
       car.sectorTimes[car.currentSector] = 0;
     }
+  }
+
+  /**
+   * Handle first crossing (cars start before finish line)
+   * Emits 'timer' event with very short time (few hundred ms)
+   */
+  completeFirstCrossing(car) {
+    const crossingTime = car.startDistance;
+    car.totalTime = crossingTime;
+
+    // Emit 'timer' event like real CU
+    this.emit('timer', {
+      controller: car.id - 1,
+      timestamp: car.totalTime,
+      sector: 1,
+    });
+
+    this.io.emit('race:lap', {
+      carId: car.id,
+      lapNumber: 0,
+      lapTime: crossingTime,
+      bestLap: null,
+      timestamp: Date.now(),
+    });
   }
 
   /**
@@ -529,6 +574,12 @@ export class CarreraSimulator extends EventEmitter {
    * Called by SyncService.reset() before starting a new session
    */
   reset() {
+    // Stop the simulation loop if running
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+    this.isRunning = false;
     this.cuState = CU_STATE.STOPPED;
     this.raceActive = false;
     this.resetTimer();
@@ -539,7 +590,7 @@ export class CarreraSimulator extends EventEmitter {
    */
   resetTimer() {
     this.raceTime = 0;
-    this.cars.forEach(car => {
+    this.cars.forEach((car, i) => {
       car.currentLap = 0;
       car.totalLaps = 0;
       car.lastLapTime = 0;
@@ -547,6 +598,8 @@ export class CarreraSimulator extends EventEmitter {
       car.totalTime = 0;
       car.sectorTimes = [0, 0, 0];
       car.currentSector = 0;
+      car.firstCrossing = true;
+      car.startDistance = 200 + i * 80 + Math.random() * 50;
     });
     this.emitCuStatus();
   }
