@@ -75,10 +75,16 @@ export class SessionService extends EventEmitter {
 
     // 1. Update RAM
     driver.totalLaps++;
-    driver.totalTime += Math.round(lapTime);
     driver.lastLapTime = Math.round(lapTime);
     if (driver.bestLapTime === null || lapTime < driver.bestLapTime) {
       driver.bestLapTime = Math.round(lapTime);
+    }
+
+    // Only accumulate time up to maxLaps (for race classification)
+    // Extra laps during grace period don't count toward total time
+    const maxLaps = this.sessionConfig?.maxLaps;
+    if (!maxLaps || driver.totalLaps <= maxLaps) {
+      driver.totalTime += Math.round(lapTime);
     }
 
     // 2. Recalculate positions
@@ -491,6 +497,7 @@ export class SessionService extends EventEmitter {
         pauseDuration: currentPauseDuration,
         totalPauseDuration,
         pauses,
+        leaderboard: this.sessionDrivers,
       });
     }, 1000);
   }
@@ -525,12 +532,12 @@ export class SessionService extends EventEmitter {
       }
     }
 
-    // Checkered flag logic: check if all drivers finished their current lap
+    // Checkered flag logic: check if all drivers finished
     if (this.sessionStatus === 'finishing') {
-      const allFinishedCurrentLap = this.checkAllDriversFinishedCurrentLap();
-      if (allFinishedCurrentLap) {
+      const allFinished = this.checkAllDriversFinished();
+      if (allFinished) {
         shouldStop = true;
-        reason = 'all_finished_lap';
+        reason = 'all_finished';
       }
     }
 
@@ -544,11 +551,13 @@ export class SessionService extends EventEmitter {
   }
 
   /**
-   * Check if all active drivers have completed their current lap after checkered flag
-   * A driver has finished if: totalLaps > lapsAtFinishing
-   * Skip drivers who haven't started (lapsAtFinishing === 0 or null)
+   * Check if all active drivers have finished
+   * - Lap-based race: all must reach maxLaps
+   * - Time-based race: all must complete their current lap (lapsAtFinishing + 1)
    */
-  checkAllDriversFinishedCurrentLap() {
+  checkAllDriversFinished() {
+    const maxLaps = this.sessionConfig?.maxLaps;
+
     const activeDrivers = this.sessionDrivers.filter(d => {
       // Driver was active at checkered flag if they had completed at least 1 lap
       return d.lapsAtFinishing !== null && d.lapsAtFinishing !== undefined && d.lapsAtFinishing > 0;
@@ -559,8 +568,13 @@ export class SessionService extends EventEmitter {
       return true;
     }
 
-    // All active drivers must have completed at least one more lap
-    return activeDrivers.every(d => d.totalLaps > d.lapsAtFinishing);
+    if (maxLaps) {
+      // Lap-based race: all must reach maxLaps
+      return activeDrivers.every(d => d.totalLaps >= maxLaps);
+    } else {
+      // Time-based race: all must complete their current lap
+      return activeDrivers.every(d => d.totalLaps > d.lapsAtFinishing);
+    }
   }
 
   async startFinishingPhase(reason) {
@@ -654,14 +668,26 @@ export class SessionService extends EventEmitter {
   }
 
   async calculateDNF() {
+    const maxLaps = this.sessionConfig?.maxLaps;
+
     for (const driver of this.sessionDrivers) {
       const sd = await this.prisma.sessionDriver.findUnique({
         where: { id: driver.id },
       });
 
       if (sd?.lapsAtFinishing !== null && sd.lapsAtFinishing > 0) {
-        const isDNF = driver.totalLaps === sd.lapsAtFinishing;
+        let isDNF = false;
+
+        if (maxLaps) {
+          // Lap-based race: DNF if didn't reach maxLaps
+          isDNF = driver.totalLaps < maxLaps;
+        } else {
+          // Time-based race: DNF if didn't finish current lap
+          isDNF = driver.totalLaps === sd.lapsAtFinishing;
+        }
+
         if (isDNF) {
+          driver.isDNF = true;
           await this.prisma.sessionDriver.update({
             where: { id: driver.id },
             data: { isDNF: true },

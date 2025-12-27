@@ -4,7 +4,8 @@ import {
   ArrowPathIcon,
   ClockIcon,
   FlagIcon,
-  BeakerIcon
+  BeakerIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 
@@ -40,6 +41,7 @@ const CONTROLLER_COLORS = [
  */
 export default function SessionConfigModal({
   session,
+  sessions = [],
   drivers = [],
   cars = [],
   sessionDrivers = [],
@@ -79,6 +81,26 @@ export default function SessionConfigModal({
   const canEdit = ['draft', 'ready'].includes(session?.status)
   const canDelete = canEdit || isFinished
   const canReset = session?.status === 'ready' || isActive || isFinished
+
+  // Find practice session to copy from (only for non-practice sessions in a championship)
+  const practiceSession = useMemo(() => {
+    if (isPractice || !session?.championshipId) return null
+    return sessions.find(s => s.type === 'practice' && s.drivers?.length > 0)
+  }, [sessions, isPractice, session?.championshipId])
+
+  // Copy config from practice session
+  const handleCopyFromPractice = () => {
+    if (!practiceSession?.drivers) return
+    const newConfigs = {}
+    for (let i = 0; i < 6; i++) {
+      const sd = practiceSession.drivers.find(d => Number(d.controller) === i)
+      newConfigs[i] = {
+        driverId: sd?.driverId || null,
+        carId: sd?.carId || null
+      }
+    }
+    setControllerConfigs(newConfigs)
+  }
 
   // Get used driver/car IDs to prevent duplicates
   const usedDriverIds = useMemo(() => {
@@ -254,9 +276,20 @@ export default function SessionConfigModal({
 
         {/* Controller config table */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Configuration Controllers
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Configuration Controllers
+            </label>
+            {canEdit && practiceSession && (
+              <button
+                onClick={handleCopyFromPractice}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              >
+                <DocumentDuplicateIcon className="w-4 h-4" />
+                Copier depuis EL
+              </button>
+            )}
+          </div>
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">

@@ -406,6 +406,7 @@ export default function ChampionshipDetail() {
       {configSession && (
         <SessionConfigModal
           session={configSession}
+          sessions={sessions}
           drivers={drivers}
           cars={cars}
           sessionDrivers={configSession.drivers || []}

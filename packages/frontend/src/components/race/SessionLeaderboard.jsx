@@ -44,11 +44,34 @@ export default function SessionLeaderboard({
     }
   })
 
-  // Assign positions after sorting
-  const entriesWithPositions = sortedEntries.map((entry, index) => ({
-    ...entry,
-    position: index + 1
-  }))
+  // Assign positions and calculate proper gaps for race mode
+  const entriesWithPositions = sortedEntries.map((entry, index) => {
+    const position = index + 1
+    let displayGap = null
+
+    if (sortBy === 'race' && index > 0) {
+      const leader = sortedEntries[0]
+      const leaderLaps = leader.stats?.laps || 0
+      const leaderTime = leader.stats?.totalTime || 0
+      const myLaps = entry.stats?.laps || 0
+      const myTime = entry.stats?.totalTime || 0
+
+      if (myLaps < leaderLaps) {
+        // Different number of laps: show lap difference
+        displayGap = { type: 'laps', value: leaderLaps - myLaps }
+      } else {
+        // Same number of laps: show time difference
+        displayGap = { type: 'time', value: myTime - leaderTime }
+      }
+    }
+
+    return {
+      ...entry,
+      position,
+      displayGap,
+      leaderTotalTime: index === 0 && sortBy === 'race' ? entry.stats?.totalTime : null
+    }
+  })
 
   if (!entries || entries.length === 0) {
     return (
@@ -185,10 +208,17 @@ export default function SessionLeaderboard({
                   <LapTime time={stats.lastLap} size="md" />
                 </div>
 
-                {/* Gap */}
+                {/* Gap / Total Time */}
                 <div className="text-center min-w-[80px]">
-                  <div className="text-xs text-gray-400 uppercase">Écart</div>
-                  <GapDisplay gap={stats.gap} position={position} />
+                  <div className="text-xs text-gray-400 uppercase">
+                    {position === 1 && sortBy === 'race' ? 'Total' : 'Écart'}
+                  </div>
+                  <GapDisplay
+                    gap={entry.displayGap || stats.gap}
+                    position={position}
+                    leaderTotalTime={entry.leaderTotalTime}
+                    isRace={sortBy === 'race'}
+                  />
                 </div>
               </div>
             </motion.div>

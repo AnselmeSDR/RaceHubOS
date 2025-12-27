@@ -118,7 +118,7 @@ export function SessionProvider({ children }) {
       }
     })
 
-    // Heartbeat (timing updates)
+    // Heartbeat (timing updates + leaderboard)
     socket.on('session:heartbeat', (data) => {
       setLastServerTime(new Date().toISOString())
       if (data.elapsedTime !== undefined) setElapsed(Math.floor(data.elapsedTime / 1000))
@@ -130,6 +130,10 @@ export function SessionProvider({ children }) {
       setTotalPauseDuration(data.totalPauseDuration ? Math.floor(data.totalPauseDuration / 1000) : 0)
       setPauses(data.pauses || [])
       if (data.startedAt) setStartedAt(data.startedAt)
+      // Update leaderboard from heartbeat (ensures data sync on refresh)
+      if (data.leaderboard && Array.isArray(data.leaderboard)) {
+        setLeaderboard(data.leaderboard)
+      }
     })
 
     // Championship events
