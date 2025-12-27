@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -7,18 +8,30 @@ const prisma = new PrismaClient();
 /**
  * GET /api/records/track/:trackId
  * Get best laps for a specific track, grouped by session type
+ * Query params:
+ *   - free=true: Only include sessions without championship (free mode)
+ *   - championshipId: Filter by specific championship
  */
 router.get('/track/:trackId', async (req, res) => {
   try {
     const { trackId } = req.params;
+    const { free, championshipId } = req.query;
+
+    // Build session filter
+    const sessionFilter = {};
+    if (free === 'true') {
+      sessionFilter.championshipId = null;
+    } else if (championshipId) {
+      sessionFilter.championshipId = championshipId;
+    }
 
     // Get best laps by session type (practice, qualif, race)
     const getBestByType = async (type) => {
-      return prisma.lap.findMany({
+      const laps = await prisma.lap.findMany({
         where: {
           trackId,
           softDeletedAt: null,
-          session: { type }
+          session: { type, ...sessionFilter }
         },
         orderBy: { lapTime: 'asc' },
         take: 5,
@@ -29,6 +42,11 @@ router.get('/track/:trackId', async (req, res) => {
           session: { select: { id: true, type: true, name: true } }
         }
       });
+      return laps.map(lap => ({
+        ...lap,
+        driver: withImageUrl(lap.driver),
+        car: withImageUrl(lap.car)
+      }));
     };
 
     const [practiceLaps, qualifLaps, raceLaps, track] = await Promise.all([
@@ -41,7 +59,7 @@ router.get('/track/:trackId', async (req, res) => {
     res.json({
       success: true,
       data: {
-        track,
+        track: withImageUrl(track),
         practice: practiceLaps,
         qualif: qualifLaps,
         race: raceLaps
