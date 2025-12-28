@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { withImageUrl } from '../utils/imageUrl.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -318,12 +319,13 @@ router.get('/:id/standings', async (req, res) => {
           },
           include: {
             drivers: {
-              include: { driver: true }
+              include: { driver: true, car: true }
             },
             laps: type !== 'race' ? {
               // For practice: include ALL laps (no softDeletedAt filter)
               // For qualif: only active laps
-              where: type === 'qualif' ? { softDeletedAt: null } : undefined
+              where: type === 'qualif' ? { softDeletedAt: null } : undefined,
+              include: { driver: true, car: true }
             } : undefined
           }
         }
@@ -340,68 +342,70 @@ router.get('/:id/standings', async (req, res) => {
     let standings = [];
 
     if (type === 'qualif') {
-      // Qualifying standings: MIN(lapTime) grouped by driverId
-      const driverStats = {};
+      // Qualifying standings: MIN(lapTime) grouped by driverId + carId
+      const stats = {};
 
       championship.sessions.forEach(session => {
         session.laps.forEach(lap => {
+          const key = `${lap.driverId}-${lap.carId}`;
           const lapTimeMs = Math.round(lap.lapTime);
-          if (!driverStats[lap.driverId]) {
-            driverStats[lap.driverId] = {
+          if (!stats[key]) {
+            stats[key] = {
               driverId: lap.driverId,
+              carId: lap.carId,
+              driver: withImageUrl(lap.driver),
+              car: withImageUrl(lap.car),
               bestTime: Infinity,
               totalLaps: 0
             };
           }
-          driverStats[lap.driverId].totalLaps++;
-          if (lapTimeMs < driverStats[lap.driverId].bestTime) {
-            driverStats[lap.driverId].bestTime = lapTimeMs;
+          stats[key].totalLaps++;
+          if (lapTimeMs < stats[key].bestTime) {
+            stats[key].bestTime = lapTimeMs;
           }
         });
       });
 
-      // Get driver details
-      const driverIds = Object.keys(driverStats);
-      const drivers = await prisma.driver.findMany({
-        where: { id: { in: driverIds } }
-      });
-      const driverMap = Object.fromEntries(drivers.map(d => [d.id, d]));
-
-      standings = Object.values(driverStats)
+      standings = Object.values(stats)
         .filter(entry => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
           driverId: entry.driverId,
-          driver: driverMap[entry.driverId],
+          carId: entry.carId,
+          driver: entry.driver,
+          car: entry.car,
           bestTime: entry.bestTime,
           totalLaps: entry.totalLaps
         }));
 
     } else if (type === 'race') {
-      // Race standings: SUM(totalLaps), SUM(totalTime) grouped by driverId
-      const driverStats = {};
+      // Race standings: SUM(totalLaps), SUM(totalTime) grouped by driverId + carId
+      const stats = {};
 
       championship.sessions.forEach(session => {
         session.drivers.forEach(sd => {
-          if (!driverStats[sd.driverId]) {
-            driverStats[sd.driverId] = {
+          const key = `${sd.driverId}-${sd.carId}`;
+          if (!stats[key]) {
+            stats[key] = {
               driverId: sd.driverId,
-              driver: sd.driver,
+              carId: sd.carId,
+              driver: withImageUrl(sd.driver),
+              car: withImageUrl(sd.car),
               totalLaps: 0,
               totalTime: 0,
               finishedRaces: 0
             };
           }
-          driverStats[sd.driverId].totalLaps += sd.totalLaps || 0;
-          driverStats[sd.driverId].totalTime += sd.totalTime || 0;
+          stats[key].totalLaps += sd.totalLaps || 0;
+          stats[key].totalTime += sd.totalTime || 0;
           if (!sd.isDNF && sd.totalLaps > 0) {
-            driverStats[sd.driverId].finishedRaces++;
+            stats[key].finishedRaces++;
           }
         });
       });
 
-      standings = Object.values(driverStats)
+      standings = Object.values(stats)
         .sort((a, b) => {
           // More laps = better
           if (b.totalLaps !== a.totalLaps) return b.totalLaps - a.totalLaps;
@@ -411,15 +415,17 @@ router.get('/:id/standings', async (req, res) => {
         .map((entry, index) => ({
           position: index + 1,
           driverId: entry.driverId,
+          carId: entry.carId,
           driver: entry.driver,
+          car: entry.car,
           totalLaps: entry.totalLaps,
           totalTime: entry.totalTime,
           finishedRaces: entry.finishedRaces
         }));
 
     } else if (type === 'practice') {
-      // Practice standings: MIN(lapTime) grouped by driverId (includes soft-deleted laps)
-      const practiceSession = championship.sessions[0]; // There's only one practice session per championship
+      // Practice standings: MIN(lapTime) grouped by driverId + carId (includes soft-deleted laps)
+      const practiceSession = championship.sessions[0];
 
       if (!practiceSession) {
         return res.json({
@@ -430,37 +436,36 @@ router.get('/:id/standings', async (req, res) => {
         });
       }
 
-      const driverStats = {};
+      const stats = {};
 
       practiceSession.laps.forEach(lap => {
+        const key = `${lap.driverId}-${lap.carId}`;
         const lapTimeMs = Math.round(lap.lapTime);
-        if (!driverStats[lap.driverId]) {
-          driverStats[lap.driverId] = {
+        if (!stats[key]) {
+          stats[key] = {
             driverId: lap.driverId,
+            carId: lap.carId,
+            driver: withImageUrl(lap.driver),
+            car: withImageUrl(lap.car),
             bestTime: Infinity,
             totalLaps: 0
           };
         }
-        driverStats[lap.driverId].totalLaps++;
-        if (lapTimeMs < driverStats[lap.driverId].bestTime) {
-          driverStats[lap.driverId].bestTime = lapTimeMs;
+        stats[key].totalLaps++;
+        if (lapTimeMs < stats[key].bestTime) {
+          stats[key].bestTime = lapTimeMs;
         }
       });
 
-      // Get driver details
-      const driverIds = Object.keys(driverStats);
-      const drivers = await prisma.driver.findMany({
-        where: { id: { in: driverIds } }
-      });
-      const driverMap = Object.fromEntries(drivers.map(d => [d.id, d]));
-
-      standings = Object.values(driverStats)
+      standings = Object.values(stats)
         .filter(entry => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
           driverId: entry.driverId,
-          driver: driverMap[entry.driverId],
+          carId: entry.carId,
+          driver: entry.driver,
+          car: entry.car,
           bestTime: entry.bestTime,
           totalLaps: entry.totalLaps
         }));
