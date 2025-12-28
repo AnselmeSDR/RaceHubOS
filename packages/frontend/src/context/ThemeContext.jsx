@@ -2,28 +2,39 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const ThemeContext = createContext(null)
 
-const STORAGE_KEY = 'racehubos-theme'
+const THEME_KEY = 'racehubos-theme'
+const ADMIN_KEY = 'racehubos-admin'
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(THEME_KEY)
     return stored === 'dark'
+  })
+
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const stored = localStorage.getItem(ADMIN_KEY)
+    return stored === 'true'
   })
 
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark')
-      localStorage.setItem(STORAGE_KEY, 'dark')
+      localStorage.setItem(THEME_KEY, 'dark')
     } else {
       document.documentElement.classList.remove('dark')
-      localStorage.setItem(STORAGE_KEY, 'light')
+      localStorage.setItem(THEME_KEY, 'light')
     }
   }, [isDark])
 
+  useEffect(() => {
+    localStorage.setItem(ADMIN_KEY, isAdmin ? 'true' : 'false')
+  }, [isAdmin])
+
   const toggleTheme = () => setIsDark(prev => !prev)
+  const toggleAdmin = () => setIsAdmin(prev => !prev)
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDark, toggleTheme, isAdmin, toggleAdmin }}>
       {children}
     </ThemeContext.Provider>
   )

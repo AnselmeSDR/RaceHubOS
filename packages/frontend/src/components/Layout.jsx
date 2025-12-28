@@ -39,7 +39,6 @@ const CU_STATE_NAMES = {
 
 export default function Layout() {
   const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
-  const { isDark, toggleTheme } = useTheme()
   const isSimulator = deviceAddress === SIMULATOR_ADDRESS
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen')
@@ -71,7 +70,9 @@ export default function Layout() {
     const interval = setInterval(checkHealth, 5000)
     return () => clearInterval(interval)
   }, [])
-  const navItems = [
+  const { isDark, toggleTheme, isAdmin } = useTheme()
+
+  const allNavItems = [
     { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
     { to: '/race', label: 'Mode Libre', Icon: FlagIcon },
     { to: '/championships', label: 'Championnats', Icon: TrophyIcon },
@@ -81,11 +82,13 @@ export default function Layout() {
     { to: '/tracks', label: 'Circuits', Icon: MapIcon },
     { to: '/teams', label: 'Équipes', Icon: UsersIcon },
     { to: '/stats', label: 'Statistiques', Icon: TrophyIcon },
-    { to: '/displays', label: 'Displays', Icon: Squares2X2Icon },
-    { to: '/simulator', label: 'Simulateur', Icon: BeakerIcon },
-    { to: '/test', label: 'Test', Icon: CommandLineIcon },
+    { to: '/displays', label: 'Displays', Icon: Squares2X2Icon, adminOnly: true },
+    { to: '/simulator', label: 'Simulateur', Icon: BeakerIcon, adminOnly: true },
+    { to: '/test', label: 'Test', Icon: CommandLineIcon, adminOnly: true },
     { to: '/settings', label: 'Paramètres', Icon: CogIcon },
   ]
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin)
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
