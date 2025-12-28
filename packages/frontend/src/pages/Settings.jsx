@@ -31,7 +31,7 @@ export default function Settings() {
     disconnect,
     removeDevice,
   } = useDevice()
-  const { isDark, toggleTheme } = useTheme()
+  const { isDark, toggleTheme, isAdmin, toggleAdmin } = useTheme()
 
   // Logs
   const [logs, setLogs] = useState([])
@@ -257,6 +257,34 @@ export default function Settings() {
                 <span
                   className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
                     isDark ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Admin */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+              <CpuChipIcon className="h-6 w-6 text-purple-500" />
+              Admin
+            </h2>
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-800 dark:text-gray-200">Mode administrateur</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Afficher les pages Displays, Test et Simulateur
+                </p>
+              </div>
+              <button
+                onClick={toggleAdmin}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                  isAdmin ? 'bg-purple-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                    isAdmin ? 'translate-x-7' : 'translate-x-1'
                   }`}
                 />
               </button>
