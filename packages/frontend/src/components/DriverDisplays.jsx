@@ -18,13 +18,13 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
       onClick={onClick}
       className={`
         flex items-center gap-3 p-3 rounded-lg transition-all duration-200 cursor-pointer
-        ${selected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'}
+        ${selected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}
       `}
     >
       {/* Position number if provided */}
       {position !== undefined && (
         <div className="w-8 text-center">
-          <span className="text-lg font-bold text-gray-400">{position}</span>
+          <span className="text-lg font-bold text-gray-400 dark:text-gray-500">{position}</span>
         </div>
       )}
 
@@ -63,11 +63,11 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
 
       {/* Driver info */}
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-gray-900 truncate uppercase tracking-wide">
+        <div className="font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">
           {driver.name}
         </div>
         {driver.team && (
-          <div className="text-sm text-gray-500 truncate">{driver.team.name}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>
         )}
       </div>
 
@@ -75,11 +75,11 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
       {showStats && (
         <div className="flex gap-4 text-sm">
           <div className="text-center">
-            <div className="text-gray-500 text-xs">Courses</div>
-            <div className="font-bold">{driver._count?.sessions || 0}</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">Courses</div>
+            <div className="font-bold text-gray-900 dark:text-white">{driver._count?.sessions || 0}</div>
           </div>
           <div className="text-center">
-            <div className="text-gray-500 text-xs">Victoires</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">Victoires</div>
             <div className="font-bold text-yellow-600">{driver.wins || 0}</div>
           </div>
         </div>
@@ -116,7 +116,7 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
         </span>
       </div>
       {showName && (
-        <span className="font-bold text-gray-900 uppercase tracking-wide">
+        <span className="font-bold text-gray-900 dark:text-white uppercase tracking-wide">
           {driver.name}
         </span>
       )}
@@ -170,11 +170,11 @@ export function DriverGridPosition({ driver, side = 'left' }) {
 
         {/* Name */}
         <div className="flex-1 min-w-0">
-          <div className="font-black text-xl text-gray-900 uppercase italic truncate">
+          <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
             {driver.name.split(' ').pop()}
           </div>
           {driver.team && (
-            <div className="text-sm text-gray-600 truncate">{driver.team.name}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{driver.team.name}</div>
           )}
         </div>
       </div>
@@ -301,8 +301,8 @@ export function DriverProfileHeader({ driver }) {
             {/* Best lap */}
             {driver.bestLap && (
               <div className="mt-4 inline-block">
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-6 py-3 shadow-md">
-                  <div className="text-xs text-gray-600 uppercase tracking-wide mb-1">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-6 py-3 shadow-md">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
                     Meilleur Tour
                   </div>
                   <div
@@ -339,12 +339,12 @@ export function DriverStanding({ driver, position, points, change }) {
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+    <div className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow">
       {/* Position */}
       <div
         className={`
           w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl flex-shrink-0
-          ${positionColors[position] || 'bg-gray-100 text-gray-600'}
+          ${positionColors[position] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}
         `}
       >
         {position}
@@ -365,11 +365,11 @@ export function DriverStanding({ driver, position, points, change }) {
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <DriverBadge driver={driver} size="md" showName={false} />
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-gray-900 truncate uppercase">
+          <div className="font-bold text-gray-900 dark:text-white truncate uppercase">
             {driver.name}
           </div>
           {driver.team && (
-            <div className="text-sm text-gray-500 truncate">{driver.team.name}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>
           )}
         </div>
       </div>
@@ -380,7 +380,7 @@ export function DriverStanding({ driver, position, points, change }) {
           <div className="text-2xl font-black" style={{ color: driver.color }}>
             {points}
           </div>
-          <div className="text-xs text-gray-500 uppercase">Points</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Points</div>
         </div>
       )}
     </div>
@@ -398,8 +398,8 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
       className={`
         relative w-full p-4 rounded-xl transition-all duration-200 text-left
         ${selected
-          ? 'ring-4 ring-blue-500 bg-blue-50 shadow-xl scale-105'
-          : 'bg-white shadow hover:shadow-lg'
+          ? 'ring-4 ring-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-xl scale-105'
+          : 'bg-white dark:bg-gray-800 shadow hover:shadow-lg'
         }
       `}
     >
@@ -443,7 +443,7 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="font-black text-lg text-gray-900 uppercase truncate">
+          <div className="font-black text-lg text-gray-900 dark:text-white uppercase truncate">
             {driver.name}
           </div>
           {driver.team && (
@@ -466,7 +466,7 @@ function StatBox({ icon, label, value, color, highlight }) {
     <div
       className={`
         p-3 rounded-lg text-center transition-all
-        ${highlight ? 'bg-yellow-50 ring-2 ring-yellow-400' : 'bg-white/60 backdrop-blur-sm'}
+        ${highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm'}
       `}
     >
       <div
@@ -475,7 +475,7 @@ function StatBox({ icon, label, value, color, highlight }) {
       >
         {icon}
       </div>
-      <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
         {label}
       </div>
       <div

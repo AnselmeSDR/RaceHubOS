@@ -275,7 +275,7 @@ export default function FreeSessionPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Top bar: Track & Type selection */}
-      <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* Track selector */}
           <div className="relative">
@@ -283,7 +283,7 @@ export default function FreeSessionPage() {
               value={selectedTrackId || ''}
               onChange={(e) => handleTrackChange(e.target.value)}
               disabled={isSessionActive}
-              className="appearance-none bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 pr-10 font-medium text-gray-700 disabled:opacity-50"
+              className="appearance-none bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-10 font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50"
             >
               <option value="">Sélectionner circuit...</option>
               {tracks.map(track => (
@@ -294,7 +294,7 @@ export default function FreeSessionPage() {
           </div>
 
           {/* Type selector (pills) */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             {SESSION_TYPES.map(type => (
               <button
                 key={type.value}
@@ -302,8 +302,8 @@ export default function FreeSessionPage() {
                 disabled={isSessionActive}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
                   selectedType === type.value
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 {type.label}
@@ -317,7 +317,7 @@ export default function FreeSessionPage() {
           <button
             onClick={handleNewSession}
             disabled={!selectedTrackId || isSessionActive || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
             <PlusIcon className="w-5 h-5" />
             Nouvelle session
@@ -325,7 +325,7 @@ export default function FreeSessionPage() {
 
           {/* Track info */}
           {selectedTrack && (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {selectedTrack.length && `${selectedTrack.length}m`}
             </div>
           )}
@@ -337,7 +337,7 @@ export default function FreeSessionPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left column: Session + Leaderboard */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Session en cours
             </h2>
             {loading ? (
@@ -376,7 +376,7 @@ export default function FreeSessionPage() {
 
           {/* Right column: Standings */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Classement Général
             </h2>
             <StandingsTabs

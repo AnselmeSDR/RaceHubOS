@@ -93,16 +93,16 @@ export default function StandingsTabs({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden">
       {/* Tabs Header */}
-      <div className="flex border-b">
+      <div className="flex border-b dark:border-gray-700">
         {tabs.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
           const colorClasses = {
-            purple: isActive ? 'text-purple-600 border-purple-600' : 'text-gray-600 hover:text-purple-600',
-            blue: isActive ? 'text-blue-600 border-blue-600' : 'text-gray-600 hover:text-blue-600',
-            green: isActive ? 'text-green-600 border-green-600' : 'text-gray-600 hover:text-green-600'
+            purple: isActive ? 'text-purple-600 border-purple-600' : 'text-gray-600 dark:text-gray-400 hover:text-purple-600',
+            blue: isActive ? 'text-blue-600 border-blue-600' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600',
+            green: isActive ? 'text-green-600 border-green-600' : 'text-gray-600 dark:text-gray-400 hover:text-green-600'
           }
 
           return (
@@ -111,8 +111,8 @@ export default function StandingsTabs({
               onClick={() => onTabChange(tab.id)}
               className={`flex-1 px-3 py-3 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
                 isActive
-                  ? `${colorClasses[tab.color]} border-b-2 bg-gray-50`
-                  : `${colorClasses[tab.color]} hover:bg-gray-50`
+                  ? `${colorClasses[tab.color]} border-b-2 bg-gray-50 dark:bg-gray-700`
+                  : `${colorClasses[tab.color]} hover:bg-gray-50 dark:hover:bg-gray-700`
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -126,11 +126,11 @@ export default function StandingsTabs({
       {/* Standings List */}
       <div className="max-h-[400px] overflow-y-auto">
         {sortedStandings.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 text-sm">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400 text-sm">
             Aucun classement disponible
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {sortedStandings.map((standing, index) => {
               const driver = standing.driver || getDriver(standing.driverId)
               const gap = getGap(standing, index)
@@ -139,18 +139,18 @@ export default function StandingsTabs({
               return (
                 <div
                   key={`${activeTab}-${standing.driverId}-${standing.carId || index}`}
-                  className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 ${
-                    position === 1 ? 'bg-yellow-50' :
-                    position === 2 ? 'bg-gray-50' :
-                    position === 3 ? 'bg-orange-50' : ''
+                  className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    position === 1 ? 'bg-amber-100 dark:bg-amber-900/40' :
+                    position === 2 ? 'bg-slate-100 dark:bg-slate-700/60' :
+                    position === 3 ? 'bg-orange-100 dark:bg-orange-900/40' : ''
                   }`}
                 >
                   {/* Position */}
                   <span className={`w-6 text-center font-bold text-sm ${
-                    position === 1 ? 'text-yellow-600' :
-                    position === 2 ? 'text-gray-500' :
-                    position === 3 ? 'text-orange-600' :
-                    'text-gray-700'
+                    position === 1 ? 'text-amber-500' :
+                    position === 2 ? 'text-slate-400' :
+                    position === 3 ? 'text-amber-700 dark:text-amber-600' :
+                    'text-gray-700 dark:text-gray-300'
                   }`}>
                     {position}
                   </span>
@@ -173,10 +173,10 @@ export default function StandingsTabs({
 
                   {/* Driver info */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 text-sm truncate">
+                    <div className="font-medium text-gray-900 dark:text-white text-sm truncate">
                       {driver.name}
                     </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                       {standing.car && (
                         <span className="truncate">{standing.car.brand} {standing.car.model}</span>
                       )}
@@ -192,7 +192,7 @@ export default function StandingsTabs({
                       <>
                         <LapTime time={standing.lapTime || standing.bestTime} size="sm" />
                         {gap !== null && (
-                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400 w-16 text-right">
                             +{(gap.value / 1000).toFixed(3)}
                           </span>
                         )}
@@ -203,7 +203,7 @@ export default function StandingsTabs({
                       <>
                         <LapTime time={standing.bestTime} size="sm" />
                         {gap !== null && (
-                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400 w-16 text-right">
                             +{(gap.value / 1000).toFixed(3)}
                           </span>
                         )}
@@ -214,12 +214,12 @@ export default function StandingsTabs({
                       <>
                         <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
                         {gap !== null && (
-                          <span className="font-mono text-xs text-gray-500 w-16 text-right">
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400 w-16 text-right">
                             +{(gap.value / 1000).toFixed(3)}
                           </span>
                         )}
                         {standing.points !== undefined && (
-                          <span className="font-bold text-gray-900 text-sm w-12 text-right">
+                          <span className="font-bold text-gray-900 dark:text-white text-sm w-12 text-right">
                             {standing.points} pts
                           </span>
                         )}

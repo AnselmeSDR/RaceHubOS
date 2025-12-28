@@ -95,7 +95,7 @@ export default function Drivers() {
             ))}
           </div>
         ) : (
-          <div className="space-y-3 bg-white rounded-lg shadow p-6">
+          <div className="space-y-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             {drivers.map((driver, index) => (
               <DriverListItem
                 key={driver.id}
@@ -203,7 +203,7 @@ function DriverCard({ driver, onEdit, onClick }) {
             </h3>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 text-gray-700 hover:bg-white hover:scale-110 transition-all flex items-center justify-center shadow-md flex-shrink-0"
+              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md flex-shrink-0"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
@@ -220,9 +220,9 @@ function DriverCard({ driver, onEdit, onClick }) {
         </div>
 
         {driver.bestLap && (
-          <div className="mt-3 p-3 rounded-lg bg-white/80 border-2" style={{ borderColor: `${driver.color}40` }}>
+          <div className="mt-3 p-3 rounded-lg bg-white/80 dark:bg-gray-800/80 border-2" style={{ borderColor: `${driver.color}40` }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-600 uppercase">Meilleur Tour</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Meilleur Tour</span>
               <span className="text-lg font-black tabular-nums" style={{ color: driver.color }}>
                 {(driver.bestLap / 1000).toFixed(3)}s
               </span>
@@ -236,11 +236,11 @@ function DriverCard({ driver, onEdit, onClick }) {
 
 function StatBadge({ icon, label, value, color, highlight }) {
   return (
-    <div className={`p-2 rounded-lg text-center ${highlight ? 'bg-yellow-50 ring-2 ring-yellow-400' : 'bg-white/60'}`}>
+    <div className={`p-2 rounded-lg text-center ${highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-white/60 dark:bg-gray-800/60'}`}>
       <div className="flex items-center justify-center mb-1" style={{ color: highlight ? '#EAB308' : color }}>
         {icon}
       </div>
-      <div className="text-xs font-medium text-gray-600 mb-0.5 uppercase">{label}</div>
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5 uppercase">{label}</div>
       <div className="text-lg font-black tabular-nums" style={{ color: highlight ? '#EAB308' : color }}>
         {value}
       </div>

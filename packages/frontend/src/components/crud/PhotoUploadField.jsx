@@ -106,14 +106,14 @@ export default function PhotoUploadField({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         {label}
       </label>
 
       <div className="flex items-center gap-4">
         {/* Preview */}
         <div
-          className={`relative w-20 h-20 ${shape === 'round' ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300`}
+          className={`relative w-20 h-20 ${shape === 'round' ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600`}
         >
           {uploading ? (
             <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: primaryColor }} />
@@ -151,11 +151,11 @@ export default function PhotoUploadField({
           <label
             htmlFor={inputId}
             style={{ borderColor: primaryColor, color: uploading ? '#9CA3AF' : primaryColor }}
-            className={`inline-block px-4 py-2 border-2 rounded-lg transition-colors text-sm font-medium ${uploading ? 'cursor-wait bg-gray-50' : 'cursor-pointer hover:bg-gray-50'}`}
+            className={`inline-block px-4 py-2 border-2 rounded-lg transition-colors text-sm font-medium ${uploading ? 'cursor-wait bg-gray-50 dark:bg-gray-700' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'}`}
           >
             {uploading ? 'Upload...' : (value ? 'Changer' : 'Choisir une image')}
           </label>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             JPG, PNG ou GIF. Max 5MB.
           </p>
         </div>

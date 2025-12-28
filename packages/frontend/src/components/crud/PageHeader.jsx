@@ -30,7 +30,7 @@ export default function PageHeader({
   return (
     <div className="flex items-center justify-between mb-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
           {icon && (
             <span style={{ color: primaryColor }}>
               {icon}
@@ -38,7 +38,7 @@ export default function PageHeader({
           )}
           {title}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {count} {countLabel}
         </p>
       </div>
@@ -70,13 +70,13 @@ export default function PageHeader({
  */
 export function ViewToggleButtons({ mode, onChange }) {
   return (
-    <div className="flex bg-gray-100 rounded-lg p-1">
+    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
       <button
         onClick={() => onChange('grid')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           mode === 'grid'
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-600 hover:text-gray-900'
+            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
         }`}
       >
         <Squares2X2Icon className="w-4 h-4" />
@@ -86,8 +86,8 @@ export function ViewToggleButtons({ mode, onChange }) {
         onClick={() => onChange('list')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           mode === 'list'
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-600 hover:text-gray-900'
+            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
         }`}
       >
         <ListBulletIcon className="w-4 h-4" />

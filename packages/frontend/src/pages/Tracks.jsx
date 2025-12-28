@@ -141,10 +141,10 @@ function TrackCard({ track, onEdit }) {
 
         <div className="mb-3">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-black text-xl tracking-tight text-gray-900 uppercase">{track.name}</h3>
+            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white uppercase">{track.name}</h3>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 text-gray-700 hover:bg-white hover:scale-110 transition-all flex items-center justify-center shadow-md"
+              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
@@ -155,43 +155,43 @@ function TrackCard({ track, onEdit }) {
 
       <div className="px-6 pb-6 space-y-3">
         {track.length && (
-          <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
             <div className="flex items-center gap-2">
-              <RocketLaunchIcon className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-medium text-gray-600 uppercase">Longueur</span>
+              <RocketLaunchIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Longueur</span>
             </div>
-            <span className="text-sm font-black text-purple-600">{track.length}m</span>
+            <span className="text-sm font-black text-purple-600 dark:text-purple-400">{track.length}m</span>
           </div>
         )}
 
         {track.corners && (
-          <div className="flex items-center justify-between p-2 bg-white/60 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
             <div className="flex items-center gap-2">
-              <ArrowPathIcon className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-medium text-gray-600 uppercase">Virages</span>
+              <ArrowPathIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Virages</span>
             </div>
-            <span className="text-sm font-black text-purple-600">{track.corners}</span>
+            <span className="text-sm font-black text-purple-600 dark:text-purple-400">{track.corners}</span>
           </div>
         )}
 
         {track.bestLap && (
-          <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <ClockIcon className="w-4 h-4 text-yellow-600" />
-                <span className="text-xs font-bold text-yellow-900 uppercase">Record</span>
+                <ClockIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-xs font-bold text-yellow-900 dark:text-yellow-300 uppercase">Record</span>
               </div>
-              <span className="text-lg font-black text-yellow-600">{(track.bestLap / 1000).toFixed(3)}s</span>
+              <span className="text-lg font-black text-yellow-600 dark:text-yellow-400">{(track.bestLap / 1000).toFixed(3)}s</span>
             </div>
             {track.bestLapBy && (
-              <div className="text-xs text-yellow-700 text-right">par {track.bestLapBy}</div>
+              <div className="text-xs text-yellow-700 dark:text-yellow-400 text-right">par {track.bestLapBy}</div>
             )}
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500 uppercase">Courses</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">Courses</span>
             <span className="text-lg font-black" style={{ color: trackColor }}>{track._count?.sessions || 0}</span>
           </div>
         </div>

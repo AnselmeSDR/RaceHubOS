@@ -74,13 +74,13 @@ export default function SessionsList() {
   function getSessionTypeColor(type) {
     switch (type) {
       case 'practice':
-        return 'bg-blue-100 text-blue-700 border-blue-200'
+        return 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700'
       case 'qualif':
-        return 'bg-purple-100 text-purple-700 border-purple-200'
+        return 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700'
       case 'race':
-        return 'bg-green-100 text-green-700 border-green-200'
+        return 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700'
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200'
+        return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
     }
   }
 
@@ -138,7 +138,7 @@ export default function SessionsList() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement des sessions...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des sessions...</p>
         </div>
       </div>
     )
@@ -149,8 +149,8 @@ export default function SessionsList() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Sessions</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Sessions</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             {sessions.length} session{sessions.length > 1 ? 's' : ''} enregistrée
             {sessions.length > 1 ? 's' : ''}
           </p>
@@ -158,13 +158,13 @@ export default function SessionsList() {
 
         <div className="flex items-center gap-3">
           {/* Filter tabs */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
                 filter === 'all'
-                  ? 'bg-white shadow text-indigo-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               Toutes
@@ -173,8 +173,8 @@ export default function SessionsList() {
               onClick={() => setFilter('draft')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
                 filter === 'draft'
-                  ? 'bg-white shadow text-indigo-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               Brouillons
@@ -183,8 +183,8 @@ export default function SessionsList() {
               onClick={() => setFilter('active')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
                 filter === 'active'
-                  ? 'bg-white shadow text-indigo-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               En cours
@@ -193,8 +193,8 @@ export default function SessionsList() {
               onClick={() => setFilter('finished')}
               className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
                 filter === 'finished'
-                  ? 'bg-white shadow text-indigo-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               Terminées
@@ -234,9 +234,9 @@ export default function SessionsList() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
           <FlagIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg mb-4">
+          <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
             {filter === 'all'
               ? 'Aucune session enregistrée'
               : `Aucune session ${getStatusLabel(filter).toLowerCase()}`}
@@ -282,10 +282,7 @@ function SessionCard({
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 group bg-white cursor-pointer"
-      style={{
-        background: `linear-gradient(135deg, ${sessionColor}10 0%, ${sessionColor}05 100%)`,
-      }}
+      className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 group bg-white dark:bg-gray-800 cursor-pointer"
       onClick={onView}
     >
       {/* Background pattern */}
@@ -321,9 +318,9 @@ function SessionCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* Status badge */}
-        <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full flex items-center gap-2">
+        <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full flex items-center gap-2">
           {getStatusIcon(session.status)}
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
             {getStatusLabel(session.status)}
           </span>
         </div>
@@ -342,10 +339,10 @@ function SessionCard({
       <div className="relative p-6">
         {/* Session name and track */}
         <div className="mb-4">
-          <h3 className="font-bold text-xl text-gray-900 mb-1">
+          <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-1">
             {session.name || `Session #${session.id.slice(0, 8)}`}
           </h3>
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <MapPinIcon className="h-4 w-4" />
             <span className="text-sm">{session.track?.name || 'Circuit non défini'}</span>
           </div>
@@ -353,8 +350,8 @@ function SessionCard({
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg p-2">
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
+          <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg p-2">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 mb-1">
               <UsersIcon className="h-4 w-4" />
               <span className="text-xs">Pilotes</span>
             </div>
@@ -363,8 +360,8 @@ function SessionCard({
             </span>
           </div>
 
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg p-2">
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
+          <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg p-2">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 mb-1">
               <FlagIcon className="h-4 w-4" />
               <span className="text-xs">Tours</span>
             </div>
@@ -375,7 +372,7 @@ function SessionCard({
         </div>
 
         {/* Date and duration */}
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4" />
             <span>{formatDate(session.createdAt)}</span>
@@ -390,10 +387,10 @@ function SessionCard({
 
         {/* Championship badge */}
         {session.championship && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <TrophyIcon className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 {session.championship.name}
               </span>
             </div>
@@ -402,13 +399,13 @@ function SessionCard({
 
         {/* View button */}
         <button
-          className="absolute top-6 right-6 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all shadow-md"
+          className="absolute top-6 right-6 w-10 h-10 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all shadow-md"
           onClick={(e) => {
             e.stopPropagation()
             onView()
           }}
         >
-          <EyeIcon className="h-5 w-5 text-gray-700" />
+          <EyeIcon className="h-5 w-5 text-gray-700 dark:text-gray-200" />
         </button>
       </div>
 

@@ -32,7 +32,7 @@ export default function DriverProfile() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
         </div>
       </div>
     )
@@ -42,7 +42,7 @@ export default function DriverProfile() {
     return (
       <div className="p-8">
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Pilote non trouvé</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Pilote non trouvé</p>
           <button
             onClick={() => navigate('/drivers')}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -59,7 +59,7 @@ export default function DriverProfile() {
       {/* Back button */}
       <button
         onClick={() => navigate('/drivers')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
       >
         <ArrowLeftIcon className="w-5 h-5" />
         <span className="font-medium">Retour aux pilotes</span>
@@ -71,20 +71,20 @@ export default function DriverProfile() {
       {/* Recent sessions and more detailed stats could go here */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Sessions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Sessions récentes</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Sessions récentes</h2>
           {driver.sessions && driver.sessions.length > 0 ? (
             <div className="space-y-3">
               {driver.sessions.slice(0, 5).map((sessionDriver) => (
                 <div
                   key={sessionDriver.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-gray-900 dark:text-white">
                       {sessionDriver.session.track?.name || 'Circuit inconnu'}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {sessionDriver.session.type === 'race' ? 'Course' :
                        sessionDriver.session.type === 'qualif' ? 'Qualifications' :
                        'Essais'}
@@ -95,26 +95,26 @@ export default function DriverProfile() {
                       <div className="text-2xl font-black" style={{ color: driver.color }}>
                         P{sessionDriver.finalPos}
                       </div>
-                      <div className="text-xs text-gray-500">Position</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Position</div>
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">Aucune session enregistrée</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucune session enregistrée</p>
           )}
         </div>
 
         {/* Best Laps */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Meilleurs tours</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Meilleurs tours</h2>
           {driver.laps && driver.laps.length > 0 ? (
             <div className="space-y-3">
               {driver.laps.map((lap, index) => (
                 <div
                   key={lap.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -124,10 +124,10 @@ export default function DriverProfile() {
                       {index + 1}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-white">
                         Tour {lap.lapNumber}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {lap.sessionId ? `Session #${lap.sessionId.slice(-6)}` : 'Libre'}
                       </div>
                     </div>
@@ -144,7 +144,7 @@ export default function DriverProfile() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">Aucun tour enregistré</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucun tour enregistré</p>
           )}
         </div>
       </div>

@@ -311,7 +311,7 @@ export default function ChampionshipDetail() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500" />
       </div>
     )
@@ -320,14 +320,14 @@ export default function ChampionshipDetail() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-red-500">Erreur: {error}</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Championship Header */}
       <ChampionshipHeader
         championship={championship}
@@ -344,7 +344,7 @@ export default function ChampionshipDetail() {
           <div className="lg:col-span-2 space-y-4">
             {/* Data freshness indicator */}
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Session en cours
               </h2>
               {selectedSession?.status === 'active' && (
@@ -368,8 +368,8 @@ export default function ChampionshipDetail() {
 
             {/* Finishing countdown */}
             {finishingSession && finishingSession.sessionId === selectedSessionId && (
-              <div className="bg-orange-100 border border-orange-300 rounded-lg p-4 text-center">
-                <div className="text-orange-800 font-bold text-lg animate-pulse">
+              <div className="bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg p-4 text-center">
+                <div className="text-orange-800 dark:text-orange-200 font-bold text-lg animate-pulse">
                   DERNIER TOUR
                 </div>
               </div>
@@ -389,7 +389,7 @@ export default function ChampionshipDetail() {
 
           {/* Right column: Standings */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Classement General
             </h2>
             <StandingsTabs

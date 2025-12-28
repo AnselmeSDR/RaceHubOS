@@ -204,7 +204,7 @@ export default function SessionConfigModal({
         <div className="grid grid-cols-2 gap-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nom
             </label>
             <input
@@ -213,16 +213,16 @@ export default function SessionConfigModal({
               onChange={(e) => setName(e.target.value)}
               placeholder={SESSION_TYPE_LABELS[session?.type]}
               disabled={!canEdit}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
           {/* Type (readonly) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Type
             </label>
-            <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-700">
+            <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
               {SESSION_TYPE_LABELS[session?.type]}
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function SessionConfigModal({
         {!isPractice && (
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Duree (minutes)
               </label>
               <input
@@ -241,11 +241,11 @@ export default function SessionConfigModal({
                 onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
                 min="0"
                 disabled={!canEdit}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Max tours
               </label>
               <input
@@ -254,11 +254,11 @@ export default function SessionConfigModal({
                 onChange={(e) => setMaxLaps(parseInt(e.target.value) || 0)}
                 min="0"
                 disabled={!canEdit}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Grace period (sec)
               </label>
               <input
@@ -268,7 +268,7 @@ export default function SessionConfigModal({
                 min="5"
                 max="300"
                 disabled={!canEdit}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -277,29 +277,29 @@ export default function SessionConfigModal({
         {/* Controller config table */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Configuration Controllers
             </label>
             {canEdit && practiceSession && (
               <button
                 onClick={handleCopyFromPractice}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
               >
                 <DocumentDuplicateIcon className="w-4 h-4" />
                 Copier depuis EL
               </button>
             )}
           </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-medium text-gray-500 uppercase">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   <th className="px-3 py-2">Ctrl</th>
                   <th className="px-3 py-2">Pilote</th>
                   <th className="px-3 py-2">Voiture</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {[0, 1, 2, 3, 4, 5].map(controller => (
                   <tr key={controller}>
                     <td className="px-3 py-2">
@@ -312,7 +312,7 @@ export default function SessionConfigModal({
                         value={controllerConfigs[controller]?.driverId || ''}
                         onChange={(e) => handleControllerChange(controller, 'driverId', e.target.value)}
                         disabled={!canEdit}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
                         {getAvailableDrivers(controller).map(driver => (
@@ -327,7 +327,7 @@ export default function SessionConfigModal({
                         value={controllerConfigs[controller]?.carId || ''}
                         onChange={(e) => handleControllerChange(controller, 'carId', e.target.value)}
                         disabled={!canEdit}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
                         {getAvailableCars(controller).map(car => (
@@ -347,7 +347,7 @@ export default function SessionConfigModal({
         {/* Status radio (only for draft/ready) */}
         {canEdit && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Statut
             </label>
             <div className="flex items-center gap-6">
@@ -360,7 +360,7 @@ export default function SessionConfigModal({
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
                 />
-                <span className="text-sm text-gray-700">Brouillon</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Brouillon</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -371,19 +371,19 @@ export default function SessionConfigModal({
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Pret</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Pret</span>
               </label>
             </div>
           </div>
         )}
 
         {/* Action buttons row */}
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center justify-between pt-4 border-t dark:border-gray-700">
           <div className="flex items-center gap-2">
             {canDelete && !isPractice && (
               <button
                 onClick={handleDelete}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-sm"
               >
                 <TrashIcon className="w-4 h-4" />
                 Supprimer
@@ -392,7 +392,7 @@ export default function SessionConfigModal({
             {canReset && (
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors text-sm"
               >
                 <ArrowPathIcon className="w-4 h-4" />
                 Reinitialiser

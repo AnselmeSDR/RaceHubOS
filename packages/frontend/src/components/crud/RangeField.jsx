@@ -21,7 +21,7 @@ export default function RangeField({
           max={max}
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
-          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
           style={{
             accentColor: color
           }}
