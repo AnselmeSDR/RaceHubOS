@@ -25,8 +25,9 @@ router.get('/track/:trackId', async (req, res) => {
       sessionFilter.championshipId = championshipId;
     }
 
-    // Get best laps by session type (practice, qualif, race)
+    // Get best laps by session type (practice, qualif, race) with lap counts
     const getBestByType = async (type) => {
+      // Get best lap per driver+car combination
       const laps = await prisma.lap.findMany({
         where: {
           trackId,
@@ -35,17 +36,32 @@ router.get('/track/:trackId', async (req, res) => {
         },
         orderBy: { lapTime: 'asc' },
         take: 5,
-        distinct: ['driverId'],
+        distinct: ['driverId', 'carId'],
         include: {
           driver: true,
           car: true,
           session: { select: { id: true, type: true, name: true } }
         }
       });
+
+      // Get lap counts per driver+car
+      const lapCounts = await prisma.lap.groupBy({
+        by: ['driverId', 'carId'],
+        where: {
+          trackId,
+          softDeletedAt: null,
+          session: { type, ...sessionFilter }
+        },
+        _count: { id: true }
+      });
+
+      const countMap = new Map(lapCounts.map(c => [`${c.driverId}-${c.carId}`, c._count.id]));
+
       return laps.map(lap => ({
         ...lap,
         driver: withImageUrl(lap.driver),
-        car: withImageUrl(lap.car)
+        car: withImageUrl(lap.car),
+        laps: countMap.get(`${lap.driverId}-${lap.carId}`) || 0
       }));
     };
 

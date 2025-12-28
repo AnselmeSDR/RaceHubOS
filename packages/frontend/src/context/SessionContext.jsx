@@ -165,26 +165,32 @@ export function SessionProvider({ children }) {
   }, [])
 
   // Find or create free session (no championship)
-  const findOrCreateFreeSession = useCallback(async ({ trackId, type }) => {
+  const findOrCreateFreeSession = useCallback(async ({ trackId, type, autoCreate = true }) => {
     try {
-      // 1. Search for existing draft session
       const searchParams = new URLSearchParams({
         trackId,
         type,
-        status: 'draft',
         championshipId: 'null'
       })
       const searchRes = await fetch(`${API_URL}/api/sessions?${searchParams}`)
       const searchData = await searchRes.json()
 
       if (searchData.success && searchData.data?.length > 0) {
-        // Use existing draft session
-        const existingSession = searchData.data[0]
-        setSession(existingSession)
-        return existingSession
+        // Return most recent session (sorted by createdAt desc)
+        const sorted = [...searchData.data].sort((a, b) =>
+          new Date(b.createdAt) - new Date(a.createdAt)
+        )
+        const latestSession = sorted[0]
+        setSession(latestSession)
+        return latestSession
       }
 
-      // 2. Create new session
+      // Create new session only if autoCreate is true
+      if (!autoCreate) {
+        setSession(null)
+        return null
+      }
+
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

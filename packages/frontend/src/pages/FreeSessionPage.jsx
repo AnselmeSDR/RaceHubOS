@@ -4,7 +4,8 @@ import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
-import TrackRecordsPanel from '../components/race/freePractice/TrackRecordsPanel'
+import StandingsTabs from '../components/championship/StandingsTabs'
+import SessionConfigModal from '../components/championship/SessionConfigModal'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -35,27 +36,39 @@ export default function FreeSessionPage() {
   const [selectedTrackId, setSelectedTrackId] = useState(null)
   const [selectedType, setSelectedType] = useState('practice')
   const [loading, setLoading] = useState(false)
-  const [trackRecords, setTrackRecords] = useState({})
+  const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
+  const [configSession, setConfigSession] = useState(null)
+  const [drivers, setDrivers] = useState([])
+  const [cars, setCars] = useState([])
 
-  // Fetch tracks on mount
+  // Fetch tracks, drivers, cars on mount
   useEffect(() => {
-    const fetchTracks = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/tracks`)
-        const data = await res.json()
-        if (data.success && data.data?.length > 0) {
-          setTracks(data.data)
-          // Auto-select first track
+        const [tracksRes, driversRes, carsRes] = await Promise.all([
+          fetch(`${API_URL}/api/tracks`),
+          fetch(`${API_URL}/api/drivers`),
+          fetch(`${API_URL}/api/cars`),
+        ])
+        const [tracksData, driversData, carsData] = await Promise.all([
+          tracksRes.json(),
+          driversRes.json(),
+          carsRes.json(),
+        ])
+        if (tracksData.success && tracksData.data?.length > 0) {
+          setTracks(tracksData.data)
           if (!selectedTrackId) {
-            setSelectedTrackId(data.data[0].id)
+            setSelectedTrackId(tracksData.data[0].id)
           }
         }
+        if (driversData.success) setDrivers(driversData.data || [])
+        if (carsData.success) setCars(carsData.data || [])
       } catch (error) {
-        console.error('Error fetching tracks:', error)
+        console.error('Error fetching data:', error)
       }
     }
-    fetchTracks()
+    fetchData()
   }, [])
 
   // Load session when track or type changes
@@ -65,27 +78,43 @@ export default function FreeSessionPage() {
     }
   }, [selectedTrackId, selectedType])
 
-  // Fetch track records
-  const fetchTrackRecords = useCallback(async () => {
+  // Fetch standings (records for free sessions)
+  const fetchStandings = useCallback(async () => {
     if (!selectedTrackId) {
-      setTrackRecords({})
+      setStandings({ practice: [], qualif: [], race: [] })
       return
     }
     try {
       const res = await fetch(`${API_URL}/api/records/track/${selectedTrackId}?championshipId=null`)
       const data = await res.json()
       if (data.success) {
-        setTrackRecords(data.data)
+        // Transform records to standings format
+        setStandings({
+          practice: (data.data.practice || []).map(lap => ({
+            ...lap,
+            lapTime: lap.lapTime,
+            bestTime: lap.lapTime,
+          })),
+          qualif: (data.data.qualif || []).map(lap => ({
+            ...lap,
+            bestTime: lap.lapTime,
+          })),
+          race: (data.data.race || []).map(lap => ({
+            ...lap,
+            bestTime: lap.lapTime,
+            totalTime: lap.lapTime,
+          })),
+        })
       }
     } catch (error) {
-      console.error('Error fetching track records:', error)
+      console.error('Error fetching standings:', error)
     }
   }, [selectedTrackId])
 
-  // Fetch track records when track changes (free sessions only)
+  // Fetch standings when track changes
   useEffect(() => {
-    fetchTrackRecords()
-  }, [fetchTrackRecords])
+    fetchStandings()
+  }, [fetchStandings])
 
   const handleLoadSession = useCallback(async () => {
     if (!selectedTrackId || !selectedType) return
@@ -118,17 +147,37 @@ export default function FreeSessionPage() {
     setSelectedType(type)
   }
 
-  // Handle new session (force create)
+  // Handle new session (force create, copy config from last session)
   const handleNewSession = async () => {
     if (!selectedTrackId || !selectedType) return
 
     setLoading(true)
     try {
-      await createSession({
+      // Create session with config from previous session
+      const result = await createSession({
         trackId: selectedTrackId,
         type: selectedType,
         name: `${SESSION_TYPES.find(t => t.value === selectedType)?.label || selectedType} libre`,
+        maxDuration: session?.maxDuration || null,
+        maxLaps: session?.maxLaps || null,
+        gracePeriod: session?.gracePeriod || 30000,
       })
+
+      // Copy drivers from previous session
+      if (result.success && result.data?.id && session?.drivers?.length > 0) {
+        const driversConfig = session.drivers.map(sd => ({
+          controller: sd.controller,
+          driverId: sd.driverId,
+          carId: sd.carId,
+        }))
+        await fetch(`${API_URL}/api/sessions/${result.data.id}/drivers`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ drivers: driversConfig })
+        })
+        // Reload session to get updated drivers
+        await loadSession(result.data.id)
+      }
     } catch (error) {
       console.error('Error creating session:', error)
     } finally {
@@ -155,16 +204,73 @@ export default function FreeSessionPage() {
   const handleStop = async () => {
     if (!session?.id) return
     await stopSession(session.id)
-    // Refresh records after session ends
-    await fetchTrackRecords()
+    // Refresh standings after session ends
+    await fetchStandings()
   }
 
   const handleConfig = () => {
-    // TODO: Open session config modal if needed
+    if (session) {
+      setConfigSession(session)
+    }
+  }
+
+  const handleSaveSessionConfig = async (data) => {
+    if (!configSession) return
+    try {
+      await fetch(`${API_URL}/api/sessions/${configSession.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          maxDuration: data.maxDuration,
+          maxLaps: data.maxLaps,
+          gracePeriod: data.gracePeriod
+        })
+      })
+      if (data.status !== configSession.status) {
+        await fetch(`${API_URL}/api/sessions/${configSession.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: data.status })
+        })
+      }
+      if (data.drivers?.length > 0) {
+        await fetch(`${API_URL}/api/sessions/${configSession.id}/drivers`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ drivers: data.drivers })
+        })
+      }
+      await loadSession(configSession.id)
+      setConfigSession(null)
+    } catch (err) {
+      console.error('Error saving session config:', err)
+    }
+  }
+
+  const handleDeleteSession = async (sessionId) => {
+    try {
+      await fetch(`${API_URL}/api/sessions/${sessionId}`, { method: 'DELETE' })
+      setConfigSession(null)
+      clearSession()
+      await handleLoadSession()
+    } catch (err) {
+      console.error('Error deleting session:', err)
+    }
+  }
+
+  const handleResetSession = async (sessionId) => {
+    const result = await resetSession(sessionId)
+    if (result.success) {
+      await fetchStandings()
+    }
   }
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId)
-  const isSessionActive = session && ['ready', 'active', 'paused', 'finishing'].includes(session.status)
+  // Only block changes if session is actively running (not finished)
+  const isSessionActive = session &&
+    ['active', 'paused', 'finishing'].includes(session.status) &&
+    session.type === selectedType
 
   return (
     <div className="h-full flex flex-col">
@@ -227,49 +333,77 @@ export default function FreeSessionPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Session + Leaderboard */}
-        <div className="flex-1 overflow-auto p-4 space-y-4">
-          {loading ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-            </div>
-          ) : (
-            <>
-              {/* Session Section */}
-              <SessionSection
-                session={session}
-                sessions={[]}
-                drivers={[]}
-                cars={[]}
-                onStart={handleStart}
-                onPause={handlePause}
-                onResume={handleResume}
-                onStop={handleStop}
-                onTriggerCuStart={triggerCuStart}
-                onConfig={handleConfig}
-              />
-
-              {/* Leaderboard */}
-              {session && (
-                <SessionLeaderboard
-                  entries={entries}
-                  sortBy={session.type === 'practice' ? practiceSortBy :
-                    session.type === 'qualif' ? 'bestLap' : 'race'}
-                  onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
-                  sessionType={session.type}
+      <div className="flex-1 overflow-auto p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column: Session + Leaderboard */}
+          <div className="lg:col-span-2 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Session en cours
+            </h2>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+              </div>
+            ) : (
+              <>
+                {/* Session Section */}
+                <SessionSection
+                  session={session}
+                  sessions={[]}
+                  drivers={drivers}
+                  cars={cars}
+                  onStart={handleStart}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onStop={handleStop}
+                  onTriggerCuStart={triggerCuStart}
+                  onConfig={handleConfig}
                 />
-              )}
-            </>
-          )}
-        </div>
 
-        {/* Right: Track records panel */}
-        <TrackRecordsPanel
-          selectedTrack={selectedTrack}
-          trackRecords={trackRecords}
-        />
+                {/* Leaderboard */}
+                {session && (
+                  <SessionLeaderboard
+                    entries={entries}
+                    sortBy={session.type === 'practice' ? practiceSortBy :
+                      session.type === 'qualif' ? 'bestLap' : 'race'}
+                    onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
+                    sessionType={session.type}
+                  />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Right column: Standings */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Classement Général
+            </h2>
+            <StandingsTabs
+              standings={standings}
+              drivers={drivers}
+              activeTab={selectedType}
+              onTabChange={setSelectedType}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Session Config Modal */}
+      {configSession && (
+        <SessionConfigModal
+          session={configSession}
+          sessions={[]}
+          drivers={drivers}
+          cars={cars}
+          sessionDrivers={configSession.drivers || []}
+          open={!!configSession}
+          onClose={() => setConfigSession(null)}
+          onSave={handleSaveSessionConfig}
+          onDelete={handleDeleteSession}
+          onReset={handleResetSession}
+        />
+      )}
     </div>
   )
 }

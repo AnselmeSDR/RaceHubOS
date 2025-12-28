@@ -138,7 +138,7 @@ export default function StandingsTabs({
 
               return (
                 <div
-                  key={standing.id || standing.driverId || index}
+                  key={`${activeTab}-${standing.driverId}-${standing.carId || index}`}
                   className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 ${
                     position === 1 ? 'bg-yellow-50' :
                     position === 2 ? 'bg-gray-50' :
@@ -176,11 +176,14 @@ export default function StandingsTabs({
                     <div className="font-medium text-gray-900 text-sm truncate">
                       {driver.name}
                     </div>
-                    {(standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
-                      <div className="text-xs text-gray-500">
-                        {standing.totalLaps || standing.raceTotalLaps || standing.laps} tours
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                      {standing.car && (
+                        <span className="truncate">{standing.car.brand} {standing.car.model}</span>
+                      )}
+                      {(standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
+                        <span>• {standing.totalLaps || standing.raceTotalLaps || standing.laps} tours</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Stats */}
