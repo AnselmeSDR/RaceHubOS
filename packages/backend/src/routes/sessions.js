@@ -1,4 +1,5 @@
 import express from 'express';
+import SessionService from '../services/SessionService.js';
 
 const router = express.Router();
 let sessionService;
@@ -173,7 +174,7 @@ router.put('/:id/drivers', async (req, res) => {
           driverId: d.driverId,
           carId: d.carId,
           controller: Number(d.controller),
-          gridPos: idx + 1
+          gridPos: d.gridPos ?? idx + 1
         }))
       });
     }
@@ -453,42 +454,22 @@ router.get('/:id/leaderboard', async (req, res) => {
         orderBy: { timestamp: 'desc' }
       });
 
-      const totalLaps = laps.length;
-      const totalTime = laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0);
-      const bestLap = laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null;
-      const lastLap = laps.length > 0 ? laps[0].lapTime : null;
-
       entries.push({
         controller: sd.controller,
         driverId: sd.driverId,
         driver: sd.driver,
         car: sd.car,
-        totalLaps,
-        totalTime,
-        bestLap,
-        lastLap,
-        position: 0,
-        gap: null
+        totalLaps: laps.length,
+        totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
+        bestLapTime: laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null,
+        lastLapTime: laps.length > 0 ? laps[0].lapTime : null,
       });
     }
 
-    // Sort
-    if (session.type === 'qualif') {
-      entries.sort((a, b) => {
-        if (a.bestLap === null) return 1;
-        if (b.bestLap === null) return -1;
-        return a.bestLap - b.bestLap;
-      });
-    } else {
-      entries.sort((a, b) => {
-        if (a.totalLaps !== b.totalLaps) return b.totalLaps - a.totalLaps;
-        return a.totalTime - b.totalTime;
-      });
-    }
+    // Calculate gaps and positions
+    const sortedEntries = SessionService.calculateDriverGaps(entries, session.type);
 
-    entries.forEach((e, i) => { e.position = i + 1; });
-
-    res.json({ success: true, data: entries });
+    res.json({ success: true, data: sortedEntries });
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     res.status(500).json({ success: false, error: error.message });

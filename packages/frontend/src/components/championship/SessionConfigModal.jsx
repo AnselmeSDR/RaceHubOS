@@ -67,7 +67,8 @@ export default function SessionConfigModal({
       const sd = sessionDrivers.find(d => Number(d.controller) === i)
       configs[i] = {
         driverId: sd?.driverId || null,
-        carId: sd?.carId || null
+        carId: sd?.carId || null,
+        gridPos: sd?.gridPos || null
       }
     }
     return configs
@@ -96,7 +97,8 @@ export default function SessionConfigModal({
       const sd = practiceSession.drivers.find(d => Number(d.controller) === i)
       newConfigs[i] = {
         driverId: sd?.driverId || null,
-        carId: sd?.carId || null
+        carId: sd?.carId || null,
+        gridPos: sd?.gridPos || null
       }
     }
     setControllerConfigs(newConfigs)
@@ -152,7 +154,8 @@ export default function SessionConfigModal({
         .map(([controller, config]) => ({
           controller: Number(controller), // 0-indexed
           driverId: config.driverId,
-          carId: config.carId
+          carId: config.carId,
+          gridPos: config.gridPos || null
         }))
 
       await onSave({
@@ -297,6 +300,7 @@ export default function SessionConfigModal({
                   <th className="px-3 py-2">Ctrl</th>
                   <th className="px-3 py-2">Pilote</th>
                   <th className="px-3 py-2">Voiture</th>
+                  <th className="px-3 py-2 w-20">Grille</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -336,6 +340,18 @@ export default function SessionConfigModal({
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="6"
+                        value={controllerConfigs[controller]?.gridPos || ''}
+                        onChange={(e) => handleControllerChange(controller, 'gridPos', e.target.value ? Number(e.target.value) : null)}
+                        disabled={!canEdit}
+                        placeholder="-"
+                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
                     </td>
                   </tr>
                 ))}

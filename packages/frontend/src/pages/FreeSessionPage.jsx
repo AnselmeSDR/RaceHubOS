@@ -4,6 +4,7 @@ import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
+import StartingGrid from '../components/race/StartingGrid'
 import StandingsTabs from '../components/championship/StandingsTabs'
 import SessionConfigModal from '../components/championship/SessionConfigModal'
 
@@ -20,6 +21,7 @@ export default function FreeSessionPage() {
   const {
     session,
     entries,
+    maxLapsCompleted,
     findOrCreateFreeSession,
     createSession,
     loadSession,
@@ -360,15 +362,19 @@ export default function FreeSessionPage() {
                   onConfig={handleConfig}
                 />
 
-                {/* Leaderboard */}
+                {/* Leaderboard or Grid */}
                 {session && (
-                  <SessionLeaderboard
-                    entries={entries}
-                    sortBy={session.type === 'practice' ? practiceSortBy :
-                      session.type === 'qualif' ? 'bestLap' : 'race'}
-                    onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
-                    sessionType={session.type}
-                  />
+                  maxLapsCompleted === 0 && session.status !== 'finished' ? (
+                    <StartingGrid entries={entries} />
+                  ) : (
+                    <SessionLeaderboard
+                      entries={entries}
+                      sortBy={session.type === 'practice' ? practiceSortBy :
+                        session.type === 'qualif' ? 'bestLap' : 'race'}
+                      onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
+                      sessionType={session.type}
+                    />
+                  )
                 )}
               </>
             )}
