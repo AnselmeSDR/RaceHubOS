@@ -275,47 +275,16 @@ export function SessionProvider({ children }) {
         setTotalPauseDuration(Math.floor(totalPause / 1000))
       }
 
-      // For finished sessions, use drivers as leaderboard
-      if (sessionInfo.status === 'finished' && sessionInfo.drivers) {
-        const isRace = sessionInfo.type === 'race'
-        const sorted = [...sessionInfo.drivers].sort((a, b) => (a.position || 99) - (b.position || 99))
-        const leader = sorted[0]
-
-        const leaderboardData = sorted.map((sd, idx) => {
-          let gap = null
-          if (idx > 0 && leader) {
-            if (isRace) {
-              const lapDiff = (leader.totalLaps || 0) - (sd.totalLaps || 0)
-              gap = lapDiff > 0 ? lapDiff : (sd.totalTime || 0) - (leader.totalTime || 0)
-            } else {
-              if (leader.bestLapTime && sd.bestLapTime) {
-                gap = sd.bestLapTime - leader.bestLapTime
-              }
-            }
-          }
-          return {
-            id: sd.id,
-            controller: sd.controller,
-            driverId: sd.driverId,
-            carId: sd.carId,
-            driver: sd.driver,
-            car: sd.car,
-            position: sd.position || 0,
-            totalLaps: sd.totalLaps || 0,
-            totalTime: sd.totalTime || 0,
-            bestLapTime: sd.bestLapTime || null,
-            lastLapTime: sd.lastLapTime || null,
-            gap,
-            isDNF: sd.isDNF || false,
-          }
-        })
-        setLeaderboard(leaderboardData)
-        return { success: true, session: sessionInfo }
-      }
-
       // For active/ready sessions, load into SyncService
       if (['ready', 'active', 'paused'].includes(sessionInfo.status)) {
         await fetch(`${API_URL}/api/sync/load-session/${sessionId}`, { method: 'POST' })
+      }
+
+      // Fetch leaderboard with gaps calculated by backend
+      const lbRes = await fetch(`${API_URL}/api/sessions/${sessionId}/leaderboard`)
+      const lbData = await lbRes.json()
+      if (lbData.success && Array.isArray(lbData.data)) {
+        setLeaderboard(lbData.data)
       }
 
       return { success: true, session: sessionInfo }
@@ -457,6 +426,7 @@ export function SessionProvider({ children }) {
       controller: p.controller,
       driver: p.driver,
       car: p.car,
+      gridPos: p.gridPos ?? null,
       stats: {
         laps: p.totalLaps || 0,
         bestLap: p.bestLapTime || null,

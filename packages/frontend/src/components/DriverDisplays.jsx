@@ -1,5 +1,6 @@
 import { TrophyIcon, FlagIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { useTheme } from '../context/ThemeContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -129,21 +130,26 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
  * Affichage ROW 1, ROW 2, etc.
  */
 export function DriverGridPosition({ driver, side = 'left' }) {
+  const { isDark } = useTheme()
+  const gradientEnd = isDark ? '#1f2937' : 'white'
+  const driverColor = driver.color || '#3B82F6'
+
   return (
     <div className={`flex items-center gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
       {/* Driver card */}
       <div
-        className="flex items-center gap-3 p-3 rounded-lg shadow-md flex-1"
+        className="flex items-center gap-3 p-3 rounded-lg flex-1"
         style={{
-          background: `linear-gradient(to ${side === 'left' ? 'right' : 'left'}, ${driver.color}15, transparent)`,
-          borderLeft: side === 'left' ? `4px solid ${driver.color}` : 'none',
-          borderRight: side === 'right' ? `4px solid ${driver.color}` : 'none',
+          background: `linear-gradient(to ${side === 'left' ? 'right' : 'left'}, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, ${gradientEnd})`,
+          borderLeft: side === 'left' ? `5px solid ${driverColor}` : 'none',
+          borderRight: side === 'right' ? `5px solid ${driverColor}` : 'none',
+          boxShadow: isDark ? 'none' : `0 2px 12px ${driverColor}40`,
         }}
       >
         {/* Photo */}
         <div
           className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: driver.color }}
+          style={{ backgroundColor: driverColor }}
         >
           {driver.img ? (
             <img
@@ -158,10 +164,13 @@ export function DriverGridPosition({ driver, side = 'left' }) {
 
         {/* Number - Large NASCAR style */}
         {driver.number && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-16">
             <span
-              className="text-5xl font-black italic opacity-20"
-              style={{ color: driver.color }}
+              className="text-5xl font-black italic"
+              style={{
+                color: driverColor,
+                WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
+              }}
             >
               {driver.number}
             </span>

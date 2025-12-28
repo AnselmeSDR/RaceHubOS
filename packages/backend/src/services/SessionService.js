@@ -467,6 +467,43 @@ export class SessionService extends EventEmitter {
     this.emit('session:leaderboard', this.sessionDrivers);
   }
 
+  /**
+   * Static method to calculate gaps on drivers array
+   * Used by API routes when returning session data
+   */
+  static calculateDriverGaps(drivers, sessionType) {
+    if (!drivers || drivers.length === 0) return drivers;
+
+    const isRace = sessionType === 'race';
+    const sorted = [...drivers].sort((a, b) => {
+      if (isRace) {
+        if (b.totalLaps !== a.totalLaps) return b.totalLaps - a.totalLaps;
+        return a.totalTime - b.totalTime;
+      } else {
+        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
+        if (a.bestLapTime === null) return 1;
+        if (b.bestLapTime === null) return -1;
+        return a.bestLapTime - b.bestLapTime;
+      }
+    });
+
+    const leader = sorted[0];
+    return sorted.map((driver, i) => {
+      let gap = null;
+      if (i > 0 && leader) {
+        if (isRace) {
+          const lapDiff = leader.totalLaps - driver.totalLaps;
+          gap = lapDiff > 0 ? lapDiff : driver.totalTime - leader.totalTime;
+        } else {
+          if (leader.bestLapTime && driver.bestLapTime) {
+            gap = driver.bestLapTime - leader.bestLapTime;
+          }
+        }
+      }
+      return { ...driver, gap, position: i + 1 };
+    });
+  }
+
   // ==================== Heartbeat ====================
 
   startHeartbeat() {
