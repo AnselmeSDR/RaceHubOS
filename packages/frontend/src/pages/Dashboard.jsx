@@ -98,32 +98,32 @@ export default function Dashboard() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Tableau de bord</h1>
-        <p className="text-gray-600">Vue d'ensemble du système RaceHubOS</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Tableau de bord</h1>
+        <p className="text-gray-600 dark:text-gray-400">Vue d'ensemble du système RaceHubOS</p>
       </div>
 
       {/* Configuration Warning */}
       {showConfigWarning && (
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <div className="flex-1">
-              <h3 className="font-semibold text-yellow-800">Configuration requise</h3>
-              <p className="text-sm text-yellow-700 mt-1">
+              <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Configuration requise</h3>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                 Configuration incomplète détectée.
               </p>
               <div className="mt-2 space-y-1">
                 {stats.drivers === 0 && (
-                  <Link to="/drivers" className="text-sm text-yellow-700 hover:text-yellow-800 flex items-center gap-1">
+                  <Link to="/drivers" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
                     → Ajouter des pilotes
                   </Link>
                 )}
                 {stats.cars === 0 && (
-                  <Link to="/cars" className="text-sm text-yellow-700 hover:text-yellow-800 flex items-center gap-1">
+                  <Link to="/cars" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
                     → Ajouter des voitures
                   </Link>
                 )}
                 {stats.tracks === 0 && (
-                  <Link to="/tracks" className="text-sm text-yellow-700 hover:text-yellow-800 flex items-center gap-1">
+                  <Link to="/tracks" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
                     → Ajouter des circuits
                   </Link>
                 )}
@@ -158,110 +158,110 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link to="/drivers" className="block">
-          <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <UserGroupIcon className="h-10 w-10 text-blue-500" />
-              <span className="text-3xl font-bold text-gray-800">{stats.drivers}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.drivers}</span>
             </div>
-            <h3 className="text-gray-600 font-semibold">Pilotes</h3>
-            <p className="text-sm text-gray-500 mt-1">Pilotes enregistrés</p>
+            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Pilotes</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Pilotes enregistrés</p>
           </div>
         </Link>
 
         <Link to="/cars" className="block">
-          <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <TruckIcon className="h-10 w-10 text-green-500" />
-              <span className="text-3xl font-bold text-gray-800">{stats.cars}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.cars}</span>
             </div>
-            <h3 className="text-gray-600 font-semibold">Voitures</h3>
-            <p className="text-sm text-gray-500 mt-1">Voitures disponibles</p>
+            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Voitures</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Voitures disponibles</p>
           </div>
         </Link>
 
         <Link to="/tracks" className="block">
-          <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <MapIcon className="h-10 w-10 text-purple-500" />
-              <span className="text-3xl font-bold text-gray-800">{stats.tracks}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.tracks}</span>
             </div>
-            <h3 className="text-gray-600 font-semibold">Circuits</h3>
-            <p className="text-sm text-gray-500 mt-1">Circuits configurés</p>
+            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Circuits</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Circuits configurés</p>
           </div>
         </Link>
 
         <Link to="/sessions" className="block">
-          <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <FlagIcon className="h-10 w-10 text-red-500" />
-              <span className="text-3xl font-bold text-gray-800">{stats.sessions}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.sessions}</span>
             </div>
-            <h3 className="text-gray-600 font-semibold">Sessions</h3>
-            <p className="text-sm text-gray-500 mt-1">Sessions de course</p>
+            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Sessions</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sessions de course</p>
           </div>
         </Link>
       </div>
 
       {/* Quick Actions & System Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Actions rapides</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Actions rapides</h2>
           <div className="space-y-3">
             <Link
               to="/race"
-              className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+              className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <FlagIcon className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Mode Course</span>
+                <span className="font-medium text-gray-800 dark:text-white">Mode Course</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
             <Link
               to="/drivers"
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <UserPlusIcon className="h-5 w-5 text-blue-500" />
-                <span className="font-medium">Ajouter un pilote</span>
+                <span className="font-medium text-gray-800 dark:text-white">Ajouter un pilote</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
             <Link
               to="/simulator"
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <BeakerIcon className="h-5 w-5 text-purple-500" />
-                <span className="font-medium">Ouvrir le simulateur</span>
+                <span className="font-medium text-gray-800 dark:text-white">Ouvrir le simulateur</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
             <Link
               to="/settings"
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <CogIcon className="h-5 w-5 text-gray-500" />
-                <span className="font-medium">Paramètres</span>
+                <CogIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <span className="font-medium text-gray-800 dark:text-white">Paramètres</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">État du système</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">État du système</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Backend API</span>
+              <span className="text-gray-600 dark:text-gray-300">Backend API</span>
               <span className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-green-600 font-medium">Connecté</span>
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">WebSocket</span>
+              <span className="text-gray-600 dark:text-gray-300">WebSocket</span>
               <span className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
                 <span className={`text-sm font-medium ${socketConnected ? 'text-green-600' : 'text-red-600'}`}>
@@ -270,16 +270,16 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Control Unit</span>
+              <span className="text-gray-600 dark:text-gray-300">Control Unit</span>
               <span className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${cuConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-                <span className={`text-sm font-medium ${cuConnected ? 'text-green-600' : 'text-gray-600'}`}>
+                <span className={`text-sm font-medium ${cuConnected ? 'text-green-600' : 'text-gray-600 dark:text-gray-400'}`}>
                   {cuConnected ? 'Connecté' : 'Non connecté'}
                 </span>
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Base de données</span>
+              <span className="text-gray-600 dark:text-gray-300">Base de données</span>
               <span className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-green-600 font-medium">SQLite</span>

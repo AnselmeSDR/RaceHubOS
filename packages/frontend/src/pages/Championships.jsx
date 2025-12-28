@@ -123,19 +123,19 @@ function ChampionshipCard({ championship, track, onClick, onDelete }) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-shadow cursor-pointer group"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer group"
     >
       <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <TrophyIcon className="w-6 h-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+              <TrophyIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-yellow-600 transition-colors">
+              <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">
                 {championship.name}
               </h3>
-              <div className="flex items-center gap-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                 <MapPinIcon className="w-4 h-4" />
                 {track?.name || 'Circuit non défini'}
               </div>
@@ -147,26 +147,26 @@ function ChampionshipCard({ championship, track, onClick, onDelete }) {
         <div className="mt-4 flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-sm">
             <ClockIcon className="w-4 h-4 text-blue-500" />
-            <span className="text-gray-600">{qualifCount} qualif{qualifCount > 1 ? 's' : ''}</span>
+            <span className="text-gray-600 dark:text-gray-300">{qualifCount} qualif{qualifCount > 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
             <FlagIcon className="w-4 h-4 text-green-500" />
-            <span className="text-gray-600">{raceCount} course{raceCount > 1 ? 's' : ''}</span>
+            <span className="text-gray-600 dark:text-gray-300">{raceCount} course{raceCount > 1 ? 's' : ''}</span>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t dark:border-gray-700 flex items-center justify-between">
           <span className={`px-2 py-1 rounded text-xs font-medium ${
-            championship.status === 'active' ? 'bg-green-100 text-green-700' :
-            championship.status === 'finished' ? 'bg-gray-100 text-gray-700' :
-            'bg-yellow-100 text-yellow-700'
+            championship.status === 'active' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+            championship.status === 'finished' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' :
+            'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
           }`}>
             {championship.status === 'active' ? 'En cours' :
              championship.status === 'finished' ? 'Terminé' : 'Planifié'}
           </span>
           <button
             onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>

@@ -30,6 +30,8 @@ export class SessionService extends EventEmitter {
 
     // Driver states
     this.sessionDrivers = [];
+    this.previousPositions = new Map(); // controller -> previous position
+    this.displayedDeltas = new Map(); // controller -> delta to display
 
     // Grace period
     this.raceFinishTime = null;
@@ -87,8 +89,8 @@ export class SessionService extends EventEmitter {
       driver.totalTime += Math.round(lapTime);
     }
 
-    // 2. Recalculate positions
-    this.recalculatePositions();
+    // 2. Recalculate positions (pass controller who just completed a lap)
+    this.recalculatePositions(controller);
 
     // 3. Save to DB
     await this.saveLap(driver, lapTime);
@@ -127,6 +129,18 @@ export class SessionService extends EventEmitter {
     this.activeTrackId = session.trackId;
     this.currentPhase = session.type === 'qualif' ? 'qualif' :
                         session.type === 'practice' ? 'practice' : 'race';
+
+    // Reset position tracking for new session
+    if (!this.previousPositions) {
+      this.previousPositions = new Map();
+    } else {
+      this.previousPositions.clear();
+    }
+    if (!this.displayedDeltas) {
+      this.displayedDeltas = new Map();
+    } else {
+      this.displayedDeltas.clear();
+    }
 
     this.sessionConfig = {
       maxDuration: session.maxDuration,
@@ -299,6 +313,12 @@ export class SessionService extends EventEmitter {
     this.stopHeartbeat();
 
     this.sessionDrivers = [];
+    if (this.previousPositions) {
+      this.previousPositions.clear();
+    }
+    if (this.displayedDeltas) {
+      this.displayedDeltas.clear();
+    }
     this.raceFinishTime = null;
     this.gracePeriodEndsAt = null;
     this.activeSessionId = null;
@@ -380,7 +400,7 @@ export class SessionService extends EventEmitter {
     return this.sessionDrivers.find(d => d.controller === controller);
   }
 
-  recalculatePositions() {
+  recalculatePositions(lapController = null) {
     if (this.sessionDrivers.length === 0) return;
 
     const isRace = this.currentPhase === 'race';
@@ -403,7 +423,26 @@ export class SessionService extends EventEmitter {
 
     for (let i = 0; i < this.sessionDrivers.length; i++) {
       const driver = this.sessionDrivers[i];
-      driver.position = i + 1;
+      const newPosition = i + 1;
+      const previousPosition = this.previousPositions.get(driver.controller);
+
+      if (previousPosition !== undefined && previousPosition !== newPosition) {
+        // Position changed - update delta for this driver
+        this.displayedDeltas.set(driver.controller, previousPosition - newPosition);
+      } else if (driver.controller === lapController) {
+        // This driver just completed a lap but position didn't change - clear their delta
+        this.displayedDeltas.set(driver.controller, 0);
+      }
+      // Other drivers with no position change keep their existing delta
+
+      // Get displayed delta
+      driver.positionDelta = this.displayedDeltas.get(driver.controller) || 0;
+
+      // Update position
+      driver.position = newPosition;
+
+      // Store current position for next comparison
+      this.previousPositions.set(driver.controller, newPosition);
 
       if (i === 0) {
         driver.gap = null;

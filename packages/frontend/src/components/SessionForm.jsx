@@ -166,10 +166,10 @@ export default function SessionForm({ session, onClose, onSaved }) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-2xl w-full mx-4">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
           </div>
         </div>
       </div>
@@ -178,15 +178,15 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700 flex-shrink-0">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {session ? 'Modifier la session' : 'Nouvelle session'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -195,33 +195,33 @@ export default function SessionForm({ session, onClose, onSaved }) {
         {/* Form */}
         <form id="session-form" onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4 text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
 
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Informations générales</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Informations générales</h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="Ex: Essais libres Nürburgring"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="practice">Essais libres</option>
                   <option value="qualif">Qualifications</option>
@@ -230,12 +230,12 @@ export default function SessionForm({ session, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Circuit</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Circuit</label>
                 <select
                   required
                   value={formData.trackId}
                   onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Sélectionner un circuit</option>
                   {tracks.map((track) => (
@@ -249,11 +249,11 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Championnat (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Championnat (optionnel)</label>
                 <select
                   value={formData.championshipId}
                   onChange={(e) => setFormData({ ...formData, championshipId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Aucun</option>
                   {championships.map((champ) => (
@@ -265,11 +265,11 @@ export default function SessionForm({ session, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Carburant</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Carburant</label>
                 <select
                   value={formData.fuelMode}
                   onChange={(e) => setFormData({ ...formData, fuelMode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="OFF">Désactivé</option>
                   <option value="ON">Activé</option>
@@ -279,23 +279,23 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Durée (minutes)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durée (minutes)</label>
                 <input
                   type="number"
                   value={formData.duration || ''}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : null })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tours max</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tours max</label>
                 <input
                   type="number"
                   value={formData.maxLaps || ''}
                   onChange={(e) => setFormData({ ...formData, maxLaps: e.target.value ? parseInt(e.target.value) : null })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="100"
                 />
               </div>
@@ -306,8 +306,8 @@ export default function SessionForm({ session, onClose, onSaved }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900">Pilotes</h3>
-                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                <h3 className="font-semibold text-gray-900 dark:text-white">Pilotes</h3>
+                <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full font-medium">
                   {formData.drivers.length}/{availableSlots} slots
                 </span>
               </div>
@@ -315,7 +315,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                 type="button"
                 onClick={addDriver}
                 disabled={formData.drivers.length >= availableSlots}
-                className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlusIcon className="w-4 h-4" />
                 Ajouter
@@ -324,11 +324,11 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="space-y-3">
               {formData.drivers.map((driver, index) => (
-                <div key={index} className="flex gap-3 p-4 bg-gray-50 rounded-lg">
+                <div key={index} className="flex gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <select
                     value={driver.driverId}
                     onChange={(e) => updateDriver(index, 'driverId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">Pilote</option>
                     {drivers.map((d) => (
@@ -341,7 +341,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   <select
                     value={driver.carId}
                     onChange={(e) => updateDriver(index, 'carId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">Voiture</option>
                     {cars.map((c) => (
@@ -354,7 +354,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   <select
                     value={driver.controller}
                     onChange={(e) => updateDriver(index, 'controller', e.target.value)}
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">Ctrl</option>
                     {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
@@ -376,13 +376,13 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     value={driver.gridPos || ''}
                     onChange={(e) => updateDriver(index, 'gridPos', e.target.value ? parseInt(e.target.value) : null)}
                     placeholder="Grille"
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   />
 
                   <button
                     type="button"
                     onClick={() => removeDriver(index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -390,7 +390,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
               ))}
 
               {formData.drivers.length === 0 && (
-                <p className="text-gray-500 text-sm text-center py-4">Aucun pilote ajouté</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">Aucun pilote ajouté</p>
               )}
             </div>
           </div>
@@ -398,7 +398,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
         </form>
 
         {/* Actions Footer */}
-        <div className="flex gap-3 p-6 border-t flex-shrink-0 bg-white">
+        <div className="flex gap-3 p-6 border-t dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
           <button
             form="session-form"
             type="submit"
@@ -409,7 +409,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
           >
             Annuler
           </button>

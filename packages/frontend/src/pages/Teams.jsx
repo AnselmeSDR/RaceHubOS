@@ -140,19 +140,19 @@ function TeamCard({ team, onEdit }) {
           </div>
 
           {team.color && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 shadow-md">
-              <div className="w-4 h-4 rounded-full border-2 border-white ring-1 ring-gray-300" style={{ backgroundColor: team.color }} />
-              <span className="text-xs font-mono font-bold text-gray-700">{team.color}</span>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-md">
+              <div className="w-4 h-4 rounded-full border-2 border-white dark:border-gray-600 ring-1 ring-gray-300 dark:ring-gray-600" style={{ backgroundColor: team.color }} />
+              <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-200">{team.color}</span>
             </div>
           )}
         </div>
 
         <div className="mb-3">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-black text-2xl tracking-tight text-gray-900 uppercase">{team.name}</h3>
+            <h3 className="font-black text-2xl tracking-tight text-gray-900 dark:text-white uppercase">{team.name}</h3>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 text-gray-700 hover:bg-white hover:scale-110 transition-all flex items-center justify-center shadow-md"
+              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
@@ -162,11 +162,11 @@ function TeamCard({ team, onEdit }) {
       </div>
 
       <div className="px-6 pb-6">
-        <div className="bg-white/50 rounded-lg p-4 border border-gray-200">
+        <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <UserGroupIcon className="w-5 h-5" style={{ color: teamColor }} />
-              <span className="text-sm font-bold text-gray-700 uppercase">Pilotes</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase">Pilotes</span>
             </div>
             <span className="text-2xl font-black" style={{ color: teamColor }}>
               {team._count?.drivers || 0}
@@ -178,12 +178,12 @@ function TeamCard({ team, onEdit }) {
               {team.drivers.slice(0, 3).map((driver) => (
                 <div key={driver.id} className="flex items-center gap-2 text-sm">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: teamColor }} />
-                  <span className="text-gray-700 font-medium">{driver.name}</span>
+                  <span className="text-gray-700 dark:text-gray-200 font-medium">{driver.name}</span>
                   {driver.number && <span className="text-gray-400 text-xs">#{driver.number}</span>}
                 </div>
               ))}
               {team.drivers.length > 3 && (
-                <div className="text-xs text-gray-500 italic mt-2">
+                <div className="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
                   +{team.drivers.length - 3} autre{team.drivers.length - 3 > 1 ? 's' : ''}
                 </div>
               )}
@@ -199,19 +199,19 @@ function TeamCard({ team, onEdit }) {
 
 function TeamTable({ teams, onEdit }) {
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Équipe</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Couleur</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pilotes</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Équipe</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Couleur</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pilotes</th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {teams.map((team) => (
-            <tr key={team.id} className="hover:bg-gray-50">
+            <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-3">
                   <div
@@ -224,24 +224,24 @@ function TeamTable({ teams, onEdit }) {
                       <UserGroupSolidIcon className="w-6 h-6" />
                     )}
                   </div>
-                  <div className="font-medium text-gray-900">{team.name}</div>
+                  <div className="font-medium text-gray-900 dark:text-white">{team.name}</div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 {team.color ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg shadow-md border-2 border-white ring-1 ring-gray-200" style={{ backgroundColor: team.color }} />
-                    <span className="text-sm text-gray-500 font-mono">{team.color}</span>
+                    <div className="w-8 h-8 rounded-lg shadow-md border-2 border-white dark:border-gray-600 ring-1 ring-gray-200 dark:ring-gray-600" style={{ backgroundColor: team.color }} />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">{team.color}</span>
                   </div>
                 ) : (
                   <span className="text-sm text-gray-400">-</span>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {team._count?.drivers || 0} pilote{(team._count?.drivers || 0) > 1 ? 's' : ''}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right">
-                <button onClick={() => onEdit(team)} className="text-orange-600 hover:text-orange-900">
+                <button onClick={() => onEdit(team)} className="text-orange-600 hover:text-orange-400">
                   <PencilIcon className="w-5 h-5" />
                 </button>
               </td>

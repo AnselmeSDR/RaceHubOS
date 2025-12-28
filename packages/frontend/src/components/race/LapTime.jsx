@@ -12,7 +12,7 @@ export default function LapTime({ time, size = 'md', highlight = false }) {
   // Handle null/undefined/invalid times
   if (time === null || time === undefined || time <= 0) {
     return (
-      <span className={`${sizes[size]} font-mono text-gray-400 tabular-nums`}>
+      <span className={`${sizes[size]} font-mono text-gray-400 dark:text-gray-500 tabular-nums`}>
         --
       </span>
     )
@@ -40,8 +40,8 @@ export default function LapTime({ time, size = 'md', highlight = false }) {
       className={`
         ${sizes[size]} font-mono tabular-nums
         ${highlight
-          ? 'bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold'
-          : 'text-gray-900'
+          ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded font-bold'
+          : 'text-gray-900 dark:text-white'
         }
       `}
     >

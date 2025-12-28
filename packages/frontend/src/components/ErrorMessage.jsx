@@ -6,30 +6,30 @@ export default function ErrorMessage({ type = 'error', message, onClose, classNa
 
   const styles = {
     error: {
-      bg: 'bg-red-50',
-      border: 'border-red-400',
-      text: 'text-red-800',
+      bg: 'bg-red-50 dark:bg-red-900/30',
+      border: 'border-red-400 dark:border-red-600',
+      text: 'text-red-800 dark:text-red-300',
       icon: XCircleIcon,
       iconColor: 'text-red-400'
     },
     success: {
-      bg: 'bg-green-50',
-      border: 'border-green-400',
-      text: 'text-green-800',
+      bg: 'bg-green-50 dark:bg-green-900/30',
+      border: 'border-green-400 dark:border-green-600',
+      text: 'text-green-800 dark:text-green-300',
       icon: CheckCircleIcon,
       iconColor: 'text-green-400'
     },
     warning: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-400',
-      text: 'text-yellow-800',
+      bg: 'bg-yellow-50 dark:bg-yellow-900/30',
+      border: 'border-yellow-400 dark:border-yellow-600',
+      text: 'text-yellow-800 dark:text-yellow-300',
       icon: ExclamationTriangleIcon,
       iconColor: 'text-yellow-400'
     },
     info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-400',
-      text: 'text-blue-800',
+      bg: 'bg-blue-50 dark:bg-blue-900/30',
+      border: 'border-blue-400 dark:border-blue-600',
+      text: 'text-blue-800 dark:text-blue-300',
       icon: InformationCircleIcon,
       iconColor: 'text-blue-400'
     }

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './context/ThemeContext'
 import { DeviceProvider } from './context/DeviceContext'
 import { SessionProvider } from './context/SessionContext'
 import Layout from './components/Layout'
@@ -23,8 +24,9 @@ import ChampionshipDetail from './pages/ChampionshipDetail'
 function App() {
   return (
     <BrowserRouter>
-      <DeviceProvider>
-        <SessionProvider>
+      <ThemeProvider>
+        <DeviceProvider>
+          <SessionProvider>
           <Routes>
           {/* Main layout with sidebar */}
           <Route path="/" element={<Layout />}>
@@ -61,8 +63,9 @@ function App() {
           {/* Redirect unknown routes */}
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </SessionProvider>
-      </DeviceProvider>
+          </SessionProvider>
+        </DeviceProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

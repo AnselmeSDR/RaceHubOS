@@ -15,9 +15,12 @@ import {
   Bars3Icon,
   CommandLineIcon,
   ClockIcon,
+  SunIcon,
+  MoonIcon,
 } from '@heroicons/react/24/outline'
 import BackendStatusPopup from './BackendStatusPopup'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
+import { useTheme } from '../context/ThemeContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -36,6 +39,7 @@ const CU_STATE_NAMES = {
 
 export default function Layout() {
   const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
+  const { isDark, toggleTheme } = useTheme()
   const isSimulator = deviceAddress === SIMULATOR_ADDRESS
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen')
@@ -84,7 +88,7 @@ export default function Layout() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white flex flex-col transition-all duration-300`}>
         {/* Header */}
@@ -95,22 +99,40 @@ export default function Layout() {
                 <h1 className="text-2xl font-bold">RaceHubOS</h1>
                 <p className="text-sm text-gray-400 mt-1">Carrera Digital 132/124</p>
               </div>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                title="Réduire"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  title={isDark ? 'Mode jour' : 'Mode nuit'}
+                >
+                  {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Réduire"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             </>
           ) : (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors mx-auto"
-              title="Agrandir"
-            >
-              <Bars3Icon className="w-6 h-6" />
-            </button>
+            <div className="flex flex-col items-center gap-2 mx-auto">
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                title={isDark ? 'Mode jour' : 'Mode nuit'}
+              >
+                {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                title="Agrandir"
+              >
+                <Bars3Icon className="w-6 h-6" />
+              </button>
+            </div>
           )}
         </div>
 

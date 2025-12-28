@@ -15,8 +15,8 @@ import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const SESSION_TYPES = {
-  qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-100 text-blue-700', icon: ClockIcon },
-  race: { label: 'Course', shortLabel: 'R', color: 'bg-green-100 text-green-700', icon: FlagIcon }
+  qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300', icon: ClockIcon },
+  race: { label: 'Course', shortLabel: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300', icon: FlagIcon }
 }
 
 /**
@@ -245,7 +245,7 @@ export default function ChampionshipConfigModal({
     >
       <div className="space-y-6">
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
             {error}
           </div>
         )}
@@ -253,25 +253,25 @@ export default function ChampionshipConfigModal({
         {/* Championship Info */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nom du championnat
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Circuit
             </label>
             <select
               value={trackId}
               onChange={(e) => setTrackId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">-- Selectionner un circuit --</option>
               {tracks.map(track => (
@@ -286,20 +286,20 @@ export default function ChampionshipConfigModal({
         {/* Sessions Management */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Sessions Qualifications & Courses
             </label>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowNewSession('qualif')}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
               >
                 <PlusIcon className="w-3 h-3" />
                 Qualif
               </button>
               <button
                 onClick={() => setShowNewSession('race')}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
               >
                 <PlusIcon className="w-3 h-3" />
                 Course
@@ -308,9 +308,9 @@ export default function ChampionshipConfigModal({
           </div>
 
           {/* Sessions List */}
-          <div className="border rounded-lg divide-y">
+          <div className="border dark:border-gray-600 rounded-lg divide-y dark:divide-gray-600">
             {qrSessions.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                 Aucune session. Ajoutez une qualification ou une course.
               </div>
             ) : (
@@ -333,17 +333,17 @@ export default function ChampionshipConfigModal({
                             value={sessionForm.name}
                             onChange={(e) => setSessionForm(f => ({ ...f, name: e.target.value }))}
                             placeholder={config.label}
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-yellow-500"
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
 
                         <div className="flex items-center gap-4 text-sm">
-                          <label className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                             <input
                               type="checkbox"
                               checked={sessionForm.useTime}
                               onChange={(e) => setSessionForm(f => ({ ...f, useTime: e.target.checked }))}
-                              className="rounded border-gray-300 text-blue-600"
+                              className="rounded border-gray-300 dark:border-gray-600 text-blue-600"
                             />
                             <ClockIcon className="w-4 h-4 text-gray-400" />
                             <input
@@ -351,17 +351,17 @@ export default function ChampionshipConfigModal({
                               value={sessionForm.duration}
                               onChange={(e) => setSessionForm(f => ({ ...f, duration: parseInt(e.target.value) || 1 }))}
                               disabled={!sessionForm.useTime}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center disabled:bg-gray-100"
+                              className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
-                            <span className="text-gray-500">min</span>
+                            <span className="text-gray-500 dark:text-gray-400">min</span>
                           </label>
 
-                          <label className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                             <input
                               type="checkbox"
                               checked={sessionForm.useLaps}
                               onChange={(e) => setSessionForm(f => ({ ...f, useLaps: e.target.checked }))}
-                              className="rounded border-gray-300 text-green-600"
+                              className="rounded border-gray-300 dark:border-gray-600 text-green-600"
                             />
                             <ArrowPathIcon className="w-4 h-4 text-gray-400" />
                             <input
@@ -369,16 +369,16 @@ export default function ChampionshipConfigModal({
                               value={sessionForm.maxLaps}
                               onChange={(e) => setSessionForm(f => ({ ...f, maxLaps: parseInt(e.target.value) || 1 }))}
                               disabled={!sessionForm.useLaps}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center disabled:bg-gray-100"
+                              className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
-                            <span className="text-gray-500">tours</span>
+                            <span className="text-gray-500 dark:text-gray-400">tours</span>
                           </label>
                         </div>
 
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => setEditingSession(null)}
-                            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                            className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                           >
                             Annuler
                           </button>
@@ -398,14 +398,14 @@ export default function ChampionshipConfigModal({
                           <button
                             onClick={() => handleMoveSession(session.id, 'up')}
                             disabled={index === 0}
-                            className="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <ChevronUpIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleMoveSession(session.id, 'down')}
                             disabled={index === qrSessions.length - 1}
-                            className="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <ChevronDownIcon className="w-4 h-4" />
                           </button>
@@ -417,19 +417,19 @@ export default function ChampionshipConfigModal({
                             {getSessionLabel(session, index)}
                           </span>
                           <Icon className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-gray-900 dark:text-white">
                             {session.name || config.label}
                           </span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             {session.maxDuration ? `${Math.round(session.maxDuration / 60000)} min` : ''}
                             {session.maxDuration && session.maxLaps ? ' / ' : ''}
                             {session.maxLaps ? `${session.maxLaps} tours` : ''}
                           </span>
                           {session.status !== 'draft' && (
                             <span className={`px-1.5 py-0.5 rounded text-xs ${
-                              session.status === 'finished' ? 'bg-gray-100 text-gray-600' :
-                              session.status === 'active' ? 'bg-green-100 text-green-700' :
-                              'bg-yellow-100 text-yellow-700'
+                              session.status === 'finished' ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' :
+                              session.status === 'active' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+                              'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
                             }`}>
                               {session.status}
                             </span>
@@ -440,14 +440,14 @@ export default function ChampionshipConfigModal({
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => startEditing(session)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
                             title="Modifier"
                           >
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteSession(session.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
                             title="Supprimer"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -462,7 +462,7 @@ export default function ChampionshipConfigModal({
 
             {/* New session form */}
             {showNewSession && (
-              <div className="p-3 bg-gray-50">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${SESSION_TYPES[showNewSession].color}`}>
@@ -473,17 +473,17 @@ export default function ChampionshipConfigModal({
                       value={newSessionForm.name}
                       onChange={(e) => setNewSessionForm(f => ({ ...f, name: e.target.value }))}
                       placeholder={SESSION_TYPES[showNewSession].label}
-                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-yellow-500"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
 
                   <div className="flex items-center gap-4 text-sm">
-                    <label className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={newSessionForm.useTime}
                         onChange={(e) => setNewSessionForm(f => ({ ...f, useTime: e.target.checked }))}
-                        className="rounded border-gray-300 text-blue-600"
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600"
                       />
                       <ClockIcon className="w-4 h-4 text-gray-400" />
                       <input
@@ -491,17 +491,17 @@ export default function ChampionshipConfigModal({
                         value={newSessionForm.duration}
                         onChange={(e) => setNewSessionForm(f => ({ ...f, duration: parseInt(e.target.value) || 1 }))}
                         disabled={!newSessionForm.useTime}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center disabled:bg-gray-100"
+                        className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
-                      <span className="text-gray-500">min</span>
+                      <span className="text-gray-500 dark:text-gray-400">min</span>
                     </label>
 
-                    <label className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={newSessionForm.useLaps}
                         onChange={(e) => setNewSessionForm(f => ({ ...f, useLaps: e.target.checked }))}
-                        className="rounded border-gray-300 text-green-600"
+                        className="rounded border-gray-300 dark:border-gray-600 text-green-600"
                       />
                       <ArrowPathIcon className="w-4 h-4 text-gray-400" />
                       <input
@@ -509,16 +509,16 @@ export default function ChampionshipConfigModal({
                         value={newSessionForm.maxLaps}
                         onChange={(e) => setNewSessionForm(f => ({ ...f, maxLaps: parseInt(e.target.value) || 1 }))}
                         disabled={!newSessionForm.useLaps}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center disabled:bg-gray-100"
+                        className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
-                      <span className="text-gray-500">tours</span>
+                      <span className="text-gray-500 dark:text-gray-400">tours</span>
                     </label>
                   </div>
 
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => setShowNewSession(null)}
-                      className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
                     >
                       Annuler
                     </button>

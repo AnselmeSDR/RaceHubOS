@@ -6,9 +6,9 @@ import {
 } from '@heroicons/react/24/outline'
 
 const SESSION_TYPES = {
-  practice: { label: 'EL', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: BeakerIcon },
-  qualif: { label: 'Q', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: ClockIcon },
-  race: { label: 'R', color: 'bg-green-100 text-green-700 border-green-200', icon: FlagIcon }
+  practice: { label: 'EL', color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700', icon: BeakerIcon },
+  qualif: { label: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700', icon: ClockIcon },
+  race: { label: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', icon: FlagIcon }
 }
 
 /**
@@ -59,22 +59,22 @@ export default function ChampionshipHeader({
   })
 
   return (
-    <div className="bg-white border-b">
+    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
       {/* Main header row */}
       <div className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{championship?.name || 'Championnat'}</h1>
-            <p className="text-sm text-gray-500">{championship?.track?.name || 'Circuit non defini'}</p>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{championship?.name || 'Championnat'}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{championship?.track?.name || 'Circuit non defini'}</p>
           </div>
         </div>
 
         <button
           onClick={onConfig}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title="Configuration du championnat"
         >
-          <Cog6ToothIcon className="w-5 h-5 text-gray-500" />
+          <Cog6ToothIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 
@@ -93,7 +93,7 @@ export default function ChampionshipHeader({
               className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
                 isSelected
                   ? `${config.color} border-2 shadow-sm`
-                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
               }`}
             >
               <Icon className="w-4 h-4" />

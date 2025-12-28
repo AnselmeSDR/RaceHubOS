@@ -140,7 +140,7 @@ function CarCard({ car, onEdit }) {
           </div>
 
           {car.year && (
-            <div className="px-3 py-1 rounded-full text-sm font-bold bg-white/80 text-gray-900 shadow-md">
+            <div className="px-3 py-1 rounded-full text-sm font-bold bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white shadow-md">
               {car.year}
             </div>
           )}
@@ -148,10 +148,10 @@ function CarCard({ car, onEdit }) {
 
         <div className="mb-3">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-black text-xl tracking-tight text-gray-900 uppercase">{car.brand}</h3>
+            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white uppercase">{car.brand}</h3>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 text-gray-700 hover:bg-white hover:scale-110 transition-all flex items-center justify-center shadow-md"
+              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
@@ -166,9 +166,9 @@ function CarCard({ car, onEdit }) {
         <SpecBar icon={<FireIcon className="w-4 h-4" />} label="Freinage" value={car.brakeForce} color="#EF4444" />
         <SpecBar icon={<BeakerIcon className="w-4 h-4" />} label="Réservoir" value={(car.fuelCapacity / 150) * 100} color="#3B82F6" displayValue={car.fuelCapacity} />
 
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500 uppercase">Courses</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">Courses</span>
             <span className="text-lg font-black" style={{ color: carColor }}>{car._count?.sessions || 0}</span>
           </div>
         </div>
@@ -183,13 +183,13 @@ function SpecBar({ icon, label, value, color, displayValue }) {
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <span style={{ color }}>{icon}</span>
-          <span className="text-xs font-medium text-gray-600 uppercase">{label}</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">{label}</span>
         </div>
         <span className="text-sm font-black" style={{ color }}>
           {displayValue ?? `${Math.round(value)}%`}
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
         <div
           className="h-2 rounded-full transition-all"
           style={{ width: `${value}%`, backgroundColor: color }}
@@ -201,51 +201,51 @@ function SpecBar({ icon, label, value, color, displayValue }) {
 
 function CarTable({ cars, onEdit }) {
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marque & Modèle</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Année</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vitesse</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Freinage</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Réservoir</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Courses</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Marque & Modèle</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Année</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vitesse</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Freinage</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Réservoir</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Courses</th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {cars.map((car) => (
-            <tr key={car.id} className="hover:bg-gray-50">
+            <tr key={car.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
                     {car.brand.charAt(0)}
                   </div>
-                  <div className="font-medium text-gray-900">{car.brand} {car.model}</div>
+                  <div className="font-medium text-gray-900 dark:text-white">{car.brand} {car.model}</div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{car.year || 'N/A'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car.year || 'N/A'}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2 w-20">
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 w-20">
                     <div className="bg-green-500 h-2 rounded-full" style={{ width: `${car.maxSpeed}%` }} />
                   </div>
-                  <span className="text-sm font-medium">{car.maxSpeed}%</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{car.maxSpeed}%</span>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2 w-20">
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 w-20">
                     <div className="bg-red-500 h-2 rounded-full" style={{ width: `${car.brakeForce}%` }} />
                   </div>
-                  <span className="text-sm font-medium">{car.brakeForce}%</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{car.brakeForce}%</span>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{car.fuelCapacity}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{car._count?.sessions || 0}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car.fuelCapacity}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car._count?.sessions || 0}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right">
-                <button onClick={() => onEdit(car)} className="text-green-600 hover:text-green-900">
+                <button onClick={() => onEdit(car)} className="text-green-600 hover:text-green-400">
                   <PencilIcon className="w-5 h-5" />
                 </button>
               </td>

@@ -86,10 +86,10 @@ export default function SessionDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Chargement de la session...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400 text-lg">Chargement de la session...</p>
         </div>
       </div>
     )
@@ -97,15 +97,15 @@ export default function SessionDetail() {
 
   if (!session) {
     return (
-      <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <button
           onClick={() => navigate('/history')}
-          className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 mb-8"
+          className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mb-8"
         >
           <ArrowLeftIcon className="w-5 h-5" />
           Retour à l'historique
         </button>
-        <div className="text-center text-gray-500">Session introuvable</div>
+        <div className="text-center text-gray-500 dark:text-gray-400">Session introuvable</div>
       </div>
     )
   }
@@ -123,7 +123,7 @@ export default function SessionDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div
         className="relative"
@@ -196,47 +196,47 @@ export default function SessionDetail() {
         {/* Stats Cards */}
         <div className="flex flex-wrap gap-6 mb-8">
           {/* Circuit */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
               <MapPinIcon className="w-8 h-8 text-indigo-500" />
-              <span className="text-xl font-bold text-gray-900">{session.track?.name}</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">{session.track?.name}</span>
             </div>
-            <p className="text-gray-600">Circuit</p>
+            <p className="text-gray-600 dark:text-gray-400">Circuit</p>
           </div>
 
           {/* Pilotes */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
               <UsersIcon className="w-8 h-8 text-indigo-500" />
-              <span className="text-3xl font-bold text-gray-900">{session.drivers?.length || 0}</span>
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">{session.drivers?.length || 0}</span>
             </div>
-            <p className="text-gray-600">Pilotes</p>
+            <p className="text-gray-600 dark:text-gray-400">Pilotes</p>
           </div>
 
           {/* Tours */}
-          <div className="bg-white rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
               <FlagIcon className="w-8 h-8 text-green-500" />
-              <span className="text-3xl font-bold text-gray-900">{session._count?.laps || 0}</span>
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">{session._count?.laps || 0}</span>
             </div>
-            <p className="text-gray-600">Tours complétés</p>
+            <p className="text-gray-600 dark:text-gray-400">Tours complétés</p>
           </div>
 
           {/* Championnat */}
           {session.championship && (
-            <div className="bg-white rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
               <div className="flex items-center gap-3 mb-3">
                 <TrophyIcon className="w-8 h-8 text-yellow-500" />
-                <span className="text-xl font-bold text-gray-900">{session.championship.name}</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">{session.championship.name}</span>
               </div>
-              <p className="text-gray-600">Championnat</p>
+              <p className="text-gray-600 dark:text-gray-400">Championnat</p>
             </div>
           )}
         </div>
 
         {/* Leaderboard Tabs */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex">
               {['practice', 'qualif', 'race'].map((phase) => (
                 <button
@@ -244,8 +244,8 @@ export default function SessionDetail() {
                   onClick={() => setActivePhaseTab(phase)}
                   className={`px-6 py-4 font-medium transition-all flex items-center gap-2 ${
                     activePhaseTab === phase
-                      ? 'text-indigo-600 border-b-2 border-indigo-600'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   {phase === 'practice' && <ClockIcon className="w-5 h-5" />}
@@ -253,7 +253,7 @@ export default function SessionDetail() {
                   {phase === 'race' && <FlagIcon className="w-5 h-5" />}
                   {phase === 'practice' ? 'Essais' : phase === 'qualif' ? 'Qualifications' : 'Course'}
                   {phaseLeaderboards[phase]?.length > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
+                    <span className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full">
                       {phaseLeaderboards[phase].length}
                     </span>
                   )}
@@ -269,18 +269,18 @@ export default function SessionDetail() {
                   <div
                     key={entry.driver?.id || idx}
                     className={`flex items-center justify-between p-4 rounded-lg ${
-                      idx === 0 ? 'bg-yellow-50 border-2 border-yellow-300' :
-                      idx === 1 ? 'bg-gray-50 border-2 border-gray-300' :
-                      idx === 2 ? 'bg-orange-50 border-2 border-orange-300' :
-                      'bg-gray-50'
+                      idx === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-600' :
+                      idx === 1 ? 'bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-300 dark:border-gray-600' :
+                      idx === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-600' :
+                      'bg-gray-50 dark:bg-gray-700/50'
                     }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`text-3xl font-bold ${
-                        idx === 0 ? 'text-yellow-600' :
-                        idx === 1 ? 'text-gray-600' :
-                        idx === 2 ? 'text-orange-600' :
-                        'text-gray-900'
+                        idx === 0 ? 'text-yellow-600 dark:text-yellow-400' :
+                        idx === 1 ? 'text-gray-600 dark:text-gray-400' :
+                        idx === 2 ? 'text-orange-600 dark:text-orange-400' :
+                        'text-gray-900 dark:text-white'
                       }`}>
                         #{idx + 1}
                       </div>
@@ -300,17 +300,17 @@ export default function SessionDetail() {
                           </div>
                         )}
                         <div>
-                          <p className="font-bold text-gray-900">{entry.driver?.name}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className="font-bold text-gray-900 dark:text-white">{entry.driver?.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {entry.car?.brand} {entry.car?.model}
                           </p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">{entry.laps || 0} tours</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{entry.laps || 0} tours</p>
                       {entry.bestLap && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Meilleur : {(entry.bestLap / 1000).toFixed(3)}s
                         </p>
                       )}
@@ -319,8 +319,8 @@ export default function SessionDetail() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                <FlagIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <FlagIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                 <p className="font-medium">Aucune donnée pour cette phase</p>
               </div>
             )}

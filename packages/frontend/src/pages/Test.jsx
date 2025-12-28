@@ -389,17 +389,17 @@ export default function Test() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">Test Console</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Test Console</h1>
           {/* Socket status */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            connected ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
           }`}>
             {connected ? <SignalIcon className="w-4 h-4" /> : <SignalSlashIcon className="w-4 h-4" />}
             {connected ? 'Socket OK' : 'Socket Off'}
           </div>
           {/* CU status */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            cuConnected ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+            cuConnected ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
           }`}>
             <BoltIcon className="w-4 h-4" />
             {cuConnected ? 'CU Connected' : 'CU Offline'}
@@ -414,7 +414,7 @@ export default function Test() {
           {modes.length > 0 && (
             <div className="flex gap-1">
               {modes.map(m => (
-                <span key={m} className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
+                <span key={m} className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded">
                   {m}
                 </span>
               ))}
@@ -424,10 +424,10 @@ export default function Test() {
       </div>
 
       {/* CU Controls */}
-      <div className="bg-white rounded-lg shadow p-4 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-700">Control Unit</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-200">Control Unit</span>
             {!cuConnected ? (
               <button
                 onClick={scanAndConnect}
@@ -483,13 +483,13 @@ export default function Test() {
                 </button>
 
                 {/* CU Buttons */}
-                <div className="border-l pl-2 ml-2 flex gap-1">
+                <div className="border-l dark:border-gray-600 pl-2 ml-2 flex gap-1">
                   {Object.entries(CU_BUTTONS).map(([name, id]) => (
                     <button
                       key={id}
                       onClick={() => apiCall(`/button/${id}`)}
                       disabled={actionLoading}
-                      className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 text-xs"
+                      className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50 text-xs"
                       title={`Button ${id}: ${name}`}
                     >
                       {name}
@@ -512,7 +512,7 @@ export default function Test() {
 
           {/* Status info */}
           {cuConnected && cuStatus && (
-            <div className="text-xs text-gray-500 flex gap-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
               <span>Display: {cuStatus.display || 6} cars</span>
               {cuStatus.fuel && (
                 <span>Fuel: [{cuStatus.fuel.slice(0, cuStatus.display || 6).join(', ')}]</span>
@@ -523,7 +523,7 @@ export default function Test() {
           {/* Config toggle */}
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className={`flex items-center gap-1 px-3 py-2 rounded-lg ${showConfig ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'} hover:bg-blue-200`}
+            className={`flex items-center gap-1 px-3 py-2 rounded-lg ${showConfig ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'} hover:bg-blue-200 dark:hover:bg-blue-900/70`}
           >
             <Cog6ToothIcon className="w-4 h-4" />
             Config
@@ -533,8 +533,8 @@ export default function Test() {
 
       {/* Controller Configuration Panel */}
       {showConfig && (
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
             <UserIcon className="w-5 h-5" />
             Configuration des Controllers
           </h3>
@@ -543,19 +543,19 @@ export default function Test() {
               const config = controllerConfig[controller] || {}
               const color = CONTROLLER_COLORS[controller]
               return (
-                <div key={controller} className="border rounded-lg p-3 bg-gray-50">
+                <div key={controller} className="border dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
                   <div className="flex items-center gap-2 mb-2">
                     <div
-                      className="w-4 h-4 rounded-full border border-gray-300"
+                      className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="font-bold text-sm">Controller {controller}</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">Controller {controller}</span>
                   </div>
                   <div className="space-y-2">
                     <select
                       value={config.driverId || ''}
                       onChange={(e) => updateControllerConfig(controller, 'driverId', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white"
+                      className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
                       <option value="">-- Pilote --</option>
                       {drivers.map(d => (
@@ -567,7 +567,7 @@ export default function Test() {
                     <select
                       value={config.carId || ''}
                       onChange={(e) => updateControllerConfig(controller, 'carId', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white"
+                      className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
                       <option value="">-- Voiture --</option>
                       {cars.map(c => (
@@ -698,12 +698,12 @@ export default function Test() {
         </div>
 
         {/* Leaderboard Panel */}
-        <div className="bg-white rounded-lg shadow flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between p-3 border-b">
-            <span className="font-semibold text-gray-800">Live Leaderboard</span>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between p-3 border-b dark:border-gray-700">
+            <span className="font-semibold text-gray-800 dark:text-white">Live Leaderboard</span>
             <button
               onClick={clearLeaderboard}
-              className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-500"
+              className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400"
               title="Clear leaderboard"
             >
               <TrashIcon className="w-4 h-4" />
@@ -717,8 +717,8 @@ export default function Test() {
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr className="text-left text-gray-500 text-xs">
+                <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                  <tr className="text-left text-gray-500 dark:text-gray-400 text-xs">
                     <th className="px-3 py-2">Pos</th>
                     <th className="px-3 py-2">Car</th>
                     <th className="px-3 py-2 text-right">Laps</th>
@@ -732,28 +732,28 @@ export default function Test() {
                     return (
                       <tr
                         key={entry.controller}
-                        className={`border-b hover:bg-gray-50 ${
-                          Date.now() - entry.lastUpdate < 3000 ? 'bg-yellow-50' : ''
+                        className={`border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                          Date.now() - entry.lastUpdate < 3000 ? 'bg-yellow-50 dark:bg-yellow-900/30' : ''
                         }`}
                       >
-                        <td className="px-3 py-2 font-bold">{index + 1}</td>
+                        <td className="px-3 py-2 font-bold text-gray-900 dark:text-white">{index + 1}</td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
                             <div
-                              className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                              className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500 flex-shrink-0"
                               style={{ backgroundColor: info.color }}
                             />
                             <div>
-                              <div className="font-medium">{info.driverName}</div>
+                              <div className="font-medium text-gray-900 dark:text-white">{info.driverName}</div>
                               <div className="text-xs text-gray-400">{info.carName}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono">{entry.laps}</td>
-                        <td className="px-3 py-2 text-right font-mono text-green-600">
+                        <td className="px-3 py-2 text-right font-mono text-gray-900 dark:text-white">{entry.laps}</td>
+                        <td className="px-3 py-2 text-right font-mono text-green-600 dark:text-green-400">
                           {formatTime(entry.bestLap)}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono text-gray-600">
+                        <td className="px-3 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
                           {formatTime(entry.lastLap)}
                         </td>
                       </tr>
@@ -765,7 +765,7 @@ export default function Test() {
           </div>
 
           {sortedLeaderboard.length > 0 && (
-            <div className="p-3 border-t bg-gray-50 text-xs text-gray-500">
+            <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex justify-between">
                 <span>Total Laps: {sortedLeaderboard.reduce((s, e) => s + e.laps, 0)}</span>
                 <span>Cars: {sortedLeaderboard.length}</span>

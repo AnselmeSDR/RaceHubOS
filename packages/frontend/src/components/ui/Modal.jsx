@@ -31,17 +31,17 @@ export default function Modal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${sizeClasses[size]} p-6 mx-4`}>
+      <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full ${sizeClasses[size]} p-6 mx-4`}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
             {icon}
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            <XMarkIcon className="w-6 h-6 text-gray-500" />
+            <XMarkIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
         {children}
@@ -75,7 +75,7 @@ export function ModalButton({
     primary: 'bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300',
     success: 'bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300',
     danger: 'bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300',
-    secondary: 'text-gray-600 hover:bg-gray-100'
+    secondary: 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
   }
 
   return (
@@ -107,18 +107,18 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100' : 'bg-yellow-100'}`}>
+          <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'}`}>
             <ExclamationTriangleIcon className={`w-6 h-6 ${variant === 'danger' ? 'text-red-600' : 'text-yellow-600'}`} />
           </div>
-          <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white">{title}</h2>
         </div>
-        {message && <p className="text-gray-600 mb-6">{message}</p>}
+        {message && <p className="text-gray-600 dark:text-gray-300 mb-6">{message}</p>}
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+            className="flex-1 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
           >
             {cancelLabel}
           </button>

@@ -125,12 +125,12 @@ export default function Stats() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Statistiques & Classements</h1>
-        <p className="text-gray-600 mt-1">Analyse des performances et records</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistiques & Classements</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Analyse des performances et records</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-6">
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
@@ -139,8 +139,8 @@ export default function Stats() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white text-indigo-600 shadow'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -160,7 +160,7 @@ export default function Stats() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement des statistiques...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des statistiques...</p>
           </div>
         </div>
       ) : (
@@ -169,16 +169,16 @@ export default function Stats() {
           {activeTab === 'leaderboard' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Driver Leaderboard */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
                   <h2 className="text-xl font-bold flex items-center gap-2">
                     <TrophyIcon className="w-6 h-6" />
                     Classement Pilotes
                   </h2>
                 </div>
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {driverLeaderboard.map((entry, index) => (
-                    <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div
@@ -212,11 +212,11 @@ export default function Stats() {
                               </div>
                             )}
                             <div>
-                              <p className="font-semibold text-gray-900">
+                              <p className="font-semibold text-gray-900 dark:text-white">
                                 {entry.driver?.name}
                               </p>
                               {entry.driver?.team && (
-                                <p className="text-sm text-gray-500">{entry.driver.team.name}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{entry.driver.team.name}</p>
                               )}
                             </div>
                           </div>
@@ -224,24 +224,24 @@ export default function Stats() {
                         <div className="text-right">
                           {entry.points !== undefined ? (
                             <>
-                              <p className="font-bold text-lg text-gray-900">{entry.points} pts</p>
+                              <p className="font-bold text-lg text-gray-900 dark:text-white">{entry.points} pts</p>
                               {entry.gap && (
-                                <p className="text-sm text-gray-500">-{entry.gap} pts</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">-{entry.gap} pts</p>
                               )}
                             </>
                           ) : (
                             <div className="flex gap-3 text-sm">
                               <div className="text-center">
                                 <p className="font-bold text-yellow-500">{entry.wins || 0}</p>
-                                <p className="text-gray-500">V</p>
+                                <p className="text-gray-500 dark:text-gray-400">V</p>
                               </div>
                               <div className="text-center">
-                                <p className="font-bold text-gray-600">{entry.podiums || 0}</p>
-                                <p className="text-gray-500">P</p>
+                                <p className="font-bold text-gray-600 dark:text-gray-300">{entry.podiums || 0}</p>
+                                <p className="text-gray-500 dark:text-gray-400">P</p>
                               </div>
                               <div className="text-center">
-                                <p className="font-bold text-gray-600">{entry.races || 0}</p>
-                                <p className="text-gray-500">C</p>
+                                <p className="font-bold text-gray-600 dark:text-gray-300">{entry.races || 0}</p>
+                                <p className="text-gray-500 dark:text-gray-400">C</p>
                               </div>
                             </div>
                           )}
@@ -250,22 +250,22 @@ export default function Stats() {
                     </div>
                   ))}
                   {driverLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">Aucune donnée disponible</div>
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
                   )}
                 </div>
               </div>
 
               {/* Team Leaderboard */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4">
                   <h2 className="text-xl font-bold flex items-center gap-2">
                     <UserGroupIcon className="w-6 h-6" />
                     Classement Équipes
                   </h2>
                 </div>
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {teamLeaderboard.map((entry, index) => (
-                    <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div
@@ -298,18 +298,18 @@ export default function Stats() {
                                 {entry.team?.name?.charAt(0)}
                               </div>
                             )}
-                            <p className="font-semibold text-gray-900">{entry.team?.name}</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{entry.team?.name}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-lg text-gray-900">{entry.points} pts</p>
-                          {entry.gap && <p className="text-sm text-gray-500">-{entry.gap} pts</p>}
+                          <p className="font-bold text-lg text-gray-900 dark:text-white">{entry.points} pts</p>
+                          {entry.gap && <p className="text-sm text-gray-500 dark:text-gray-400">-{entry.gap} pts</p>}
                         </div>
                       </div>
                     </div>
                   ))}
                   {teamLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">Aucune donnée disponible</div>
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
                   )}
                 </div>
               </div>
@@ -318,36 +318,36 @@ export default function Stats() {
 
           {/* Driver Stats Tab */}
           {activeTab === 'drivers' && (
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
               <table className="min-w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Pilote
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Courses
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Victoires
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Podiums
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Tours
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Meilleur Tour
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Temps Moyen
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {driverStats.map((driver) => (
-                    <tr key={driver.id} className="hover:bg-gray-50">
+                    <tr key={driver.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           {driver.img ? (
@@ -365,14 +365,14 @@ export default function Stats() {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{driver.name}</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{driver.name}</p>
                             {driver.team && (
-                              <p className="text-sm text-gray-500">{driver.team.name}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">{driver.team.name}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
                         {driver.statistics.totalRaces}
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -380,16 +380,16 @@ export default function Stats() {
                           {driver.statistics.wins}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
                         {driver.statistics.podiums}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
                         {driver.statistics.totalLaps}
                       </td>
-                      <td className="px-6 py-4 text-center font-mono text-sm">
+                      <td className="px-6 py-4 text-center font-mono text-sm text-gray-900 dark:text-white">
                         {formatTime(driver.statistics.bestLap)}
                       </td>
-                      <td className="px-6 py-4 text-center font-mono text-sm">
+                      <td className="px-6 py-4 text-center font-mono text-sm text-gray-900 dark:text-white">
                         {formatTime(driver.statistics.avgLapTime)}
                       </td>
                     </tr>
@@ -397,7 +397,7 @@ export default function Stats() {
                 </tbody>
               </table>
               {driverStats.length === 0 && (
-                <div className="p-8 text-center text-gray-500">Aucune donnée disponible</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
               )}
             </div>
           )}
@@ -406,7 +406,7 @@ export default function Stats() {
           {activeTab === 'cars' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {carStats.map((car) => (
-                <div key={car.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div key={car.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                   <div
                     className="h-2"
                     style={{ backgroundColor: car.color || '#10b981' }}
@@ -414,9 +414,9 @@ export default function Stats() {
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="font-bold text-lg text-gray-900">{car.brand}</h3>
-                        <p className="text-gray-600">{car.model}</p>
-                        {car.year && <p className="text-sm text-gray-500">{car.year}</p>}
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">{car.brand}</h3>
+                        <p className="text-gray-600 dark:text-gray-400">{car.model}</p>
+                        {car.year && <p className="text-sm text-gray-500 dark:text-gray-400">{car.year}</p>}
                       </div>
                       {car.img && (
                         <img
@@ -429,28 +429,28 @@ export default function Stats() {
 
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Courses</span>
-                        <span className="font-semibold">{car.statistics.totalRaces}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Courses</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{car.statistics.totalRaces}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Victoires</span>
+                        <span className="text-gray-600 dark:text-gray-400">Victoires</span>
                         <span className="font-bold text-yellow-600">
                           {car.statistics.wins}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tours</span>
-                        <span className="font-semibold">{car.statistics.totalLaps}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Tours</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{car.statistics.totalLaps}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Meilleur tour</span>
-                        <span className="font-mono text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Meilleur tour</span>
+                        <span className="font-mono text-sm text-gray-900 dark:text-white">
                           {formatTime(car.statistics.bestLap)}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Fiabilité</span>
-                        <span className="font-semibold">
+                        <span className="text-gray-600 dark:text-gray-400">Fiabilité</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {car.statistics.reliability.toFixed(0)}%
                         </span>
                       </div>
@@ -459,7 +459,7 @@ export default function Stats() {
                 </div>
               ))}
               {carStats.length === 0 && (
-                <div className="col-span-3 p-8 text-center text-gray-500 bg-white rounded-lg shadow">
+                <div className="col-span-3 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
                   Aucune donnée disponible
                 </div>
               )}
@@ -470,15 +470,15 @@ export default function Stats() {
           {activeTab === 'tracks' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {trackStats.map((track) => (
-                <div key={track.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div key={track.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                   <div
                     className="h-2"
                     style={{ backgroundColor: track.color || '#9333ea' }}
                   />
                   <div className="p-6">
                     <div className="mb-4">
-                      <h3 className="font-bold text-lg text-gray-900">{track.name}</h3>
-                      <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">{track.name}</h3>
+                      <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {track.length && <span>{track.length}m</span>}
                         {track.corners && <span>{track.corners} virages</span>}
                       </div>
@@ -486,29 +486,29 @@ export default function Stats() {
 
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Sessions</span>
-                        <span className="font-semibold">{track.statistics.totalSessions}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Sessions</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.totalSessions}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tours totaux</span>
-                        <span className="font-semibold">{track.statistics.totalLaps}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Tours totaux</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.totalLaps}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Record</span>
-                        <span className="font-mono text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Record</span>
+                        <span className="font-mono text-sm text-gray-900 dark:text-white">
                           {formatTime(track.statistics.bestLap)}
                         </span>
                       </div>
                       {track.statistics.bestLapBy && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Par</span>
-                          <span className="font-semibold">{track.statistics.bestLapBy}</span>
+                          <span className="text-gray-600 dark:text-gray-400">Par</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.bestLapBy}</span>
                         </div>
                       )}
                       {track.statistics.avgSessionDuration && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Durée moyenne</span>
-                          <span className="font-semibold">
+                          <span className="text-gray-600 dark:text-gray-400">Durée moyenne</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">
                             {track.statistics.avgSessionDuration.toFixed(0)} min
                           </span>
                         </div>
@@ -518,7 +518,7 @@ export default function Stats() {
                 </div>
               ))}
               {trackStats.length === 0 && (
-                <div className="col-span-3 p-8 text-center text-gray-500 bg-white rounded-lg shadow">
+                <div className="col-span-3 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
                   Aucune donnée disponible
                 </div>
               )}
@@ -591,7 +591,7 @@ export default function Stats() {
               )}
 
               {!records.fastestLap && !records.mostWins && !records.mostPodiums && !records.mostPolePositions && (
-                <div className="col-span-2 p-8 text-center text-gray-500 bg-white rounded-lg shadow">
+                <div className="col-span-2 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
                   Aucun record disponible pour le moment
                 </div>
               )}

@@ -20,7 +20,7 @@ export default function EmptyState({
   primaryColor = '#3B82F6'
 }) {
   return (
-    <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+    <div className="text-center py-16 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
       {icon && (
         <div
           className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
@@ -32,8 +32,8 @@ export default function EmptyState({
         </div>
       )}
 
-      <h3 className="text-lg font-medium text-gray-900 mb-1">{title}</h3>
-      <p className="text-gray-500 mb-6">{message}</p>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">{title}</h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-6">{message}</p>
 
       {onAction && (
         <button

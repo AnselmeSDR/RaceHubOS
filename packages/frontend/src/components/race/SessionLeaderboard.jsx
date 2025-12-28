@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
+import { useTheme } from '../../context/ThemeContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -17,6 +18,9 @@ export default function SessionLeaderboard({
   sortBy = 'laps',
   sessionType = 'race'
 }) {
+  const { isDark } = useTheme()
+  const gradientEnd = isDark ? '#1f2937' : 'white' // gray-800 in dark mode
+
   // Sort entries based on sortBy prop
   const sortedEntries = [...entries].sort((a, b) => {
     const statsA = a.stats || {}
@@ -77,7 +81,7 @@ export default function SessionLeaderboard({
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">
+      <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-8 text-center text-gray-500">
         No entries in the leaderboard
       </div>
     )
@@ -113,20 +117,20 @@ export default function SessionLeaderboard({
                 layout: { type: 'spring', stiffness: 200, damping: 30, mass: 1 },
                 opacity: { duration: 0.3 }
               }}
-              className="flex items-center gap-3 p-3 rounded-lg shadow-md"
+              className="flex items-center gap-3 p-3 rounded-lg shadow-md dark:shadow-none"
               style={{
-                background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, white)`,
+                background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, ${gradientEnd})`,
                 borderLeft: `5px solid ${driverColor}`,
-                boxShadow: `0 2px 12px ${driverColor}40`,
+                boxShadow: isDark ? 'none' : `0 2px 12px ${driverColor}40`,
               }}
             >
               {/* Position */}
-              <div className="w-14 flex-shrink-0 text-center">
+              <div className="w-16 flex-shrink-0 flex items-center justify-center gap-1">
                 <span className={`text-2xl font-black ${
                   position === 1 ? 'text-yellow-500' :
                   position === 2 ? 'text-gray-400' :
                   position === 3 ? 'text-orange-500' :
-                  'text-gray-600'
+                  'text-gray-600 dark:text-gray-400'
                 }`}>
                   {position}
                 </span>
@@ -136,7 +140,7 @@ export default function SessionLeaderboard({
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className={`flex items-center justify-center gap-0.5 text-xs font-bold ${
+                    className={`flex items-center gap-0.5 text-xs font-bold ${
                       entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
                     }`}
                   >
@@ -170,8 +174,11 @@ export default function SessionLeaderboard({
               {driver.number && (
                 <div className="flex-shrink-0 w-16">
                   <span
-                    className="text-5xl font-black italic opacity-20"
-                    style={{ color: driverColor }}
+                    className="text-5xl font-black italic"
+                    style={{
+                      color: driverColor,
+                      WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
+                    }}
                   >
                     {driver.number}
                   </span>
@@ -180,10 +187,10 @@ export default function SessionLeaderboard({
 
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
-                <div className="font-black text-xl text-gray-900 uppercase italic truncate">
+                <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
                   {(driver.name || 'Unknown').split(' ').pop()}
                 </div>
-                <div className="text-sm text-gray-500 truncate flex items-center gap-1.5">
+                <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-1.5">
                   {car.color && (
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0 border border-gray-300"
@@ -198,27 +205,27 @@ export default function SessionLeaderboard({
               <div className="flex items-center gap-6 flex-shrink-0">
                 {/* Laps */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Tours</div>
-                  <div className="font-mono font-bold text-lg text-gray-900">
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Tours</div>
+                  <div className="font-mono font-bold text-lg text-gray-900 dark:text-white">
                     {stats.laps ?? 0}
                   </div>
                 </div>
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Meilleur</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Meilleur</div>
                   <LapTime time={stats.bestLap} size="md" highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Dernier</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Dernier</div>
                   <LapTime time={stats.lastLap} size="md" />
                 </div>
 
                 {/* Gap / Total Time */}
                 <div className="text-center min-w-[80px]">
-                  <div className="text-xs text-gray-400 uppercase">
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">
                     {position === 1 && sortBy === 'race' ? 'Total' : 'Écart'}
                   </div>
                   <GapDisplay

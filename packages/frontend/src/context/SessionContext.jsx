@@ -39,6 +39,7 @@ export function SessionProvider({ children }) {
   // Socket ref
   const socketRef = useRef(null)
 
+
   // Check data freshness
   useEffect(() => {
     const interval = setInterval(() => {
@@ -407,7 +408,7 @@ export function SessionProvider({ children }) {
       if (data.success) {
         setSession(data.data)
         setLeaderboard([])
-      }
+          }
       return data
     } catch (error) {
       console.error('[SessionContext] Error resetting session:', error)
@@ -449,7 +450,7 @@ export function SessionProvider({ children }) {
 
     // Find fastest lap
     const allBestLaps = source.map(p => p.bestLapTime).filter(t => t && t > 0)
-    const fastestLap = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
+    const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
 
     return source.map(p => ({
       id: p.id,
@@ -463,8 +464,9 @@ export function SessionProvider({ children }) {
         totalTime: p.totalTime || 0,
         gap: p.gap ?? null
       },
-      position: p.position || null,
-      hasFastestLap: fastestLap && p.bestLapTime === fastestLap,
+      position: p.position || 0,
+      positionDelta: p.positionDelta || 0, // From backend
+      hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
       isDNF: p.isDNF || false
     })).sort((a, b) => (a.position || 99) - (b.position || 99))
   }, [leaderboard, session])
