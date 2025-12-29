@@ -128,8 +128,8 @@ export default function FreeSessionPage() {
         type: selectedType,
       })
 
-      // If session exists and is active, load it into SyncService
-      if (foundSession && ['ready', 'active', 'paused'].includes(foundSession.status)) {
+      // Load session data and leaderboard
+      if (foundSession) {
         await loadSession(foundSession.id)
       }
     } catch (error) {
