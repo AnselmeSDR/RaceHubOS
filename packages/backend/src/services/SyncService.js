@@ -184,8 +184,8 @@ export class SyncService {
    */
   async startRace() {
     if (!this.source) return;
-    if (this.source.startRace) {
-      await this.source.startRace();
+    if (this.source.start) {
+      await this.source.start();
     }
   }
 

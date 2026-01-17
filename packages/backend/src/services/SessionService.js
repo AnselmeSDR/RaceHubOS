@@ -66,14 +66,13 @@ export class SessionService extends EventEmitter {
     }
 
     // Track crossings - first crossing is start, doesn't count as lap
-    const isFirstCrossing = driver.crossings === 0;
+    // const isFirstCrossing = driver.crossings === 0; // DISABLED: count first lap
     driver.crossings++;
 
-    if (isFirstCrossing) {
-      // First crossing = crossing start line from grid, not a lap
-      this.emitLeaderboard();
-      return;
-    }
+    // if (isFirstCrossing) { // DISABLED
+      // // First crossing = crossing start line from grid, not a lap
+      // this.emitLeaderboard();
+    // }
 
     // 1. Update RAM
     driver.totalLaps++;
@@ -1039,3 +1038,4 @@ export class SessionService extends EventEmitter {
 }
 
 export default SessionService;
+

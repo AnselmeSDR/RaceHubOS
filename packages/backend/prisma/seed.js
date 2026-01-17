@@ -24,7 +24,7 @@ async function main() {
     data: {
       name: 'Red Bull Racing',
       color: '#1E3A5F',
-      logo: null,
+      img: null,
     },
   });
 
@@ -32,7 +32,7 @@ async function main() {
     data: {
       name: 'Scuderia Ferrari',
       color: '#DC0000',
-      logo: null,
+      img: null,
     },
   });
 
@@ -40,7 +40,7 @@ async function main() {
     data: {
       name: 'Porsche Motorsport',
       color: '#C9A227',
-      logo: null,
+      img: null,
     },
   });
 
