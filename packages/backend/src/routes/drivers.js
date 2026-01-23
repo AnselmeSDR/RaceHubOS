@@ -59,13 +59,10 @@ router.get('/:id', async (req, res) => {
               createdAt: 'desc',
             },
           },
-          take: 10, // Last 10 sessions
+          take: 10,
         },
-        laps: {
-          orderBy: {
-            lapTime: 'asc',
-          },
-          take: 5, // Top 5 best laps
+        _count: {
+          select: { sessions: true, laps: true },
         },
       },
     });
@@ -77,9 +74,36 @@ router.get('/:id', async (req, res) => {
       });
     }
 
+    // Get best laps per car x track combo for this driver (top 10)
+    const bestLaps = await prisma.lap.findMany({
+      where: { driverId: id },
+      orderBy: { lapTime: 'asc' },
+      distinct: ['carId', 'trackId'],
+      take: 10,
+      include: {
+        car: {
+          select: { id: true, brand: true, model: true, color: true, img: true },
+        },
+        track: {
+          select: { id: true, name: true, color: true },
+        },
+        session: {
+          select: { type: true },
+        },
+      },
+    });
+
+    const records = bestLaps.map((lap) => ({
+      id: lap.id,
+      lapTime: lap.lapTime,
+      car: lap.car,
+      track: lap.track,
+      sessionType: lap.session?.type,
+    }));
+
     res.json({
       success: true,
-      data: withNestedImageUrls(driver),
+      data: withNestedImageUrls({ ...driver, records }),
     });
   } catch (error) {
     console.error('Error fetching driver:', error);
@@ -299,6 +323,62 @@ router.get('/:id/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch driver statistics',
+    });
+  }
+});
+
+// POST /api/drivers/:id/reset-stats - Reset driver statistics
+router.post('/:id/reset-stats', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if driver exists
+    const exists = await prisma.driver.findUnique({
+      where: { id },
+    });
+
+    if (!exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Driver not found',
+      });
+    }
+
+    // Delete related data and reset stats in a transaction
+    const driver = await prisma.$transaction(async (tx) => {
+      // Delete laps
+      await tx.lap.deleteMany({ where: { driverId: id } });
+      // Delete session participations
+      await tx.sessionDriver.deleteMany({ where: { driverId: id } });
+      // Delete track records
+      await tx.trackRecord.deleteMany({ where: { driverId: id } });
+
+      // Reset stats fields
+      return tx.driver.update({
+        where: { id },
+        data: {
+          totalRaces: 0,
+          wins: 0,
+          podiums: 0,
+          bestLap: null,
+        },
+        include: {
+          team: true,
+          _count: { select: { sessions: true, laps: true } },
+        },
+      });
+    });
+
+    res.json({
+      success: true,
+      data: withNestedImageUrls(driver),
+      message: 'Statistics reset successfully',
+    });
+  } catch (error) {
+    console.error('Error resetting driver stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset driver statistics',
     });
   }
 });

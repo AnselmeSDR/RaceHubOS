@@ -1,13 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from '../LapTime'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-const getImgUrl = (img) => {
-  if (!img) return null
-  return img.startsWith('http') ? img : `${API_URL}${img}`
-}
+import { getImgUrl } from '../../../utils/image'
 
 export default function FreePracticeEntry({ entry, index }) {
     const driverColor = entry.driver?.color || 'grey'

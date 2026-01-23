@@ -2,12 +2,7 @@ import { TrophyIcon, FlagIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { useTheme } from '../context/ThemeContext'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-const getImgUrl = (img) => {
-  if (!img) return null
-  return img.startsWith('http') ? img : `${API_URL}${img}`
-}
+import { getImgUrl } from '../utils/image'
 
 /**
  * DriverListItem - Format horizontal compact pour listes et sélections
@@ -47,14 +42,14 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
         )}
       </div>
 
-      {/* Driver number - NASCAR style */}
+      {/* Driver number - NASCAR style (supports 3 digits) */}
       {driver.number && (
         <div
-          className="w-16 h-12 rounded flex items-center justify-center shadow-md flex-shrink-0"
+          className="w-20 h-12 rounded flex items-center justify-center shadow-md flex-shrink-0"
           style={{ backgroundColor: driver.color }}
         >
           <span
-            className="text-2xl font-black text-white italic"
+            className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-xl' : 'text-2xl'}`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
           >
             {driver.number}
@@ -162,11 +157,11 @@ export function DriverGridPosition({ driver, side = 'left' }) {
           )}
         </div>
 
-        {/* Number - Large NASCAR style */}
+        {/* Number - Large NASCAR style (supports 3 digits) */}
         {driver.number && (
-          <div className="flex-shrink-0 w-16">
+          <div className="flex-shrink-0 w-20">
             <span
-              className="text-5xl font-black italic"
+              className={`font-black italic ${String(driver.number).length >= 3 ? 'text-4xl' : 'text-5xl'}`}
               style={{
                 color: driverColor,
                 WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
@@ -242,13 +237,13 @@ export function DriverProfileHeader({ driver }) {
               )}
             </div>
 
-            {/* Number badge overlay */}
+            {/* Number badge overlay (supports 3 digits) */}
             {driver.number && (
               <div
-                className="absolute -bottom-3 -right-3 w-16 h-16 rounded-xl flex items-center justify-center shadow-xl ring-4 ring-white"
+                className="absolute -bottom-3 -right-3 w-18 h-16 rounded-xl flex items-center justify-center shadow-xl ring-4 ring-white px-2"
                 style={{ backgroundColor: driver.color }}
               >
-                <span className="text-3xl font-black text-white italic">
+                <span className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-2xl' : 'text-3xl'}`}>
                   {driver.number}
                 </span>
               </div>
@@ -438,13 +433,13 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
           )}
         </div>
 
-        {/* Number - Large */}
+        {/* Number - Large (supports 3 digits) */}
         {driver.number && (
           <div
             className="w-20 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0"
             style={{ backgroundColor: driver.color }}
           >
-            <span className="text-4xl font-black text-white italic">
+            <span className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-3xl' : 'text-4xl'}`}>
               {driver.number}
             </span>
           </div>

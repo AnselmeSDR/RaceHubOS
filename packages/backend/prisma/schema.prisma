@@ -124,8 +124,8 @@ model Session {
 model SessionDriver {
   id              String   @id @default(cuid())
   sessionId       String
-  driverId        String
-  carId           String
+  driverId        String?  // Optional for draft configs
+  carId           String?  // Optional for draft configs
   controller      Int      // 0-5 (CU address)
   position        Int?
   gridPos         Int?
@@ -136,11 +136,10 @@ model SessionDriver {
   bestLapTime     Int?     // Best lap time in ms
   lastLapTime     Int?     // Last lap time in ms
   isDNF           Boolean  @default(false)
-  car             Car      @relation(fields: [carId], references: [id])
-  driver          Driver   @relation(fields: [driverId], references: [id])
+  car             Car?     @relation(fields: [carId], references: [id])
+  driver          Driver?  @relation(fields: [driverId], references: [id])
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@unique([sessionId, driverId])
   @@unique([sessionId, controller])
 }
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useId } from 'react'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../ImageCropper'
+import { getImgUrl } from '../../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -100,9 +101,7 @@ export default function PhotoUploadField({
   }
 
   // Build full image URL
-  const imageUrl = value
-    ? (value.startsWith('http') || value.startsWith('data:') ? value : `${API_URL}${value}`)
-    : null
+  const imageUrl = getImgUrl(value)
 
   return (
     <div>

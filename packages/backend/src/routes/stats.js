@@ -481,6 +481,97 @@ router.get('/leaderboard/teams', async (req, res) => {
   }
 });
 
+// GET /api/stats/laptimes - Get all lap times with filters
+router.get('/laptimes', async (req, res) => {
+  try {
+    const { driverId, carId, trackId, sessionType, limit = 100, sortBy = 'lapTime', sortOrder = 'asc' } = req.query;
+
+    // Build where clause
+    const where = {
+      softDeletedAt: null, // Only active laps
+    };
+
+    if (driverId) where.driverId = driverId;
+    if (carId) where.carId = carId;
+
+    // Build session filter
+    const sessionFilter = {};
+    if (trackId) sessionFilter.trackId = trackId;
+    if (sessionType) sessionFilter.type = sessionType;
+    if (Object.keys(sessionFilter).length > 0) {
+      where.session = sessionFilter;
+    }
+
+    // Build orderBy
+    const orderBy = {};
+    if (sortBy === 'lapTime') orderBy.lapTime = sortOrder;
+    else if (sortBy === 'timestamp') orderBy.timestamp = sortOrder;
+    else orderBy.lapTime = 'asc';
+
+    // Fetch more laps to ensure we have enough unique combos
+    const laps = await prisma.lap.findMany({
+      where,
+      orderBy,
+      take: parseInt(limit) * 50, // Fetch more to find unique combos
+      include: {
+        driver: {
+          select: { id: true, name: true, color: true, img: true, number: true },
+        },
+        car: {
+          select: { id: true, brand: true, model: true, color: true, img: true },
+        },
+        session: {
+          select: {
+            id: true,
+            type: true,
+            createdAt: true,
+            track: {
+              select: { id: true, name: true, color: true, img: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Group by driver+car+track to get best lap per combo
+    const bestLapsMap = new Map();
+    for (const lap of laps) {
+      const key = `${lap.driverId}-${lap.carId}-${lap.session.track?.id}`;
+      if (!bestLapsMap.has(key) || lap.lapTime < bestLapsMap.get(key).lapTime) {
+        bestLapsMap.set(key, lap);
+      }
+    }
+
+    const bestLaps = Array.from(bestLapsMap.values())
+      .sort((a, b) => sortOrder === 'asc' ? a.lapTime - b.lapTime : b.lapTime - a.lapTime)
+      .slice(0, parseInt(limit));
+
+    const result = bestLaps.map(lap => ({
+      id: lap.id,
+      lapTime: lap.lapTime,
+      timestamp: lap.timestamp,
+      sessionType: lap.session.type,
+      driver: withImageUrl(lap.driver),
+      car: withImageUrl(lap.car),
+      track: withImageUrl(lap.session.track),
+      sessionId: lap.session.id,
+      sessionDate: lap.session.createdAt,
+    }));
+
+    res.json({
+      success: true,
+      data: result,
+      filters: { driverId, carId, trackId, sessionType, limit, sortBy, sortOrder },
+    });
+  } catch (error) {
+    console.error('Error fetching lap times:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch lap times',
+    });
+  }
+});
+
 // GET /api/stats/records - Get all-time records
 router.get('/records', async (req, res) => {
   try {

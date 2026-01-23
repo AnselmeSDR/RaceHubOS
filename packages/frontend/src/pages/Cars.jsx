@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   TruckIcon,
   PencilIcon,
@@ -22,6 +23,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const PRIMARY_COLOR = '#22C55E'
 
 export default function Cars() {
+  const navigate = useNavigate()
   const { data: cars = [], loading, refetch } = useFetch('/api/cars')
   const [showForm, setShowForm] = useState(false)
   const [editingCar, setEditingCar] = useState(null)
@@ -80,11 +82,11 @@ export default function Cars() {
         viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
-              <CarCard key={car.id} car={car} onEdit={() => handleEdit(car)} />
+              <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} onEdit={() => handleEdit(car)} />
             ))}
           </div>
         ) : (
-          <CarTable cars={cars} onEdit={handleEdit} />
+          <CarTable cars={cars} onEdit={handleEdit} onView={(car) => navigate(`/cars/${car.id}`)} />
         )
       ) : (
         <EmptyState
@@ -108,13 +110,13 @@ export default function Cars() {
   )
 }
 
-function CarCard({ car, onEdit }) {
+function CarCard({ car, onClick, onEdit }) {
   const carColor = car.color || '#22C55E'
 
   return (
     <div
       className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer"
-      onClick={onEdit}
+      onClick={onClick}
       style={{
         background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)`
       }}
@@ -199,7 +201,7 @@ function SpecBar({ icon, label, value, color, displayValue }) {
   )
 }
 
-function CarTable({ cars, onEdit }) {
+function CarTable({ cars, onEdit, onView }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -215,12 +217,21 @@ function CarTable({ cars, onEdit }) {
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {cars.map((car) => (
-            <tr key={car.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+          {cars.map((car) => {
+            const carColor = car.color || '#22C55E'
+            return (
+            <tr key={car.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => onView(car)}>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
-                    {car.brand.charAt(0)}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
+                  >
+                    {car.img ? (
+                      <img src={car.img} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
+                    ) : (
+                      car.brand.charAt(0)
+                    )}
                   </div>
                   <div className="font-medium text-gray-900 dark:text-white">{car.brand} {car.model}</div>
                 </div>
@@ -245,12 +256,12 @@ function CarTable({ cars, onEdit }) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car.fuelCapacity}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car._count?.sessions || 0}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right">
-                <button onClick={() => onEdit(car)} className="text-green-600 hover:text-green-400">
+                <button onClick={(e) => { e.stopPropagation(); onEdit(car) }} className="text-green-600 hover:text-green-400">
                   <PencilIcon className="w-5 h-5" />
                 </button>
               </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
     </div>

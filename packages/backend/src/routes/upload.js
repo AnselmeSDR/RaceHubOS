@@ -72,7 +72,7 @@ router.post('/:type', upload.single('img'), (req, res) => {
     }
 
     const type = req.params.type;
-    const photoUrl = `/uploads/${type}/${req.file.filename}`;
+    const photoUrl = `/api/img/${type}/${req.file.filename}`;
 
     res.json({
       success: true,

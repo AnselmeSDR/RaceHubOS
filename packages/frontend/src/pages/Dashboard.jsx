@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
+import { useTheme } from '../context/ThemeContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { connected: cuConnected, socketConnected } = useDevice()
   const { session, isActive: isSessionActive } = useSession()
+  const { isAdmin } = useTheme()
 
   const [stats, setStats] = useState({
     drivers: 0,
@@ -49,10 +51,10 @@ export default function Dashboard() {
       ])
 
       const [driversData, carsData, tracksData, sessionsData] = await Promise.all([
-        driversRes.json(),
-        carsRes.json(),
-        tracksRes.json(),
-        sessionsRes.json(),
+        driversRes.ok ? driversRes.json() : { count: 0 },
+        carsRes.ok ? carsRes.json() : { count: 0 },
+        tracksRes.ok ? tracksRes.json() : { count: 0 },
+        sessionsRes.ok ? sessionsRes.json() : { count: 0 },
       ])
 
       setStats({
@@ -227,16 +229,18 @@ export default function Dashboard() {
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
-            <Link
-              to="/simulator"
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <BeakerIcon className="h-5 w-5 text-purple-500" />
-                <span className="font-medium text-gray-800 dark:text-white">Ouvrir le simulateur</span>
-              </div>
-              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/simulator"
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <BeakerIcon className="h-5 w-5 text-purple-500" />
+                  <span className="font-medium text-gray-800 dark:text-white">Ouvrir le simulateur</span>
+                </div>
+                <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+              </Link>
+            )}
             <Link
               to="/settings"
               className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"

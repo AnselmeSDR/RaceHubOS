@@ -1,8 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { CarreraConnection } from '../utils/carrera-protocol';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { isAdmin } = useTheme();
+
+  // Redirect non-admin users to dashboard
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+    }
+  }, [isAdmin, navigate]);
   const [systemStatus, setSystemStatus] = useState({
     backend: 'checking',
     database: 'checking',

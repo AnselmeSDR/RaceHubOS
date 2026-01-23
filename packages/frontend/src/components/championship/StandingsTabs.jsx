@@ -1,14 +1,7 @@
 import { useMemo } from 'react'
 import { PlayIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline'
 import LapTime from '../race/LapTime'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-// Backend now returns full URLs, but keep helper for backwards compatibility
-const getImgUrl = (img) => {
-  if (!img) return null
-  return img.startsWith('http') ? img : `${API_URL}${img}`
-}
+import { getImgUrl } from '../../utils/image'
 
 /**
  * StandingsTabs - Three tabs for Practice, Qualifications and Races standings

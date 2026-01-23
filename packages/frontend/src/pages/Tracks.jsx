@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   MapPinIcon,
   PencilIcon,
@@ -22,6 +23,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const PRIMARY_COLOR = '#9333EA'
 
 export default function Tracks() {
+  const navigate = useNavigate()
   const { data: tracks = [], loading, refetch } = useFetch('/api/tracks')
   const [showForm, setShowForm] = useState(false)
   const [editingTrack, setEditingTrack] = useState(null)
@@ -75,7 +77,7 @@ export default function Tracks() {
       {tracks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tracks.map((track) => (
-            <TrackCard key={track.id} track={track} onEdit={() => handleEdit(track)} />
+            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} onEdit={() => handleEdit(track)} />
           ))}
         </div>
       ) : (
@@ -100,13 +102,13 @@ export default function Tracks() {
   )
 }
 
-function TrackCard({ track, onEdit }) {
+function TrackCard({ track, onClick, onEdit }) {
   const trackColor = track.color || '#9333EA'
 
   return (
     <div
       className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer"
-      onClick={onEdit}
+      onClick={onClick}
       style={{
         background: `linear-gradient(135deg, ${trackColor}10 0%, ${trackColor}05 100%)`
       }}
