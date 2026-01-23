@@ -200,7 +200,7 @@ export default function Layout() {
           <Outlet />
         </div>
         {/* CU Status Footer */}
-        <footer className="bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
+        <footer className="mt-auto bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
           <div className={`w-1.5 h-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-400') : 'text-red-400'}>
             {cuConnected ? (isSimulator ? 'SIMULATOR' : 'CU') : 'NO CU'}
