@@ -5,7 +5,8 @@ import {
   ClockIcon,
   FlagIcon,
   BeakerIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 
@@ -144,26 +145,46 @@ export default function SessionConfigModal({
     )
   }
 
+  // Check for incomplete configs (driver without car or car without driver)
+  const incompleteControllers = useMemo(() => {
+    return Object.entries(controllerConfigs)
+      .filter(([, config]) =>
+        (config.driverId && !config.carId) || (!config.driverId && config.carId)
+      )
+      .map(([controller, config]) => ({
+        controller: Number(controller),
+        hasDriver: !!config.driverId,
+        hasCar: !!config.carId
+      }))
+  }, [controllerConfigs])
+
+  const hasIncompleteConfig = incompleteControllers.length > 0
+  const canSetReady = !hasIncompleteConfig
+
   // Handle save
   const handleSave = async () => {
     setSaving(true)
     try {
       // Build drivers array from configs (controller is 0-indexed)
+      // Include configs with at least driver OR car (partial configs allowed in draft)
       const driversPayload = Object.entries(controllerConfigs)
-        .filter(([, config]) => config.driverId && config.carId)
+        .filter(([, config]) => config.driverId || config.carId)
         .map(([controller, config]) => ({
           controller: Number(controller), // 0-indexed
-          driverId: config.driverId,
-          carId: config.carId,
+          driverId: config.driverId || null,
+          carId: config.carId || null,
           gridPos: config.gridPos || null
         }))
+
+      // Force draft status if incomplete config (safety check)
+      const finalStatus = hasIncompleteConfig && status === 'ready' ? 'draft' : status
 
       await onSave({
         name: name || null,
         maxDuration: durationMinutes > 0 ? durationMinutes * 60000 : null, // Convert minutes to ms
         maxLaps: maxLaps > 0 ? maxLaps : null,
         gracePeriod: gracePeriodSeconds > 0 ? gracePeriodSeconds * 1000 : 30000, // Convert seconds to ms
-        status,
+        status: finalStatus,
         drivers: driversPayload
       })
       onClose()
@@ -378,18 +399,37 @@ export default function SessionConfigModal({
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">Brouillon</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className={`flex items-center gap-2 ${canSetReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
                 <input
                   type="radio"
                   name="status"
                   value="ready"
                   checked={status === 'ready'}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  onChange={(e) => canSetReady && setStatus(e.target.value)}
+                  disabled={!canSetReady}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Pret</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Prêt</span>
               </label>
             </div>
+
+            {/* Warning for incomplete config */}
+            {hasIncompleteConfig && (
+              <div className="mt-3 p-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg flex items-start gap-2">
+                <ExclamationTriangleIcon className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="text-orange-700 dark:text-orange-300 font-medium">Configuration incomplète</p>
+                  <p className="text-orange-600 dark:text-orange-400 mt-0.5">
+                    {incompleteControllers.map(ic => {
+                      if (ic.hasDriver && !ic.hasCar) return `Ctrl ${ic.controller + 1}: pilote sans voiture`
+                      if (!ic.hasDriver && ic.hasCar) return `Ctrl ${ic.controller + 1}: voiture sans pilote`
+                      return null
+                    }).filter(Boolean).join(' • ')}
+                  </p>
+                  <p className="text-orange-600 dark:text-orange-400 mt-1">Complétez la config pour passer en "Prêt"</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

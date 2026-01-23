@@ -166,13 +166,14 @@ router.put('/:id/drivers', async (req, res) => {
 
     await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
 
-    const validDrivers = drivers.filter(d => d.driverId && d.carId && d.controller !== undefined);
+    // Accept partial configs (driver OR car) for draft sessions
+    const validDrivers = drivers.filter(d => (d.driverId || d.carId) && d.controller !== undefined);
     if (validDrivers.length > 0) {
       await prisma().sessionDriver.createMany({
         data: validDrivers.map((d, idx) => ({
           sessionId: id,
-          driverId: d.driverId,
-          carId: d.carId,
+          driverId: d.driverId || null,
+          carId: d.carId || null,
           controller: Number(d.controller),
           gridPos: d.gridPos ?? idx + 1
         }))

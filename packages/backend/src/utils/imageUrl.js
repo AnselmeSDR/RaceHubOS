@@ -1,12 +1,16 @@
-const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`;
-
 /**
  * Add full URL to image path if it's a relative path
+ * Paths starting with /api/img/ are left as-is (relative URLs work fine)
  */
 export function addImageUrl(imgPath) {
   if (!imgPath) return null;
-  if (imgPath.startsWith('http')) return imgPath;
-  return `${API_URL}${imgPath}`;
+  // Already a full URL or API path - leave as-is
+  if (imgPath.startsWith('http') || imgPath.startsWith('/api/img/')) return imgPath;
+  // Convert old /uploads/ paths to /api/img/ paths
+  if (imgPath.startsWith('/uploads/')) {
+    return imgPath.replace('/uploads/', '/api/img/');
+  }
+  return `/api/img/${imgPath}`;
 }
 
 /**

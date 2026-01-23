@@ -47,14 +47,13 @@ router.get('/:id', async (req, res) => {
           orderBy: {
             createdAt: 'desc',
           },
-          take: 10, // Last 10 sessions
+          take: 10,
           include: {
-            drivers: {
-              include: {
-                driver: true,
-              },
-            },
+            _count: { select: { drivers: true } },
           },
+        },
+        _count: {
+          select: { sessions: true },
         },
       },
     });
@@ -66,9 +65,41 @@ router.get('/:id', async (req, res) => {
       });
     }
 
+    // Get best laps per driver x car combo on this track (top 10)
+    const bestLaps = await prisma.lap.findMany({
+      where: { trackId: id },
+      orderBy: { lapTime: 'asc' },
+      distinct: ['driverId', 'carId'],
+      take: 10,
+      include: {
+        driver: {
+          select: { id: true, name: true, color: true, img: true },
+        },
+        car: {
+          select: { id: true, brand: true, model: true, color: true, img: true },
+        },
+        session: {
+          select: { type: true },
+        },
+      },
+    });
+
+    const records = bestLaps.map((lap) => ({
+      id: lap.id,
+      lapTime: lap.lapTime,
+      driver: lap.driver,
+      car: lap.car,
+      sessionType: lap.session?.type,
+    }));
+
+    const result = {
+      ...track,
+      records,
+    };
+
     res.json({
       success: true,
-      data: withNestedImageUrls(track),
+      data: withNestedImageUrls(result),
     });
   } catch (error) {
     console.error('Error fetching track:', error);
@@ -209,6 +240,56 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete track',
+    });
+  }
+});
+
+// POST /api/tracks/:id/reset-stats - Reset track statistics
+router.post('/:id/reset-stats', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const exists = await prisma.track.findUnique({
+      where: { id },
+    });
+
+    if (!exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Track not found',
+      });
+    }
+
+    // Delete related data and reset stats in a transaction
+    const track = await prisma.$transaction(async (tx) => {
+      // Delete track records
+      await tx.trackRecord.deleteMany({ where: { trackId: id } });
+      // Delete laps on this track
+      await tx.lap.deleteMany({ where: { trackId: id } });
+
+      // Reset stats fields
+      return tx.track.update({
+        where: { id },
+        data: {
+          bestLap: null,
+          bestLapBy: null,
+        },
+        include: {
+          _count: { select: { sessions: true } },
+        },
+      });
+    });
+
+    res.json({
+      success: true,
+      data: withImageUrl(track),
+      message: 'Statistics reset successfully',
+    });
+  } catch (error) {
+    console.error('Error resetting track stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset track statistics',
     });
   }
 });

@@ -1,11 +1,5 @@
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-const getImgUrl = (img) => {
-  if (!img) return null
-  return img.startsWith('http') ? img : `${API_URL}${img}`
-}
+import { getImgUrl } from '../../utils/image'
 
 const CONTROLLER_COLORS = {
   1: 'bg-red-500',

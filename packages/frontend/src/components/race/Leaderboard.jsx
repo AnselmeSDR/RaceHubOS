@@ -2,13 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-const getImgUrl = (img) => {
-  if (!img) return null
-  return img.startsWith('http') ? img : `${API_URL}${img}`
-}
+import { getImgUrl } from '../../utils/image'
 
 /**
  * Leaderboard - Real-time race leaderboard with NASCAR-style driver cards

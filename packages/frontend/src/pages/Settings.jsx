@@ -92,9 +92,12 @@ export default function Settings() {
   }
 
   // Merge devices from DB with scan results (avoid duplicates)
-  const allDevices = [...devices]
+  // Filter out simulator if not admin
+  const allDevices = [...devices].filter(d => isAdmin || d.type !== 'simulator')
   for (const scanDevice of scanResults) {
     if (!allDevices.find(d => d.address === scanDevice.address)) {
+      // Skip simulator in scan results if not admin
+      if (!isAdmin && scanDevice.type === 'simulator') continue
       allDevices.push({
         ...scanDevice,
         isNew: true, // Mark as not yet in DB

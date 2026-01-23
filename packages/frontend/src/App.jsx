@@ -7,7 +7,9 @@ import Dashboard from './pages/Dashboard'
 import Drivers from './pages/Drivers'
 import DriverProfile from './pages/DriverProfile'
 import Cars from './pages/Cars'
+import CarProfile from './pages/CarProfile'
 import Tracks from './pages/Tracks'
+import TrackProfile from './pages/TrackProfile'
 import Teams from './pages/Teams'
 import Home from './pages/Home'
 import Displays from './pages/Displays'
@@ -40,7 +42,9 @@ function App() {
             <Route path="drivers" element={<Drivers />} />
             <Route path="drivers/:id" element={<DriverProfile />} />
             <Route path="cars" element={<Cars />} />
+            <Route path="cars/:id" element={<CarProfile />} />
             <Route path="tracks" element={<Tracks />} />
+            <Route path="tracks/:id" element={<TrackProfile />} />
             <Route path="teams" element={<Teams />} />
             {/* Session history */}
             <Route path="sessions" element={<SessionsList />} />

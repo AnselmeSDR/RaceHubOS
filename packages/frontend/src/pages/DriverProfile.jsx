@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { DriverProfileHeader } from '../components/DriverDisplays'
+import { RecordsList } from '../components/RecordDisplays'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const PRIMARY_COLOR = '#3B82F6'
 
 export default function DriverProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [driver, setDriver] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     loadDriver()
@@ -18,12 +21,32 @@ export default function DriverProfile() {
   async function loadDriver() {
     try {
       const res = await fetch(`${API_URL}/drivers/${id}`)
+      if (!res.ok) {
+        console.error('Failed to load driver: HTTP', res.status)
+        return
+      }
       const data = await res.json()
       setDriver(data.data)
     } catch (error) {
       console.error('Failed to load driver:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleResetStats() {
+    if (!confirm('Remettre à zéro toutes les statistiques de ce pilote ?')) return
+
+    setResetting(true)
+    try {
+      const res = await fetch(`${API_URL}/drivers/${id}/reset-stats`, { method: 'POST' })
+      if (res.ok) {
+        loadDriver()
+      }
+    } catch (error) {
+      console.error('Failed to reset stats:', error)
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -56,14 +79,25 @@ export default function DriverProfile() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/drivers')}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeftIcon className="w-5 h-5" />
-        <span className="font-medium">Retour aux pilotes</span>
-      </button>
+      {/* Header with back button and actions */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => navigate('/drivers')}
+          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeftIcon className="w-5 h-5" />
+          <span className="font-medium">Retour aux pilotes</span>
+        </button>
+
+        <button
+          onClick={handleResetStats}
+          disabled={resetting}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-lg transition-colors disabled:opacity-50"
+        >
+          <ArrowPathIcon className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+          Reset stats
+        </button>
+      </div>
 
       {/* Profile Header */}
       <DriverProfileHeader driver={driver} />
@@ -106,47 +140,19 @@ export default function DriverProfile() {
           )}
         </div>
 
-        {/* Best Laps */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Meilleurs tours</h2>
-          {driver.laps && driver.laps.length > 0 ? (
-            <div className="space-y-3">
-              {driver.laps.map((lap, index) => (
-                <div
-                  key={lap.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
-                      style={{ backgroundColor: driver.color }}
-                    >
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        Tour {lap.lapNumber}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {lap.sessionId ? `Session #${lap.sessionId.slice(-6)}` : 'Libre'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div
-                      className="text-xl font-black tabular-nums"
-                      style={{ color: driver.color }}
-                    >
-                      {(lap.lapTime / 1000).toFixed(3)}s
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucun tour enregistré</p>
-          )}
-        </div>
+        {/* Top 10 Records */}
+        <RecordsList
+          title="Top 10 Records"
+          records={driver.records?.map(r => ({
+            ...r,
+            driver: { name: driver.name, color: driver.color, img: driver.img }
+          }))}
+          primaryColor={driver.color || PRIMARY_COLOR}
+          showDriverAvatar={false}
+          showCarAvatar={true}
+          showCar={true}
+          showTrack={true}
+        />
       </div>
     </div>
   )

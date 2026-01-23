@@ -1,604 +1,511 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   TrophyIcon,
   ChartBarIcon,
-  UserGroupIcon,
-  FlagIcon,
-  ClockIcon,
-  BoltIcon,
-  FireIcon,
+  FunnelIcon,
+  ArrowsUpDownIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
-import {
-  TrophyIcon as TrophySolidIcon,
-  StarIcon,
-} from '@heroicons/react/24/solid'
-import ErrorMessage from '../components/ErrorMessage'
+import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { getImgUrl } from '../utils/image'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+const sessionTypeLabels = {
+  race: { label: 'Course', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  qualif: { label: 'Qualif', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  practice: { label: 'Essais', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+}
 
 export default function Stats() {
-  const [activeTab, setActiveTab] = useState('leaderboard')
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [laptimes, setLaptimes] = useState([])
 
-  // Data states
-  const [driverLeaderboard, setDriverLeaderboard] = useState([])
-  const [teamLeaderboard, setTeamLeaderboard] = useState([])
-  const [driverStats, setDriverStats] = useState([])
-  const [carStats, setCarStats] = useState([])
-  const [trackStats, setTrackStats] = useState([])
-  const [records, setRecords] = useState(null)
+  // Filter options
+  const [drivers, setDrivers] = useState([])
+  const [cars, setCars] = useState([])
+  const [tracks, setTracks] = useState([])
+
+  // Active filters
+  const [filters, setFilters] = useState({
+    driverId: '',
+    carId: '',
+    trackId: '',
+    sessionType: '',
+    limit: '50',
+  })
+
+  // Sorting
+  const [sortConfig, setSortConfig] = useState({ key: 'lapTime', direction: 'asc' })
+
+  // Show filters panel
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    loadData()
-  }, [activeTab])
+    loadFilterOptions()
+    loadLaptimes()
+  }, [])
 
-  async function loadData() {
-    setLoading(true)
-    setError('')
+  useEffect(() => {
+    loadLaptimes()
+  }, [filters])
 
+  async function loadFilterOptions() {
     try {
-      if (activeTab === 'leaderboard') {
-        await Promise.all([loadDriverLeaderboard(), loadTeamLeaderboard()])
-      } else if (activeTab === 'drivers') {
-        await loadDriverStats()
-      } else if (activeTab === 'cars') {
-        await loadCarStats()
-      } else if (activeTab === 'tracks') {
-        await loadTrackStats()
-      } else if (activeTab === 'records') {
-        await loadRecords()
+      const [driversRes, carsRes, tracksRes] = await Promise.all([
+        fetch(`${API_URL}/api/drivers`),
+        fetch(`${API_URL}/api/cars`),
+        fetch(`${API_URL}/api/tracks`),
+      ])
+
+      const driversData = await driversRes.json()
+      const carsData = await carsRes.json()
+      const tracksData = await tracksRes.json()
+
+      if (driversData.success) setDrivers(driversData.data || [])
+      if (carsData.success) setCars(carsData.data || [])
+      if (tracksData.success) setTracks(tracksData.data || [])
+    } catch (error) {
+      console.error('Error loading filter options:', error)
+    }
+  }
+
+  async function loadLaptimes() {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (filters.driverId) params.append('driverId', filters.driverId)
+      if (filters.carId) params.append('carId', filters.carId)
+      if (filters.trackId) params.append('trackId', filters.trackId)
+      if (filters.sessionType) params.append('sessionType', filters.sessionType)
+      params.append('limit', filters.limit || '50')
+
+      const res = await fetch(`${API_URL}/api/stats/laptimes?${params}`)
+      const data = await res.json()
+
+      if (data.success) {
+        setLaptimes(data.data || [])
       }
-    } catch (err) {
-      console.error('Error loading data:', err)
-      setError('Erreur lors du chargement des données')
+    } catch (error) {
+      console.error('Error loading laptimes:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  async function loadDriverLeaderboard() {
-    const res = await fetch(`${API_URL}/stats/leaderboard/drivers?limit=10`)
-    const data = await res.json()
-    if (data.success) {
-      setDriverLeaderboard(data.data || [])
-    }
+  // Sort laptimes
+  const sortedLaptimes = useMemo(() => {
+    const sorted = [...laptimes]
+    sorted.sort((a, b) => {
+      let aVal, bVal
+
+      switch (sortConfig.key) {
+        case 'lapTime':
+          aVal = a.lapTime
+          bVal = b.lapTime
+          break
+        case 'driver':
+          aVal = a.driver?.name || ''
+          bVal = b.driver?.name || ''
+          break
+        case 'car':
+          aVal = `${a.car?.brand} ${a.car?.model}`
+          bVal = `${b.car?.brand} ${b.car?.model}`
+          break
+        case 'track':
+          aVal = a.track?.name || ''
+          bVal = b.track?.name || ''
+          break
+        case 'sessionType':
+          aVal = a.sessionType
+          bVal = b.sessionType
+          break
+        case 'date':
+          aVal = new Date(a.sessionDate)
+          bVal = new Date(b.sessionDate)
+          break
+        default:
+          aVal = a.lapTime
+          bVal = b.lapTime
+      }
+
+      if (typeof aVal === 'string') {
+        return sortConfig.direction === 'asc'
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal)
+      }
+
+      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal
+    })
+    return sorted
+  }, [laptimes, sortConfig])
+
+  function handleSort(key) {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }))
   }
 
-  async function loadTeamLeaderboard() {
-    const res = await fetch(`${API_URL}/stats/leaderboard/teams`)
-    const data = await res.json()
-    if (data.success) {
-      setTeamLeaderboard(data.data || [])
-    }
+  function clearFilters() {
+    setFilters({ driverId: '', carId: '', trackId: '', sessionType: '', limit: '50' })
   }
 
-  async function loadDriverStats() {
-    const res = await fetch(`${API_URL}/stats/drivers`)
-    const data = await res.json()
-    if (data.success) {
-      setDriverStats(data.data || [])
-    }
-  }
-
-  async function loadCarStats() {
-    const res = await fetch(`${API_URL}/stats/cars`)
-    const data = await res.json()
-    if (data.success) {
-      setCarStats(data.data || [])
-    }
-  }
-
-  async function loadTrackStats() {
-    const res = await fetch(`${API_URL}/stats/tracks`)
-    const data = await res.json()
-    if (data.success) {
-      setTrackStats(data.data || [])
-    }
-  }
-
-  async function loadRecords() {
-    const res = await fetch(`${API_URL}/stats/records`)
-    const data = await res.json()
-    if (data.success) {
-      setRecords(data.data)
-    }
-  }
+  const activeFilterCount = [filters.driverId, filters.carId, filters.trackId, filters.sessionType].filter(v => v).length
 
   function formatTime(ms) {
     if (!ms) return '-'
-    const seconds = ms / 1000
-    const minutes = Math.floor(seconds / 60)
-    const secs = (seconds % 60).toFixed(3)
-    return minutes > 0 ? `${minutes}:${secs.padStart(6, '0')}` : `${secs}s`
+    return (ms / 1000).toFixed(3) + 's'
   }
 
-  const tabs = [
-    { id: 'leaderboard', label: 'Classements', icon: TrophyIcon },
-    { id: 'drivers', label: 'Pilotes', icon: UserGroupIcon },
-    { id: 'cars', label: 'Voitures', icon: BoltIcon },
-    { id: 'tracks', label: 'Circuits', icon: FlagIcon },
-    { id: 'records', label: 'Records', icon: StarIcon },
-  ]
+  function SortHeader({ label, sortKey }) {
+    const isActive = sortConfig.key === sortKey
+    return (
+      <th
+        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none"
+        onClick={() => handleSort(sortKey)}
+      >
+        <div className="flex items-center gap-1">
+          {label}
+          {isActive ? (
+            sortConfig.direction === 'asc' ? (
+              <ChevronUpIcon className="w-4 h-4 text-indigo-500" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4 text-indigo-500" />
+            )
+          ) : (
+            <ArrowsUpDownIcon className="w-4 h-4 opacity-30" />
+          )}
+        </div>
+      </th>
+    )
+  }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistiques & Classements</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Analyse des performances et records</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <ChartBarIcon className="w-7 h-7 text-indigo-500" />
+            Statistiques & Records
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {sortedLaptimes.length} record{sortedLaptimes.length > 1 ? 's' : ''} trouvé{sortedLaptimes.length > 1 ? 's' : ''}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            showFilters || activeFilterCount > 0
+              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          }`}
+        >
+          <FunnelIcon className="w-5 h-5" />
+          Filtres
+          {activeFilterCount > 0 && (
+            <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-500 text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
-        {tabs.map((tab) => {
-          const Icon = tab.icon
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{tab.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Filtres</h3>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+              >
+                <XMarkIcon className="w-4 h-4" />
+                Effacer tout
+              </button>
+            )}
+          </div>
 
-      {/* Error Message */}
-      {error && (
-        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
-      )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Driver filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Pilote
+              </label>
+              <select
+                value={filters.driverId}
+                onChange={(e) => setFilters(f => ({ ...f, driverId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous les pilotes</option>
+                {drivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des statistiques...</p>
+            {/* Car filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Voiture
+              </label>
+              <select
+                value={filters.carId}
+                onChange={(e) => setFilters(f => ({ ...f, carId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Toutes les voitures</option>
+                {cars.map(c => (
+                  <option key={c.id} value={c.id}>{c.brand} {c.model}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Track filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Circuit
+              </label>
+              <select
+                value={filters.trackId}
+                onChange={(e) => setFilters(f => ({ ...f, trackId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous les circuits</option>
+                {tracks.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Session type filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Type de session
+              </label>
+              <select
+                value={filters.sessionType}
+                onChange={(e) => setFilters(f => ({ ...f, sessionType: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous les types</option>
+                <option value="practice">Essais</option>
+                <option value="qualif">Qualifications</option>
+                <option value="race">Course</option>
+              </select>
+            </div>
+
+            {/* Limit filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Nombre max
+              </label>
+              <select
+                value={filters.limit}
+                onChange={(e) => setFilters(f => ({ ...f, limit: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="250">250</option>
+                <option value="500">500</option>
+              </select>
+            </div>
           </div>
         </div>
-      ) : (
-        <div>
-          {/* Leaderboard Tab */}
-          {activeTab === 'leaderboard' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Driver Leaderboard */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <TrophyIcon className="w-6 h-6" />
-                    Classement Pilotes
-                  </h2>
-                </div>
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {driverLeaderboard.map((entry, index) => (
-                    <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
-                              index === 0
-                                ? 'bg-yellow-500'
-                                : index === 1
-                                ? 'bg-gray-400'
-                                : index === 2
-                                ? 'bg-orange-600'
-                                : 'bg-gray-600'
-                            }`}
-                          >
-                            {entry.position || index + 1}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {entry.driver?.img ? (
-                              <img
-                                src={entry.driver.img}
-                                alt={entry.driver.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div
-                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                                style={{
-                                  backgroundColor: entry.driver?.color || '#6366f1',
-                                }}
-                              >
-                                {entry.driver?.name?.charAt(0)}
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-semibold text-gray-900 dark:text-white">
-                                {entry.driver?.name}
-                              </p>
-                              {entry.driver?.team && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{entry.driver.team.name}</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {entry.points !== undefined ? (
-                            <>
-                              <p className="font-bold text-lg text-gray-900 dark:text-white">{entry.points} pts</p>
-                              {entry.gap && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">-{entry.gap} pts</p>
-                              )}
-                            </>
-                          ) : (
-                            <div className="flex gap-3 text-sm">
-                              <div className="text-center">
-                                <p className="font-bold text-yellow-500">{entry.wins || 0}</p>
-                                <p className="text-gray-500 dark:text-gray-400">V</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="font-bold text-gray-600 dark:text-gray-300">{entry.podiums || 0}</p>
-                                <p className="text-gray-500 dark:text-gray-400">P</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="font-bold text-gray-600 dark:text-gray-300">{entry.races || 0}</p>
-                                <p className="text-gray-500 dark:text-gray-400">C</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {driverLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
-                  )}
-                </div>
-              </div>
+      )}
 
-              {/* Team Leaderboard */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <UserGroupIcon className="w-6 h-6" />
-                    Classement Équipes
-                  </h2>
-                </div>
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {teamLeaderboard.map((entry, index) => (
-                    <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
-                              index === 0
-                                ? 'bg-yellow-500'
-                                : index === 1
-                                ? 'bg-gray-400'
-                                : index === 2
-                                ? 'bg-orange-600'
-                                : 'bg-gray-600'
-                            }`}
-                          >
-                            {entry.position}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {entry.team?.img ? (
-                              <img
-                                src={entry.team.img}
-                                alt={entry.team.name}
-                                className="w-10 h-10 rounded object-cover"
-                              />
-                            ) : (
-                              <div
-                                className="w-10 h-10 rounded flex items-center justify-center text-white font-bold"
-                                style={{
-                                  backgroundColor: entry.team?.color || '#f97316',
-                                }}
-                              >
-                                {entry.team?.name?.charAt(0)}
-                              </div>
-                            )}
-                            <p className="font-semibold text-gray-900 dark:text-white">{entry.team?.name}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg text-gray-900 dark:text-white">{entry.points} pts</p>
-                          {entry.gap && <p className="text-sm text-gray-500 dark:text-gray-400">-{entry.gap} pts</p>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {teamLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
-                  )}
-                </div>
-              </div>
-            </div>
+      {/* Active filters badges */}
+      {activeFilterCount > 0 && !showFilters && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {filters.driverId && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-sm">
+              {drivers.find(d => d.id === filters.driverId)?.name}
+              <button onClick={() => setFilters(f => ({ ...f, driverId: '' }))} className="hover:text-blue-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
           )}
-
-          {/* Driver Stats Tab */}
-          {activeTab === 'drivers' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Pilote
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Courses
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Victoires
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Podiums
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Tours
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Meilleur Tour
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Temps Moyen
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {driverStats.map((driver) => (
-                    <tr key={driver.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          {driver.img ? (
-                            <img
-                              src={driver.img}
-                              alt={driver.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                              style={{ backgroundColor: driver.color }}
-                            >
-                              {driver.name.charAt(0)}
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{driver.name}</p>
-                            {driver.team && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{driver.team.name}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
-                        {driver.statistics.totalRaces}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-yellow-600">
-                          {driver.statistics.wins}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
-                        {driver.statistics.podiums}
-                      </td>
-                      <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
-                        {driver.statistics.totalLaps}
-                      </td>
-                      <td className="px-6 py-4 text-center font-mono text-sm text-gray-900 dark:text-white">
-                        {formatTime(driver.statistics.bestLap)}
-                      </td>
-                      <td className="px-6 py-4 text-center font-mono text-sm text-gray-900 dark:text-white">
-                        {formatTime(driver.statistics.avgLapTime)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {driverStats.length === 0 && (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée disponible</div>
-              )}
-            </div>
+          {filters.carId && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-sm">
+              {cars.find(c => c.id === filters.carId)?.brand} {cars.find(c => c.id === filters.carId)?.model}
+              <button onClick={() => setFilters(f => ({ ...f, carId: '' }))} className="hover:text-green-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
           )}
-
-          {/* Car Stats Tab */}
-          {activeTab === 'cars' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {carStats.map((car) => (
-                <div key={car.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                  <div
-                    className="h-2"
-                    style={{ backgroundColor: car.color || '#10b981' }}
-                  />
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">{car.brand}</h3>
-                        <p className="text-gray-600 dark:text-gray-400">{car.model}</p>
-                        {car.year && <p className="text-sm text-gray-500 dark:text-gray-400">{car.year}</p>}
-                      </div>
-                      {car.img && (
-                        <img
-                          src={car.img}
-                          alt={`${car.brand} ${car.model}`}
-                          className="w-16 h-16 rounded object-cover"
-                        />
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Courses</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{car.statistics.totalRaces}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Victoires</span>
-                        <span className="font-bold text-yellow-600">
-                          {car.statistics.wins}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Tours</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{car.statistics.totalLaps}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Meilleur tour</span>
-                        <span className="font-mono text-sm text-gray-900 dark:text-white">
-                          {formatTime(car.statistics.bestLap)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Fiabilité</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {car.statistics.reliability.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {carStats.length === 0 && (
-                <div className="col-span-3 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
-                  Aucune donnée disponible
-                </div>
-              )}
-            </div>
+          {filters.trackId && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-sm">
+              {tracks.find(t => t.id === filters.trackId)?.name}
+              <button onClick={() => setFilters(f => ({ ...f, trackId: '' }))} className="hover:text-purple-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
           )}
-
-          {/* Track Stats Tab */}
-          {activeTab === 'tracks' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trackStats.map((track) => (
-                <div key={track.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                  <div
-                    className="h-2"
-                    style={{ backgroundColor: track.color || '#9333ea' }}
-                  />
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">{track.name}</h3>
-                      <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {track.length && <span>{track.length}m</span>}
-                        {track.corners && <span>{track.corners} virages</span>}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Sessions</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.totalSessions}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Tours totaux</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.totalLaps}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Record</span>
-                        <span className="font-mono text-sm text-gray-900 dark:text-white">
-                          {formatTime(track.statistics.bestLap)}
-                        </span>
-                      </div>
-                      {track.statistics.bestLapBy && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">Par</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{track.statistics.bestLapBy}</span>
-                        </div>
-                      )}
-                      {track.statistics.avgSessionDuration && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">Durée moyenne</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {track.statistics.avgSessionDuration.toFixed(0)} min
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {trackStats.length === 0 && (
-                <div className="col-span-3 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
-                  Aucune donnée disponible
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Records Tab */}
-          {activeTab === 'records' && records && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Fastest Lap */}
-              {records.fastestLap && (
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg shadow-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <ClockIcon className="w-8 h-8" />
-                    <h3 className="text-xl font-bold">Tour le plus rapide</h3>
-                  </div>
-                  <div className="text-3xl font-bold mb-2">
-                    {formatTime(records.fastestLap.time)}
-                  </div>
-                  <p className="text-purple-100">{records.fastestLap.driver.name}</p>
-                  <p className="text-sm text-purple-200">
-                    {records.fastestLap.car.brand} {records.fastestLap.car.model}
-                  </p>
-                  <p className="text-sm text-purple-200 mt-2">
-                    {records.fastestLap.track.name}
-                  </p>
-                </div>
-              )}
-
-              {/* Most Wins */}
-              {records.mostWins && (
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <TrophySolidIcon className="w-8 h-8" />
-                    <h3 className="text-xl font-bold">Plus de victoires</h3>
-                  </div>
-                  <div className="text-3xl font-bold mb-2">
-                    {records.mostWins.count}
-                  </div>
-                  <p className="text-yellow-100">{records.mostWins.driver.name}</p>
-                </div>
-              )}
-
-              {/* Most Podiums */}
-              {records.mostPodiums && (
-                <div className="bg-gradient-to-br from-gray-600 to-gray-800 text-white rounded-lg shadow-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <ChartBarIcon className="w-8 h-8" />
-                    <h3 className="text-xl font-bold">Plus de podiums</h3>
-                  </div>
-                  <div className="text-3xl font-bold mb-2">
-                    {records.mostPodiums.count}
-                  </div>
-                  <p className="text-gray-200">{records.mostPodiums.driver.name}</p>
-                </div>
-              )}
-
-              {/* Most Pole Positions */}
-              {records.mostPolePositions && (
-                <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white rounded-lg shadow-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <FlagIcon className="w-8 h-8" />
-                    <h3 className="text-xl font-bold">Plus de pole positions</h3>
-                  </div>
-                  <div className="text-3xl font-bold mb-2">
-                    {records.mostPolePositions.count}
-                  </div>
-                  <p className="text-green-100">{records.mostPolePositions.driver.name}</p>
-                </div>
-              )}
-
-              {!records.fastestLap && !records.mostWins && !records.mostPodiums && !records.mostPolePositions && (
-                <div className="col-span-2 p-8 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow">
-                  Aucun record disponible pour le moment
-                </div>
-              )}
-            </div>
+          {filters.sessionType && (
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${sessionTypeLabels[filters.sessionType]?.color}`}>
+              {sessionTypeLabels[filters.sessionType]?.label}
+              <button onClick={() => setFilters(f => ({ ...f, sessionType: '' }))}>
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
           )}
         </div>
       )}
+
+      {/* Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : sortedLaptimes.length === 0 ? (
+          <div className="text-center py-16">
+            <TrophyIcon className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">Aucun record trouvé</p>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="mt-3 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                Effacer les filtres
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider w-12">
+                    #
+                  </th>
+                  <SortHeader label="Temps" sortKey="lapTime" />
+                  <SortHeader label="Pilote" sortKey="driver" />
+                  <SortHeader label="Voiture" sortKey="car" />
+                  <SortHeader label="Circuit" sortKey="track" />
+                  <SortHeader label="Session" sortKey="sessionType" />
+                  <SortHeader label="Date" sortKey="date" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {sortedLaptimes.map((lap, index) => {
+                  const sessionInfo = sessionTypeLabels[lap.sessionType] || sessionTypeLabels.practice
+                  const isTop3 = index < 3 && sortConfig.key === 'lapTime' && sortConfig.direction === 'asc'
+
+                  return (
+                    <tr
+                      key={lap.id}
+                      className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isTop3 ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : ''}`}
+                    >
+                      {/* Position */}
+                      <td className="px-4 py-3">
+                        {isTop3 ? (
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white ${
+                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
+                          }`}>
+                            {index === 0 ? <TrophySolidIcon className="w-4 h-4" /> : index + 1}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500 font-medium">{index + 1}</span>
+                        )}
+                      </td>
+
+                      {/* Lap time */}
+                      <td className="px-4 py-3">
+                        <span className={`font-mono font-bold text-lg ${isTop3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}>
+                          {formatTime(lap.lapTime)}
+                        </span>
+                      </td>
+
+                      {/* Driver */}
+                      <td className="px-4 py-3">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                          onClick={() => navigate(`/drivers/${lap.driver?.id}`)}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0"
+                            style={{ backgroundColor: lap.driver?.color || '#666' }}
+                          >
+                            {lap.driver?.img ? (
+                              <img src={getImgUrl(lap.driver.img)} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              lap.driver?.name?.charAt(0)
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-900 dark:text-white truncate">
+                            {lap.driver?.name}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Car */}
+                      <td className="px-4 py-3">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                          onClick={() => navigate(`/cars/${lap.car?.id}`)}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                            style={{ backgroundColor: lap.car?.color || '#666' }}
+                          >
+                            {lap.car?.img ? (
+                              <img src={getImgUrl(lap.car.img)} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              lap.car?.brand?.charAt(0)
+                            )}
+                          </div>
+                          <span className="text-gray-700 dark:text-gray-300 truncate">
+                            {lap.car?.brand} {lap.car?.model}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Track */}
+                      <td className="px-4 py-3">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                          onClick={() => navigate(`/tracks/${lap.track?.id}`)}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: lap.track?.color || '#666' }}
+                          />
+                          <span className="text-gray-700 dark:text-gray-300 truncate">
+                            {lap.track?.name}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Session type */}
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${sessionInfo.color}`}>
+                          {sessionInfo.label}
+                        </span>
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm">
+                        {lap.sessionDate ? new Date(lap.sessionDate).toLocaleDateString('fr-FR') : '-'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -20,6 +20,7 @@ import {
   PhotoUploadField,
   ColorPickerField
 } from '../components/crud'
+import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const PRIMARY_COLOR = '#3B82F6'
@@ -164,7 +165,7 @@ function DriverCard({ driver, onEdit, onClick }) {
               style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)` }}
             >
               {driver.img ? (
-                <img src={driver.img.startsWith('http') ? driver.img : `${API_URL}${driver.img}`} alt={driver.name} className="w-full h-full object-cover" />
+                <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="drop-shadow-lg">{driver.name.charAt(0)}</span>
               )}

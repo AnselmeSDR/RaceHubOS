@@ -3,8 +3,7 @@ import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { useTheme } from '../../context/ThemeContext'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+import { getImgUrl } from '../../utils/image'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -161,7 +160,7 @@ export default function SessionLeaderboard({
               >
                 {driver.img ? (
                   <img
-                    src={driver.img.startsWith('http') ? driver.img : `${API_URL}${driver.img}`}
+                    src={getImgUrl(driver.img)}
                     alt={driver.name || 'Driver'}
                     className="w-full h-full object-cover"
                   />
@@ -170,11 +169,11 @@ export default function SessionLeaderboard({
                 )}
               </div>
 
-              {/* Number - Large NASCAR style */}
+              {/* Number - Large NASCAR style (supports 3 digits) */}
               {driver.number && (
-                <div className="flex-shrink-0 w-16">
+                <div className="flex-shrink-0 w-20">
                   <span
-                    className="text-5xl font-black italic"
+                    className={`font-black italic ${String(driver.number).length >= 3 ? 'text-4xl' : 'text-5xl'}`}
                     style={{
                       color: driverColor,
                       WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
@@ -182,6 +181,17 @@ export default function SessionLeaderboard({
                   >
                     {driver.number}
                   </span>
+                </div>
+              )}
+
+              {/* Car image */}
+              {car.img && (
+                <div className="w-14 h-10 rounded flex-shrink-0 overflow-hidden shadow-md">
+                  <img
+                    src={getImgUrl(car.img)}
+                    alt={`${car.brand} ${car.model}`}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
 

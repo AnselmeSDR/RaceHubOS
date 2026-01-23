@@ -57,7 +57,10 @@ router.get('/:id', async (req, res) => {
               createdAt: 'desc',
             },
           },
-          take: 10, // Last 10 sessions
+          take: 10,
+        },
+        _count: {
+          select: { sessions: true },
         },
       },
     });
@@ -69,9 +72,36 @@ router.get('/:id', async (req, res) => {
       });
     }
 
+    // Get best laps per driver x track combo for this car (top 10)
+    const bestLaps = await prisma.lap.findMany({
+      where: { carId: id },
+      orderBy: { lapTime: 'asc' },
+      distinct: ['driverId', 'trackId'],
+      take: 10,
+      include: {
+        driver: {
+          select: { id: true, name: true, color: true, img: true },
+        },
+        track: {
+          select: { id: true, name: true, color: true },
+        },
+        session: {
+          select: { type: true },
+        },
+      },
+    });
+
+    const records = bestLaps.map((lap) => ({
+      id: lap.id,
+      lapTime: lap.lapTime,
+      driver: lap.driver,
+      track: lap.track,
+      sessionType: lap.session?.type,
+    }));
+
     res.json({
       success: true,
-      data: withNestedImageUrls(car),
+      data: withNestedImageUrls({ ...car, records }),
     });
   } catch (error) {
     console.error('Error fetching car:', error);
@@ -210,9 +240,14 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    await prisma.car.delete({
-      where: { id },
-    });
+    // Delete related records first (cascade not configured for car)
+    await prisma.$transaction([
+      prisma.sessionDriver.deleteMany({ where: { carId: id } }),
+      prisma.lap.deleteMany({ where: { carId: id } }),
+      prisma.controllerConfig.deleteMany({ where: { carId: id } }),
+      prisma.trackRecord.deleteMany({ where: { carId: id } }),
+      prisma.car.delete({ where: { id } }),
+    ]);
 
     res.json({
       success: true,
@@ -223,6 +258,56 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete car',
+    });
+  }
+});
+
+// POST /api/cars/:id/reset-stats - Reset car statistics
+router.post('/:id/reset-stats', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const exists = await prisma.car.findUnique({
+      where: { id },
+    });
+
+    if (!exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Car not found',
+      });
+    }
+
+    // Delete related data and reset stats in a transaction
+    const car = await prisma.$transaction(async (tx) => {
+      // Delete laps
+      await tx.lap.deleteMany({ where: { carId: id } });
+      // Delete session participations
+      await tx.sessionDriver.deleteMany({ where: { carId: id } });
+
+      // Reset stats fields
+      return tx.car.update({
+        where: { id },
+        data: {
+          totalRaces: 0,
+          bestLap: null,
+        },
+        include: {
+          _count: { select: { sessions: true } },
+        },
+      });
+    });
+
+    res.json({
+      success: true,
+      data: withImageUrl(car),
+      message: 'Statistics reset successfully',
+    });
+  } catch (error) {
+    console.error('Error resetting car stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset car statistics',
     });
   }
 });
