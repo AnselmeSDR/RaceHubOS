@@ -175,8 +175,8 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
 
     try {
       const url = session
-        ? `http://localhost:3000/api/sessions/${session.id}`
-        : 'http://localhost:3000/api/sessions'
+        ? `/api/sessions/${session.id}`
+        : '/api/sessions'
 
       const response = await fetch(url, {
         method: session ? 'PUT' : 'POST',
@@ -206,7 +206,7 @@ function SessionForm({ session, onClose, onSave, tracks, championships, drivers,
     setError('')
 
     try {
-      const response = await fetch(`http://localhost:3000/api/sessions/${session.id}`, {
+      const response = await fetch(`/api/sessions/${session.id}`, {
         method: 'DELETE'
       })
 
@@ -490,7 +490,7 @@ export default function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/sessions')
+      const response = await fetch('/api/sessions')
       const data = await response.json()
       setSessions(data.data || [])
     } catch (err) {
@@ -500,7 +500,7 @@ export default function Sessions() {
 
   const fetchTracks = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/tracks')
+      const response = await fetch('/api/tracks')
       const data = await response.json()
       setTracks(data.data || [])
     } catch (err) {
@@ -510,7 +510,7 @@ export default function Sessions() {
 
   const fetchChampionships = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/championships')
+      const response = await fetch('/api/championships')
       const data = await response.json()
       setChampionships(data.data || [])
     } catch (err) {
@@ -520,7 +520,7 @@ export default function Sessions() {
 
   const fetchDrivers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/drivers')
+      const response = await fetch('/api/drivers')
       const data = await response.json()
       setDrivers(data.data || [])
     } catch (err) {
@@ -530,7 +530,7 @@ export default function Sessions() {
 
   const fetchCars = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/cars')
+      const response = await fetch('/api/cars')
       const data = await response.json()
       setCars(data.data || [])
     } catch (err) {

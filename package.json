@@ -14,12 +14,17 @@
     "lint": "npm run lint --workspaces"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "baseline-browser-mapping": "^2.9.17",
+    "concurrently": "^9.2.1"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
   "author": "",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "overrides": {
+    "tar": "^7.5.4",
+    "lodash": "^4.17.22"
+  }
 }

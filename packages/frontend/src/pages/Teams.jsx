@@ -12,7 +12,7 @@ import {
   ColorPickerField
 } from '../components/crud'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 const PRIMARY_COLOR = '#F97316'
 
 export default function Teams() {

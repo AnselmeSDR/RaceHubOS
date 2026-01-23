@@ -9,7 +9,7 @@ import {
 import { MapPinIcon as MapPinSolidIcon, TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { RecordsList } from '../components/RecordDisplays'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 const PRIMARY_COLOR = '#9333EA'
 
 export default function TrackProfile() {

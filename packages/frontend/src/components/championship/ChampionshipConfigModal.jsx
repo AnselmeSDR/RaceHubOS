@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const SESSION_TYPES = {
   qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300', icon: ClockIcon },

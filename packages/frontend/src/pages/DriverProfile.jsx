@@ -4,7 +4,7 @@ import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { DriverProfileHeader } from '../components/DriverDisplays'
 import { RecordsList } from '../components/RecordDisplays'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 const PRIMARY_COLOR = '#3B82F6'
 
 export default function DriverProfile() {

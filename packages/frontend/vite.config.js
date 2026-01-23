@@ -12,6 +12,15 @@ export default defineConfig({
         target: `http://localhost:${backendPort}`,
         changeOrigin: true,
       },
+      '/health': {
+        target: `http://localhost:${backendPort}`,
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: `http://localhost:${backendPort}`,
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

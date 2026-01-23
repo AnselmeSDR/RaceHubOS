@@ -40,5 +40,5 @@ export const MODE_FLAGS = {
   LAP_COUNTER: 0x8
 }
 
-// API URL
-export const API_URL = 'http://localhost:3000'
+// API URL - uses Vite proxy in development
+export const API_URL = '/api'

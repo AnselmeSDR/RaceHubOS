@@ -15,8 +15,8 @@ import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useTheme } from '../context/ThemeContext'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
+const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export default function Dashboard() {
   const navigate = useNavigate()

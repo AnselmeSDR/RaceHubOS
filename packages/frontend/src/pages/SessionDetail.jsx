@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorMessage from '../components/ErrorMessage'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 export default function SessionDetail() {
   const { id } = useParams()

@@ -3,7 +3,7 @@ import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../ImageCropper'
 import { getImgUrl } from '../../utils/image'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 /**
  * Photo upload field with cropper integration

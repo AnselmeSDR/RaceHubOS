@@ -18,7 +18,7 @@ import {
 } from '../components/crud'
 import { ConfirmModal } from '../components/ui/Modal'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 const PRIMARY_COLOR = '#EAB308'
 
 export default function Championships() {
