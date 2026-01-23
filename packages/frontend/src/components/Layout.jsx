@@ -195,12 +195,12 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-h-0">
+      <main className="flex-1 overflow-auto flex flex-col">
         <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
         {/* CU Status Footer */}
-        <footer className="mt-auto bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
+        <footer className="bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
           <div className={`w-1.5 h-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-400') : 'text-red-400'}>
             {cuConnected ? (isSimulator ? 'SIMULATOR' : 'CU') : 'NO CU'}
