@@ -36,5 +36,7 @@ npm-debug.log*
 prisma/migrations/
 
 packages/backend/prisma/dev.db-shm
-
 packages/backend/prisma/dev.db-wal
+
+# Uploads (generated at runtime)
+packages/backend/public/uploads/
