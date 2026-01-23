@@ -110,6 +110,13 @@ export function SessionProvider({ children }) {
         reason: data.reason,
       })
       window.dispatchEvent(new CustomEvent('session:finished', { detail: data }))
+
+      // Play finish music
+      try {
+        const audio = new Audio('/sounds/race-finish.mp3')
+        audio.volume = 0.7
+        audio.play().catch(() => {})
+      } catch {}
     })
 
     // Real-time positions

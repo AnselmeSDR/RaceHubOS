@@ -139,9 +139,9 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Start the simulator (prepare for race - Lights 1)
+   * Start the simulator - triggers START button like real CU
    */
-  start() {
+  async start() {
     // Start the tick loop if not running
     if (!this.isRunning) {
       this.isRunning = true;
@@ -150,12 +150,8 @@ export class CarreraSimulator extends EventEmitter {
       }, this.tickRate);
     }
 
-    // Always set to LIGHTS_1 state (works for first start and resume)
-    this.raceActive = false;
-    this.cuState = CU_STATE.LIGHTS_1;
-
-    this.emitRaceStatus();
-    this.emitCuStatus();
+    // Delegate to startRace() which handles the light sequence
+    await this.startRace();
   }
 
   /**
