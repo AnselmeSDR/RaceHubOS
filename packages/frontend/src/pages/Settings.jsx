@@ -15,7 +15,7 @@ import {
   MoonIcon,
 } from '@heroicons/react/24/outline'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export default function Settings() {
   const {

@@ -46,7 +46,7 @@ export default function Home() {
     addLog('info', 'Vérification du backend...');
 
     // Check backend status
-    fetch('http://localhost:3000/health')
+    fetch('/health')
       .then(res => res.json())
       .then(data => {
         setSystemStatus(prev => ({ ...prev, backend: 'online', database: 'online' }));
@@ -55,7 +55,7 @@ export default function Home() {
         addLog('success', 'Base de données SQLite opérationnelle');
 
         // Connect WebSocket
-        const socket = io('http://localhost:3000');
+        const socket = io('');
         socketRef.current = socket;
 
         socket.on('connect', () => {

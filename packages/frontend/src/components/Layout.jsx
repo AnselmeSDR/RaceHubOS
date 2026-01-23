@@ -22,7 +22,7 @@ import BackendStatusPopup from './BackendStatusPopup'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useTheme } from '../context/ThemeContext'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const CU_STATE_NAMES = {
   0: 'Racing',

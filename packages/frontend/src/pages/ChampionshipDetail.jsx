@@ -14,7 +14,7 @@ import ChampionshipConfigModal from '../components/championship/ChampionshipConf
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function ChampionshipDetail() {
   const { id } = useParams()

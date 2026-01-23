@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { io } from 'socket.io-client'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
+const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export const SESSION_STATUS = {
   DRAFT: 'draft',

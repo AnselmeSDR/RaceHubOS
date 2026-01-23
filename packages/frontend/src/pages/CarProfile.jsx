@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeftIcon, ArrowPathIcon, BoltIcon, FireIcon, BeakerIcon } from '@heroicons/react/24/outline'
 import { RecordsList } from '../components/RecordDisplays'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function CarProfile() {
   const { id } = useParams()

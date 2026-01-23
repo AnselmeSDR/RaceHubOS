@@ -19,7 +19,7 @@ import {
   RangeField
 } from '../components/crud'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 const PRIMARY_COLOR = '#22C55E'
 
 export default function Cars() {

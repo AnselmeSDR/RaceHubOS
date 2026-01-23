@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon, ArrowPathIcon, BoltIcon, SignalIcon, SignalSlashIcon, ServerIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { io } from 'socket.io-client'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
+const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 const LOG_TYPES = ['info', 'warn', 'error', 'debug']
 

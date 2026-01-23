@@ -12,7 +12,7 @@ import {
 import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const sessionTypeLabels = {
   race: { label: 'Course', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },

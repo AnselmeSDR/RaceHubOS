@@ -8,7 +8,7 @@ import StartingGrid from '../components/race/StartingGrid'
 import StandingsTabs from '../components/championship/StandingsTabs'
 import SessionConfigModal from '../components/championship/SessionConfigModal'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const SESSION_TYPES = [
   { value: 'practice', label: 'Essais libres' },

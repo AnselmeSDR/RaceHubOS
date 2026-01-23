@@ -20,7 +20,7 @@ import {
 import ErrorMessage from '../components/ErrorMessage'
 import SessionForm from '../components/SessionForm'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 export default function SessionsList() {
   const navigate = useNavigate()
