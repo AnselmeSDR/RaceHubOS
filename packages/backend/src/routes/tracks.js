@@ -8,23 +8,33 @@ const prisma = new PrismaClient();
 // GET /api/tracks - List all tracks
 router.get('/', async (req, res) => {
   try {
-    const tracks = await prisma.track.findMany({
-      include: {
-        _count: {
-          select: {
-            sessions: true,
+    const { deleted, limit = '50', offset = '0' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    const [tracks, total] = await Promise.all([
+      prisma.track.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              sessions: { where: { deletedAt: null } },
+            },
           },
         },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+        orderBy: { name: 'asc' },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma.track.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: tracks.map(t => withImageUrl(t)),
-      count: tracks.length,
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {
     console.error('Error fetching tracks:', error);
