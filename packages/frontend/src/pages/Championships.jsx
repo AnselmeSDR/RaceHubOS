@@ -9,6 +9,7 @@ import {
 import { FormModal, TextField, SelectField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
+import { Badge } from '@/components/ui/badge'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -103,7 +104,7 @@ export default function Championships() {
       cell: ({ row }) => {
         const track = tracks.find(t => t.id === row.original.trackId)
         return (
-          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
             <MapPinIcon className="w-4 h-4" />
             {track?.name || 'Non défini'}
           </span>
@@ -115,7 +116,7 @@ export default function Championships() {
       accessorFn: (row) => row.sessions?.filter(s => s.type === 'qualif').length || 0,
       header: 'Qualifs',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <ClockIcon className="w-4 h-4 text-blue-500" />
           {row.original.sessions?.filter(s => s.type === 'qualif').length || 0}
         </span>
@@ -126,7 +127,7 @@ export default function Championships() {
       accessorFn: (row) => row.sessions?.filter(s => s.type === 'race').length || 0,
       header: 'Courses',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <FlagIcon className="w-4 h-4 text-green-500" />
           {row.original.sessions?.filter(s => s.type === 'race').length || 0}
         </span>
@@ -159,9 +160,9 @@ export default function Championships() {
         const labels = { active: 'En cours', finished: 'Terminé', planned: 'Planifié' }
         const key = row.original.status || 'planned'
         return (
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${styles[key] || styles.planned}`}>
+          <Badge className={styles[key] || styles.planned}>
             {labels[key] || labels.planned}
-          </span>
+          </Badge>
         )
       },
     },

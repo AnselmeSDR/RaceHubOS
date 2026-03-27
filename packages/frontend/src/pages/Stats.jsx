@@ -5,6 +5,7 @@ import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
+import { Badge } from '@/components/ui/badge'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -121,7 +122,7 @@ export default function Stats() {
       cell: ({ row }) => {
         const isTop3 = row.index < 3
         return (
-          <span className={`font-mono font-bold text-lg ${isTop3 ? 'text-yellow-600 dark:text-yellow-400' : ''}`}>
+          <span className={`font-mono font-bold ${isTop3 ? 'text-yellow-600 dark:text-yellow-400' : ''}`}>
             {formatTime(row.original.lapTime)}
           </span>
         )
@@ -253,9 +254,9 @@ export default function Stats() {
       cell: ({ row }) => {
         const info = sessionTypeLabels[row.original.sessionType] || sessionTypeLabels.practice
         return (
-          <span className={`px-2 py-1 rounded text-xs font-semibold ${info.color}`}>
+          <Badge className={info.color}>
             {info.label}
-          </span>
+          </Badge>
         )
       },
     },
@@ -264,7 +265,7 @@ export default function Stats() {
       accessorFn: (row) => row.sessionDate,
       header: 'Date',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground">
           {row.original.sessionDate ? new Date(row.original.sessionDate).toLocaleDateString('fr-FR') : '-'}
         </span>
       ),

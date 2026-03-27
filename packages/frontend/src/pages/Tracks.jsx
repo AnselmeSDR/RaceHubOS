@@ -90,7 +90,7 @@ export default function Tracks() {
       accessorFn: (row) => row.length || 0,
       header: 'Longueur',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <RocketLaunchIcon className="w-4 h-4 text-purple-500" />
           {row.original.length ? `${row.original.length}m` : '-'}
         </span>
@@ -101,7 +101,7 @@ export default function Tracks() {
       accessorFn: (row) => row.corners || 0,
       header: 'Virages',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <ArrowPathIcon className="w-4 h-4 text-purple-500" />
           {row.original.corners || '-'}
         </span>
@@ -113,7 +113,7 @@ export default function Tracks() {
       header: 'Record',
       cell: ({ row }) => (
         <div>
-          <span className="font-mono font-bold text-sm">
+          <span className="font-mono font-bold">
             {formatTime(row.original.bestLap)}
           </span>
           {row.original.bestLapBy && (
@@ -129,7 +129,7 @@ export default function Tracks() {
       accessorFn: (row) => row._count?.sessions || 0,
       header: 'Sessions',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <ClockIcon className="w-4 h-4" />
           {row.original._count?.sessions || 0}
         </span>
