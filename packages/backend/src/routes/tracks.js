@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // GET /api/tracks - List all tracks
 router.get('/', async (req, res) => {
   try {
-    const { deleted, limit = '50', offset = '0' } = req.query;
+    const { deleted, limit = '50', offset = '0', sortBy = 'name', sortOrder = 'asc' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        orderBy: { name: 'asc' },
+        orderBy: { [sortBy]: sortOrder },
         skip: parsedOffset,
         take: parsedLimit,
       }),

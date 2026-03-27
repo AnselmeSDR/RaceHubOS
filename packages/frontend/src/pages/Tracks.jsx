@@ -23,10 +23,11 @@ export default function Tracks() {
   const [editingTrack, setEditingTrack] = useState(null)
 
   const [filters, setFilters] = useState({ deleted: false })
+  const [sort, setSort] = useState(null)
 
   useEffect(() => {
     loadData(0)
-  }, [filters])
+  }, [filters, sort])
 
   async function loadData(offset) {
     const isFirst = offset === 0
@@ -35,6 +36,10 @@ export default function Tracks() {
     try {
       const params = new URLSearchParams()
       if (filters.deleted) params.append('deleted', 'true')
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
+      }
       params.append('offset', String(offset))
       params.append('limit', '50')
       const res = await fetch(`${API_URL}/api/tracks?${params}`)
@@ -152,6 +157,7 @@ export default function Tracks() {
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(tracks.length)}
+      onSortChange={setSort}
       hasActiveFilters={filters.deleted}
       emptyTitle="Aucun circuit"
       emptyMessage="Ajoutez votre premier circuit"

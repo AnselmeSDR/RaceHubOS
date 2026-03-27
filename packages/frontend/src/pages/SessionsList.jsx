@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FlagIcon,
@@ -38,6 +38,9 @@ export default function SessionsList() {
     championshipId: [],
     deleted: false,
   })
+  const [sort, setSort] = useState(null)
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
 
   useEffect(() => {
     Promise.all([
@@ -51,12 +54,14 @@ export default function SessionsList() {
 
   useEffect(() => {
     loadData(0)
-  }, [filters])
+  }, [filters, sort])
+
+  const hasLoadedOnce = useRef(false)
 
   async function loadData(offset) {
     const isFirst = offset === 0
-    if (isFirst) setLoading(true)
-    else setLoadingMore(true)
+    if (isFirst && !hasLoadedOnce.current) setLoading(true)
+    else if (!isFirst) setLoadingMore(true)
     try {
       const params = new URLSearchParams()
       if (filters.status.length) params.append('status', filters.status.join(','))
@@ -64,6 +69,10 @@ export default function SessionsList() {
       if (filters.type.length) params.append('type', filters.type.join(','))
       if (filters.championshipId.length) params.append('championshipId', filters.championshipId.join(','))
       if (filters.deleted) params.append('deleted', 'true')
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
+      }
       params.append('offset', String(offset))
       params.append('limit', '50')
       const res = await fetch(`${API_URL}/api/sessions?${params}`)
@@ -76,7 +85,7 @@ export default function SessionsList() {
     } catch (err) {
       console.error('Failed to load sessions:', err)
     } finally {
-      if (isFirst) setLoading(false)
+      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
       else setLoadingMore(false)
     }
   }
@@ -131,8 +140,8 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Type"
-          active={filters.type.length > 0}
-          value={filters.type}
+          active={filtersRef.current.type.length > 0}
+          value={filtersRef.current.type}
           options={[
             { value: 'practice', label: 'Essais libres' },
             { value: 'qualif', label: 'Qualifications' },
@@ -163,8 +172,8 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={filters.trackId.length > 0}
-          value={filters.trackId}
+          active={filtersRef.current.trackId.length > 0}
+          value={filtersRef.current.trackId}
           options={tracks.map(t => ({ value: t.id, label: t.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
@@ -184,8 +193,8 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Statut"
-          active={filters.status.length > 0}
-          value={filters.status}
+          active={filtersRef.current.status.length > 0}
+          value={filtersRef.current.status}
           options={[
             { value: 'draft', label: 'Brouillon' },
             { value: 'ready', label: 'Prête' },
@@ -212,8 +221,8 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Championnat"
-          active={filters.championshipId.length > 0}
-          value={filters.championshipId}
+          active={filtersRef.current.championshipId.length > 0}
+          value={filtersRef.current.championshipId}
           options={[
             { value: 'null', label: 'Hors championnat' },
             ...championships.map(c => ({ value: c.id, label: c.name })),
@@ -269,7 +278,7 @@ export default function SessionsList() {
         </span>
       ),
     },
-  ], [filters, tracks, championships])
+  ], [tracks, championships])
 
   const hasActiveFilters = filters.status.length > 0 || filters.trackId.length > 0 || filters.type.length > 0 || filters.championshipId.length > 0 || filters.deleted
 
@@ -293,6 +302,7 @@ export default function SessionsList() {
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(sessions.length)}
+      onSortChange={setSort}
       hasActiveFilters={hasActiveFilters}
       emptyTitle="Aucune session"
       emptyMessage="Créez votre première session"

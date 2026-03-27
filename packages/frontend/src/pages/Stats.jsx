@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChartBarIcon, TrophyIcon } from '@heroicons/react/24/outline'
 import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
@@ -34,6 +34,9 @@ export default function Stats() {
     sessionType: [],
     unique: true,
   })
+  const [sort, setSort] = useState(null)
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
 
   useEffect(() => {
     Promise.all([
@@ -49,12 +52,14 @@ export default function Stats() {
 
   useEffect(() => {
     loadData(0)
-  }, [filters])
+  }, [filters, sort])
+
+  const hasLoadedOnce = useRef(false)
 
   async function loadData(offset) {
     const isFirst = offset === 0
-    if (isFirst) setLoading(true)
-    else setLoadingMore(true)
+    if (isFirst && !hasLoadedOnce.current) setLoading(true)
+    else if (!isFirst) setLoadingMore(true)
     try {
       const params = new URLSearchParams()
       if (filters.driverId.length) params.append('driverId', filters.driverId.join(','))
@@ -62,6 +67,10 @@ export default function Stats() {
       if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
       if (filters.sessionType.length) params.append('sessionType', filters.sessionType.join(','))
       params.append('unique', String(filters.unique))
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
+      }
       params.append('limit', '50')
       params.append('offset', String(offset))
       const res = await fetch(`${API_URL}/api/stats/laptimes?${params}`)
@@ -74,7 +83,7 @@ export default function Stats() {
     } catch (err) {
       console.error('Failed to load laptimes:', err)
     } finally {
-      if (isFirst) setLoading(false)
+      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
       else setLoadingMore(false)
     }
   }
@@ -126,8 +135,8 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Pilote"
-          active={filters.driverId.length > 0}
-          value={filters.driverId}
+          active={filtersRef.current.driverId.length > 0}
+          value={filtersRef.current.driverId}
           options={[
             ...drivers.map(d => ({ value: d.id, label: d.name })),
           ]}
@@ -164,8 +173,8 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Voiture"
-          active={filters.carId.length > 0}
-          value={filters.carId}
+          active={filtersRef.current.carId.length > 0}
+          value={filtersRef.current.carId}
           options={[
             ...cars.map(c => ({ value: c.id, label: `${c.brand} ${c.model}` })),
           ]}
@@ -202,8 +211,8 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={filters.trackId.length > 0}
-          value={filters.trackId}
+          active={filtersRef.current.trackId.length > 0}
+          value={filtersRef.current.trackId}
           options={[
             ...tracks.map(t => ({ value: t.id, label: t.name })),
           ]}
@@ -231,8 +240,8 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Session"
-          active={filters.sessionType.length > 0}
-          value={filters.sessionType}
+          active={filtersRef.current.sessionType.length > 0}
+          value={filtersRef.current.sessionType}
           options={[
             { value: 'practice', label: 'Essais' },
             { value: 'qualif', label: 'Qualifications' },
@@ -260,7 +269,7 @@ export default function Stats() {
         </span>
       ),
     },
-  ], [filters, drivers, cars, tracks])
+  ], [drivers, cars, tracks])
 
   const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0
 
@@ -278,6 +287,7 @@ export default function Stats() {
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(laptimes.length)}
+      onSortChange={setSort}
       hasActiveFilters={hasActiveFilters}
       emptyTitle="Aucun record"
       emptyMessage="Aucun temps enregistré"

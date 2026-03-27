@@ -1,19 +1,21 @@
-import { FunnelIcon } from '@heroicons/react/24/outline'
+import { FunnelIcon as FunnelOutline } from '@heroicons/react/24/outline'
+import { FunnelIcon as FunnelSolid } from '@heroicons/react/24/solid'
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
-import { CheckIcon } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export function FilterHeader({ label, active, value = [], options, onChange, column }) {
   const sorted = column?.getIsSorted?.()
   const canSort = column?.getCanSort?.()
 
-  // Normalize value to array
   const selected = Array.isArray(value) ? value : (value ? [value] : [])
 
   function toggleValue(optValue) {
     if (!optValue) {
-      // "Tous" clicked — clear selection
       onChange([])
       return
     }
@@ -24,7 +26,7 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
   }
 
   return (
-    <Popover>
+    <DropdownMenu>
       <div className="flex items-center w-full">
         <span
           className={canSort ? 'cursor-pointer select-none hover:text-foreground flex items-center gap-2' : ''}
@@ -40,40 +42,34 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
           )}
         </span>
         <span className="flex-1" />
-        <PopoverTrigger asChild>
-          <button
-            className={`p-1 rounded hover:bg-muted transition-colors ${
-              active ? 'text-primary' : 'text-muted-foreground'
-            }`}
-          >
-            <FunnelIcon className="w-4 h-4" />
+        <DropdownMenuTrigger asChild>
+          <button className="p-1 rounded hover:bg-muted transition-colors">
+            {active
+              ? <FunnelSolid className="w-4 h-4 text-primary" />
+              : <FunnelOutline className="w-4 h-4 text-muted-foreground" />
+            }
           </button>
-        </PopoverTrigger>
+        </DropdownMenuTrigger>
       </div>
-      <PopoverContent align="end" collisionPadding={16} className="w-52 p-1 max-h-72 overflow-y-auto">
-        {/* "Tous" option */}
-        <button
-          onClick={() => toggleValue('')}
-          className="flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors text-left"
+      <DropdownMenuContent align="end" className="w-52 max-h-72 overflow-y-auto">
+        <DropdownMenuCheckboxItem
+          checked={selected.length === 0}
+          onCheckedChange={() => toggleValue('')}
+          onSelect={(e) => e.preventDefault()}
         >
-          <span>Tous</span>
-          {selected.length === 0 && <CheckIcon className="w-4 h-4 text-primary" />}
-        </button>
-        {/* Options with checkboxes */}
+          Tous
+        </DropdownMenuCheckboxItem>
         {options.filter(o => o.value).map((opt) => (
-          <button
+          <DropdownMenuCheckboxItem
             key={opt.value}
-            onClick={() => toggleValue(opt.value)}
-            className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors text-left"
+            checked={selected.includes(opt.value)}
+            onCheckedChange={() => toggleValue(opt.value)}
+            onSelect={(e) => e.preventDefault()}
           >
-            <Checkbox
-              checked={selected.includes(opt.value)}
-              className="h-3.5 w-3.5 pointer-events-none"
-            />
-            <span className="flex-1">{opt.label}</span>
-          </button>
+            {opt.label}
+          </DropdownMenuCheckboxItem>
         ))}
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
