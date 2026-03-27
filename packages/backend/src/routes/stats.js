@@ -484,7 +484,10 @@ router.get('/leaderboard/teams', async (req, res) => {
 // GET /api/stats/laptimes - Get all lap times with filters
 router.get('/laptimes', async (req, res) => {
   try {
-    const { driverId, carId, trackId, sessionType, limit = 100, sortBy = 'lapTime', sortOrder = 'asc' } = req.query;
+    const { driverId, carId, trackId, sessionType, limit = 50, offset = 0, sortBy = 'lapTime', sortOrder = 'asc', unique = 'true' } = req.query;
+
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
 
     // Build where clause
     const where = {
@@ -503,48 +506,90 @@ router.get('/laptimes', async (req, res) => {
     }
 
     // Build orderBy
-    const orderBy = {};
-    if (sortBy === 'lapTime') orderBy.lapTime = sortOrder;
-    else if (sortBy === 'timestamp') orderBy.timestamp = sortOrder;
-    else orderBy.lapTime = 'asc';
+    const sortByMap = {
+      lapTime: { lapTime: sortOrder },
+      timestamp: { timestamp: sortOrder },
+      driver: { driver: { name: sortOrder } },
+      car: { car: { brand: sortOrder } },
+      track: { session: { track: { name: sortOrder } } },
+      sessionType: { session: { type: sortOrder } },
+      date: { session: { createdAt: sortOrder } },
+    };
+    const orderBy = sortByMap[sortBy] || { lapTime: 'asc' };
 
-    // Fetch more laps to ensure we have enough unique combos
-    const laps = await prisma.lap.findMany({
-      where,
-      orderBy,
-      take: parseInt(limit) * 50, // Fetch more to find unique combos
-      include: {
-        driver: {
-          select: { id: true, name: true, color: true, img: true, number: true },
-        },
-        car: {
-          select: { id: true, brand: true, model: true, color: true, img: true },
-        },
-        session: {
-          select: {
-            id: true,
-            type: true,
-            createdAt: true,
-            track: {
-              select: { id: true, name: true, color: true, img: true },
-            },
+    const shouldGroup = unique === 'true';
+
+    const lapInclude = {
+      driver: {
+        select: { id: true, name: true, color: true, img: true, number: true },
+      },
+      car: {
+        select: { id: true, brand: true, model: true, color: true, img: true },
+      },
+      session: {
+        select: {
+          id: true,
+          type: true,
+          createdAt: true,
+          track: {
+            select: { id: true, name: true, color: true, img: true },
           },
         },
       },
-    });
+    };
 
-    // Group by driver+car+track to get best lap per combo
-    const bestLapsMap = new Map();
-    for (const lap of laps) {
-      const key = `${lap.driverId}-${lap.carId}-${lap.session.track?.id}`;
-      if (!bestLapsMap.has(key) || lap.lapTime < bestLapsMap.get(key).lapTime) {
-        bestLapsMap.set(key, lap);
+    let bestLaps;
+    let hasMore;
+    let total;
+
+    if (shouldGroup) {
+      // Fetch all to deduplicate, then paginate
+      const laps = await prisma.lap.findMany({
+        where,
+        orderBy,
+        include: lapInclude,
+      });
+
+      const bestLapsMap = new Map();
+      for (const lap of laps) {
+        const key = `${lap.driverId}-${lap.carId}-${lap.session.track?.id}`;
+        if (!bestLapsMap.has(key) || lap.lapTime < bestLapsMap.get(key).lapTime) {
+          bestLapsMap.set(key, lap);
+        }
       }
-    }
+      const sortFns = {
+        lapTime: (a, b) => a.lapTime - b.lapTime,
+        timestamp: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+        driver: (a, b) => (a.driver?.name || '').localeCompare(b.driver?.name || ''),
+        car: (a, b) => (`${a.car?.brand} ${a.car?.model}`).localeCompare(`${b.car?.brand} ${b.car?.model}`),
+        track: (a, b) => (a.session.track?.name || '').localeCompare(b.session.track?.name || ''),
+        sessionType: (a, b) => (a.session.type || '').localeCompare(b.session.type || ''),
+        date: (a, b) => new Date(a.session.createdAt) - new Date(b.session.createdAt),
+      };
+      const compareFn = sortFns[sortBy] || sortFns.lapTime;
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      const allUnique = Array.from(bestLapsMap.values())
+        .sort((a, b) => dir * compareFn(a, b));
 
-    const bestLaps = Array.from(bestLapsMap.values())
-      .sort((a, b) => sortOrder === 'asc' ? a.lapTime - b.lapTime : b.lapTime - a.lapTime)
-      .slice(0, parseInt(limit));
+      total = allUnique.length;
+      bestLaps = allUnique.slice(parsedOffset, parsedOffset + parsedLimit);
+      hasMore = parsedOffset + parsedLimit < allUnique.length;
+    } else {
+      const [laps, count] = await Promise.all([
+        prisma.lap.findMany({
+          where,
+          orderBy,
+          skip: parsedOffset,
+          take: parsedLimit + 1,
+          include: lapInclude,
+        }),
+        prisma.lap.count({ where }),
+      ]);
+
+      hasMore = laps.length > parsedLimit;
+      bestLaps = hasMore ? laps.slice(0, parsedLimit) : laps;
+      total = count;
+    }
 
     const result = bestLaps.map(lap => ({
       id: lap.id,
@@ -561,7 +606,9 @@ router.get('/laptimes', async (req, res) => {
     res.json({
       success: true,
       data: result,
-      filters: { driverId, carId, trackId, sessionType, limit, sortBy, sortOrder },
+      total,
+      hasMore,
+      filters: { driverId, carId, trackId, sessionType, limit, offset, sortBy, sortOrder, unique },
     });
   } catch (error) {
     console.error('Error fetching lap times:', error);
