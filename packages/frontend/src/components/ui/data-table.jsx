@@ -245,7 +245,7 @@ export function DataTable({
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-head"
-                    className="relative group h-12 px-4 text-left align-middle font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                    className="relative group h-12 px-4 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0"
                     onDragEnter={(e) => canDrag && handleDragEnter(e, header.column.id)}
                     onDragOver={handleDragOver}
                   >
@@ -309,7 +309,7 @@ export function DataTable({
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-cell"
-                    className="px-4 py-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0"
+                    className="px-4 py-3 align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </motion.td>
