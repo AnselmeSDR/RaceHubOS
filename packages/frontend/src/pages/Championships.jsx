@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   TrophyIcon,
   MapPinIcon,
-  ChevronRightIcon,
-  XMarkIcon,
+  TrashIcon,
   FlagIcon,
-  ClockIcon
+  ClockIcon,
 } from '@heroicons/react/24/outline'
 import { useFetch } from '../hooks/useFetch'
 import {
@@ -14,7 +13,7 @@ import {
   EmptyState,
   FormModal,
   TextField,
-  SelectField
+  SelectField,
 } from '../components/crud'
 import { ConfirmModal } from '../components/ui/Modal'
 
@@ -26,32 +25,60 @@ export default function Championships() {
   const { data: championships = [], loading, refetch } = useFetch('/api/championships')
   const { data: tracks = [] } = useFetch('/api/tracks')
   const [showForm, setShowForm] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [selected, setSelected] = useState(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  function handleDeleteClick(id, e) {
-    e.stopPropagation()
-    setDeleteTarget(id)
+  function toggleSelect(id) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === championships.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(championships.map(c => c.id)))
+    }
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return
     try {
-      const res = await fetch(`${API_URL}/api/championships/${deleteTarget}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const data = await res.json()
-        console.error('Delete failed:', data.error)
-      }
+      await Promise.all(
+        [...selected].map(id =>
+          fetch(`${API_URL}/api/championships/${id}`, { method: 'DELETE' })
+        )
+      )
+      setSelected(new Set())
       refetch()
     } catch (error) {
       console.error('Failed to delete:', error)
     } finally {
-      setDeleteTarget(null)
+      setShowDeleteConfirm(false)
     }
   }
 
   function handleFormClose() {
     setShowForm(false)
     refetch()
+  }
+
+  function getStatusBadge(status) {
+    const styles = {
+      active: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300',
+      finished: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+      planned: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
+    }
+    const labels = { active: 'En cours', finished: 'Terminé', planned: 'Planifié' }
+    const key = status || 'planned'
+    return (
+      <span className={`px-2 py-0.5 rounded text-xs font-medium ${styles[key] || styles.planned}`}>
+        {labels[key] || labels.planned}
+      </span>
+    )
   }
 
   if (loading) {
@@ -74,6 +101,22 @@ export default function Championships() {
         primaryColor={PRIMARY_COLOR}
       />
 
+      {/* Selection actions bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Supprimer
+          </button>
+        </div>
+      )}
+
       {championships.length === 0 ? (
         <EmptyState
           icon={<TrophyIcon className="w-8 h-8" />}
@@ -84,16 +127,84 @@ export default function Championships() {
           primaryColor={PRIMARY_COLOR}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {championships.map(champ => (
-            <ChampionshipCard
-              key={champ.id}
-              championship={champ}
-              track={tracks.find(t => t.id === champ.trackId)}
-              onClick={() => navigate(`/championships/${champ.id}`)}
-              onDelete={(e) => handleDeleteClick(champ.id, e)}
-            />
-          ))}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr>
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selected.size === championships.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Nom</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Circuit</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Qualifs</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Courses</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {championships.map(champ => {
+                const track = tracks.find(t => t.id === champ.trackId)
+                const qualifCount = champ.sessions?.filter(s => s.type === 'qualif').length || 0
+                const raceCount = champ.sessions?.filter(s => s.type === 'race').length || 0
+                const isSelected = selected.has(champ.id)
+
+                return (
+                  <tr
+                    key={champ.id}
+                    onClick={() => navigate(`/championships/${champ.id}`)}
+                    className={`cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(champ.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <TrophyIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <span className="font-semibold text-gray-900 dark:text-white">{champ.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                        <MapPinIcon className="w-4 h-4" />
+                        {track?.name || 'Non défini'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                        <ClockIcon className="w-4 h-4 text-blue-500" />
+                        {qualifCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                        <FlagIcon className="w-4 h-4 text-green-500" />
+                        {raceCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(champ.status)}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -105,73 +216,13 @@ export default function Championships() {
       )}
 
       <ConfirmModal
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
-        title="Supprimer le championnat"
-        message="Cette action est irréversible. Toutes les sessions et données associées seront supprimées."
+        title="Supprimer les championnats"
+        message={`${selected.size} championnat${selected.size > 1 ? 's' : ''} sera${selected.size > 1 ? 'ont' : ''} supprimé${selected.size > 1 ? 's' : ''}. Cette action est irréversible.`}
         confirmLabel="Supprimer"
       />
-    </div>
-  )
-}
-
-function ChampionshipCard({ championship, track, onClick, onDelete }) {
-  const qualifCount = championship.sessions?.filter(s => s.type === 'qualif').length || 0
-  const raceCount = championship.sessions?.filter(s => s.type === 'race').length || 0
-
-  return (
-    <div
-      onClick={onClick}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer group"
-    >
-      <div className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-              <TrophyIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">
-                {championship.name}
-              </h3>
-              <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                <MapPinIcon className="w-4 h-4" />
-                {track?.name || 'Circuit non défini'}
-              </div>
-            </div>
-          </div>
-          <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors" />
-        </div>
-
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-sm">
-            <ClockIcon className="w-4 h-4 text-blue-500" />
-            <span className="text-gray-600 dark:text-gray-300">{qualifCount} qualif{qualifCount > 1 ? 's' : ''}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm">
-            <FlagIcon className="w-4 h-4 text-green-500" />
-            <span className="text-gray-600 dark:text-gray-300">{raceCount} course{raceCount > 1 ? 's' : ''}</span>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t dark:border-gray-700 flex items-center justify-between">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            championship.status === 'active' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-            championship.status === 'finished' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' :
-            'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-          }`}>
-            {championship.status === 'active' ? 'En cours' :
-             championship.status === 'finished' ? 'Terminé' : 'Planifié'}
-          </span>
-          <button
-            onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-          >
-            <XMarkIcon className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

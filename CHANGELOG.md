@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stats : infinite scroll** : remplacement du filtre "Nombre max" par un scroll infini avec chargement progressif par pages de 50
 - **Stats : regroupement pilote×voiture optionnel** : le regroupement par meilleur tour par combo pilote/voiture/circuit est maintenant désactivable via une checkbox
 - **API `/api/stats/laptimes`** : ajout des paramètres `offset`, `sortBy` (lapTime, driver, car, track, sessionType, date), `sortOrder`, `unique` ; retourne `total` et `hasMore` pour la pagination
+- **Sessions : vue liste** : remplacement de la grille de cartes par une liste compacte avec barre colorée, statut, badge type, stats et date
+- **Sessions : filtres** : ajout de filtres par circuit, type de session et championnat (backend déjà supporté)
+- **Championnats : vue tableau** : remplacement de la grille de cartes par un tableau avec colonnes (nom, circuit, qualifs, courses, statut) et sélection multiple pour suppression en batch
 
 ### Fixed
 - **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture

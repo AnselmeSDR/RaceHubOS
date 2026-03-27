@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  CalendarIcon,
   FlagIcon,
   UsersIcon,
   TrophyIcon,
   ClockIcon,
   PlusIcon,
   PlayIcon,
-  EyeIcon,
   MapPinIcon,
-  ChartBarIcon,
+  FunnelIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import {
   CheckCircleIcon,
@@ -29,20 +28,52 @@ export default function SessionsList() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all') // all, draft, ready, active, finished
   const [showForm, setShowForm] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Filter options
+  const [tracks, setTracks] = useState([])
+  const [championships, setChampionships] = useState([])
+
+  // Active filters
+  const [filters, setFilters] = useState({
+    trackId: '',
+    type: '',
+    championshipId: '',
+  })
+
+  useEffect(() => {
+    loadFilterOptions()
+  }, [])
 
   useEffect(() => {
     loadSessions()
-  }, [filter])
+  }, [filter, filters])
+
+  async function loadFilterOptions() {
+    try {
+      const [tracksRes, champsRes] = await Promise.all([
+        fetch(`${API_URL}/tracks`),
+        fetch(`${API_URL}/championships`),
+      ])
+      const tracksData = await tracksRes.json()
+      const champsData = await champsRes.json()
+      if (tracksData.success) setTracks(tracksData.data || [])
+      if (champsData.success) setChampionships(champsData.data || [])
+    } catch (err) {
+      console.error('Error loading filter options:', err)
+    }
+  }
 
   async function loadSessions() {
     try {
       setLoading(true)
-      let url = `${API_URL}/sessions`
-      if (filter !== 'all') {
-        url += `?status=${filter}`
-      }
+      const params = new URLSearchParams()
+      if (filter !== 'all') params.append('status', filter)
+      if (filters.trackId) params.append('trackId', filters.trackId)
+      if (filters.type) params.append('type', filters.type)
+      if (filters.championshipId) params.append('championshipId', filters.championshipId)
 
-      const res = await fetch(url)
+      const res = await fetch(`${API_URL}/sessions?${params}`)
       const data = await res.json()
 
       if (data.success) {
@@ -57,6 +88,12 @@ export default function SessionsList() {
       setLoading(false)
     }
   }
+
+  function clearFilters() {
+    setFilters({ trackId: '', type: '', championshipId: '' })
+  }
+
+  const activeFilterCount = [filters.trackId, filters.type, filters.championshipId].filter(v => v).length
 
   function getSessionTypeLabel(type) {
     switch (type) {
@@ -159,47 +196,42 @@ export default function SessionsList() {
         <div className="flex items-center gap-3">
           {/* Filter tabs */}
           <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'all'
-                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Toutes
-            </button>
-            <button
-              onClick={() => setFilter('draft')}
-              className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'draft'
-                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Brouillons
-            </button>
-            <button
-              onClick={() => setFilter('active')}
-              className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'active'
-                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              En cours
-            </button>
-            <button
-              onClick={() => setFilter('finished')}
-              className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'finished'
-                  ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Terminées
-            </button>
+            {[
+              { key: 'all', label: 'Toutes' },
+              { key: 'draft', label: 'Brouillons' },
+              { key: 'active', label: 'En cours' },
+              { key: 'finished', label: 'Terminées' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={`px-3 py-2 rounded-md transition-all text-sm font-medium ${
+                  filter === key
+                    ? 'bg-white dark:bg-gray-600 shadow text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              showFilters || activeFilterCount > 0
+                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <FunnelIcon className="w-5 h-5" />
+            Filtres
+            {activeFilterCount > 0 && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-500 text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
 
           <button
             onClick={() => setShowForm(true)}
@@ -211,27 +243,192 @@ export default function SessionsList() {
         </div>
       </div>
 
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Filtres</h3>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+              >
+                <XMarkIcon className="w-4 h-4" />
+                Effacer tout
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Track filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Circuit
+              </label>
+              <select
+                value={filters.trackId}
+                onChange={(e) => setFilters(f => ({ ...f, trackId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous les circuits</option>
+                {tracks.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Type filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Type de session
+              </label>
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters(f => ({ ...f, type: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous les types</option>
+                <option value="practice">Essais libres</option>
+                <option value="qualif">Qualifications</option>
+                <option value="race">Course</option>
+              </select>
+            </div>
+
+            {/* Championship filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Championnat
+              </label>
+              <select
+                value={filters.championshipId}
+                onChange={(e) => setFilters(f => ({ ...f, championshipId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Tous</option>
+                <option value="null">Hors championnat</option>
+                {championships.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active filters badges */}
+      {activeFilterCount > 0 && !showFilters && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {filters.trackId && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-sm">
+              {tracks.find(t => t.id === filters.trackId)?.name}
+              <button onClick={() => setFilters(f => ({ ...f, trackId: '' }))} className="hover:text-purple-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+          {filters.type && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-sm">
+              {getSessionTypeLabel(filters.type)}
+              <button onClick={() => setFilters(f => ({ ...f, type: '' }))} className="hover:text-blue-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+          {filters.championshipId && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-sm">
+              {filters.championshipId === 'null' ? 'Hors championnat' : championships.find(c => c.id === filters.championshipId)?.name}
+              <button onClick={() => setFilters(f => ({ ...f, championshipId: '' }))} className="hover:text-yellow-900">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Error Message */}
       {error && (
         <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
       )}
 
-      {/* Sessions Grid */}
+      {/* Sessions List */}
       {sessions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              onView={() => navigate(`/sessions/${session.id}`)}
-              getSessionTypeLabel={getSessionTypeLabel}
-              getSessionTypeColor={getSessionTypeColor}
-              getStatusIcon={getStatusIcon}
-              getStatusLabel={getStatusLabel}
-              formatDate={formatDate}
-              formatDuration={formatDuration}
-            />
-          ))}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {sessions.map((session) => {
+              const sessionColor = session.track?.color || '#6366f1'
+              const duration = formatDuration(session.startedAt, session.finishedAt)
+
+              return (
+                <div
+                  key={session.id}
+                  className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/sessions/${session.id}`)}
+                >
+                  {/* Color stripe */}
+                  <div
+                    className="w-1 h-12 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: sessionColor }}
+                  />
+
+                  {/* Status icon */}
+                  <div className="flex-shrink-0">
+                    {getStatusIcon(session.status)}
+                  </div>
+
+                  {/* Main info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900 dark:text-white truncate">
+                        {session.name || `Session #${session.id.slice(0, 8)}`}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${getSessionTypeColor(session.type)}`}>
+                        {getSessionTypeLabel(session.type)}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        {getStatusIcon(session.status)}
+                        {getStatusLabel(session.status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <MapPinIcon className="h-3.5 w-3.5" />
+                        {session.track?.name || 'Circuit non défini'}
+                      </span>
+                      {session.championship && (
+                        <span className="flex items-center gap-1">
+                          <TrophyIcon className="h-3.5 w-3.5 text-yellow-500" />
+                          {session.championship.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="hidden sm:flex items-center gap-6 flex-shrink-0 text-sm text-gray-600 dark:text-gray-400">
+                    <span className="flex items-center gap-1.5" title="Pilotes">
+                      <UsersIcon className="h-4 w-4" />
+                      {session.drivers?.length || 0}
+                    </span>
+                    <span className="flex items-center gap-1.5" title="Tours">
+                      <FlagIcon className="h-4 w-4" />
+                      {session._count?.laps || 0}
+                    </span>
+                    {duration && (
+                      <span className="flex items-center gap-1.5" title="Durée">
+                        <ClockIcon className="h-4 w-4" />
+                        {duration}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Date */}
+                  <div className="hidden md:block flex-shrink-0 text-sm text-gray-500 dark:text-gray-400 w-40 text-right">
+                    {formatDate(session.createdAt)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       ) : (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -267,153 +464,3 @@ export default function SessionsList() {
   )
 }
 
-function SessionCard({
-  session,
-  onView,
-  getSessionTypeLabel,
-  getSessionTypeColor,
-  getStatusIcon,
-  getStatusLabel,
-  formatDate,
-  formatDuration,
-}) {
-  const sessionColor = session.track?.color || '#6366f1'
-  const duration = formatDuration(session.startedAt, session.finishedAt)
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 group bg-white dark:bg-gray-800 cursor-pointer"
-      onClick={onView}
-    >
-      {/* Background pattern */}
-      <div
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            45deg,
-            ${sessionColor},
-            ${sessionColor} 10px,
-            transparent 10px,
-            transparent 20px
-          )`,
-        }}
-      />
-
-      {/* Header with track photo */}
-      <div className="relative h-32 overflow-hidden">
-        {session.track?.img ? (
-          <img
-            src={session.track.img}
-            alt={session.track.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-full h-full"
-            style={{
-              background: `linear-gradient(135deg, ${sessionColor} 0%, ${sessionColor}CC 100%)`,
-            }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-        {/* Status badge */}
-        <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full flex items-center gap-2">
-          {getStatusIcon(session.status)}
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {getStatusLabel(session.status)}
-          </span>
-        </div>
-
-        {/* Type badge */}
-        <div
-          className={`absolute top-3 left-3 px-3 py-1 rounded-full text-sm font-bold border ${getSessionTypeColor(
-            session.type
-          )}`}
-        >
-          {getSessionTypeLabel(session.type)}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="relative p-6">
-        {/* Session name and track */}
-        <div className="mb-4">
-          <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-1">
-            {session.name || `Session #${session.id.slice(0, 8)}`}
-          </h3>
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <MapPinIcon className="h-4 w-4" />
-            <span className="text-sm">{session.track?.name || 'Circuit non défini'}</span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg p-2">
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 mb-1">
-              <UsersIcon className="h-4 w-4" />
-              <span className="text-xs">Pilotes</span>
-            </div>
-            <span className="text-lg font-bold" style={{ color: sessionColor }}>
-              {session.drivers?.length || 0}
-            </span>
-          </div>
-
-          <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg p-2">
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 mb-1">
-              <FlagIcon className="h-4 w-4" />
-              <span className="text-xs">Tours</span>
-            </div>
-            <span className="text-lg font-bold" style={{ color: sessionColor }}>
-              {session._count?.laps || 0}
-            </span>
-          </div>
-        </div>
-
-        {/* Date and duration */}
-        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            <span>{formatDate(session.createdAt)}</span>
-          </div>
-          {duration && (
-            <div className="flex items-center gap-2">
-              <ClockIcon className="h-4 w-4" />
-              <span>Durée : {duration}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Championship badge */}
-        {session.championship && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <TrophyIcon className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                {session.championship.name}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* View button */}
-        <button
-          className="absolute top-6 right-6 w-10 h-10 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all shadow-md"
-          onClick={(e) => {
-            e.stopPropagation()
-            onView()
-          }}
-        >
-          <EyeIcon className="h-5 w-5 text-gray-700 dark:text-gray-200" />
-        </button>
-      </div>
-
-      {/* Racing stripe */}
-      <div
-        className="absolute top-0 left-0 w-1 h-full opacity-80"
-        style={{ backgroundColor: sessionColor }}
-      />
-    </div>
-  )
-}
