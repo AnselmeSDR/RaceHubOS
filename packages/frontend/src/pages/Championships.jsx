@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   TrophyIcon,
@@ -27,6 +27,9 @@ export default function Championships() {
     status: [],
     deleted: false,
   })
+  const [sort, setSort] = useState(null)
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
 
   useEffect(() => {
     fetch(`${API_URL}/api/tracks`).then(r => r.json()).then(d => {
@@ -36,17 +39,23 @@ export default function Championships() {
 
   useEffect(() => {
     loadData(0)
-  }, [filters])
+  }, [filters, sort])
+
+  const hasLoadedOnce = useRef(false)
 
   async function loadData(offset) {
     const isFirst = offset === 0
-    if (isFirst) setLoading(true)
-    else setLoadingMore(true)
+    if (isFirst && !hasLoadedOnce.current) setLoading(true)
+    else if (!isFirst) setLoadingMore(true)
     try {
       const params = new URLSearchParams()
       if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
       if (filters.status.length) params.append('status', filters.status.join(','))
       if (filters.deleted) params.append('deleted', 'true')
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
+      }
       params.append('offset', String(offset))
       params.append('limit', '50')
       const res = await fetch(`${API_URL}/api/championships?${params}`)
@@ -59,7 +68,7 @@ export default function Championships() {
     } catch (err) {
       console.error('Failed to load championships:', err)
     } finally {
-      if (isFirst) setLoading(false)
+      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
       else setLoadingMore(false)
     }
   }
@@ -85,8 +94,8 @@ export default function Championships() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={filters.trackId.length > 0}
-          value={filters.trackId}
+          active={filtersRef.current.trackId.length > 0}
+          value={filtersRef.current.trackId}
           options={tracks.map(t => ({ value: t.id, label: t.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
@@ -131,8 +140,8 @@ export default function Championships() {
         <FilterHeader
           column={column}
           label="Statut"
-          active={filters.status.length > 0}
-          value={filters.status}
+          active={filtersRef.current.status.length > 0}
+          value={filtersRef.current.status}
           options={[
             { value: 'planned', label: 'Planifié' },
             { value: 'active', label: 'En cours' },
@@ -156,7 +165,7 @@ export default function Championships() {
         )
       },
     },
-  ], [filters, tracks])
+  ], [tracks])
 
   return (
     <ListPage
@@ -178,6 +187,7 @@ export default function Championships() {
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(championships.length)}
+      onSortChange={setSort}
       hasActiveFilters={filters.trackId.length > 0 || filters.status.length > 0 || filters.deleted}
       options={[
         {

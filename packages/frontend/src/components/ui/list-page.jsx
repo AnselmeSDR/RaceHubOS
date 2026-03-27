@@ -53,6 +53,7 @@ export function ListPage({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  onSortChange,
   children,
 }) {
   const [selectedIds, setSelectedIds] = useState([])
@@ -172,6 +173,7 @@ export function ListPage({
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={onLoadMore}
+          onSortChange={onSortChange}
           renderActions={() => (
             <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
               <TrashIcon className="w-4 h-4" />

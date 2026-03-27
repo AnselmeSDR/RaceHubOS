@@ -54,6 +54,7 @@ export function DataTable({
   loadingMore = false,
   onLoadMore,
   initialPrefs,
+  onSortChange,
 }) {
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
@@ -122,10 +123,22 @@ export function DataTable({
     dragCol.current = null
   }
 
+  function handleSortingChange(updater) {
+    setSorting(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      if (onSortChange) {
+        const sort = next[0]
+        onSortChange(sort ? { id: sort.id, desc: sort.desc } : null)
+      }
+      return next
+    })
+  }
+
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
+    manualSorting: !!onSortChange,
+    onSortingChange: handleSortingChange,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: handleVisibilityChange,
     onRowSelectionChange: setRowSelection,
