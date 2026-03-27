@@ -77,12 +77,13 @@ export class ChampionshipService {
    */
   async getStandings(championshipId) {
     const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
+      where: { id: championshipId, deletedAt: null },
       include: {
         sessions: {
-          where: { status: 'finished' },
+          where: { status: 'finished', deletedAt: null },
           include: {
             drivers: {
+              where: { deletedAt: null },
               include: { driver: true },
               orderBy: { finalPos: 'asc' },
             },

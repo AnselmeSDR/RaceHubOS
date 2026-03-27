@@ -7,14 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton
+- **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
+- **ListPage générique** (`list-page.jsx`) : layout page réutilisable avec header (icône + titre + compteur + bouton ajout), DataTable, barre d'actions de sélection, confirmation de suppression, empty state
+- **FilterHeader** (`filter-header.jsx`) : header de colonne avec tri + icône funnel + popover d'options de filtre
+- **Préférences utilisateur** : modèle `Preference` en DB (clé/valeur JSON), route `GET/PUT /api/preferences/:key`, sauvegarde de la visibilité et de l'ordre des colonnes par page
+- **Soft delete** : champ `deletedAt` sur Championship, Session, SessionDriver, Lap, Driver, Car, Track, Team, TrackRecord ; suppression en cascade via `deletedAt` au lieu de hard delete ; filtre "Afficher les supprimés" dans les tableaux
+- **Lazy loading** : toutes les pages chargées dynamiquement via `React.lazy()` + `Suspense`, bundle principal réduit de 900KB à 317KB
+
 ### Changed
+- **Tailwind v3 → v4** : migration vers Tailwind CSS v4 avec plugin Vite natif (`@tailwindcss/vite`), support oklch, suppression de postcss.config.js et tailwind.config.js
 - **Stats : filtres et tri côté serveur** : tous les filtres, le tri et la pagination sont désormais gérés par le backend (Prisma orderBy / skip / take), suppression du tri client-side
 - **Stats : infinite scroll** : remplacement du filtre "Nombre max" par un scroll infini avec chargement progressif par pages de 50
 - **Stats : regroupement pilote×voiture optionnel** : le regroupement par meilleur tour par combo pilote/voiture/circuit est maintenant désactivable via une checkbox
 - **API `/api/stats/laptimes`** : ajout des paramètres `offset`, `sortBy` (lapTime, driver, car, track, sessionType, date), `sortOrder`, `unique` ; retourne `total` et `hasMore` pour la pagination
-- **Sessions : vue liste** : remplacement de la grille de cartes par une liste compacte avec barre colorée, statut, badge type, stats et date
-- **Sessions : filtres** : ajout de filtres par circuit, type de session et championnat (backend déjà supporté)
-- **Championnats : vue tableau** : remplacement de la grille de cartes par un tableau avec colonnes (nom, circuit, qualifs, courses, statut) et sélection multiple pour suppression en batch
+- **API `/api/championships`** : ajout des paramètres `offset`, `limit`, `trackId`, `status`, `deleted` ; retourne `total` et `hasMore`
+- **API `/api/sessions`** : ajout des paramètres `offset`, `limit`, `deleted` ; retourne `total` et `hasMore`
+- **Sessions : vue DataTable** : remplacement de la vue liste custom par le DataTable générique avec filtres par colonne (type, circuit, statut, championnat), tri, sélection, drag & drop
+- **Championnats : vue DataTable** : remplacement de la grille de cartes par le DataTable générique avec filtres par colonne (circuit, statut), tri, sélection, drag & drop
+- **Lap.softDeletedAt → Lap.deletedAt** : renommage pour cohérence avec les autres modèles
+- **Suppression** : passage de hard delete à soft delete avec cascade sur Session et Championship
 
 ### Fixed
 - **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture

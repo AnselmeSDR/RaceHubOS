@@ -14,26 +14,40 @@ export function setChampionshipService(service) {
 // GET /api/championships - Liste tous les championnats
 router.get('/', async (req, res) => {
   try {
-    const championships = await prisma.championship.findMany({
-      include: {
-        track: true,
-        sessions: {
-          select: {
-            id: true,
-            type: true,
-            status: true,
+    const { deleted, trackId, status, limit = '50', offset = '0' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    if (trackId) where.trackId = trackId;
+    if (status) where.status = status;
+
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    const [championships, total] = await Promise.all([
+      prisma.championship.findMany({
+        where,
+        include: {
+          track: true,
+          sessions: {
+            where: { deletedAt: null },
+            select: {
+              id: true,
+              type: true,
+              status: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma.championship.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: championships,
-      count: championships.length,
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {
     console.error('Error fetching championships:', error);
@@ -50,19 +64,22 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     const championship = await prisma.championship.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         track: true,
         sessions: {
+          where: { deletedAt: null },
           include: {
             track: true,
             drivers: {
+              where: { deletedAt: null },
               include: {
                 driver: true,
                 car: true,
               },
             },
             laps: {
+              where: { deletedAt: null },
               orderBy: {
                 timestamp: 'asc',
               },
@@ -236,25 +253,27 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Delete related data in order (respecting foreign keys)
-    // 1. Delete laps for all sessions
-    await prisma.lap.deleteMany({
-      where: { session: { championshipId: id } },
+    const now = new Date();
+
+    // Soft delete cascade: laps → session drivers → sessions → championship
+    await prisma.lap.updateMany({
+      where: { session: { championshipId: id }, deletedAt: null },
+      data: { deletedAt: now },
     });
 
-    // 2. Delete session drivers for all sessions
-    await prisma.sessionDriver.deleteMany({
-      where: { session: { championshipId: id } },
+    await prisma.sessionDriver.updateMany({
+      where: { session: { championshipId: id }, deletedAt: null },
+      data: { deletedAt: now },
     });
 
-    // 3. Delete all sessions
-    await prisma.session.deleteMany({
-      where: { championshipId: id },
+    await prisma.session.updateMany({
+      where: { championshipId: id, deletedAt: null },
+      data: { deletedAt: now },
     });
 
-    // 4. Delete championship
-    await prisma.championship.delete({
+    await prisma.championship.update({
       where: { id },
+      data: { deletedAt: now },
     });
 
     res.json({
@@ -310,21 +329,23 @@ router.get('/:id/standings', async (req, res) => {
 
     // Runtime calculation based on type
     const championship = await prisma.championship.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         sessions: {
-          where: type === 'practice' ? { type: 'practice' } : {
-            type: type === 'qualif' ? 'qualif' : 'race',
-            status: 'finished'
+          where: {
+            deletedAt: null,
+            ...(type === 'practice' ? { type: 'practice' } : {
+              type: type === 'qualif' ? 'qualif' : 'race',
+              status: 'finished'
+            }),
           },
           include: {
             drivers: {
+              where: { deletedAt: null },
               include: { driver: true, car: true }
             },
             laps: type !== 'race' ? {
-              // For practice: include ALL laps (no softDeletedAt filter)
-              // For qualif: only active laps
-              where: type === 'qualif' ? { softDeletedAt: null } : undefined,
+              where: type === 'qualif' ? { deletedAt: null } : undefined,
               include: { driver: true, car: true }
             } : undefined
           }

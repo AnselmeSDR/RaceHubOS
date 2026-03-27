@@ -18,6 +18,7 @@ model Driver {
   wins              Int                @default(0)
   podiums           Int                @default(0)
   bestLap           Float?
+  deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   number            Int?               @unique
@@ -40,6 +41,7 @@ model Car {
   fuelCapacity      Int                @default(100)
   totalRaces        Int                @default(0)
   bestLap           Float?
+  deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   laps              Lap[]
@@ -58,6 +60,7 @@ model Track {
   color             String             @default("#9333ea")
   bestLap           Float?
   bestLapBy         String?
+  deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   sessions          Session[]
@@ -72,6 +75,7 @@ model Team {
   name      String
   color     String?
   img       String?
+  deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   drivers   Driver[]
@@ -83,6 +87,7 @@ model Championship {
   season    String
   status    String    @default("planned")
   trackId   String?
+  deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   sessions  Session[]
@@ -104,6 +109,7 @@ model Session {
   startedAt      DateTime?
   finishingAt    DateTime?       // When grace period started
   finishedAt     DateTime?
+  deletedAt      DateTime?
   syncedAt       DateTime?
   cuVersion      String?
   cuFuelMode     Boolean?
@@ -136,6 +142,7 @@ model SessionDriver {
   bestLapTime     Int?     // Best lap time in ms
   lastLapTime     Int?     // Last lap time in ms
   isDNF           Boolean  @default(false)
+  deletedAt       DateTime?
   car             Car?     @relation(fields: [carId], references: [id])
   driver          Driver?  @relation(fields: [driverId], references: [id])
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -156,7 +163,7 @@ model Lap {
   sector1       Float?
   sector2       Float?
   sector3       Float?
-  softDeletedAt DateTime? // For practice reset (null = active)
+  deletedAt     DateTime?
   timestamp     DateTime  @default(now())
   car           Car       @relation(fields: [carId], references: [id])
   driver        Driver    @relation(fields: [driverId], references: [id])
@@ -166,7 +173,7 @@ model Lap {
   @@index([sessionId, driverId])
   @@index([sessionId, lapTime])
   @@index([sessionId, phase])
-  @@index([sessionId, softDeletedAt])
+  @@index([sessionId, deletedAt])
   @@index([trackId, driverId, lapTime])
 }
 
@@ -195,6 +202,7 @@ model TrackRecord {
   carId     String
   lapTime   Float
   sessionId String?
+  deletedAt DateTime?
   setAt     DateTime @default(now())
 
   track   Track    @relation(fields: [trackId], references: [id])
@@ -213,4 +221,10 @@ model Device {
   lastConnected DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Preference {
+  key       String   @id
+  value     String   // JSON
+  updatedAt DateTime @updatedAt
 }
