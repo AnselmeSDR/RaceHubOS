@@ -16,8 +16,8 @@ router.get('/', async (req, res) => {
   try {
     const { deleted, trackId, status, limit = '50', offset = '0' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    if (trackId) where.trackId = trackId;
-    if (status) where.status = status;
+    if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
+    if (status) where.status = status.includes(',') ? { in: status.split(',') } : status;
 
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
