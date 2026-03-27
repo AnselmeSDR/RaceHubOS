@@ -1,130 +1,175 @@
-import { useState } from 'react'
-import { UserGroupIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { UserGroupIcon } from '@heroicons/react/24/outline'
+import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
+import { ListPage } from '@/components/ui/list-page'
+import { Card } from '@/components/ui/card'
 import { UserGroupIcon as UserGroupSolidIcon } from '@heroicons/react/24/solid'
-import ErrorMessage from '../components/ErrorMessage'
-import { useFetch } from '../hooks/useFetch'
-import {
-  PageHeader,
-  EmptyState,
-  FormModal,
-  TextField,
-  PhotoUploadField,
-  ColorPickerField
-} from '../components/crud'
+import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-const PRIMARY_COLOR = '#F97316'
 
 export default function Teams() {
-  const { data: teams = [], loading, refetch } = useFetch('/api/teams')
+  const [teams, setTeams] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editingTeam, setEditingTeam] = useState(null)
-  const [viewMode, setViewMode] = useState('grid')
-  const [error, setError] = useState('')
+  const [sort, setSort] = useState(null)
+  const [filters, setFilters] = useState({ deleted: false })
 
-  async function deleteTeam(id) {
+  useEffect(() => {
+    loadData(0)
+  }, [filters, sort])
+
+  const hasLoadedOnce = useRef(false)
+
+  async function loadData(offset) {
+    const isFirst = offset === 0
+    if (isFirst && !hasLoadedOnce.current) setLoading(true)
+    else if (!isFirst) setLoadingMore(true)
     try {
-      const res = await fetch(`${API_URL}/api/teams/${id}`, { method: 'DELETE' })
-      const data = await res.json()
-      if (res.ok) {
-        refetch()
-      } else {
-        setError(data.error || 'Erreur lors de la suppression')
-        setTimeout(() => setError(''), 5000)
+      const params = new URLSearchParams()
+      if (filters.deleted) params.append('deleted', 'true')
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
       }
-    } catch {
-      setError('Erreur lors de la suppression')
-      setTimeout(() => setError(''), 5000)
+      params.append('offset', String(offset))
+      params.append('limit', '50')
+      const res = await fetch(`${API_URL}/api/teams?${params}`)
+      const data = await res.json()
+      if (data.success) {
+        setTeams(prev => isFirst ? data.data : [...prev, ...data.data])
+        setHasMore(data.hasMore ?? false)
+        if (isFirst) setTotalCount(data.total ?? 0)
+      }
+    } catch (err) {
+      console.error('Failed to load teams:', err)
+    } finally {
+      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
+      else setLoadingMore(false)
     }
   }
 
-  function handleEdit(team) {
-    setEditingTeam(team)
-    setShowForm(true)
-  }
-
-  function handleFormClose() {
-    setShowForm(false)
-    setEditingTeam(null)
-    refetch()
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600" />
-      </div>
-    )
-  }
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Équipe',
+      cell: ({ row }) => {
+        const team = row.original
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
+              style={{ backgroundColor: team.color || '#F97316' }}
+            >
+              {team.img ? (
+                <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserGroupIcon className="w-4 h-4" />
+              )}
+            </div>
+            <span className="font-semibold">{team.name}</span>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'color',
+      accessorKey: 'color',
+      header: 'Couleur',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md border border-border" style={{ backgroundColor: row.original.color || '#F97316' }} />
+          <span className="text-muted-foreground font-mono text-xs">{row.original.color}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'drivers',
+      accessorFn: (row) => row._count?.drivers || 0,
+      header: 'Pilotes',
+      cell: ({ row }) => {
+        const team = row.original
+        return (
+          <div>
+            <span className="font-medium">{team._count?.drivers || 0}</span>
+            {team.drivers?.length > 0 && (
+              <span className="text-muted-foreground ml-1.5">
+                ({team.drivers.slice(0, 2).map(d => d.name).join(', ')}{team.drivers.length > 2 ? '...' : ''})
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+  ], [])
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <PageHeader
-        title="Équipes"
-        icon={<UserGroupIcon className="w-8 h-8" />}
-        count={teams.length}
-        countLabel={`équipe${teams.length > 1 ? 's' : ''} enregistrée${teams.length > 1 ? 's' : ''}`}
-        onAdd={() => setShowForm(true)}
-        addLabel="Ajouter une équipe"
-        primaryColor={PRIMARY_COLOR}
-        showViewToggle
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
-      {error && (
-        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
+    <ListPage
+      title="Équipes"
+      icon={<UserGroupIcon />}
+      color="orange"
+      preferenceKey="teams"
+      data={teams}
+      totalCount={totalCount}
+      columns={columns}
+      loading={loading}
+      searchPlaceholder="Rechercher une équipe..."
+      addLabel="Nouvelle équipe"
+      onAdd={() => { setEditingTeam(null); setShowForm(true) }}
+      onRowClick={(row) => { setEditingTeam(row); setShowForm(true) }}
+      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      deleteEndpoint="/api/teams"
+      onDeleted={() => loadData(0)}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={() => loadData(teams.length)}
+      onSortChange={setSort}
+      hasActiveFilters={filters.deleted}
+      emptyTitle="Aucune équipe"
+      emptyMessage="Ajoutez votre première équipe"
+      renderGrid={(data) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.map((team) => (
+            <TeamCard key={team.id} team={team} onClick={() => { setEditingTeam(team); setShowForm(true) }} />
+          ))}
+        </div>
       )}
-
-      {teams.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teams.map((team) => (
-              <TeamCard key={team.id} team={team} onEdit={() => handleEdit(team)} />
-            ))}
-          </div>
-        ) : (
-          <TeamTable teams={teams} onEdit={handleEdit} />
-        )
-      ) : (
-        <EmptyState
-          icon={<UserGroupIcon className="w-8 h-8" />}
-          title="Aucune équipe enregistrée"
-          message="Ajoutez votre première équipe pour commencer"
-          actionLabel="Ajouter la première équipe"
-          onAction={() => setShowForm(true)}
-          primaryColor={PRIMARY_COLOR}
-        />
-      )}
-
+      options={[
+        {
+          key: 'deleted',
+          label: 'Afficher les supprimées',
+          checked: filters.deleted,
+          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+        },
+      ]}
+    >
       {showForm && (
         <TeamFormModal
           team={editingTeam}
-          onClose={handleFormClose}
-          onDelete={editingTeam ? () => deleteTeam(editingTeam.id) : undefined}
+          onClose={() => { setShowForm(false); setEditingTeam(null); loadData(0) }}
         />
       )}
-    </div>
+    </ListPage>
   )
 }
 
-function TeamCard({ team, onEdit }) {
+function TeamCard({ team, onClick }) {
   const teamColor = team.color || '#F97316'
 
   return (
-    <div
-      className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer"
-      onClick={onEdit}
-      style={{
-        background: `linear-gradient(135deg, ${teamColor}10 0%, ${teamColor}05 100%)`
-      }}
+    <Card
+      onClick={onClick}
+      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
+      style={{ background: `linear-gradient(135deg, ${teamColor}10 0%, ${teamColor}05 100%)` }}
     >
-      {/* Racing stripe */}
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: teamColor }} />
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
-          {/* Logo/Icon */}
           <div className="relative">
             <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: teamColor }} />
             <div
@@ -132,128 +177,55 @@ function TeamCard({ team, onEdit }) {
               style={{ background: `linear-gradient(135deg, ${teamColor} 0%, ${teamColor}CC 100%)` }}
             >
               {team.img ? (
-                <img src={team.img} alt={team.name} className="w-full h-full object-cover" />
+                <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
               ) : (
                 <UserGroupSolidIcon className="w-12 h-12 drop-shadow-lg" />
               )}
             </div>
           </div>
-
-          {team.color && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-md">
-              <div className="w-4 h-4 rounded-full border-2 border-white dark:border-gray-600 ring-1 ring-gray-300 dark:ring-gray-600" style={{ backgroundColor: team.color }} />
-              <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-200">{team.color}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="mb-3">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-black text-2xl tracking-tight text-gray-900 dark:text-white uppercase">{team.name}</h3>
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md"
-            >
-              <PencilIcon className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/80 shadow-md">
+            <div className="w-4 h-4 rounded-full border-2 border-white ring-1 ring-border" style={{ backgroundColor: teamColor }} />
+            <span className="text-xs font-mono font-bold text-muted-foreground">{teamColor}</span>
           </div>
-          <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: teamColor }} />
         </div>
+        <h3 className="font-black text-2xl tracking-tight text-foreground uppercase">{team.name}</h3>
+        <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: teamColor }} />
       </div>
 
-      <div className="px-6 pb-6">
-        <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+      <div className="relative px-6 pb-6">
+        <div className="bg-card/50 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <UserGroupIcon className="w-5 h-5" style={{ color: teamColor }} />
-              <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase">Pilotes</span>
+              <span className="text-sm font-bold text-muted-foreground uppercase">Pilotes</span>
             </div>
-            <span className="text-2xl font-black" style={{ color: teamColor }}>
-              {team._count?.drivers || 0}
-            </span>
+            <span className="text-2xl font-black" style={{ color: teamColor }}>{team._count?.drivers || 0}</span>
           </div>
-
-          {team.drivers && team.drivers.length > 0 ? (
+          {team.drivers?.length > 0 ? (
             <div className="space-y-1">
               {team.drivers.slice(0, 3).map((driver) => (
                 <div key={driver.id} className="flex items-center gap-2 text-sm">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: teamColor }} />
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">{driver.name}</span>
-                  {driver.number && <span className="text-gray-400 text-xs">#{driver.number}</span>}
+                  <span className="text-foreground font-medium">{driver.name}</span>
+                  {driver.number && <span className="text-muted-foreground text-xs">#{driver.number}</span>}
                 </div>
               ))}
               {team.drivers.length > 3 && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 italic mt-2">
+                <div className="text-xs text-muted-foreground italic mt-2">
                   +{team.drivers.length - 3} autre{team.drivers.length - 3 > 1 ? 's' : ''}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-sm text-gray-400 italic">Aucun pilote</div>
+            <div className="text-sm text-muted-foreground italic">Aucun pilote</div>
           )}
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
-function TeamTable({ teams, onEdit }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-700">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Équipe</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Couleur</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pilotes</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {teams.map((team) => (
-            <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md overflow-hidden"
-                    style={{ background: `linear-gradient(135deg, ${team.color || '#F97316'} 0%, ${team.color || '#F97316'}CC 100%)` }}
-                  >
-                    {team.img ? (
-                      <img src={team.img} alt={team.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <UserGroupSolidIcon className="w-6 h-6" />
-                    )}
-                  </div>
-                  <div className="font-medium text-gray-900 dark:text-white">{team.name}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {team.color ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg shadow-md border-2 border-white dark:border-gray-600 ring-1 ring-gray-200 dark:ring-gray-600" style={{ backgroundColor: team.color }} />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">{team.color}</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-gray-400">-</span>
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {team._count?.drivers || 0} pilote{(team._count?.drivers || 0) > 1 ? 's' : ''}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right">
-                <button onClick={() => onEdit(team)} className="text-orange-600 hover:text-orange-400">
-                  <PencilIcon className="w-5 h-5" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function TeamFormModal({ team, onClose, onDelete }) {
+function TeamFormModal({ team, onClose }) {
   const [formData, setFormData] = useState({
     name: team?.name || '',
     color: team?.color || '#F97316',
@@ -274,7 +246,7 @@ function TeamFormModal({ team, onClose, onDelete }) {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        setSuccess('Équipe sauvegardée avec succès')
+        setSuccess('Équipe sauvegardée')
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
@@ -287,11 +259,6 @@ function TeamFormModal({ team, onClose, onDelete }) {
     }
   }
 
-  function handleDelete() {
-    onClose()
-    onDelete?.()
-  }
-
   return (
     <FormModal
       open
@@ -299,36 +266,15 @@ function TeamFormModal({ team, onClose, onDelete }) {
       title={team ? "Modifier l'équipe" : 'Nouvelle équipe'}
       icon={<UserGroupIcon className="w-5 h-5 text-orange-500" />}
       onSubmit={handleSubmit}
-      onDelete={onDelete ? handleDelete : undefined}
       isEditing={!!team}
       saving={saving}
       error={error}
       success={success}
-      primaryColor={PRIMARY_COLOR}
+      primaryColor="#F97316"
     >
-      <TextField
-        label="Nom de l'équipe"
-        value={formData.name}
-        onChange={(v) => setFormData(f => ({ ...f, name: v }))}
-        placeholder="Red Bull Racing"
-        required
-      />
-
-      <PhotoUploadField
-        label="Logo de l'équipe"
-        value={formData.img}
-        onChange={(img) => setFormData(f => ({ ...f, img }))}
-        shape="rect"
-        primaryColor={PRIMARY_COLOR}
-        onError={setError}
-        uploadType="teams"
-      />
-
-      <ColorPickerField
-        label="Couleur de l'équipe"
-        value={formData.color}
-        onChange={(color) => setFormData(f => ({ ...f, color }))}
-      />
+      <TextField label="Nom" value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder="Red Bull Racing" required />
+      <PhotoUploadField label="Logo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" primaryColor="#F97316" onError={setError} uploadType="teams" />
+      <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
     </FormModal>
   )
 }

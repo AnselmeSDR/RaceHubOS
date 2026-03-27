@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge
+- **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
 - **ListPage générique** (`list-page.jsx`) : layout page réutilisable avec header (icône + titre + compteur + bouton ajout), DataTable, barre d'actions de sélection, confirmation de suppression, empty state
 - **FilterHeader** (`filter-header.jsx`) : header de colonne avec tri + icône funnel + popover d'options de filtre
@@ -31,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Circuits : vue DataTable** : remplacement de la grille de cartes par le DataTable générique avec tri, sélection, recherche, infinite scroll, drag & drop colonnes
 - **Stats : vue DataTable** : remplacement du tableau custom par le DataTable générique avec filtres par colonne (pilote, voiture, circuit, session), avatars, médailles top 3, infinite scroll
 - **API `/api/tracks`** : ajout des paramètres `offset`, `limit`, `deleted` ; retourne `total` et `hasMore`
+- **Pilotes : vue DataTable + grille** : toggle grille/liste avec shadcn Tabs, DataTable avec colonnes (pilote, n°, équipe, courses, victoires, podiums, tours, record), cartes originales avec racing stripe/gradient/blur en mode grille
+- **Voitures : vue DataTable + grille** : colonnes séparées marque/modèle/année, barres vitesse/freinage, record, sessions, cartes avec specs en mode grille
+- **Équipes : vue DataTable + grille** : colonnes (nom, couleur, pilotes), cartes avec liste pilotes en mode grille
+- **Circuits : vue grille** : ajout du mode grille avec cartes (specs longueur/virages, record, sessions)
+- **API `/api/drivers`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` sessions/laps ; retourne `total` et `hasMore`
+- **API `/api/cars`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` sessions ; retourne `total` et `hasMore`
+- **API `/api/teams`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` drivers ; retourne `total` et `hasMore`
+- **Toggle grille/liste** : composant shadcn Tabs dans ListPage, préférence sauvegardée en DB
 
 ### Fixed
 - **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture

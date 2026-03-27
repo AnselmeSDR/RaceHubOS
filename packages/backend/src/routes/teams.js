@@ -8,28 +8,37 @@ const prisma = new PrismaClient();
 // GET /api/teams - List all teams
 router.get('/', async (req, res) => {
   try {
-    const teams = await prisma.team.findMany({
-      include: {
-        drivers: {
-          orderBy: {
-            name: 'asc',
+    const { deleted, limit = '50', offset = '0', sortBy = 'name', sortOrder = 'asc' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    const [teams, total] = await Promise.all([
+      prisma.team.findMany({
+        where,
+        include: {
+          drivers: {
+            where: { deletedAt: null },
+            orderBy: { name: 'asc' },
+          },
+          _count: {
+            select: {
+              drivers: { where: { deletedAt: null } },
+            },
           },
         },
-        _count: {
-          select: {
-            drivers: true,
-          },
-        },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+        orderBy: sortBy === 'drivers' ? { drivers: { _count: sortOrder } } : { [sortBy]: sortOrder },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma.team.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: teams.map(t => withNestedImageUrls(t)),
-      count: teams.length,
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {
     console.error('Error fetching teams:', error);

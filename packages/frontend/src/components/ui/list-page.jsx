@@ -1,35 +1,14 @@
 import { useState, useEffect } from 'react'
 import { TrashIcon } from '@heroicons/react/24/outline'
+import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { DataTable, createSelectColumn } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmModal } from '@/components/ui/Modal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-/**
- * Generic list page layout with header, DataTable, selection + delete, and empty state.
- *
- * @param {object} props
- * @param {string} props.title - Page title
- * @param {React.ReactNode} props.icon - Icon component
- * @param {string} props.color - Tailwind color name (yellow, indigo, red, etc.)
- * @param {Array} props.data - Data array
- * @param {Array} props.columns - TanStack column definitions (without select column, it's added automatically)
- * @param {boolean} props.loading - Loading state
- * @param {string} props.searchPlaceholder - Search input placeholder
- * @param {string} props.addLabel - Add button label
- * @param {function} props.onAdd - Add button click handler
- * @param {function} props.onRowClick - Row click handler, receives row data
- * @param {string} props.deleteEndpoint - API endpoint prefix for DELETE (e.g. '/api/championships')
- * @param {function} props.onDeleted - Called after successful delete to refresh data
- * @param {Array} props.options - DataTable options (checkboxes under search)
- * @param {function} props.rowClassName - Row class name function
- * @param {string} props.emptyTitle - Empty state title
- * @param {string} props.emptyMessage - Empty state message
- * @param {boolean} props.hasActiveFilters - Whether any filters are active (to decide showing empty state vs table)
- * @param {React.ReactNode} props.children - Extra content (e.g. form modal)
- */
 export function ListPage({
   title,
   icon,
@@ -54,12 +33,14 @@ export function ListPage({
   loadingMore = false,
   onLoadMore,
   onSortChange,
+  renderGrid,
   children,
 }) {
   const [selectedIds, setSelectedIds] = useState([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [initialPrefs, setInitialPrefs] = useState(null)
   const [prefsLoaded, setPrefsLoaded] = useState(!preferenceKey)
+  const [viewMode, setViewMode] = useState(renderGrid ? 'grid' : 'list')
 
   const columns = [createSelectColumn(), ...userColumns]
 
@@ -69,15 +50,28 @@ export function ListPage({
     Promise.all([
       fetch(`${API_URL}/api/preferences/columns:${preferenceKey}`).then(r => r.json()),
       fetch(`${API_URL}/api/preferences/order:${preferenceKey}`).then(r => r.json()),
-    ]).then(([visData, orderData]) => {
+      fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`).then(r => r.json()),
+    ]).then(([visData, orderData, viewData]) => {
       setInitialPrefs({
         columnVisibility: visData.success && visData.data ? visData.data : {},
         columnOrder: orderData.success && orderData.data ? orderData.data : [],
       })
+      if (viewData.success && viewData.data) setViewMode(viewData.data)
     }).catch(() => {
       setInitialPrefs({ columnVisibility: {}, columnOrder: [] })
     }).finally(() => setPrefsLoaded(true))
   }, [preferenceKey])
+
+  function handleViewModeChange(mode) {
+    setViewMode(mode)
+    if (preferenceKey) {
+      fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: mode }),
+      }).catch(() => {})
+    }
+  }
 
   async function confirmDelete() {
     if (!deleteEndpoint) return
@@ -113,16 +107,33 @@ export function ListPage({
             </p>
           </div>
         </div>
-        {onAdd && (
-          <Button
-            size="lg"
-            onClick={onAdd}
-            className={`bg-${color}-500 hover:bg-${color}-600 text-white`}
-          >
-            {icon}
-            {addLabel}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          {renderGrid && (
+            <Tabs value={viewMode} onValueChange={handleViewModeChange}>
+              <TabsList>
+                <TabsTrigger value="grid">
+                  <LayoutGridIcon className="w-4 h-4" />
+                  Grille
+                </TabsTrigger>
+                <TabsTrigger value="list">
+                  <ListIcon className="w-4 h-4" />
+                  Liste
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+          {onAdd && (
+            <Button
+              size="lg"
+              onClick={onAdd}
+              className={`bg-${color}-500 hover:bg-${color}-600 text-white`}
+            >
+              {icon}
+              {addLabel}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -158,6 +169,8 @@ export function ListPage({
             </Button>
           )}
         </div>
+      ) : viewMode === 'grid' && renderGrid ? (
+        renderGrid(data)
       ) : (
         <DataTable
           columns={columns}

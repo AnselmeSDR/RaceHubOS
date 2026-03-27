@@ -8,6 +8,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { MapPinIcon as MapPinSolidIcon, TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -161,6 +164,13 @@ export default function Tracks() {
       hasActiveFilters={filters.deleted}
       emptyTitle="Aucun circuit"
       emptyMessage="Ajoutez votre premier circuit"
+      renderGrid={(data) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.map((track) => (
+            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} />
+          ))}
+        </div>
+      )}
       options={[
         {
           key: 'deleted',
@@ -177,6 +187,87 @@ export default function Tracks() {
         />
       )}
     </ListPage>
+  )
+}
+
+function TrackCard({ track, onClick }) {
+  const trackColor = track.color || '#9333EA'
+
+  return (
+    <Card
+      onClick={onClick}
+      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
+      style={{ background: `linear-gradient(135deg, ${trackColor}10 0%, ${trackColor}05 100%)` }}
+    >
+      <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: trackColor }} />
+
+      <div className="relative p-6 pb-4">
+        <div className="flex items-start justify-between mb-4">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: trackColor }} />
+            <div
+              className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white ring-4 ring-white shadow-xl overflow-hidden"
+              style={{ background: `linear-gradient(135deg, ${trackColor} 0%, ${trackColor}CC 100%)` }}
+            >
+              {track.img ? (
+                <img src={getImgUrl(track.img)} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <MapPinSolidIcon className="w-10 h-10 drop-shadow-lg" />
+              )}
+            </div>
+          </div>
+          {track.bestLap && (
+            <Badge className="bg-yellow-500 text-white shadow-md">
+              <TrophySolidIcon className="w-3 h-3" />
+              Record
+            </Badge>
+          )}
+        </div>
+        <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{track.name}</h3>
+        <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: trackColor }} />
+      </div>
+
+      <div className="relative px-6 pb-6 space-y-3">
+        {track.length && (
+          <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
+            <div className="flex items-center gap-2">
+              <RocketLaunchIcon className="w-4 h-4" style={{ color: trackColor }} />
+              <span className="text-xs font-medium text-muted-foreground uppercase">Longueur</span>
+            </div>
+            <span className="text-sm font-black" style={{ color: trackColor }}>{track.length}m</span>
+          </div>
+        )}
+        {track.corners && (
+          <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
+            <div className="flex items-center gap-2">
+              <ArrowPathIcon className="w-4 h-4" style={{ color: trackColor }} />
+              <span className="text-xs font-medium text-muted-foreground uppercase">Virages</span>
+            </div>
+            <span className="text-sm font-black" style={{ color: trackColor }}>{track.corners}</span>
+          </div>
+        )}
+        {track.bestLap && (
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <ClockIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-xs font-bold text-yellow-900 dark:text-yellow-300 uppercase">Record</span>
+              </div>
+              <span className="text-lg font-black text-yellow-600 dark:text-yellow-400">{(track.bestLap / 1000).toFixed(3)}s</span>
+            </div>
+            {track.bestLapBy && (
+              <div className="text-xs text-yellow-700 dark:text-yellow-400 text-right">par {track.bestLapBy}</div>
+            )}
+          </div>
+        )}
+        <div className="mt-4 pt-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground uppercase">Courses</span>
+            <span className="text-lg font-black" style={{ color: trackColor }}>{track._count?.sessions || 0}</span>
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
 

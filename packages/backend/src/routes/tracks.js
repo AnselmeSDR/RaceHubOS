@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: sortBy === 'sessions' ? { sessions: { _count: sortOrder } } : { [sortBy]: sortOrder },
         skip: parsedOffset,
         take: parsedLimit,
       }),

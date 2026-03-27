@@ -8,24 +8,33 @@ const prisma = new PrismaClient();
 // GET /api/cars - List all cars
 router.get('/', async (req, res) => {
   try {
-    const cars = await prisma.car.findMany({
-      include: {
-        _count: {
-          select: {
-            sessions: true,
+    const { deleted, limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    const [cars, total] = await Promise.all([
+      prisma.car.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              sessions: { where: { deletedAt: null } },
+            },
           },
         },
-      },
-      orderBy: [
-        { brand: 'asc' },
-        { model: 'asc' },
-      ],
-    });
+        orderBy: sortBy === 'sessions' ? { sessions: { _count: sortOrder } } : { [sortBy]: sortOrder },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma.car.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: cars.map(c => withImageUrl(c)),
-      count: cars.length,
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {
     console.error('Error fetching cars:', error);
