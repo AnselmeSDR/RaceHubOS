@@ -8,25 +8,37 @@ const prisma = new PrismaClient();
 // GET /api/drivers - List all drivers
 router.get('/', async (req, res) => {
   try {
-    const drivers = await prisma.driver.findMany({
-      include: {
-        team: true,
-        _count: {
-          select: {
-            laps: true,
-            sessions: true,
+    const { deleted, limit = '50', offset = '0', sortBy = 'name', sortOrder = 'asc' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
+
+    const [drivers, total] = await Promise.all([
+      prisma.driver.findMany({
+        where,
+        include: {
+          team: true,
+          _count: {
+            select: {
+              laps: { where: { deletedAt: null } },
+              sessions: { where: { deletedAt: null } },
+            },
           },
         },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+        orderBy: sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
+          : sortBy === 'laps' ? { laps: { _count: sortOrder } }
+          : { [sortBy]: sortOrder },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma.driver.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: drivers.map(d => withNestedImageUrls(d)),
-      count: drivers.length,
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {
     console.error('Error fetching drivers:', error);

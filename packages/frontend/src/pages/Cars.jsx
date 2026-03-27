@@ -1,132 +1,225 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  TruckIcon,
-  PencilIcon,
-  BoltIcon,
-  FireIcon,
-  BeakerIcon
-} from '@heroicons/react/24/outline'
-import ErrorMessage from '../components/ErrorMessage'
-import { useFetch } from '../hooks/useFetch'
-import {
-  PageHeader,
-  EmptyState,
-  FormModal,
-  TextField,
-  PhotoUploadField,
-  ColorPickerField,
-  RangeField
-} from '../components/crud'
+import { TruckIcon, FlagIcon, BoltIcon, FireIcon, BeakerIcon } from '@heroicons/react/24/outline'
+import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
+import { ListPage } from '@/components/ui/list-page'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-const PRIMARY_COLOR = '#22C55E'
 
-export default function Cars() {
-  const navigate = useNavigate()
-  const { data: cars = [], loading, refetch } = useFetch('/api/cars')
-  const [showForm, setShowForm] = useState(false)
-  const [editingCar, setEditingCar] = useState(null)
-  const [viewMode, setViewMode] = useState('grid')
-  const [error, setError] = useState('')
-
-  async function deleteCar(id) {
-    try {
-      await fetch(`${API_URL}/api/cars/${id}`, { method: 'DELETE' })
-      refetch()
-    } catch {
-      setError('Erreur lors de la suppression')
-      setTimeout(() => setError(''), 5000)
-    }
-  }
-
-  function handleEdit(car) {
-    setEditingCar(car)
-    setShowForm(true)
-  }
-
-  function handleFormClose() {
-    setShowForm(false)
-    setEditingCar(null)
-    refetch()
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
-      </div>
-    )
-  }
-
+function RangeField({ label, value, onChange, min = 0, max = 100, color }) {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <PageHeader
-        title="Voitures"
-        icon={<TruckIcon className="w-8 h-8" />}
-        count={cars.length}
-        countLabel={`voiture${cars.length > 1 ? 's' : ''} enregistrée${cars.length > 1 ? 's' : ''}`}
-        onAdd={() => setShowForm(true)}
-        addLabel="Ajouter une voiture"
-        primaryColor={PRIMARY_COLOR}
-        showViewToggle
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
-      {error && (
-        <ErrorMessage type="error" message={error} onClose={() => setError('')} className="mb-4" />
-      )}
-
-      {cars.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cars.map((car) => (
-              <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} onEdit={() => handleEdit(car)} />
-            ))}
-          </div>
-        ) : (
-          <CarTable cars={cars} onEdit={handleEdit} onView={(car) => navigate(`/cars/${car.id}`)} />
-        )
-      ) : (
-        <EmptyState
-          icon={<TruckIcon className="w-8 h-8" />}
-          title="Aucune voiture enregistrée"
-          message="Ajoutez votre première voiture pour commencer"
-          actionLabel="Ajouter la première voiture"
-          onAction={() => setShowForm(true)}
-          primaryColor={PRIMARY_COLOR}
-        />
-      )}
-
-      {showForm && (
-        <CarFormModal
-          car={editingCar}
-          onClose={handleFormClose}
-          onDelete={editingCar ? () => deleteCar(editingCar.id) : undefined}
-        />
-      )}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+      <div className="flex items-center gap-3">
+        <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
+          className="flex-1 h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor: color }} />
+        <span className="text-sm font-medium w-10 text-right">{value}%</span>
+      </div>
     </div>
   )
 }
 
-function CarCard({ car, onClick, onEdit }) {
+export default function Cars() {
+  const navigate = useNavigate()
+  const [cars, setCars] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const [showForm, setShowForm] = useState(false)
+  const [editingCar, setEditingCar] = useState(null)
+  const [sort, setSort] = useState(null)
+  const [filters, setFilters] = useState({ deleted: false })
+
+  useEffect(() => {
+    loadData(0)
+  }, [filters, sort])
+
+  const hasLoadedOnce = useRef(false)
+
+  async function loadData(offset) {
+    const isFirst = offset === 0
+    if (isFirst && !hasLoadedOnce.current) setLoading(true)
+    else if (!isFirst) setLoadingMore(true)
+    try {
+      const params = new URLSearchParams()
+      if (filters.deleted) params.append('deleted', 'true')
+      if (sort) {
+        params.append('sortBy', sort.id)
+        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
+      }
+      params.append('offset', String(offset))
+      params.append('limit', '50')
+      const res = await fetch(`${API_URL}/api/cars?${params}`)
+      const data = await res.json()
+      if (data.success) {
+        setCars(prev => isFirst ? data.data : [...prev, ...data.data])
+        setHasMore(data.hasMore ?? false)
+        if (isFirst) setTotalCount(data.total ?? 0)
+      }
+    } catch (err) {
+      console.error('Failed to load cars:', err)
+    } finally {
+      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
+      else setLoadingMore(false)
+    }
+  }
+
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'brand',
+      header: 'Marque',
+      cell: ({ row }) => <span className="font-semibold">{row.original.brand}</span>,
+    },
+    {
+      accessorKey: 'model',
+      header: 'Modèle',
+      cell: ({ row }) => {
+        const car = row.original
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
+              style={{ backgroundColor: car.color || '#22C55E' }}
+            >
+              {car.img ? (
+                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
+              ) : (
+                car.brand?.charAt(0)
+              )}
+            </div>
+            <span className="font-medium">{car.model}</span>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'year',
+      accessorKey: 'year',
+      header: 'Année',
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
+    },
+    {
+      id: 'maxSpeed',
+      accessorKey: 'maxSpeed',
+      header: 'Vitesse',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-muted rounded-full h-2 w-20">
+            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${row.original.maxSpeed}%` }} />
+          </div>
+          <span className="text-muted-foreground w-10 text-right">{row.original.maxSpeed}%</span>
+        </div>
+      ),
+    },
+    {
+      id: 'brakeForce',
+      accessorKey: 'brakeForce',
+      header: 'Freinage',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-muted rounded-full h-2 w-20">
+            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${row.original.brakeForce}%` }} />
+          </div>
+          <span className="text-muted-foreground w-10 text-right">{row.original.brakeForce}%</span>
+        </div>
+      ),
+    },
+    {
+      id: 'fuelCapacity',
+      accessorKey: 'fuelCapacity',
+      header: 'Carburant',
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.fuelCapacity}</span>,
+    },
+    {
+      id: 'bestLap',
+      accessorFn: (row) => row.bestLap || Infinity,
+      header: 'Record',
+      cell: ({ row }) => (
+        <span className="font-mono font-bold">
+          {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
+        </span>
+      ),
+    },
+    {
+      id: 'sessions',
+      accessorFn: (row) => row._count?.sessions || 0,
+      header: 'Sessions',
+      cell: ({ row }) => (
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <FlagIcon className="w-4 h-4" />
+          {row.original._count?.sessions || 0}
+        </span>
+      ),
+    },
+  ], [])
+
+  return (
+    <ListPage
+      title="Voitures"
+      icon={<TruckIcon />}
+      color="green"
+      preferenceKey="cars"
+      data={cars}
+      totalCount={totalCount}
+      columns={columns}
+      loading={loading}
+      searchPlaceholder="Rechercher une voiture..."
+      addLabel="Nouvelle voiture"
+      onAdd={() => { setEditingCar(null); setShowForm(true) }}
+      onRowClick={(row) => !filters.deleted && navigate(`/cars/${row.id}`)}
+      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      renderGrid={(data) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.map((car) => (
+            <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} />
+          ))}
+        </div>
+      )}
+      deleteEndpoint="/api/cars"
+      onDeleted={() => loadData(0)}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={() => loadData(cars.length)}
+      onSortChange={setSort}
+      hasActiveFilters={filters.deleted}
+      emptyTitle="Aucune voiture"
+      emptyMessage="Ajoutez votre première voiture"
+      options={[
+        {
+          key: 'deleted',
+          label: 'Afficher les supprimées',
+          checked: filters.deleted,
+          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+        },
+      ]}
+    >
+      {showForm && (
+        <CarFormModal
+          car={editingCar}
+          onClose={() => { setShowForm(false); setEditingCar(null); loadData(0) }}
+        />
+      )}
+    </ListPage>
+  )
+}
+
+function CarCard({ car, onClick }) {
   const carColor = car.color || '#22C55E'
 
   return (
-    <div
-      className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all cursor-pointer"
+    <Card
       onClick={onClick}
-      style={{
-        background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)`
-      }}
+      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
+      style={{ background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)` }}
     >
-      {/* Racing stripe */}
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: carColor }} />
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
-          {/* Photo/Icon */}
           <div className="relative">
             <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: carColor }} />
             <div
@@ -134,141 +227,52 @@ function CarCard({ car, onClick, onEdit }) {
               style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
             >
               {car.img ? (
-                <img src={car.img} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
+                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="drop-shadow-lg">{car.brand.charAt(0)}</span>
+                <span className="drop-shadow-lg">{car.brand?.charAt(0)}</span>
               )}
             </div>
           </div>
-
           {car.year && (
-            <div className="px-3 py-1 rounded-full text-sm font-bold bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white shadow-md">
-              {car.year}
-            </div>
+            <Badge variant="secondary" className="shadow-md">{car.year}</Badge>
           )}
         </div>
-
-        <div className="mb-3">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white uppercase">{car.brand}</h3>
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit() }}
-              className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-700/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 hover:scale-110 transition-all flex items-center justify-center shadow-md"
-            >
-              <PencilIcon className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="font-bold text-lg" style={{ color: carColor }}>{car.model}</p>
-          <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: carColor }} />
-        </div>
+        <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{car.brand}</h3>
+        <p className="font-bold text-lg" style={{ color: carColor }}>{car.model}</p>
+        <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: carColor }} />
       </div>
 
-      <div className="px-6 pb-6 space-y-3">
-        <SpecBar icon={<BoltIcon className="w-4 h-4" />} label="Vitesse" value={car.maxSpeed} color="#22C55E" />
-        <SpecBar icon={<FireIcon className="w-4 h-4" />} label="Freinage" value={car.brakeForce} color="#EF4444" />
-        <SpecBar icon={<BeakerIcon className="w-4 h-4" />} label="Réservoir" value={(car.fuelCapacity / 150) * 100} color="#3B82F6" displayValue={car.fuelCapacity} />
-
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="relative px-6 pb-6 space-y-3">
+        {[
+          { icon: <BoltIcon className="w-4 h-4" />, label: 'Vitesse', value: car.maxSpeed, color: '#22C55E' },
+          { icon: <FireIcon className="w-4 h-4" />, label: 'Freinage', value: car.brakeForce, color: '#EF4444' },
+          { icon: <BeakerIcon className="w-4 h-4" />, label: 'Réservoir', value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
+        ].map((spec) => (
+          <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span style={{ color: spec.color }}>{spec.icon}</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">{spec.label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-20 bg-muted rounded-full h-2">
+                <div className="h-2 rounded-full" style={{ width: `${Math.min(spec.value, 100)}%`, backgroundColor: spec.color }} />
+              </div>
+              <span className="text-sm font-black w-10 text-right" style={{ color: spec.color }}>{spec.display ?? spec.value}%</span>
+            </div>
+          </div>
+        ))}
+        <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">Courses</span>
+            <span className="text-xs text-muted-foreground uppercase">Courses</span>
             <span className="text-lg font-black" style={{ color: carColor }}>{car._count?.sessions || 0}</span>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
-function SpecBar({ icon, label, value, color, displayValue }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <span style={{ color }}>{icon}</span>
-          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">{label}</span>
-        </div>
-        <span className="text-sm font-black" style={{ color }}>
-          {displayValue ?? `${Math.round(value)}%`}
-        </span>
-      </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-        <div
-          className="h-2 rounded-full transition-all"
-          style={{ width: `${value}%`, backgroundColor: color }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function CarTable({ cars, onEdit, onView }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-700">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Marque & Modèle</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Année</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vitesse</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Freinage</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Réservoir</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Courses</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {cars.map((car) => {
-            const carColor = car.color || '#22C55E'
-            return (
-            <tr key={car.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => onView(car)}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md overflow-hidden"
-                    style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
-                  >
-                    {car.img ? (
-                      <img src={car.img} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-                    ) : (
-                      car.brand.charAt(0)
-                    )}
-                  </div>
-                  <div className="font-medium text-gray-900 dark:text-white">{car.brand} {car.model}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car.year || 'N/A'}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 w-20">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${car.maxSpeed}%` }} />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{car.maxSpeed}%</span>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 w-20">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${car.brakeForce}%` }} />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{car.brakeForce}%</span>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car.fuelCapacity}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{car._count?.sessions || 0}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-right">
-                <button onClick={(e) => { e.stopPropagation(); onEdit(car) }} className="text-green-600 hover:text-green-400">
-                  <PencilIcon className="w-5 h-5" />
-                </button>
-              </td>
-            </tr>
-          )})}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function CarFormModal({ car, onClose, onDelete }) {
+function CarFormModal({ car, onClose }) {
   const [formData, setFormData] = useState({
     brand: car?.brand || '',
     model: car?.model || '',
@@ -294,7 +298,7 @@ function CarFormModal({ car, onClose, onDelete }) {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        setSuccess('Voiture sauvegardée avec succès')
+        setSuccess('Voiture sauvegardée')
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
@@ -307,11 +311,6 @@ function CarFormModal({ car, onClose, onDelete }) {
     }
   }
 
-  function handleDelete() {
-    onClose()
-    onDelete?.()
-  }
-
   return (
     <FormModal
       open
@@ -319,76 +318,22 @@ function CarFormModal({ car, onClose, onDelete }) {
       title={car ? 'Modifier la voiture' : 'Nouvelle voiture'}
       icon={<TruckIcon className="w-5 h-5 text-green-500" />}
       onSubmit={handleSubmit}
-      onDelete={onDelete ? handleDelete : undefined}
       isEditing={!!car}
       saving={saving}
       error={error}
       success={success}
-      primaryColor={PRIMARY_COLOR}
+      primaryColor="#22C55E"
     >
       <div className="grid grid-cols-2 gap-4">
-        <TextField
-          label="Marque"
-          value={formData.brand}
-          onChange={(v) => setFormData(f => ({ ...f, brand: v }))}
-          placeholder="Ferrari"
-          required
-        />
-        <TextField
-          label="Modèle"
-          value={formData.model}
-          onChange={(v) => setFormData(f => ({ ...f, model: v }))}
-          placeholder="SF-23"
-          required
-        />
+        <TextField label="Marque" value={formData.brand} onChange={(v) => setFormData(f => ({ ...f, brand: v }))} placeholder="Ferrari" required />
+        <TextField label="Modèle" value={formData.model} onChange={(v) => setFormData(f => ({ ...f, model: v }))} placeholder="SF-23" required />
       </div>
-
-      <TextField
-        label="Année"
-        type="number"
-        value={formData.year}
-        onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
-      />
-
-      <PhotoUploadField
-        label="Photo de la voiture"
-        value={formData.img}
-        onChange={(img) => setFormData(f => ({ ...f, img }))}
-        shape="rect"
-        primaryColor={PRIMARY_COLOR}
-        onError={setError}
-        uploadType="cars"
-      />
-
-      <ColorPickerField
-        label="Couleur"
-        value={formData.color}
-        onChange={(color) => setFormData(f => ({ ...f, color }))}
-      />
-
-      <RangeField
-        label="Vitesse Max"
-        value={formData.maxSpeed}
-        onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))}
-        color="#22C55E"
-      />
-
-      <RangeField
-        label="Force de Freinage"
-        value={formData.brakeForce}
-        onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))}
-        color="#EF4444"
-      />
-
-      <RangeField
-        label="Capacité Réservoir"
-        value={formData.fuelCapacity}
-        onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))}
-        min={50}
-        max={150}
-        unit=""
-        color="#3B82F6"
-      />
+      <TextField label="Année" type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
+      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" primaryColor="#22C55E" onError={setError} uploadType="cars" />
+      <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
+      <RangeField label="Vitesse max" value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} color="#22C55E" />
+      <RangeField label="Force de freinage" value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
+      <RangeField label="Capacité carburant" value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
     </FormModal>
   )
 }
