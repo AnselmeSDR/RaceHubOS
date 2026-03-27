@@ -31,7 +31,7 @@ router.get('/track/:trackId', async (req, res) => {
       const laps = await prisma.lap.findMany({
         where: {
           trackId,
-          softDeletedAt: null,
+          deletedAt: null,
           session: { type, ...sessionFilter }
         },
         orderBy: { lapTime: 'asc' },
@@ -49,7 +49,7 @@ router.get('/track/:trackId', async (req, res) => {
         by: ['driverId', 'carId'],
         where: {
           trackId,
-          softDeletedAt: null,
+          deletedAt: null,
           session: { type, ...sessionFilter }
         },
         _count: { id: true }

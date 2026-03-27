@@ -1,27 +1,29 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { DeviceProvider } from './context/DeviceContext'
 import { SessionProvider } from './context/SessionContext'
 import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import Drivers from './pages/Drivers'
-import DriverProfile from './pages/DriverProfile'
-import Cars from './pages/Cars'
-import CarProfile from './pages/CarProfile'
-import Tracks from './pages/Tracks'
-import TrackProfile from './pages/TrackProfile'
-import Teams from './pages/Teams'
-import Home from './pages/Home'
-import Displays from './pages/Displays'
-import DriverDisplayDemo from './pages/DriverDisplayDemo'
-import SessionsList from './pages/SessionsList'
-import SessionDetail from './pages/SessionDetail'
-import Stats from './pages/Stats'
-import Settings from './pages/Settings'
-import Test from './pages/Test'
-import FreeSessionPage from './pages/FreeSessionPage'
-import Championships from './pages/Championships'
-import ChampionshipDetail from './pages/ChampionshipDetail'
+
+// Lazy load all pages
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Drivers = lazy(() => import('./pages/Drivers'))
+const DriverProfile = lazy(() => import('./pages/DriverProfile'))
+const Cars = lazy(() => import('./pages/Cars'))
+const CarProfile = lazy(() => import('./pages/CarProfile'))
+const Tracks = lazy(() => import('./pages/Tracks'))
+const TrackProfile = lazy(() => import('./pages/TrackProfile'))
+const Teams = lazy(() => import('./pages/Teams'))
+const Displays = lazy(() => import('./pages/Displays'))
+const DriverDisplayDemo = lazy(() => import('./pages/DriverDisplayDemo'))
+const SessionsList = lazy(() => import('./pages/SessionsList'))
+const SessionDetail = lazy(() => import('./pages/SessionDetail'))
+const Stats = lazy(() => import('./pages/Stats'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Test = lazy(() => import('./pages/Test'))
+const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const Championships = lazy(() => import('./pages/Championships'))
+const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'))
 
 function App() {
   return (
@@ -32,39 +34,33 @@ function App() {
           <Routes>
           {/* Main layout with sidebar */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
+            <Route index element={<Suspense><Dashboard /></Suspense>} />
             {/* Free session mode */}
-            <Route path="race" element={<FreeSessionPage />} />
+            <Route path="race" element={<Suspense><FreeSessionPage /></Suspense>} />
             {/* Championships */}
-            <Route path="championships" element={<Championships />} />
-            <Route path="championships/:id" element={<ChampionshipDetail />} />
+            <Route path="championships" element={<Suspense><Championships /></Suspense>} />
+            <Route path="championships/:id" element={<Suspense><ChampionshipDetail /></Suspense>} />
             {/* Core routes */}
-            <Route path="drivers" element={<Drivers />} />
-            <Route path="drivers/:id" element={<DriverProfile />} />
-            <Route path="cars" element={<Cars />} />
-            <Route path="cars/:id" element={<CarProfile />} />
-            <Route path="tracks" element={<Tracks />} />
-            <Route path="tracks/:id" element={<TrackProfile />} />
-            <Route path="teams" element={<Teams />} />
+            <Route path="drivers" element={<Suspense><Drivers /></Suspense>} />
+            <Route path="drivers/:id" element={<Suspense><DriverProfile /></Suspense>} />
+            <Route path="cars" element={<Suspense><Cars /></Suspense>} />
+            <Route path="cars/:id" element={<Suspense><CarProfile /></Suspense>} />
+            <Route path="tracks" element={<Suspense><Tracks /></Suspense>} />
+            <Route path="tracks/:id" element={<Suspense><TrackProfile /></Suspense>} />
+            <Route path="teams" element={<Suspense><Teams /></Suspense>} />
             {/* Session history */}
-            <Route path="sessions" element={<SessionsList />} />
-            <Route path="sessions/:id" element={<SessionDetail />} />
-            <Route path="history" element={<SessionsList />} />
+            <Route path="sessions" element={<Suspense><SessionsList /></Suspense>} />
+            <Route path="sessions/:id" element={<Suspense><SessionDetail /></Suspense>} />
+            <Route path="history" element={<Suspense><SessionsList /></Suspense>} />
             {/* Utils */}
-            <Route path="stats" element={<Stats />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="displays" element={<Displays />} />
-            <Route path="demo-displays" element={<DriverDisplayDemo />} />
-            <Route path="test" element={<Test />} />
+            <Route path="stats" element={<Suspense><Stats /></Suspense>} />
+            <Route path="settings" element={<Suspense><Settings /></Suspense>} />
+            <Route path="displays" element={<Suspense><Displays /></Suspense>} />
+            <Route path="demo-displays" element={<Suspense><DriverDisplayDemo /></Suspense>} />
+            <Route path="test" element={<Suspense><Test /></Suspense>} />
           </Route>
 
-          {/* Legacy home (simulator) */}
-          <Route path="/simulator" element={<Home />} />
-
-          {/* Redirect old routes */}
-          <Route path="/practice" element={<Navigate to="/race" replace />} />
-
-          {/* Redirect unknown routes */}
+          {/* Routes without sidebar */}
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           </SessionProvider>

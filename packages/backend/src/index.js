@@ -27,6 +27,7 @@ import configRouter, { setConfigService } from './routes/config.js';
 import recordsRouter from './routes/records.js';
 import uploadRouter from './routes/upload.js';
 import devicesRouter from './routes/devices.js';
+import preferencesRouter from './routes/preferences.js';
 
 // Import services
 import { SessionService } from './services/SessionService.js';
@@ -169,6 +170,7 @@ app.use('/api/config', configRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/devices', devicesRouter);
+app.use('/api/preferences', preferencesRouter);
 
 // SyncService endpoints (hardware control)
 app.get('/api/sync/state', (req, res) => {

@@ -853,9 +853,9 @@ export class SessionService extends EventEmitter {
     let gridOrder = null;
     if (type === 'race' && gridFromQualifying) {
       const lastQualifying = await this.prisma.session.findFirst({
-        where: { trackId: finalTrackId, type: 'qualif', status: 'finished' },
+        where: { trackId: finalTrackId, type: 'qualif', status: 'finished', deletedAt: null },
         orderBy: { finishedAt: 'desc' },
-        include: { drivers: { orderBy: { finalPos: 'asc' } } },
+        include: { drivers: { where: { deletedAt: null }, orderBy: { finalPos: 'asc' } } },
       });
       if (lastQualifying) {
         gridOrder = lastQualifying.drivers.map(d => d.driverId);
@@ -922,8 +922,8 @@ export class SessionService extends EventEmitter {
     // Qualif/Race: hard delete
     if (session.type === 'practice') {
       await this.prisma.lap.updateMany({
-        where: { sessionId, softDeletedAt: null },
-        data: { softDeletedAt: new Date() },
+        where: { sessionId, deletedAt: null },
+        data: { deletedAt: new Date() },
       });
     } else {
       await this.prisma.lap.deleteMany({ where: { sessionId } });
@@ -973,22 +973,25 @@ export class SessionService extends EventEmitter {
       await this.resetForNewSession();
     }
 
-    const championshipId = session.championshipId;
+    const now = new Date();
 
-    // Clear TrackRecord references
-    await this.prisma.trackRecord.updateMany({
-      where: { sessionId },
-      data: { sessionId: null },
+    // Soft delete cascade: laps, session drivers, session
+    await this.prisma.lap.updateMany({
+      where: { sessionId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    await this.prisma.sessionDriver.updateMany({
+      where: { sessionId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { deletedAt: now },
     });
 
-    // Delete related data
-    await this.prisma.lap.deleteMany({ where: { sessionId } });
-    await this.prisma.sessionDriver.deleteMany({ where: { sessionId } });
-    await this.prisma.session.delete({ where: { id: sessionId } });
-
     // Emit internal event for ChampionshipService
-    if (championshipId) {
-      super.emit('sessionDeleted', { sessionId, championshipId });
+    if (session.championshipId) {
+      super.emit('sessionDeleted', { sessionId, championshipId: session.championshipId });
     }
   }
 

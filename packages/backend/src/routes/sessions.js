@@ -16,8 +16,8 @@ const prisma = () => sessionService.prisma;
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, championshipId, trackId, type } = req.query;
-    const where = {};
+    const { status, championshipId, trackId, type, deleted, limit = '50', offset = '0' } = req.query;
+    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     if (status && status !== 'all') where.status = status;
     if (trackId) where.trackId = trackId;
     if (type) where.type = type;
@@ -28,18 +28,26 @@ router.get('/', async (req, res) => {
       where.championshipId = championshipId;
     }
 
-    const sessions = await prisma().session.findMany({
-      where,
-      include: {
-        track: true,
-        championship: true,
-        drivers: { include: { driver: true, car: true } },
-        _count: { select: { laps: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
 
-    res.json({ success: true, data: sessions, count: sessions.length });
+    const [sessions, total] = await Promise.all([
+      prisma().session.findMany({
+        where,
+        include: {
+          track: true,
+          championship: true,
+          drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
+          _count: { select: { laps: { where: { deletedAt: null } } } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: parsedOffset,
+        take: parsedLimit,
+      }),
+      prisma().session.count({ where }),
+    ]);
+
+    res.json({ success: true, data: sessions, total, hasMore: parsedOffset + parsedLimit < total });
   } catch (error) {
     console.error('Error fetching sessions:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -52,15 +60,17 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const session = await prisma().session.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id, deletedAt: null },
       include: {
         track: true,
         championship: true,
         drivers: {
+          where: { deletedAt: null },
           include: { driver: true, car: true },
           orderBy: { controller: 'asc' }
         },
         laps: {
+          where: { deletedAt: null },
           include: { driver: true },
           orderBy: { timestamp: 'asc' }
         }
@@ -451,7 +461,7 @@ router.get('/:id/leaderboard', async (req, res) => {
     const entries = [];
     for (const sd of session.drivers) {
       const laps = await prisma().lap.findMany({
-        where: { sessionId: id, controller: sd.controller, softDeletedAt: null },
+        where: { sessionId: id, controller: sd.controller, deletedAt: null },
         orderBy: { timestamp: 'desc' }
       });
 

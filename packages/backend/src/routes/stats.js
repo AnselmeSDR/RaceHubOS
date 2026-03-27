@@ -270,7 +270,7 @@ router.get('/leaderboard/drivers', async (req, res) => {
     if (sessionId) {
       // Get leaderboard for a specific session
       const sessionDrivers = await prisma.sessionDriver.findMany({
-        where: { sessionId },
+        where: { sessionId, deletedAt: null },
         include: {
           driver: true,
           car: true,
@@ -491,7 +491,7 @@ router.get('/laptimes', async (req, res) => {
 
     // Build where clause
     const where = {
-      softDeletedAt: null, // Only active laps
+      deletedAt: null, // Only active laps
     };
 
     if (driverId) where.driverId = driverId;
