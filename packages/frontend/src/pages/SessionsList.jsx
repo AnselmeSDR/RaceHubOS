@@ -15,6 +15,7 @@ import {
 import SessionForm from '../components/SessionForm'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
+import { Badge } from '@/components/ui/badge'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -158,9 +159,9 @@ export default function SessionsList() {
         }
         const labels = { practice: 'Essais', qualif: 'Qualif', race: 'Course' }
         return (
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[row.original.type] || ''}`}>
+          <Badge className={colors[row.original.type] || ''}>
             {labels[row.original.type] || row.original.type}
-          </span>
+          </Badge>
         )
       },
     },
@@ -179,7 +180,7 @@ export default function SessionsList() {
         />
       ),
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <MapPinIcon className="w-4 h-4" />
           {row.original.track?.name || 'Non défini'}
         </span>
@@ -205,7 +206,7 @@ export default function SessionsList() {
         />
       ),
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm">
+        <span className="flex items-center gap-1.5">
           {getStatusIcon(row.original.status)}
           <span className="text-muted-foreground">
             {{ draft: 'Brouillon', ready: 'Prête', active: 'En cours', finished: 'Terminée' }[row.original.status] || row.original.status}
@@ -231,7 +232,7 @@ export default function SessionsList() {
         />
       ),
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground">
           {row.original.championship?.name || '-'}
         </span>
       ),
@@ -241,7 +242,7 @@ export default function SessionsList() {
       accessorFn: (row) => row.drivers?.length || 0,
       header: 'Pilotes',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <UsersIcon className="w-4 h-4" />
           {row.original.drivers?.length || 0}
         </span>
@@ -252,7 +253,7 @@ export default function SessionsList() {
       accessorFn: (row) => row._count?.laps || 0,
       header: 'Tours',
       cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
           <FlagIcon className="w-4 h-4" />
           {row.original._count?.laps || 0}
         </span>
@@ -263,7 +264,7 @@ export default function SessionsList() {
       accessorFn: (row) => row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0,
       header: 'Durée',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground">
           {formatDuration(row.original.startedAt, row.original.finishedAt)}
         </span>
       ),
@@ -273,7 +274,7 @@ export default function SessionsList() {
       accessorFn: (row) => row.createdAt,
       header: 'Date',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground">
           {formatDate(row.original.createdAt)}
         </span>
       ),
