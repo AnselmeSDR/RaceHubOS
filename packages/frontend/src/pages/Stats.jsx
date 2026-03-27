@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   TrophyIcon,
@@ -13,6 +13,7 @@ import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+const PAGE_SIZE = 50
 
 const sessionTypeLabels = {
   race: { label: 'Course', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
@@ -23,7 +24,11 @@ const sessionTypeLabels = {
 export default function Stats() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [laptimes, setLaptimes] = useState([])
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const sentinelRef = useRef(null)
 
   // Filter options
   const [drivers, setDrivers] = useState([])
@@ -36,7 +41,7 @@ export default function Stats() {
     carId: '',
     trackId: '',
     sessionType: '',
-    limit: '50',
+    unique: 'true',
   })
 
   // Sorting
@@ -47,12 +52,27 @@ export default function Stats() {
 
   useEffect(() => {
     loadFilterOptions()
-    loadLaptimes()
+    loadLaptimes(0)
   }, [])
 
   useEffect(() => {
-    loadLaptimes()
-  }, [filters])
+    loadLaptimes(0)
+  }, [filters, sortConfig])
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!sentinelRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
+          loadLaptimes(laptimes.length)
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [hasMore, loading, loadingMore, laptimes.length])
 
   async function loadFilterOptions() {
     try {
@@ -74,75 +94,39 @@ export default function Stats() {
     }
   }
 
-  async function loadLaptimes() {
-    setLoading(true)
+  async function loadLaptimes(offset) {
+    const isFirstPage = offset === 0
+    if (isFirstPage) setLoading(true)
+    else setLoadingMore(true)
+
     try {
       const params = new URLSearchParams()
       if (filters.driverId) params.append('driverId', filters.driverId)
       if (filters.carId) params.append('carId', filters.carId)
       if (filters.trackId) params.append('trackId', filters.trackId)
       if (filters.sessionType) params.append('sessionType', filters.sessionType)
-      params.append('limit', filters.limit || '50')
+      params.append('unique', filters.unique)
+      params.append('sortBy', sortConfig.key)
+      params.append('sortOrder', sortConfig.direction)
+      params.append('limit', String(PAGE_SIZE))
+      params.append('offset', String(offset))
 
       const res = await fetch(`${API_URL}/api/stats/laptimes?${params}`)
       const data = await res.json()
 
       if (data.success) {
-        setLaptimes(data.data || [])
+        const newData = data.data || []
+        setLaptimes(prev => isFirstPage ? newData : [...prev, ...newData])
+        setHasMore(data.hasMore ?? false)
+        if (isFirstPage) setTotalCount(data.total ?? 0)
       }
     } catch (error) {
       console.error('Error loading laptimes:', error)
     } finally {
-      setLoading(false)
+      if (isFirstPage) setLoading(false)
+      else setLoadingMore(false)
     }
   }
-
-  // Sort laptimes
-  const sortedLaptimes = useMemo(() => {
-    const sorted = [...laptimes]
-    sorted.sort((a, b) => {
-      let aVal, bVal
-
-      switch (sortConfig.key) {
-        case 'lapTime':
-          aVal = a.lapTime
-          bVal = b.lapTime
-          break
-        case 'driver':
-          aVal = a.driver?.name || ''
-          bVal = b.driver?.name || ''
-          break
-        case 'car':
-          aVal = `${a.car?.brand} ${a.car?.model}`
-          bVal = `${b.car?.brand} ${b.car?.model}`
-          break
-        case 'track':
-          aVal = a.track?.name || ''
-          bVal = b.track?.name || ''
-          break
-        case 'sessionType':
-          aVal = a.sessionType
-          bVal = b.sessionType
-          break
-        case 'date':
-          aVal = new Date(a.sessionDate)
-          bVal = new Date(b.sessionDate)
-          break
-        default:
-          aVal = a.lapTime
-          bVal = b.lapTime
-      }
-
-      if (typeof aVal === 'string') {
-        return sortConfig.direction === 'asc'
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal)
-      }
-
-      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal
-    })
-    return sorted
-  }, [laptimes, sortConfig])
 
   function handleSort(key) {
     setSortConfig(prev => ({
@@ -152,7 +136,7 @@ export default function Stats() {
   }
 
   function clearFilters() {
-    setFilters({ driverId: '', carId: '', trackId: '', sessionType: '', limit: '50' })
+    setFilters({ driverId: '', carId: '', trackId: '', sessionType: '', unique: 'true' })
   }
 
   const activeFilterCount = [filters.driverId, filters.carId, filters.trackId, filters.sessionType].filter(v => v).length
@@ -195,7 +179,7 @@ export default function Stats() {
             Statistiques & Records
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {sortedLaptimes.length} record{sortedLaptimes.length > 1 ? 's' : ''} trouvé{sortedLaptimes.length > 1 ? 's' : ''}
+            {totalCount} record{totalCount > 1 ? 's' : ''} trouvé{totalCount > 1 ? 's' : ''}
           </p>
         </div>
 
@@ -233,7 +217,7 @@ export default function Stats() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Driver filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
@@ -302,24 +286,21 @@ export default function Stats() {
               </select>
             </div>
 
-            {/* Limit filter */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Nombre max
-              </label>
-              <select
-                value={filters.limit}
-                onChange={(e) => setFilters(f => ({ ...f, limit: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-              >
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="250">250</option>
-                <option value="500">500</option>
-              </select>
-            </div>
+          </div>
+
+          {/* Unique combo toggle */}
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.unique === 'true'}
+                onChange={(e) => setFilters(f => ({ ...f, unique: e.target.checked ? 'true' : 'false' }))}
+                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Meilleur par pilote/voiture
+              </span>
+            </label>
           </div>
         </div>
       )}
@@ -368,7 +349,7 @@ export default function Stats() {
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
           </div>
-        ) : sortedLaptimes.length === 0 ? (
+        ) : laptimes.length === 0 ? (
           <div className="text-center py-16">
             <TrophyIcon className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
             <p className="text-gray-500 dark:text-gray-400">Aucun record trouvé</p>
@@ -398,7 +379,7 @@ export default function Stats() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {sortedLaptimes.map((lap, index) => {
+                {laptimes.map((lap, index) => {
                   const sessionInfo = sessionTypeLabels[lap.sessionType] || sessionTypeLabels.practice
                   const isTop3 = index < 3 && sortConfig.key === 'lapTime' && sortConfig.direction === 'asc'
 
@@ -503,6 +484,12 @@ export default function Stats() {
                 })}
               </tbody>
             </table>
+            <div ref={sentinelRef} className="h-1" />
+            {loadingMore && (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              </div>
+            )}
           </div>
         )}
       </div>
