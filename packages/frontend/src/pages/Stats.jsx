@@ -28,10 +28,10 @@ export default function Stats() {
   const [tracks, setTracks] = useState([])
 
   const [filters, setFilters] = useState({
-    driverId: '',
-    carId: '',
-    trackId: '',
-    sessionType: '',
+    driverId: [],
+    carId: [],
+    trackId: [],
+    sessionType: [],
     unique: true,
   })
 
@@ -57,10 +57,10 @@ export default function Stats() {
     else setLoadingMore(true)
     try {
       const params = new URLSearchParams()
-      if (filters.driverId) params.append('driverId', filters.driverId)
-      if (filters.carId) params.append('carId', filters.carId)
-      if (filters.trackId) params.append('trackId', filters.trackId)
-      if (filters.sessionType) params.append('sessionType', filters.sessionType)
+      if (filters.driverId.length) params.append('driverId', filters.driverId.join(','))
+      if (filters.carId.length) params.append('carId', filters.carId.join(','))
+      if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
+      if (filters.sessionType.length) params.append('sessionType', filters.sessionType.join(','))
       params.append('unique', String(filters.unique))
       params.append('limit', '50')
       params.append('offset', String(offset))
@@ -126,10 +126,9 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Pilote"
-          active={!!filters.driverId}
+          active={filters.driverId.length > 0}
           value={filters.driverId}
           options={[
-            { value: '', label: 'Tous' },
             ...drivers.map(d => ({ value: d.id, label: d.name })),
           ]}
           onChange={(v) => setFilters(f => ({ ...f, driverId: v }))}
@@ -165,10 +164,9 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Voiture"
-          active={!!filters.carId}
+          active={filters.carId.length > 0}
           value={filters.carId}
           options={[
-            { value: '', label: 'Toutes' },
             ...cars.map(c => ({ value: c.id, label: `${c.brand} ${c.model}` })),
           ]}
           onChange={(v) => setFilters(f => ({ ...f, carId: v }))}
@@ -204,10 +202,9 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={!!filters.trackId}
+          active={filters.trackId.length > 0}
           value={filters.trackId}
           options={[
-            { value: '', label: 'Tous' },
             ...tracks.map(t => ({ value: t.id, label: t.name })),
           ]}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
@@ -234,10 +231,9 @@ export default function Stats() {
         <FilterHeader
           column={column}
           label="Session"
-          active={!!filters.sessionType}
+          active={filters.sessionType.length > 0}
           value={filters.sessionType}
           options={[
-            { value: '', label: 'Tous' },
             { value: 'practice', label: 'Essais' },
             { value: 'qualif', label: 'Qualifications' },
             { value: 'race', label: 'Course' },
@@ -266,7 +262,7 @@ export default function Stats() {
     },
   ], [filters, drivers, cars, tracks])
 
-  const hasActiveFilters = !!filters.driverId || !!filters.carId || !!filters.trackId || !!filters.sessionType
+  const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0
 
   return (
     <ListPage

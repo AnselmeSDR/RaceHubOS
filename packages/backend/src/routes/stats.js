@@ -494,13 +494,13 @@ router.get('/laptimes', async (req, res) => {
       deletedAt: null, // Only active laps
     };
 
-    if (driverId) where.driverId = driverId;
-    if (carId) where.carId = carId;
+    if (driverId) where.driverId = driverId.includes(',') ? { in: driverId.split(',') } : driverId;
+    if (carId) where.carId = carId.includes(',') ? { in: carId.split(',') } : carId;
 
     // Build session filter
     const sessionFilter = {};
-    if (trackId) sessionFilter.trackId = trackId;
-    if (sessionType) sessionFilter.type = sessionType;
+    if (trackId) sessionFilter.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
+    if (sessionType) sessionFilter.type = sessionType.includes(',') ? { in: sessionType.split(',') } : sessionType;
     if (Object.keys(sessionFilter).length > 0) {
       where.session = sessionFilter;
     }

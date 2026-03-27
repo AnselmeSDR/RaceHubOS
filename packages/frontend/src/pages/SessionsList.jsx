@@ -32,10 +32,10 @@ export default function SessionsList() {
   const [championships, setChampionships] = useState([])
 
   const [filters, setFilters] = useState({
-    status: '',
-    trackId: '',
-    type: '',
-    championshipId: '',
+    status: [],
+    trackId: [],
+    type: [],
+    championshipId: [],
     deleted: false,
   })
 
@@ -59,10 +59,10 @@ export default function SessionsList() {
     else setLoadingMore(true)
     try {
       const params = new URLSearchParams()
-      if (filters.status) params.append('status', filters.status)
-      if (filters.trackId) params.append('trackId', filters.trackId)
-      if (filters.type) params.append('type', filters.type)
-      if (filters.championshipId) params.append('championshipId', filters.championshipId)
+      if (filters.status.length) params.append('status', filters.status.join(','))
+      if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
+      if (filters.type.length) params.append('type', filters.type.join(','))
+      if (filters.championshipId.length) params.append('championshipId', filters.championshipId.join(','))
       if (filters.deleted) params.append('deleted', 'true')
       params.append('offset', String(offset))
       params.append('limit', '50')
@@ -131,10 +131,9 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Type"
-          active={!!filters.type}
+          active={filters.type.length > 0}
           value={filters.type}
           options={[
-            { value: '', label: 'Tous' },
             { value: 'practice', label: 'Essais libres' },
             { value: 'qualif', label: 'Qualifications' },
             { value: 'race', label: 'Course' },
@@ -164,12 +163,9 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={!!filters.trackId}
+          active={filters.trackId.length > 0}
           value={filters.trackId}
-          options={[
-            { value: '', label: 'Tous' },
-            ...tracks.map(t => ({ value: t.id, label: t.name })),
-          ]}
+          options={tracks.map(t => ({ value: t.id, label: t.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
       ),
@@ -188,10 +184,9 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Statut"
-          active={!!filters.status}
+          active={filters.status.length > 0}
           value={filters.status}
           options={[
-            { value: '', label: 'Tous' },
             { value: 'draft', label: 'Brouillon' },
             { value: 'ready', label: 'Prête' },
             { value: 'active', label: 'En cours' },
@@ -217,10 +212,9 @@ export default function SessionsList() {
         <FilterHeader
           column={column}
           label="Championnat"
-          active={!!filters.championshipId}
+          active={filters.championshipId.length > 0}
           value={filters.championshipId}
           options={[
-            { value: '', label: 'Tous' },
             { value: 'null', label: 'Hors championnat' },
             ...championships.map(c => ({ value: c.id, label: c.name })),
           ]}
@@ -277,7 +271,7 @@ export default function SessionsList() {
     },
   ], [filters, tracks, championships])
 
-  const hasActiveFilters = !!filters.status || !!filters.trackId || !!filters.type || !!filters.championshipId || filters.deleted
+  const hasActiveFilters = filters.status.length > 0 || filters.trackId.length > 0 || filters.type.length > 0 || filters.championshipId.length > 0 || filters.deleted
 
   return (
     <ListPage

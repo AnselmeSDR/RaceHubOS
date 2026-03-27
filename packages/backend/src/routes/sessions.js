@@ -18,14 +18,21 @@ router.get('/', async (req, res) => {
   try {
     const { status, championshipId, trackId, type, deleted, limit = '50', offset = '0' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    if (status && status !== 'all') where.status = status;
-    if (trackId) where.trackId = trackId;
-    if (type) where.type = type;
+    if (status && status !== 'all') where.status = status.includes(',') ? { in: status.split(',') } : status;
+    if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
+    if (type) where.type = type.includes(',') ? { in: type.split(',') } : type;
     // Handle championshipId=null explicitly (free sessions)
-    if (championshipId === 'null') {
-      where.championshipId = null;
-    } else if (championshipId) {
-      where.championshipId = championshipId;
+    if (championshipId) {
+      const ids = championshipId.split(',');
+      const hasNull = ids.includes('null');
+      const realIds = ids.filter(id => id !== 'null');
+      if (hasNull && realIds.length) {
+        where.OR = [{ championshipId: null }, { championshipId: { in: realIds } }];
+      } else if (hasNull) {
+        where.championshipId = null;
+      } else {
+        where.championshipId = realIds.length > 1 ? { in: realIds } : realIds[0];
+      }
     }
 
     const parsedLimit = parseInt(limit);

@@ -23,8 +23,8 @@ export default function Championships() {
   const [showForm, setShowForm] = useState(false)
 
   const [filters, setFilters] = useState({
-    trackId: '',
-    status: '',
+    trackId: [],
+    status: [],
     deleted: false,
   })
 
@@ -44,8 +44,8 @@ export default function Championships() {
     else setLoadingMore(true)
     try {
       const params = new URLSearchParams()
-      if (filters.trackId) params.append('trackId', filters.trackId)
-      if (filters.status) params.append('status', filters.status)
+      if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
+      if (filters.status.length) params.append('status', filters.status.join(','))
       if (filters.deleted) params.append('deleted', 'true')
       params.append('offset', String(offset))
       params.append('limit', '50')
@@ -85,12 +85,9 @@ export default function Championships() {
         <FilterHeader
           column={column}
           label="Circuit"
-          active={!!filters.trackId}
+          active={filters.trackId.length > 0}
           value={filters.trackId}
-          options={[
-            { value: '', label: 'Tous' },
-            ...tracks.map(t => ({ value: t.id, label: t.name })),
-          ]}
+          options={tracks.map(t => ({ value: t.id, label: t.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
       ),
@@ -134,10 +131,9 @@ export default function Championships() {
         <FilterHeader
           column={column}
           label="Statut"
-          active={!!filters.status}
+          active={filters.status.length > 0}
           value={filters.status}
           options={[
-            { value: '', label: 'Tous' },
             { value: 'planned', label: 'Planifié' },
             { value: 'active', label: 'En cours' },
             { value: 'finished', label: 'Terminé' },
@@ -182,7 +178,7 @@ export default function Championships() {
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(championships.length)}
-      hasActiveFilters={!!filters.trackId || !!filters.status || filters.deleted}
+      hasActiveFilters={filters.trackId.length > 0 || filters.status.length > 0 || filters.deleted}
       options={[
         {
           key: 'deleted',
