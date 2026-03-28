@@ -10,6 +10,7 @@ import { DataFreshnessIndicator } from '../components/ui'
 import ChampionshipConfigModal from '../components/championship/ChampionshipConfigModal'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
+import { useSidebar } from '@/components/ui/sidebar'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -122,11 +123,17 @@ export default function ChampionshipDetail() {
     if (selectedSession?.type) setStandingsTab(selectedSession.type)
   }, [selectedSession?.type])
 
+  const { setOpen: setSidebarOpen } = useSidebar()
+
   const handleStartSession = useCallback(async () => {
     if (!selectedSession) return
     const r = await startSession(selectedSession.id)
-    if (r.success) fetchSessions()
-  }, [selectedSession, startSession, fetchSessions])
+    if (r.success) {
+      fetchSessions()
+      setShowStandings(false)
+      setSidebarOpen(false)
+    }
+  }, [selectedSession, startSession, fetchSessions, setSidebarOpen])
 
   const handlePauseSession = useCallback(async () => {
     if (!selectedSession) return
