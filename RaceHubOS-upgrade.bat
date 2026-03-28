@@ -182,6 +182,16 @@ echo start /b cmd /c "timeout /t 5 /nobreak ^>nul ^&^& start http://localhost:51
 echo npm run dev
 ) > "!TARGET_DIR!\RaceHubOS-v!VERSION!.bat"
 
+:: -------------------------------------------------------
+:: Create desktop shortcut
+:: -------------------------------------------------------
+set "SHORTCUT=%USERPROFILE%\Desktop\RaceHubOS v!VERSION!.lnk"
+set "ICON=!TARGET_DIR!\logo.ico"
+if not exist "!ICON!" set "ICON="
+
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '!TARGET_DIR!\RaceHubOS-v!VERSION!.bat'; $s.WorkingDirectory = '!TARGET_DIR!'; if ('!ICON!' -ne '') { $s.IconLocation = '!ICON!' }; $s.Save()"
+echo  Raccourci bureau cree: RaceHubOS v!VERSION!
+
 echo  ====================================
 echo    Upgrade termine !
 echo  ====================================
