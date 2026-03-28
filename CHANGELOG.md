@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-03-28
 
 ### Added
 - **Sidebar shadcn/ui** : migration vers le composant Sidebar de shadcn/ui (style dashboard-01) avec `SidebarProvider`, `SidebarInset`, collapsible en mode "icon", raccourci clavier `Ctrl+B`, support mobile via Sheet, tooltips en mode collapsed
@@ -70,6 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Couleurs toutes vertes en vue liste des voitures** : utilisation de `car.color` au lieu de la couleur par défaut dans CarTable pour les badges, barres de progression et avatars
 - **Compteurs pilotes/voitures à 0 sur le dashboard** : ajout de vérifications `res.ok` sur les appels API du Dashboard avant de mettre à jour les états
 - **Simulateur accessible sans mode admin** : ajout de la condition `isAdmin &&` sur le lien vers /simulator dans la sidebar
+
+## [0.1.0] - 2026-01-23
 
 ### Changed
 - **SessionDriver** : `driverId` et `carId` sont maintenant optionnels dans le schéma Prisma pour permettre les configurations partielles en brouillon
