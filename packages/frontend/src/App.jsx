@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { DeviceProvider } from './context/DeviceContext'
 import { SessionProvider } from './context/SessionContext'
+import { TooltipProvider } from './components/ui/tooltip'
 import Layout from './components/Layout'
 
 // Lazy load all pages
@@ -31,6 +32,7 @@ function App() {
       <ThemeProvider>
         <DeviceProvider>
           <SessionProvider>
+          <TooltipProvider>
           <Routes>
           {/* Main layout with sidebar */}
           <Route path="/" element={<Layout />}>
@@ -63,6 +65,7 @@ function App() {
           {/* Routes without sidebar */}
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </TooltipProvider>
           </SessionProvider>
         </DeviceProvider>
       </ThemeProvider>
