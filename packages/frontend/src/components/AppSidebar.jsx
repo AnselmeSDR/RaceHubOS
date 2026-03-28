@@ -58,12 +58,12 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
 
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="p-0">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" className="!p-0 group-data-[collapsible=icon]:!size-auto" asChild>
               <Link to="/">
-                <img src="/logo.png" alt="RaceHubOS" className="size-10 rounded-lg object-cover" />
+                <img src="/logo.png" alt="RaceHubOS" className="size-10 shrink-0 object-contain group-data-[collapsible=icon]:size-full" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-bold">RaceHubOS</span>
                   <span className="truncate text-xs text-muted-foreground">Carrera Digital 132/124</span>

@@ -13,7 +13,15 @@ router.get('/', async (req, res) => {
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
-    const [drivers, total] = await Promise.all([
+    const computedSorts = ['team', 'bestLap'];
+    const useDbSort = !computedSorts.includes(sortBy);
+
+    const dbOrderBy = sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
+      : sortBy === 'laps' ? { laps: { _count: sortOrder } }
+      : useDbSort ? { [sortBy]: sortOrder }
+      : undefined;
+
+    const [allDrivers, total] = await Promise.all([
       prisma.driver.findMany({
         where,
         include: {
@@ -25,14 +33,23 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        orderBy: sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
-          : sortBy === 'laps' ? { laps: { _count: sortOrder } }
-          : { [sortBy]: sortOrder },
-        skip: parsedOffset,
-        take: parsedLimit,
+        orderBy: dbOrderBy,
+        ...(useDbSort ? { skip: parsedOffset, take: parsedLimit } : {}),
       }),
       prisma.driver.count({ where }),
     ]);
+
+    let sorted = allDrivers;
+    if (!useDbSort) {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      if (sortBy === 'team') {
+        sorted = [...allDrivers].sort((a, b) => dir * (a.team?.name || '').localeCompare(b.team?.name || ''));
+      } else if (sortBy === 'bestLap') {
+        sorted = [...allDrivers].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
+      }
+    }
+
+    const drivers = useDbSort ? sorted : sorted.slice(parsedOffset, parsedOffset + parsedLimit);
 
     res.json({
       success: true,

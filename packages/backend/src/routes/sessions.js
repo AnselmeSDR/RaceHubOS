@@ -38,7 +38,17 @@ router.get('/', async (req, res) => {
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
-    const [sessions, total] = await Promise.all([
+    const computedSorts = ['track', 'championship', 'drivers', 'laps', 'duration'];
+    const sortField = sortBy === 'date' ? 'createdAt' : sortBy;
+    const useDbSort = !computedSorts.includes(sortField);
+
+    const dbOrderBy = useDbSort
+      ? sortField === 'track' ? { track: { name: sortOrder } }
+      : sortField === 'championship' ? { championship: { name: sortOrder } }
+      : { [sortField]: sortOrder }
+      : undefined;
+
+    const [allSessions, total] = await Promise.all([
       prisma().session.findMany({
         where,
         include: {
@@ -47,12 +57,30 @@ router.get('/', async (req, res) => {
           drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
           _count: { select: { laps: { where: { deletedAt: null } } } }
         },
-        orderBy: { [sortBy]: sortOrder },
-        skip: parsedOffset,
-        take: parsedLimit,
+        orderBy: dbOrderBy,
+        ...(useDbSort ? { skip: parsedOffset, take: parsedLimit } : {}),
       }),
       prisma().session.count({ where }),
     ]);
+
+    let sorted = allSessions;
+    if (!useDbSort) {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      if (sortField === 'track') {
+        sorted = [...allSessions].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
+      } else if (sortField === 'championship') {
+        sorted = [...allSessions].sort((a, b) => dir * (a.championship?.name || '').localeCompare(b.championship?.name || ''));
+      } else if (sortField === 'drivers') {
+        sorted = [...allSessions].sort((a, b) => dir * ((a.drivers?.length || 0) - (b.drivers?.length || 0)));
+      } else if (sortField === 'laps') {
+        sorted = [...allSessions].sort((a, b) => dir * ((a._count?.laps || 0) - (b._count?.laps || 0)));
+      } else if (sortField === 'duration') {
+        const dur = (s) => s.startedAt && s.finishedAt ? new Date(s.finishedAt) - new Date(s.startedAt) : 0;
+        sorted = [...allSessions].sort((a, b) => dir * (dur(a) - dur(b)));
+      }
+    }
+
+    const sessions = useDbSort ? sorted : sorted.slice(parsedOffset, parsedOffset + parsedLimit);
 
     res.json({ success: true, data: sessions, total, hasMore: parsedOffset + parsedLimit < total });
   } catch (error) {
