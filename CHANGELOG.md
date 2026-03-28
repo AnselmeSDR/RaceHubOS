@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ListPage supprimés** : boutons Restaurer + Supprimer définitivement en mode "Afficher les supprimés", confirmation modale, déselection auto après action
 - **Stats laps** : endpoint DELETE/restore pour les laps, filtre "Afficher les supprimés" sur la page Stats
 - **DataTable** : toolbar sticky, empty state avec icône Search
+- **Auto-collapse au start** : sidebar et classement général se ferment automatiquement au démarrage d'une session (Mode Libre et Championnat)
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement

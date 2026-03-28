@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
+import { useSidebar } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -145,7 +146,14 @@ export default function FreeSessionPage() {
     }
   }
 
-  const handleStart = async () => { if (session?.id) await startSession(session.id) }
+  const { setOpen: setSidebarOpen } = useSidebar()
+
+  const handleStart = async () => {
+    if (!session?.id) return
+    await startSession(session.id)
+    setShowStandings(false)
+    setSidebarOpen(false)
+  }
   const handlePause = async () => { if (session?.id) await pauseSession(session.id) }
   const handleResume = async () => { if (session?.id) await resumeSession(session.id) }
   const handleStop = async () => {
