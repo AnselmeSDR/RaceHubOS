@@ -38,22 +38,47 @@ Open Source Race Management System for Carrera Digital 132/124
 - Node.js 20+
 - npm 10+
 
-### Installation
+### Installation (development)
 
 ```bash
 # Install dependencies
 npm install
 
 # Initialize the database
-npm run prisma:generate -w @racehubos/backend
-npm run prisma:migrate -w @racehubos/backend
+cd packages/backend
+npx prisma generate
+npx prisma db push
+cd ../..
 
 # Run in development mode (starts both frontend and backend)
 npm run dev
 ```
 
 The frontend will be available at http://localhost:5173
-The backend will be available at http://localhost:3000
+The backend will be available at http://localhost:3001
+
+### Installation (Windows - production)
+
+1. Télécharger `RaceHubOS-upgrade.bat` depuis le repo
+2. Le placer sur le Bureau
+3. Double-cliquer pour lancer
+
+Le script :
+- Clone le repo dans `C:\Users\<user>\RaceHubOS-v<version>`
+- Installe les dépendances (`npm install`)
+- Copie la base de données et les uploads depuis la version précédente
+- Génère le client Prisma et applique les migrations
+- Crée un lanceur `RaceHubOS-v<version>.bat`
+- Crée un raccourci sur le Bureau avec l'icône
+
+### Mise à jour (upgrade)
+
+1. Double-cliquer sur `RaceHubOS-upgrade.bat` sur le Bureau
+2. Le script détecte automatiquement la dernière version installée (tri semver)
+3. Clone la nouvelle version, copie les données, installe les dépendances
+4. Crée un nouveau lanceur et raccourci
+5. Affiche le changelog à la fin
+6. Les anciennes versions ne sont pas supprimées (rollback possible)
 
 ### Development with Simulator
 
