@@ -156,32 +156,11 @@ echo  OK
 echo.
 
 :: -------------------------------------------------------
-:: Create launcher .bat
+:: Create launcher .bat from template
 :: -------------------------------------------------------
 cd /d "!TARGET_DIR!"
-
-(
-echo @echo off
-echo title RaceHubOS v!VERSION!
-echo cd /d "!TARGET_DIR!"
-echo echo.
-echo echo  ====================================
-echo echo    RaceHubOS v!VERSION! - Starting...
-echo echo  ====================================
-echo echo.
-echo echo  Checking ports...
-echo for /f "tokens=5" %%%%a in ^('netstat -aon ^^^| findstr :3001 ^^^| findstr LISTENING'^) do taskkill /F /PID %%%%a ^>nul 2^>^&1
-echo for /f "tokens=5" %%%%a in ^('netstat -aon ^^^| findstr :5173 ^^^| findstr LISTENING'^) do taskkill /F /PID %%%%a ^>nul 2^>^&1
-echo echo  Ports cleared.
-echo echo.
-echo echo  Frontend: http://localhost:5173
-echo echo  Backend:  http://localhost:3001
-echo echo.
-echo echo  Fermer cette fenetre pour arreter.
-echo echo.
-echo start /b cmd /c "timeout /t 5 /nobreak ^>nul ^&^& start http://localhost:5173"
-echo npm run dev
-) > "!TARGET_DIR!\RaceHubOS-v!VERSION!.bat"
+copy /y "!TARGET_DIR!\RaceHubOS.bat.template" "!TARGET_DIR!\RaceHubOS-v!VERSION!.bat" >nul
+powershell -NoProfile -Command "(Get-Content '!TARGET_DIR!\RaceHubOS-v!VERSION!.bat') -replace '__VERSION__','v!VERSION!' -replace '__TARGET_DIR__','!TARGET_DIR!' | Set-Content '!TARGET_DIR!\RaceHubOS-v!VERSION!.bat'"
 
 :: -------------------------------------------------------
 :: Create desktop shortcut
