@@ -33,6 +33,7 @@ export default function Stats() {
     trackId: [],
     sessionType: [],
     unique: true,
+    deleted: false,
   })
   const [sort, setSort] = useState(null)
   const filtersRef = useRef(filters)
@@ -67,6 +68,7 @@ export default function Stats() {
       if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
       if (filters.sessionType.length) params.append('sessionType', filters.sessionType.join(','))
       params.append('unique', String(filters.unique))
+      if (filters.deleted) params.append('deleted', 'true')
       if (sort) {
         params.append('sortBy', sort.id)
         params.append('sortOrder', sort.desc ? 'desc' : 'asc')
@@ -271,7 +273,7 @@ export default function Stats() {
     },
   ], [drivers, cars, tracks])
 
-  const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0
+  const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0 || filters.deleted
 
   return (
     <ListPage
@@ -291,12 +293,21 @@ export default function Stats() {
       hasActiveFilters={hasActiveFilters}
       emptyTitle="Aucun record"
       emptyMessage="Aucun temps enregistré"
+      deleteEndpoint="/api/stats/laps"
+      onDeleted={() => loadData(0)}
+      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
       options={[
         {
           key: 'unique',
           label: 'Meilleur par pilote/voiture',
           checked: filters.unique,
           onChange: (v) => setFilters(f => ({ ...f, unique: !!v })),
+        },
+        {
+          key: 'deleted',
+          label: 'Afficher les supprimés',
+          checked: filters.deleted,
+          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
       ]}
     />

@@ -231,7 +231,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/tracks/:id - Delete track
+// DELETE /api/tracks/:id - Soft delete or hard delete track
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -248,9 +248,18 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    await prisma.track.delete({
-      where: { id },
-    });
+    if (exists.deletedAt) {
+      // Hard delete
+      await prisma.track.delete({
+        where: { id },
+      });
+    } else {
+      // Soft delete
+      await prisma.track.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     res.json({
       success: true,
@@ -262,6 +271,25 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete track',
     });
+  }
+});
+
+// PATCH /api/tracks/:id/restore - Restore soft-deleted track
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma.track.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Track not found' });
+
+    await prisma.track.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Track restored' });
+  } catch (error) {
+    console.error('Error restoring track:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore track' });
   }
 });
 

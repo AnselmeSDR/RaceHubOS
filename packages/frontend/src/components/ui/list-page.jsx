@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Trash2, RotateCcw } from 'lucide-react'
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { DataTable, createSelectColumn } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ConfirmModal } from '@/components/ui/Modal'
 import { useSetPageHeader } from '@/context/PageHeaderContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -38,6 +37,7 @@ export function ListPage({
   children,
 }) {
   const [selectedIds, setSelectedIds] = useState([])
+  const clearSelectionRef = useRef(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [initialPrefs, setInitialPrefs] = useState(null)
   const [prefsLoaded, setPrefsLoaded] = useState(!preferenceKey)
@@ -87,6 +87,13 @@ export function ListPage({
     addLabel,
   })
 
+  const isShowingDeleted = options?.some(o => o.key === 'deleted' && o.checked)
+
+  function clearSelection() {
+    setSelectedIds([])
+    clearSelectionRef.current?.()
+  }
+
   async function confirmDelete() {
     if (!deleteEndpoint) return
     try {
@@ -95,12 +102,27 @@ export function ListPage({
           fetch(`${API_URL}${deleteEndpoint}/${id}`, { method: 'DELETE' })
         )
       )
-      setSelectedIds([])
+      clearSelection()
       onDeleted?.()
     } catch (error) {
       console.error('Failed to delete:', error)
     } finally {
       setShowDeleteConfirm(false)
+    }
+  }
+
+  async function handleRestore() {
+    if (!deleteEndpoint) return
+    try {
+      await Promise.all(
+        selectedIds.map(id =>
+          fetch(`${API_URL}${deleteEndpoint}/${id}/restore`, { method: 'PATCH' })
+        )
+      )
+      clearSelection()
+      onDeleted?.()
+    } catch (error) {
+      console.error('Failed to restore:', error)
     }
   }
 
@@ -144,6 +166,7 @@ export function ListPage({
         <DataTable
           columns={columns}
           data={data}
+          clearSelectionRef={clearSelectionRef}
           preferenceKey={preferenceKey}
           initialPrefs={initialPrefs}
           searchPlaceholder={searchPlaceholder}
@@ -156,23 +179,45 @@ export function ListPage({
           loadingMore={loadingMore}
           onLoadMore={onLoadMore}
           onSortChange={onSortChange}
-          renderActions={() => (
-            <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-              <Trash2 className="w-4 h-4" />
-              Supprimer
-            </Button>
-          )}
+          renderActions={deleteEndpoint ? () => (
+            <>
+              {isShowingDeleted && (
+                <Button variant="outline" size="sm" onClick={handleRestore}>
+                  <RotateCcw className="w-4 h-4" />
+                  Restaurer
+                </Button>
+              )}
+              <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+                <Trash2 className="w-4 h-4" />
+                {isShowingDeleted ? 'Supprimer définitivement' : 'Supprimer'}
+              </Button>
+            </>
+          ) : undefined}
         />
       )}
 
-      <ConfirmModal
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDelete}
-        title="Confirmer la suppression"
-        message={`${selectedIds.length} élément${selectedIds.length > 1 ? 's' : ''} sera${selectedIds.length > 1 ? 'ont' : ''} supprimé${selectedIds.length > 1 ? 's' : ''}. Cette action est irréversible.`}
-        confirmLabel="Supprimer"
-      />
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative z-50 bg-popover rounded-xl p-4 shadow-lg w-full max-w-sm mx-4 space-y-4 ring-1 ring-foreground/10">
+            <div>
+              <h3 className="font-medium">{isShowingDeleted ? 'Suppression définitive' : 'Confirmer la suppression'}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isShowingDeleted
+                  ? `${selectedIds.length} élément${selectedIds.length > 1 ? 's' : ''} sera${selectedIds.length > 1 ? 'ont' : ''} supprimé${selectedIds.length > 1 ? 's' : ''} définitivement. Cette action est irréversible.`
+                  : `${selectedIds.length} élément${selectedIds.length > 1 ? 's' : ''} sera${selectedIds.length > 1 ? 'ont' : ''} supprimé${selectedIds.length > 1 ? 's' : ''}.`
+                }
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>Annuler</Button>
+              <Button variant="destructive" size="sm" onClick={confirmDelete}>
+                {isShowingDeleted ? 'Supprimer définitivement' : 'Supprimer'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {children}
     </div>

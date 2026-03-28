@@ -251,7 +251,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/drivers/:id - Delete driver
+// DELETE /api/drivers/:id - Soft delete or hard delete driver
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -268,9 +268,18 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    await prisma.driver.delete({
-      where: { id },
-    });
+    if (exists.deletedAt) {
+      // Hard delete
+      await prisma.driver.delete({
+        where: { id },
+      });
+    } else {
+      // Soft delete
+      await prisma.driver.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     res.json({
       success: true,
@@ -282,6 +291,25 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete driver',
     });
+  }
+});
+
+// PATCH /api/drivers/:id/restore - Restore soft-deleted driver
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma.driver.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Driver not found' });
+
+    await prisma.driver.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Driver restored' });
+  } catch (error) {
+    console.error('Error restoring driver:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore driver' });
   }
 });
 

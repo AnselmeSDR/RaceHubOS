@@ -55,12 +55,14 @@ export function DataTable({
   onLoadMore,
   initialPrefs,
   onSortChange,
+  clearSelectionRef,
 }) {
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState(initialPrefs?.columnVisibility || {})
   const [columnOrder, setColumnOrder] = useState(initialPrefs?.columnOrder || [])
   const [rowSelection, setRowSelection] = useState({})
+  if (clearSelectionRef) clearSelectionRef.current = () => setRowSelection({})
   const [globalFilter, setGlobalFilter] = useState('')
 
   const sentinelRef = useRef(null)
@@ -173,9 +175,9 @@ export function DataTable({
   )
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+    <div className="rounded-xl border border-border bg-card shadow-lg">
       {/* Search + columns toggle + options */}
-      <div className="px-4 py-3 border-b border-border">
+      <div className="px-4 py-3 border-b border-border sticky top-0 z-10 bg-card rounded-t-xl">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -228,7 +230,7 @@ export function DataTable({
 
       {/* Selection actions */}
       {selectedRows.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border sticky top-[57px] z-10">
           <span className="text-sm text-muted-foreground">
             {selectedRows.length} sélectionné{selectedRows.length > 1 ? 's' : ''}
           </span>
@@ -333,8 +335,11 @@ export function DataTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                {emptyMessage}
+              <TableCell colSpan={columns.length} className="py-12">
+                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                  <Search className="size-10 mb-3 opacity-20" />
+                  <p className="font-medium">{emptyMessage}</p>
+                </div>
               </TableCell>
             </TableRow>
           )}

@@ -252,7 +252,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/championships/:id - Supprime un championnat
+// DELETE /api/championships/:id - Soft delete or hard delete championship
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -268,28 +268,38 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    const now = new Date();
+    if (exists.deletedAt) {
+      // Hard delete cascade: laps → session drivers → sessions → championship
+      await prisma.$transaction([
+        prisma.lap.deleteMany({ where: { session: { championshipId: id } } }),
+        prisma.sessionDriver.deleteMany({ where: { session: { championshipId: id } } }),
+        prisma.session.deleteMany({ where: { championshipId: id } }),
+        prisma.championship.delete({ where: { id } }),
+      ]);
+    } else {
+      // Soft delete cascade: laps → session drivers → sessions → championship
+      const now = new Date();
 
-    // Soft delete cascade: laps → session drivers → sessions → championship
-    await prisma.lap.updateMany({
-      where: { session: { championshipId: id }, deletedAt: null },
-      data: { deletedAt: now },
-    });
+      await prisma.lap.updateMany({
+        where: { session: { championshipId: id }, deletedAt: null },
+        data: { deletedAt: now },
+      });
 
-    await prisma.sessionDriver.updateMany({
-      where: { session: { championshipId: id }, deletedAt: null },
-      data: { deletedAt: now },
-    });
+      await prisma.sessionDriver.updateMany({
+        where: { session: { championshipId: id }, deletedAt: null },
+        data: { deletedAt: now },
+      });
 
-    await prisma.session.updateMany({
-      where: { championshipId: id, deletedAt: null },
-      data: { deletedAt: now },
-    });
+      await prisma.session.updateMany({
+        where: { championshipId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
 
-    await prisma.championship.update({
-      where: { id },
-      data: { deletedAt: now },
-    });
+      await prisma.championship.update({
+        where: { id },
+        data: { deletedAt: now },
+      });
+    }
 
     res.json({
       success: true,
@@ -301,6 +311,41 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete championship',
     });
+  }
+});
+
+// PATCH /api/championships/:id/restore - Restore soft-deleted championship
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma.championship.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Championship not found' });
+
+    // Restore cascade: championship → sessions → session drivers → laps
+    await prisma.championship.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    await prisma.session.updateMany({
+      where: { championshipId: id, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+
+    await prisma.sessionDriver.updateMany({
+      where: { session: { championshipId: id }, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+
+    await prisma.lap.updateMany({
+      where: { session: { championshipId: id }, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Championship restored' });
+  } catch (error) {
+    console.error('Error restoring championship:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore championship' });
   }
 });
 

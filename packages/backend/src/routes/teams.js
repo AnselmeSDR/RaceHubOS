@@ -167,7 +167,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/teams/:id - Delete team
+// DELETE /api/teams/:id - Soft delete or hard delete team
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,17 +191,26 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Warn if team has drivers
-    if (exists._count.drivers > 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Cannot delete team with ${exists._count.drivers} driver(s). Please reassign or delete drivers first.`,
+    if (exists.deletedAt) {
+      // Hard delete
+      // Warn if team has drivers
+      if (exists._count.drivers > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Cannot delete team with ${exists._count.drivers} driver(s). Please reassign or delete drivers first.`,
+        });
+      }
+
+      await prisma.team.delete({
+        where: { id },
+      });
+    } else {
+      // Soft delete
+      await prisma.team.update({
+        where: { id },
+        data: { deletedAt: new Date() },
       });
     }
-
-    await prisma.team.delete({
-      where: { id },
-    });
 
     res.json({
       success: true,
@@ -213,6 +222,25 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete team',
     });
+  }
+});
+
+// PATCH /api/teams/:id/restore - Restore soft-deleted team
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma.team.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Team not found' });
+
+    await prisma.team.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Team restored' });
+  } catch (error) {
+    console.error('Error restoring team:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore team' });
   }
 });
 

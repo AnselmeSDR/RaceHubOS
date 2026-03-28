@@ -243,7 +243,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/cars/:id - Delete car
+// DELETE /api/cars/:id - Soft delete or hard delete car
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -260,14 +260,22 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Delete related records first (cascade not configured for car)
-    await prisma.$transaction([
-      prisma.sessionDriver.deleteMany({ where: { carId: id } }),
-      prisma.lap.deleteMany({ where: { carId: id } }),
-      prisma.controllerConfig.deleteMany({ where: { carId: id } }),
-      prisma.trackRecord.deleteMany({ where: { carId: id } }),
-      prisma.car.delete({ where: { id } }),
-    ]);
+    if (exists.deletedAt) {
+      // Hard delete - cascade related records
+      await prisma.$transaction([
+        prisma.sessionDriver.deleteMany({ where: { carId: id } }),
+        prisma.lap.deleteMany({ where: { carId: id } }),
+        prisma.controllerConfig.deleteMany({ where: { carId: id } }),
+        prisma.trackRecord.deleteMany({ where: { carId: id } }),
+        prisma.car.delete({ where: { id } }),
+      ]);
+    } else {
+      // Soft delete
+      await prisma.car.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     res.json({
       success: true,
@@ -279,6 +287,25 @@ router.delete('/:id', async (req, res) => {
       success: false,
       error: 'Failed to delete car',
     });
+  }
+});
+
+// PATCH /api/cars/:id/restore - Restore soft-deleted car
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma.car.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Car not found' });
+
+    await prisma.car.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Car restored' });
+  } catch (error) {
+    console.error('Error restoring car:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore car' });
   }
 });
 
