@@ -22,7 +22,10 @@ router.get('/', async (req, res) => {
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
-    const [championships, total] = await Promise.all([
+    const computedSorts = ['track', 'qualifs', 'races'];
+    const useDbSort = !computedSorts.includes(sortBy);
+
+    const [allChampionships, total] = await Promise.all([
       prisma.championship.findMany({
         where,
         include: {
@@ -36,12 +39,24 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        orderBy: { [sortBy]: sortOrder },
-        skip: parsedOffset,
-        take: parsedLimit,
+        orderBy: useDbSort ? { [sortBy]: sortOrder } : undefined,
       }),
       prisma.championship.count({ where }),
     ]);
+
+    let sorted = allChampionships;
+    if (!useDbSort) {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      if (sortBy === 'track') {
+        sorted = [...allChampionships].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
+      } else if (sortBy === 'qualifs') {
+        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === 'qualif').length || 0) - (b.sessions?.filter(s => s.type === 'qualif').length || 0)));
+      } else if (sortBy === 'races') {
+        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === 'race').length || 0) - (b.sessions?.filter(s => s.type === 'race').length || 0)));
+      }
+    }
+
+    const championships = sorted.slice(parsedOffset, parsedOffset + parsedLimit);
 
     res.json({
       success: true,

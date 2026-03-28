@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Toggle grille/liste** : composant shadcn Tabs dans ListPage, préférence sauvegardée en DB
 
 ### Fixed
+- **Tri championnats** : tri par circuit (relation track.name), qualifs (comptage sessions qualif), courses (comptage sessions race) côté serveur
 - **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture
 - **Affichage "Pilote non trouvé"** : ajout de vérification `res.ok` avant de parser la réponse JSON dans DriverProfile
 - **Images non affichées en vue liste des voitures** : ajout du rendu conditionnel de `car.img` dans CarTable avec fallback sur l'initiale de la marque
