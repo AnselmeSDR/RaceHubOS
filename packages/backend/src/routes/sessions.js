@@ -21,6 +21,10 @@ router.get('/', async (req, res) => {
     if (status && status !== 'all') where.status = status.includes(',') ? { in: status.split(',') } : status;
     if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
     if (type) where.type = type.includes(',') ? { in: type.split(',') } : type;
+    // Filter: only sessions with a championship
+    if (req.query.has_championship === 'true') {
+      where.championshipId = { not: null };
+    }
     // Handle championshipId=null explicitly (free sessions)
     if (championshipId) {
       const ids = championshipId.split(',');
