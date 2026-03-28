@@ -180,7 +180,7 @@ echo echo  Fermer cette fenetre pour arreter.
 echo echo.
 echo start /b cmd /c "timeout /t 5 /nobreak ^>nul ^&^& start http://localhost:5173"
 echo npm run dev
-) > "!TARGET_DIR!\RaceHubOS.bat"
+) > "!TARGET_DIR!\RaceHubOS-v!VERSION!.bat"
 
 echo  ====================================
 echo    Upgrade termine !
@@ -188,9 +188,9 @@ echo  ====================================
 echo.
 echo  Version  : v!VERSION!
 echo  Dossier  : !TARGET_DIR!
-echo  Lanceur  : !TARGET_DIR!\RaceHubOS.bat
+echo  Lanceur  : !TARGET_DIR!\RaceHubOS-v!VERSION!.bat
 echo.
-echo  Pour lancer: double-cliquer sur RaceHubOS.bat
+echo  Pour lancer: double-cliquer sur RaceHubOS-v!VERSION!.bat
 echo  dans le dossier !TARGET_DIR!
 echo.
 pause
