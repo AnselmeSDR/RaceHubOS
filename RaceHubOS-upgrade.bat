@@ -24,18 +24,9 @@ echo.
 :: -------------------------------------------------------
 set "SOURCE_DIR="
 
-:: Check RaceHubOS-v* directories (newest first by name)
-for /f "delims=" %%d in ('dir /b /ad /o-n "%USERPROFILE%\RaceHubOS-v*" 2^>nul') do (
-    if exist "%USERPROFILE%\%%d\packages\backend\prisma\dev.db" (
-        if not defined SOURCE_DIR set "SOURCE_DIR=%USERPROFILE%\%%d"
-    )
-)
-
-:: Fallback to original RaceHubOS
-if not defined SOURCE_DIR (
-    if exist "%USERPROFILE%\RaceHubOS\packages\backend\prisma\dev.db" (
-        set "SOURCE_DIR=%USERPROFILE%\RaceHubOS"
-    )
+:: Use PowerShell to sort versions correctly (semver-aware)
+for /f "delims=" %%d in ('powershell -NoProfile -Command "Get-ChildItem '%USERPROFILE%\RaceHubOS-v*' -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'packages\backend\prisma\dev.db') } | Sort-Object { $v = $_.Name -replace 'RaceHubOS-v',''; $parts = $v.Split('.'); [int]$parts[0]*10000 + [int]$parts[1]*100 + [int]$parts[2] } -Descending | Select-Object -First 1 -ExpandProperty FullName"') do (
+    set "SOURCE_DIR=%%d"
 )
 
 if defined SOURCE_DIR (
