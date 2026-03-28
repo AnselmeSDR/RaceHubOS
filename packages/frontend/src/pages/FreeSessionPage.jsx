@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { Button } from '@/components/ui/button'
@@ -51,6 +51,7 @@ export default function FreeSessionPage() {
   const [configSession, setConfigSession] = useState(null)
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
+  const [showStandings, setShowStandings] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -208,7 +209,7 @@ export default function FreeSessionPage() {
       {/* Top bar */}
       <div className="border-b px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId} disabled={isSessionActive}>
+          <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Sélectionner circuit..." />
             </SelectTrigger>
@@ -222,7 +223,7 @@ export default function FreeSessionPage() {
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
               {SESSION_TYPES.map(type => (
-                <TabsTrigger key={type.value} value={type.value} disabled={isSessionActive}>
+                <TabsTrigger key={type.value} value={type.value}>
                   {type.label}
                 </TabsTrigger>
               ))}
@@ -240,14 +241,22 @@ export default function FreeSessionPage() {
             <Plus className="size-4" />
             Nouvelle session
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowStandings(s => !s)}
+            title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}
+          >
+            {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
+          </Button>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
           {/* Left: Session + Leaderboard */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
@@ -284,7 +293,7 @@ export default function FreeSessionPage() {
           </div>
 
           {/* Right: Standings */}
-          <div>
+          {showStandings && <div>
             <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
             <StandingsTabs
               standings={standings}
@@ -292,7 +301,7 @@ export default function FreeSessionPage() {
               activeTab={selectedType}
               onTabChange={setSelectedType}
             />
-          </div>
+          </div>}
         </div>
       </div>
 

@@ -226,8 +226,8 @@ export default function SessionSection({
 
   if (!session) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">
-        <Flag className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+      <div className="bg-card rounded-xl border border-border p-8 text-center text-muted-foreground">
+        <Flag className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
         Selectionnez une session
       </div>
     )
@@ -250,12 +250,12 @@ export default function SessionSection({
   const showControllers = session.status === 'draft' || session.status === 'ready'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <TypeIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <TypeIcon className="w-5 h-5 text-muted-foreground" />
+          <h2 className="font-semibold text-foreground">
             {sessionLabel} - {session.name || SESSION_TYPE_LABELS[session.type]}
           </h2>
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.pulse ? 'animate-pulse' : ''}`}>
@@ -265,21 +265,21 @@ export default function SessionSection({
 
         <button
           onClick={() => onConfig(session)}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          className="p-1.5 hover:bg-muted rounded transition-colors"
           title="Configurer la session"
         >
-          <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <Settings className="w-5 h-5 text-muted-foreground" />
         </button>
       </div>
 
       {/* Progress bars (time and/or laps) */}
       {hasProgress && (
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-b dark:border-gray-700 space-y-3">
+        <div className="px-4 py-3 bg-muted/50 border-b border-border space-y-3">
           {/* Time progress */}
           {timeProgress && (
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
-                <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                <span className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   {formatTime(timeProgress.current)}
                   {timeProgress.pauseTime > 0 && (
@@ -296,7 +296,7 @@ export default function SessionSection({
                   </span>
                 )}
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden flex">
+              <div className="h-2 bg-muted rounded-full overflow-hidden flex">
                 {/* Render alternating segments */}
                 {timelineSegments.map((segment, idx) => {
                   const percentage = totalWallTime > 0 ? (segment.duration / totalWallTime) * 100 : 0
@@ -318,7 +318,7 @@ export default function SessionSection({
           {lapsProgress && (
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
-                <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                <span className="flex items-center gap-1 text-muted-foreground">
                   <RefreshCw className="w-4 h-4" />
                   {lapsProgress.current} {lapsProgress.total ? `/ ${lapsProgress.total}` : ''} tours
                   {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
@@ -331,7 +331,7 @@ export default function SessionSection({
                   </span>
                 )}
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden flex">
+              <div className="h-2 bg-muted rounded-full overflow-hidden flex">
                 <div
                   className={`h-full transition-all duration-500 ${
                     lapsProgress.isComplete ? 'bg-green-500' : isActive || isPaused ? 'bg-green-500' : 'bg-blue-500'
@@ -376,18 +376,18 @@ export default function SessionSection({
         <div className="p-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500 dark:text-gray-400 text-xs uppercase">
+              <tr className="text-left text-muted-foreground text-xs uppercase">
                 <th className="pb-2 font-medium">Ctrl</th>
                 <th className="pb-2 font-medium">Pilote</th>
                 <th className="pb-2 font-medium">Voiture</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-border">
               {[0, 1, 2, 3, 4, 5].map(controller => {
                 const sd = sessionDrivers.find(d => Number(d.controller) === controller)
                 const colors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500']
                 return (
-                  <tr key={controller} className="text-gray-700 dark:text-gray-300">
+                  <tr key={controller} className="text-foreground">
                     <td className="py-2">
                       <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${colors[controller]}`}>
                         {controller + 1}
@@ -405,14 +405,14 @@ export default function SessionSection({
                           {sd.driver.name}
                         </span>
                       ) : (
-                        <span className="text-gray-400 dark:text-gray-500">---</span>
+                        <span className="text-muted-foreground/50">---</span>
                       )}
                     </td>
                     <td className="py-2">
                       {sd?.car ? (
                         <span>{sd.car.brand} {sd.car.model}</span>
                       ) : (
-                        <span className="text-gray-400 dark:text-gray-500">---</span>
+                        <span className="text-muted-foreground/50">---</span>
                       )}
                     </td>
                   </tr>
@@ -432,9 +432,9 @@ export default function SessionSection({
       )}
 
       {/* Action buttons */}
-      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex items-center justify-between gap-2">
+      <div className="px-4 py-3 bg-muted/50 border-t border-border flex items-center justify-between gap-2">
         {/* CU Status indicator */}
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm text-muted-foreground">
           {isLights && (
             <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium animate-pulse">
               Feux {cuStatus.start}/5
@@ -546,7 +546,7 @@ export default function SessionSection({
           )}
 
           {isFinished && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">Session terminee</span>
+            <span className="text-sm text-muted-foreground">Session terminee</span>
           )}
         </div>
       </div>
