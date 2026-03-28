@@ -12,6 +12,8 @@ import {
   Sun,
   Moon,
   Shield,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,12 +36,28 @@ export default function Settings() {
   } = useDevice()
   const { isDark, toggleTheme, isAdmin, toggleAdmin } = useTheme()
 
+  const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [logs, setLogs] = useState([])
   const logsEndRef = useRef(null)
 
   const addLogEntry = (message) => {
     const timestamp = new Date().toLocaleTimeString()
     setLogs(prev => [...prev.slice(-99), { time: timestamp, message }])
+  }
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()).then(d => {
+      if (d.success && d.data) setDefaultViewMode(d.data)
+    }).catch(() => {})
+  }, [])
+
+  function handleDefaultViewChange(mode) {
+    setDefaultViewMode(mode)
+    fetch(`${API_URL}/api/preferences/viewMode:default`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: mode }),
+    }).catch(() => {})
   }
 
   useEffect(() => {
@@ -205,6 +223,26 @@ export default function Settings() {
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDark ? 'bg-blue-600' : 'bg-muted'}`}
             >
               <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          <div className="border-t border-border" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {defaultViewMode === 'grid' ? <LayoutGrid className="size-4 text-green-500" /> : <List className="size-4 text-green-500" />}
+              <div>
+                <p className="font-medium text-sm">Vue par défaut</p>
+                <p className="text-xs text-muted-foreground">
+                  {defaultViewMode === 'grid' ? 'Grille' : 'Liste'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleDefaultViewChange(defaultViewMode === 'grid' ? 'list' : 'grid')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${defaultViewMode === 'grid' ? 'bg-green-600' : 'bg-muted'}`}
+            >
+              <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${defaultViewMode === 'grid' ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
 

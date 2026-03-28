@@ -52,12 +52,14 @@ export function ListPage({
       fetch(`${API_URL}/api/preferences/columns:${preferenceKey}`).then(r => r.json()),
       fetch(`${API_URL}/api/preferences/order:${preferenceKey}`).then(r => r.json()),
       fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`).then(r => r.json()),
-    ]).then(([visData, orderData, viewData]) => {
+      fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()),
+    ]).then(([visData, orderData, viewData, defaultViewData]) => {
       setInitialPrefs({
         columnVisibility: visData.success && visData.data ? visData.data : {},
         columnOrder: orderData.success && orderData.data ? orderData.data : [],
       })
       if (viewData.success && viewData.data) setViewMode(viewData.data)
+      else if (renderGrid && defaultViewData.success && defaultViewData.data) setViewMode(defaultViewData.data)
     }).catch(() => {
       setInitialPrefs({ columnVisibility: {}, columnOrder: [] })
     }).finally(() => setPrefsLoaded(true))
