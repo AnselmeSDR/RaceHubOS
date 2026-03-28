@@ -8,33 +8,25 @@ const prisma = new PrismaClient();
 // GET /api/stats/drivers - Get driver statistics
 router.get('/drivers', async (req, res) => {
   try {
-    const { championshipId, trackId } = req.query;
+    const { championshipId, trackId, has_championship } = req.query;
+    const onlyChampionship = has_championship === 'true';
+
+    const sessionFilter = {
+      ...(championshipId && { championshipId }),
+      ...(trackId && { trackId }),
+      ...(onlyChampionship && { championshipId: { not: null } }),
+    };
+    const hasFilter = championshipId || trackId || onlyChampionship;
 
     // Base query for drivers with their stats
     const drivers = await prisma.driver.findMany({
       include: {
-        laps: championshipId || trackId ? {
-          where: {
-            session: {
-              ...(championshipId && { championshipId }),
-              ...(trackId && { trackId }),
-            },
-          },
+        laps: hasFilter ? {
+          where: { session: sessionFilter },
         } : true,
-        sessions: championshipId || trackId ? {
-          where: {
-            session: {
-              ...(championshipId && { championshipId }),
-              ...(trackId && { trackId }),
-            },
-          },
-          include: {
-            session: true,
-          },
-        } : {
-          include: {
-            session: true,
-          },
+        sessions: {
+          where: hasFilter ? { session: sessionFilter } : undefined,
+          include: { session: true },
         },
         team: true,
       },
@@ -501,6 +493,7 @@ router.get('/laptimes', async (req, res) => {
     const sessionFilter = {};
     if (trackId) sessionFilter.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
     if (sessionType) sessionFilter.type = sessionType.includes(',') ? { in: sessionType.split(',') } : sessionType;
+    if (req.query.has_championship === 'true') sessionFilter.championshipId = { not: null };
     if (Object.keys(sessionFilter).length > 0) {
       where.session = sessionFilter;
     }
@@ -622,10 +615,14 @@ router.get('/laptimes', async (req, res) => {
 // GET /api/stats/records - Get all-time records
 router.get('/records', async (req, res) => {
   try {
+    const onlyChampionship = req.query.has_championship === 'true';
+    const champFilter = onlyChampionship ? { championshipId: { not: null } } : {};
+
     // Get fastest lap ever
     const fastestLap = await prisma.lap.findFirst({
       where: {
         isPitLap: false,
+        session: champFilter,
       },
       orderBy: {
         lapTime: 'asc',
@@ -649,6 +646,7 @@ router.get('/records', async (req, res) => {
             finalPos: 1,
             session: {
               type: 'race',
+              ...champFilter,
             },
           },
         },
@@ -670,6 +668,7 @@ router.get('/records', async (req, res) => {
             },
             session: {
               type: 'race',
+              ...champFilter,
             },
           },
         },
@@ -689,6 +688,7 @@ router.get('/records', async (req, res) => {
             gridPos: 1,
             session: {
               type: 'race',
+              ...champFilter,
             },
           },
         },

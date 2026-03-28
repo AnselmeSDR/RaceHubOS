@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Header layout** : barre supérieure avec `SidebarTrigger`, titre de page dynamique, compteur de résultats, toggle grille/liste et bouton d'ajout (remontés depuis ListPage)
 - **Footer statut CU** : barre inférieure fixe avec état de connexion CU, mode, dernier tour
 - **Dark mode Zinc** : palette dark mode passée en Zinc (gris neutres/bleutés)
-- **Dashboard** : migration vers composants shadcn/ui (Card, icônes lucide), suppression header redondant
+- **Dashboard** : refonte complète avec records absolus, classement pilotes top 10, meilleurs tours, stats cards, bannière session active ; données limitées aux championnats (sessions libres exclues)
+- **Filtre `has_championship`** : nouveau paramètre sur `/api/sessions`, `/api/stats/drivers`, `/api/stats/records`, `/api/stats/laptimes` pour exclure les sessions hors championnat
 - **Settings** : migration vers composants shadcn/ui (Card, Button, icônes lucide), suppression header/lien retour redondants
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
