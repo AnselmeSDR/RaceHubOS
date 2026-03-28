@@ -80,7 +80,7 @@ export default function SessionLeaderboard({
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-8 text-center text-gray-500">
+      <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
         No entries in the leaderboard
       </div>
     )
@@ -129,7 +129,7 @@ export default function SessionLeaderboard({
                   position === 1 ? 'text-yellow-500' :
                   position === 2 ? 'text-gray-400' :
                   position === 3 ? 'text-orange-500' :
-                  'text-gray-600 dark:text-gray-400'
+                  'text-muted-foreground'
                 }`}>
                   {position}
                 </span>
@@ -197,13 +197,13 @@ export default function SessionLeaderboard({
 
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
-                <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
+                <div className="font-black text-xl text-foreground uppercase italic truncate">
                   {(driver.name || 'Unknown').split(' ').pop()}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-1.5">
+                <div className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
                   {car.color && (
                     <span
-                      className="w-3 h-3 rounded-full flex-shrink-0 border border-gray-300"
+                      className="w-3 h-3 rounded-full flex-shrink-0 border border-border"
                       style={{ backgroundColor: car.color }}
                     />
                   )}
@@ -215,27 +215,27 @@ export default function SessionLeaderboard({
               <div className="flex items-center gap-6 flex-shrink-0">
                 {/* Laps */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Tours</div>
-                  <div className="font-mono font-bold text-lg text-gray-900 dark:text-white">
+                  <div className="text-xs text-muted-foreground/50 uppercase">Tours</div>
+                  <div className="font-mono font-bold text-lg text-foreground">
                     {stats.laps ?? 0}
                   </div>
                 </div>
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Meilleur</div>
+                  <div className="text-xs text-muted-foreground/50 uppercase">Meilleur</div>
                   <LapTime time={stats.bestLap} size="md" highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">Dernier</div>
+                  <div className="text-xs text-muted-foreground/50 uppercase">Dernier</div>
                   <LapTime time={stats.lastLap} size="md" />
                 </div>
 
                 {/* Gap / Total Time */}
                 <div className="text-center min-w-[80px]">
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase">
+                  <div className="text-xs text-muted-foreground/50 uppercase">
                     {position === 1 && sortBy === 'race' ? 'Total' : 'Écart'}
                   </div>
                   <GapDisplay

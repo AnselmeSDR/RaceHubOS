@@ -126,7 +126,7 @@ export default function Layout() {
             <PageHeader />
           </header>
 
-          <div className="flex-1 overflow-auto [contain:inline-size]">
+          <div className="flex-1 overflow-auto">
             <Outlet />
           </div>
         </PageHeaderProvider>
