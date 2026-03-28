@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  RocketLaunchIcon,
-  FlagIcon
-} from '@heroicons/react/24/outline'
-import { MapPinIcon as MapPinSolidIcon, TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { ArrowLeft, RefreshCw, Rocket, Flag, MapPin, Trophy } from 'lucide-react'
 import { RecordsList } from '../components/RecordDisplays'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -92,7 +86,7 @@ export default function TrackProfile() {
           onClick={() => navigate('/tracks')}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Retour aux circuits</span>
         </button>
 
@@ -101,7 +95,7 @@ export default function TrackProfile() {
           disabled={resetting}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-lg transition-colors disabled:opacity-50"
         >
-          <ArrowPathIcon className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
           Reset stats
         </button>
       </div>
@@ -141,7 +135,7 @@ export default function TrackProfile() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <MapPinSolidIcon className="w-16 h-16 drop-shadow-lg" />
+                  <MapPin className="w-16 h-16 drop-shadow-lg" />
                 )}
               </div>
             </div>
@@ -159,7 +153,7 @@ export default function TrackProfile() {
               <div className="grid grid-cols-3 gap-4 mt-6">
                 {track.length && (
                   <SpecCard
-                    icon={<RocketLaunchIcon className="w-5 h-5" />}
+                    icon={<Rocket className="w-5 h-5" />}
                     label="Longueur"
                     value={`${track.length}m`}
                     color={trackColor}
@@ -167,14 +161,14 @@ export default function TrackProfile() {
                 )}
                 {track.corners && (
                   <SpecCard
-                    icon={<ArrowPathIcon className="w-5 h-5" />}
+                    icon={<RefreshCw className="w-5 h-5" />}
                     label="Virages"
                     value={track.corners}
                     color={trackColor}
                   />
                 )}
                 <SpecCard
-                  icon={<FlagIcon className="w-5 h-5" />}
+                  icon={<Flag className="w-5 h-5" />}
                   label="Courses"
                   value={track._count?.sessions || 0}
                   color={trackColor}
@@ -186,7 +180,7 @@ export default function TrackProfile() {
                 <div className="mt-6 inline-block">
                   <div className="bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg px-6 py-3 shadow-md">
                     <div className="flex items-center gap-2 mb-1">
-                      <TrophySolidIcon className="w-5 h-5 text-yellow-600" />
+                      <Trophy className="w-5 h-5 text-yellow-600" />
                       <span className="text-xs text-yellow-900 dark:text-yellow-300 uppercase tracking-wide font-bold">
                         Record du circuit
                       </span>

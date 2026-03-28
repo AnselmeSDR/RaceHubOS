@@ -1,5 +1,4 @@
-import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
-import { ClockIcon, MapPinIcon, FlagIcon } from '@heroicons/react/24/outline'
+import { Trophy, Clock, MapPin, Flag } from 'lucide-react'
 import { getImgUrl } from '../utils/image'
 
 const positionStyles = {
@@ -55,7 +54,7 @@ export function RecordItem({
         `}
       >
         {position === 1 ? (
-          <TrophySolidIcon className="w-5 h-5" />
+          <Trophy className="w-5 h-5" />
         ) : (
           position
         )}
@@ -113,7 +112,7 @@ export function RecordItem({
           )}
           {track && (
             <span className="flex items-center gap-1 truncate">
-              <MapPinIcon className="w-3 h-3 flex-shrink-0" />
+              <MapPin className="w-3 h-3 flex-shrink-0" />
               {track.name}
             </span>
           )}
@@ -158,7 +157,7 @@ export function RecordsList({
             className="w-10 h-10 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: `${primaryColor}20` }}
           >
-            <TrophySolidIcon className="w-5 h-5" style={{ color: primaryColor }} />
+            <Trophy className="w-5 h-5" style={{ color: primaryColor }} />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
         </div>
@@ -186,7 +185,7 @@ export function RecordsList({
           </div>
         ) : (
           <div className="text-center py-12">
-            <ClockIcon className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+            <Clock className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
             <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
           </div>
         )}

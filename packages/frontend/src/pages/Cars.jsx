@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TruckIcon, FlagIcon, BoltIcon, FireIcon, BeakerIcon } from '@heroicons/react/24/outline'
+import { Car, Flag, Zap, Flame, FlaskConical } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
@@ -150,7 +150,7 @@ export default function Cars() {
       header: 'Sessions',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <FlagIcon className="w-4 h-4" />
+          <Flag className="w-4 h-4" />
           {row.original._count?.sessions || 0}
         </span>
       ),
@@ -160,7 +160,7 @@ export default function Cars() {
   return (
     <ListPage
       title="Voitures"
-      icon={<TruckIcon />}
+      icon={<Car />}
       color="green"
       preferenceKey="cars"
       data={cars}
@@ -244,9 +244,9 @@ function CarCard({ car, onClick }) {
 
       <div className="relative px-6 pb-6 space-y-3">
         {[
-          { icon: <BoltIcon className="w-4 h-4" />, label: 'Vitesse', value: car.maxSpeed, color: '#22C55E' },
-          { icon: <FireIcon className="w-4 h-4" />, label: 'Freinage', value: car.brakeForce, color: '#EF4444' },
-          { icon: <BeakerIcon className="w-4 h-4" />, label: 'Réservoir', value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
+          { icon: <Zap className="w-4 h-4" />, label: 'Vitesse', value: car.maxSpeed, color: '#22C55E' },
+          { icon: <Flame className="w-4 h-4" />, label: 'Freinage', value: car.brakeForce, color: '#EF4444' },
+          { icon: <FlaskConical className="w-4 h-4" />, label: 'Réservoir', value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
         ].map((spec) => (
           <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ function CarFormModal({ car, onClose }) {
       open
       onClose={onClose}
       title={car ? 'Modifier la voiture' : 'Nouvelle voiture'}
-      icon={<TruckIcon className="w-5 h-5 text-green-500" />}
+      icon={<Car className="w-5 h-5 text-green-500" />}
       onSubmit={handleSubmit}
       isEditing={!!car}
       saving={saving}

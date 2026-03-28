@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  UserGroupIcon,
-  FlagIcon,
-  Cog6ToothIcon,
-  RectangleStackIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  ArrowPathIcon,
-  TrophyIcon,
-  BeakerIcon,
-} from '@heroicons/react/24/outline'
+import { Users, Flag, Settings, Layers, AlertTriangle, Clock, RefreshCw, Trophy, FlaskConical } from 'lucide-react'
 
 // Driver components
 import {
@@ -95,12 +85,12 @@ export default function Displays() {
   const [loading, setLoading] = useState(true)
 
   const tabs = [
-    { id: 'drivers', label: 'Pilotes', Icon: UserGroupIcon },
-    { id: 'championship', label: 'Championnat', Icon: TrophyIcon },
-    { id: 'race', label: 'Course', Icon: FlagIcon },
-    { id: 'crud', label: 'CRUD', Icon: RectangleStackIcon },
-    { id: 'config', label: 'Config', Icon: Cog6ToothIcon },
-    { id: 'unused', label: 'Non utilisés', Icon: ExclamationTriangleIcon },
+    { id: 'drivers', label: 'Pilotes', Icon: Users },
+    { id: 'championship', label: 'Championnat', Icon: Trophy },
+    { id: 'race', label: 'Course', Icon: Flag },
+    { id: 'crud', label: 'CRUD', Icon: Layers },
+    { id: 'config', label: 'Config', Icon: Settings },
+    { id: 'unused', label: 'Non utilisés', Icon: AlertTriangle },
   ]
 
   useEffect(() => {
@@ -631,9 +621,9 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
   }))
 
   const sessionTypeLabels = {
-    practice: { label: 'Essais Libres', icon: BeakerIcon, color: 'bg-gray-500' },
-    qualif: { label: 'Qualifications', icon: ClockIcon, color: 'bg-purple-500' },
-    race: { label: 'Course', icon: FlagIcon, color: 'bg-green-500' },
+    practice: { label: 'Essais Libres', icon: FlaskConical, color: 'bg-gray-500' },
+    qualif: { label: 'Qualifications', icon: Clock, color: 'bg-purple-500' },
+    race: { label: 'Course', icon: Flag, color: 'bg-green-500' },
   }
 
   const currentSession = sessionTypeLabels[sessionType]
@@ -722,13 +712,13 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
             <span className="font-semibold text-gray-700 dark:text-gray-200">{currentSession.label}</span>
             {sessionType === 'qualif' && (
               <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
-                <ClockIcon className="w-3 h-3" />
+                <Clock className="w-3 h-3" />
                 5 tours max
               </span>
             )}
             {sessionType === 'race' && (
               <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                <ArrowPathIcon className="w-3 h-3" />
+                <RefreshCw className="w-3 h-3" />
                 25 tours
               </span>
             )}
@@ -765,21 +755,21 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b dark:border-gray-700">
             <h3 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-              <TrophyIcon className="w-5 h-5 text-yellow-500" />
+              <Trophy className="w-5 h-5 text-yellow-500" />
               Classement Général
             </h3>
           </div>
           <div className="flex border-b dark:border-gray-700">
             <button className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent">
-              <BeakerIcon className="w-4 h-4 inline mr-1" />
+              <FlaskConical className="w-4 h-4 inline mr-1" />
               Libre
             </button>
             <button className="flex-1 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 border-b-2 border-purple-500">
-              <ClockIcon className="w-4 h-4 inline mr-1" />
+              <Clock className="w-4 h-4 inline mr-1" />
               Qualif
             </button>
             <button className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent">
-              <FlagIcon className="w-4 h-4 inline mr-1" />
+              <Flag className="w-4 h-4 inline mr-1" />
               Course
             </button>
           </div>
@@ -879,7 +869,7 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
         />
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           <EmptyState
-            icon={<UserGroupIcon className="w-8 h-8" />}
+            icon={<Users className="w-8 h-8" />}
             title="Aucun pilote"
             message="Commencez par ajouter votre premier pilote"
             actionLabel="Ajouter un pilote"

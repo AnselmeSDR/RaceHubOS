@@ -1,22 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
-import {
-  TrophyIcon,
-  PlusIcon,
-  TrashIcon,
-  PencilIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ClockIcon,
-  FlagIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline'
+import { Trophy, Plus, Trash2, Pencil, ChevronUp, ChevronDown, Clock, Flag, RefreshCw } from 'lucide-react'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const SESSION_TYPES = {
-  qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300', icon: ClockIcon },
-  race: { label: 'Course', shortLabel: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300', icon: FlagIcon }
+  qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300', icon: Clock },
+  race: { label: 'Course', shortLabel: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300', icon: Flag }
 }
 
 /**
@@ -240,7 +230,7 @@ export default function ChampionshipConfigModal({
       open={open}
       onClose={onClose}
       title="Configuration Championnat"
-      icon={<TrophyIcon className="w-5 h-5 text-yellow-500" />}
+      icon={<Trophy className="w-5 h-5 text-yellow-500" />}
       size="2xl"
     >
       <div className="space-y-6">
@@ -294,14 +284,14 @@ export default function ChampionshipConfigModal({
                 onClick={() => setShowNewSession('qualif')}
                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
               >
-                <PlusIcon className="w-3 h-3" />
+                <Plus className="w-3 h-3" />
                 Qualif
               </button>
               <button
                 onClick={() => setShowNewSession('race')}
                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors"
               >
-                <PlusIcon className="w-3 h-3" />
+                <Plus className="w-3 h-3" />
                 Course
               </button>
             </div>
@@ -345,7 +335,7 @@ export default function ChampionshipConfigModal({
                               onChange={(e) => setSessionForm(f => ({ ...f, useTime: e.target.checked }))}
                               className="rounded border-gray-300 dark:border-gray-600 text-blue-600"
                             />
-                            <ClockIcon className="w-4 h-4 text-gray-400" />
+                            <Clock className="w-4 h-4 text-gray-400" />
                             <input
                               type="number"
                               value={sessionForm.duration}
@@ -363,7 +353,7 @@ export default function ChampionshipConfigModal({
                               onChange={(e) => setSessionForm(f => ({ ...f, useLaps: e.target.checked }))}
                               className="rounded border-gray-300 dark:border-gray-600 text-green-600"
                             />
-                            <ArrowPathIcon className="w-4 h-4 text-gray-400" />
+                            <RefreshCw className="w-4 h-4 text-gray-400" />
                             <input
                               type="number"
                               value={sessionForm.maxLaps}
@@ -400,14 +390,14 @@ export default function ChampionshipConfigModal({
                             disabled={index === 0}
                             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
-                            <ChevronUpIcon className="w-4 h-4" />
+                            <ChevronUp className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleMoveSession(session.id, 'down')}
                             disabled={index === qrSessions.length - 1}
                             className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
-                            <ChevronDownIcon className="w-4 h-4" />
+                            <ChevronDown className="w-4 h-4" />
                           </button>
                         </div>
 
@@ -443,14 +433,14 @@ export default function ChampionshipConfigModal({
                             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
                             title="Modifier"
                           >
-                            <PencilIcon className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteSession(session.id)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
                             title="Supprimer"
                           >
-                            <TrashIcon className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -485,7 +475,7 @@ export default function ChampionshipConfigModal({
                         onChange={(e) => setNewSessionForm(f => ({ ...f, useTime: e.target.checked }))}
                         className="rounded border-gray-300 dark:border-gray-600 text-blue-600"
                       />
-                      <ClockIcon className="w-4 h-4 text-gray-400" />
+                      <Clock className="w-4 h-4 text-gray-400" />
                       <input
                         type="number"
                         value={newSessionForm.duration}
@@ -503,7 +493,7 @@ export default function ChampionshipConfigModal({
                         onChange={(e) => setNewSessionForm(f => ({ ...f, useLaps: e.target.checked }))}
                         className="rounded border-gray-300 dark:border-gray-600 text-green-600"
                       />
-                      <ArrowPathIcon className="w-4 h-4 text-gray-400" />
+                      <RefreshCw className="w-4 h-4 text-gray-400" />
                       <input
                         type="number"
                         value={newSessionForm.maxLaps}

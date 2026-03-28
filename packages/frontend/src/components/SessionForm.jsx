@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { X, Plus, Trash2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -188,7 +188,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -317,7 +317,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                 disabled={formData.drivers.length >= availableSlots}
                 className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
                 Ajouter
               </button>
             </div>
@@ -384,7 +384,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     onClick={() => removeDriver(index)}
                     className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   >
-                    <TrashIcon className="w-5 h-5" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               ))}

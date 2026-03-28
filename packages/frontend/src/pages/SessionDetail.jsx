@@ -4,7 +4,7 @@
  * NOTE: This page is for viewing completed session history.
  * For live race control, use /race (RaceControl page).
  */
-import { ArrowLeftIcon, BoltIcon, ClockIcon, FlagIcon, MapPinIcon, TrashIcon, TrophyIcon, UsersIcon } from '@heroicons/react/24/outline'
+import { ArrowLeft, Zap, Clock, Flag, MapPin, Trash2, Trophy, Users2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorMessage from '../components/ErrorMessage'
@@ -102,7 +102,7 @@ export default function SessionDetail() {
           onClick={() => navigate('/history')}
           className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mb-8"
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
           Retour à l'historique
         </button>
         <div className="text-center text-gray-500 dark:text-gray-400">Session introuvable</div>
@@ -142,7 +142,7 @@ export default function SessionDetail() {
               onClick={() => navigate('/history')}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all"
             >
-              <ArrowLeftIcon className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
               Retour
             </button>
           </div>
@@ -179,7 +179,7 @@ export default function SessionDetail() {
               className="p-3 bg-red-500/80 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all"
               title="Supprimer la session"
             >
-              <TrashIcon className="w-6 h-6" />
+              <Trash2 className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function SessionDetail() {
           {/* Circuit */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
-              <MapPinIcon className="w-8 h-8 text-indigo-500" />
+              <MapPin className="w-8 h-8 text-indigo-500" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">{session.track?.name}</span>
             </div>
             <p className="text-gray-600 dark:text-gray-400">Circuit</p>
@@ -207,7 +207,7 @@ export default function SessionDetail() {
           {/* Pilotes */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
-              <UsersIcon className="w-8 h-8 text-indigo-500" />
+              <Users2 className="w-8 h-8 text-indigo-500" />
               <span className="text-3xl font-bold text-gray-900 dark:text-white">{session.drivers?.length || 0}</span>
             </div>
             <p className="text-gray-600 dark:text-gray-400">Pilotes</p>
@@ -216,7 +216,7 @@ export default function SessionDetail() {
           {/* Tours */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
             <div className="flex items-center gap-3 mb-3">
-              <FlagIcon className="w-8 h-8 text-green-500" />
+              <Flag className="w-8 h-8 text-green-500" />
               <span className="text-3xl font-bold text-gray-900 dark:text-white">{session._count?.laps || 0}</span>
             </div>
             <p className="text-gray-600 dark:text-gray-400">Tours complétés</p>
@@ -226,7 +226,7 @@ export default function SessionDetail() {
           {session.championship && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
               <div className="flex items-center gap-3 mb-3">
-                <TrophyIcon className="w-8 h-8 text-yellow-500" />
+                <Trophy className="w-8 h-8 text-yellow-500" />
                 <span className="text-xl font-bold text-gray-900 dark:text-white">{session.championship.name}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400">Championnat</p>
@@ -248,9 +248,9 @@ export default function SessionDetail() {
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  {phase === 'practice' && <ClockIcon className="w-5 h-5" />}
-                  {phase === 'qualif' && <BoltIcon className="w-5 h-5" />}
-                  {phase === 'race' && <FlagIcon className="w-5 h-5" />}
+                  {phase === 'practice' && <Clock className="w-5 h-5" />}
+                  {phase === 'qualif' && <Zap className="w-5 h-5" />}
+                  {phase === 'race' && <Flag className="w-5 h-5" />}
                   {phase === 'practice' ? 'Essais' : phase === 'qualif' ? 'Qualifications' : 'Course'}
                   {phaseLeaderboards[phase]?.length > 0 && (
                     <span className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full">
@@ -320,7 +320,7 @@ export default function SessionDetail() {
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                <FlagIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <Flag className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                 <p className="font-medium">Aucune donnée pour cette phase</p>
               </div>
             )}

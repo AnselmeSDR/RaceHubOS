@@ -1,16 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  MapPinIcon,
-  ArrowPathIcon,
-  RocketLaunchIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline'
+import { MapPin, RefreshCw, Rocket, Clock, Trophy } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPinIcon as MapPinSolidIcon, TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -80,7 +74,7 @@ export default function Tracks() {
               {track.img ? (
                 <img src={getImgUrl(track.img)} alt="" className="w-full h-full object-cover" />
               ) : (
-                <MapPinIcon className="w-4 h-4" />
+                <MapPin className="w-4 h-4" />
               )}
             </div>
             <span className="font-semibold">{track.name}</span>
@@ -94,7 +88,7 @@ export default function Tracks() {
       header: 'Longueur',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <RocketLaunchIcon className="w-4 h-4 text-purple-500" />
+          <Rocket className="w-4 h-4 text-purple-500" />
           {row.original.length ? `${row.original.length}m` : '-'}
         </span>
       ),
@@ -105,7 +99,7 @@ export default function Tracks() {
       header: 'Virages',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <ArrowPathIcon className="w-4 h-4 text-purple-500" />
+          <RefreshCw className="w-4 h-4 text-purple-500" />
           {row.original.corners || '-'}
         </span>
       ),
@@ -133,7 +127,7 @@ export default function Tracks() {
       header: 'Sessions',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <ClockIcon className="w-4 h-4" />
+          <Clock className="w-4 h-4" />
           {row.original._count?.sessions || 0}
         </span>
       ),
@@ -143,7 +137,7 @@ export default function Tracks() {
   return (
     <ListPage
       title="Circuits"
-      icon={<MapPinIcon />}
+      icon={<MapPin />}
       color="purple"
       preferenceKey="tracks"
       data={tracks}
@@ -212,13 +206,13 @@ function TrackCard({ track, onClick }) {
               {track.img ? (
                 <img src={getImgUrl(track.img)} alt="" className="w-full h-full object-cover" />
               ) : (
-                <MapPinSolidIcon className="w-10 h-10 drop-shadow-lg" />
+                <MapPin className="w-10 h-10 drop-shadow-lg" />
               )}
             </div>
           </div>
           {track.bestLap && (
             <Badge className="bg-yellow-500 text-white shadow-md">
-              <TrophySolidIcon className="w-3 h-3" />
+              <Trophy className="w-3 h-3" />
               Record
             </Badge>
           )}
@@ -231,7 +225,7 @@ function TrackCard({ track, onClick }) {
         {track.length && (
           <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
-              <RocketLaunchIcon className="w-4 h-4" style={{ color: trackColor }} />
+              <Rocket className="w-4 h-4" style={{ color: trackColor }} />
               <span className="text-xs font-medium text-muted-foreground uppercase">Longueur</span>
             </div>
             <span className="text-sm font-black" style={{ color: trackColor }}>{track.length}m</span>
@@ -240,7 +234,7 @@ function TrackCard({ track, onClick }) {
         {track.corners && (
           <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
-              <ArrowPathIcon className="w-4 h-4" style={{ color: trackColor }} />
+              <RefreshCw className="w-4 h-4" style={{ color: trackColor }} />
               <span className="text-xs font-medium text-muted-foreground uppercase">Virages</span>
             </div>
             <span className="text-sm font-black" style={{ color: trackColor }}>{track.corners}</span>
@@ -250,7 +244,7 @@ function TrackCard({ track, onClick }) {
           <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <ClockIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                 <span className="text-xs font-bold text-yellow-900 dark:text-yellow-300 uppercase">Record</span>
               </div>
               <span className="text-lg font-black text-yellow-600 dark:text-yellow-400">{(track.bestLap / 1000).toFixed(3)}s</span>
@@ -318,7 +312,7 @@ function TrackFormModal({ track, onClose }) {
       open
       onClose={onClose}
       title={track ? 'Modifier le circuit' : 'Nouveau circuit'}
-      icon={<MapPinIcon className="w-5 h-5 text-purple-500" />}
+      icon={<MapPin className="w-5 h-5 text-purple-500" />}
       onSubmit={handleSubmit}
       isEditing={!!track}
       saving={saving}

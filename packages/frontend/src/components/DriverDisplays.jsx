@@ -1,5 +1,4 @@
-import { TrophyIcon, FlagIcon, ChartBarIcon } from '@heroicons/react/24/outline'
-import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { Trophy, Flag, BarChart3 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 import { getImgUrl } from '../utils/image'
@@ -276,26 +275,26 @@ export function DriverProfileHeader({ driver }) {
             {/* Stats row */}
             <div className="grid grid-cols-4 gap-4 mt-6">
               <StatBox
-                icon={<FlagIcon className="w-5 h-5" />}
+                icon={<Flag className="w-5 h-5" />}
                 label="Courses"
                 value={driver._count?.sessions || 0}
                 color={driver.color}
               />
               <StatBox
-                icon={<TrophySolidIcon className="w-5 h-5" />}
+                icon={<Trophy className="w-5 h-5" />}
                 label="Victoires"
                 value={driver.wins || 0}
                 color="#EAB308"
                 highlight
               />
               <StatBox
-                icon={<TrophyIcon className="w-5 h-5" />}
+                icon={<Trophy className="w-5 h-5" />}
                 label="Podiums"
                 value={driver.podiums || 0}
                 color={driver.color}
               />
               <StatBox
-                icon={<ChartBarIcon className="w-5 h-5" />}
+                icon={<BarChart3 className="w-5 h-5" />}
                 label="Tours"
                 value={driver._count?.laps || 0}
                 color={driver.color}

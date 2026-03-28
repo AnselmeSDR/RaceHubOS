@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TrophyIcon } from '@heroicons/react/24/outline'
-import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { BarChart3, Trophy } from 'lucide-react'
 import { getImgUrl } from '../utils/image'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
@@ -108,7 +107,7 @@ export default function Stats() {
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white ${
               index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
             }`}>
-              {index === 0 ? <TrophySolidIcon className="w-4 h-4" /> : index + 1}
+              {index === 0 ? <Trophy className="w-4 h-4" /> : index + 1}
             </div>
           )
         }
@@ -277,7 +276,7 @@ export default function Stats() {
   return (
     <ListPage
       title="Statistiques & Records"
-      icon={<ChartBarIcon />}
+      icon={<BarChart3 />}
       color="indigo"
       preferenceKey="stats"
       data={laptimes}

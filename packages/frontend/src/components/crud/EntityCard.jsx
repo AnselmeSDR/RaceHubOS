@@ -1,4 +1,4 @@
-import { TrophyIcon } from '@heroicons/react/24/solid'
+import { Trophy } from 'lucide-react'
 import LapTime from '../race/LapTime'
 
 /**
@@ -107,7 +107,7 @@ export default function EntityCard({
             style={{ backgroundColor: `${color}10` }}
           >
             <div className="flex items-center gap-2">
-              <TrophyIcon className="w-4 h-4 text-yellow-500" />
+              <Trophy className="w-4 h-4 text-yellow-500" />
               <span className="text-xs text-gray-600">Record:</span>
               <LapTime time={record.time} size="sm" />
             </div>

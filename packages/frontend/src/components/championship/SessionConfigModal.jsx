@@ -1,13 +1,5 @@
 import { useState, useMemo } from 'react'
-import {
-  TrashIcon,
-  ArrowPathIcon,
-  ClockIcon,
-  FlagIcon,
-  BeakerIcon,
-  DocumentDuplicateIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
+import { Trash2, RefreshCw, Clock, Flag, FlaskConical, Copy, AlertTriangle } from 'lucide-react'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 
 const SESSION_TYPE_LABELS = {
@@ -17,9 +9,9 @@ const SESSION_TYPE_LABELS = {
 }
 
 const SESSION_TYPE_ICONS = {
-  practice: BeakerIcon,
-  qualif: ClockIcon,
-  race: FlagIcon
+  practice: FlaskConical,
+  qualif: Clock,
+  race: Flag
 }
 
 // Controllers are 0-indexed in DB (0-5), displayed as 1-6
@@ -76,7 +68,7 @@ export default function SessionConfigModal({
   })
   const [saving, setSaving] = useState(false)
 
-  const TypeIcon = SESSION_TYPE_ICONS[session?.type] || FlagIcon
+  const TypeIcon = SESSION_TYPE_ICONS[session?.type] || Flag
   const isPractice = session?.type === 'practice'
   const isActive = session?.status === 'active'
   const isFinished = session?.status === 'finished'
@@ -309,7 +301,7 @@ export default function SessionConfigModal({
                 onClick={handleCopyFromPractice}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
               >
-                <DocumentDuplicateIcon className="w-4 h-4" />
+                <Copy className="w-4 h-4" />
                 Copier depuis EL
               </button>
             )}
@@ -416,7 +408,7 @@ export default function SessionConfigModal({
             {/* Warning for incomplete config */}
             {hasIncompleteConfig && (
               <div className="mt-3 p-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg flex items-start gap-2">
-                <ExclamationTriangleIcon className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <p className="text-orange-700 dark:text-orange-300 font-medium">Configuration incomplète</p>
                   <p className="text-orange-600 dark:text-orange-400 mt-0.5">
@@ -441,7 +433,7 @@ export default function SessionConfigModal({
                 onClick={handleDelete}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-sm"
               >
-                <TrashIcon className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" />
                 Supprimer
               </button>
             )}
@@ -450,7 +442,7 @@ export default function SessionConfigModal({
                 onClick={handleReset}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors text-sm"
               >
-                <ArrowPathIcon className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4" />
                 Reinitialiser
               </button>
             )}

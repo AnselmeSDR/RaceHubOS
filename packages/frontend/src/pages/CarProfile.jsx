@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeftIcon, ArrowPathIcon, BoltIcon, FireIcon, BeakerIcon } from '@heroicons/react/24/outline'
+import { ArrowLeft, RefreshCw, Zap, Flame, FlaskConical } from 'lucide-react'
 import { RecordsList } from '../components/RecordDisplays'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -85,7 +85,7 @@ export default function CarProfile() {
           onClick={() => navigate('/cars')}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Retour aux voitures</span>
         </button>
 
@@ -94,7 +94,7 @@ export default function CarProfile() {
           disabled={resetting}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-lg transition-colors disabled:opacity-50"
         >
-          <ArrowPathIcon className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
           Reset stats
         </button>
       </div>
@@ -161,19 +161,19 @@ export default function CarProfile() {
               {/* Specs */}
               <div className="grid grid-cols-3 gap-4 mt-6">
                 <SpecCard
-                  icon={<BoltIcon className="w-5 h-5" />}
+                  icon={<Zap className="w-5 h-5" />}
                   label="Vitesse"
                   value={`${car.maxSpeed}%`}
                   color="#22C55E"
                 />
                 <SpecCard
-                  icon={<FireIcon className="w-5 h-5" />}
+                  icon={<Flame className="w-5 h-5" />}
                   label="Freinage"
                   value={`${car.brakeForce}%`}
                   color="#EF4444"
                 />
                 <SpecCard
-                  icon={<BeakerIcon className="w-5 h-5" />}
+                  icon={<FlaskConical className="w-5 h-5" />}
                   label="Réservoir"
                   value={car.fuelCapacity}
                   color="#3B82F6"

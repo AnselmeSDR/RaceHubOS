@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PlayIcon, FlagIcon, ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Play, Flag, Clock, RefreshCw } from 'lucide-react'
 import Modal, { ModalFooter, ModalButton } from '../../ui/Modal'
 
 /**
@@ -40,7 +40,7 @@ export default function SessionModal({
   }
 
   const title = isQualifying ? 'Qualifications' : 'Course'
-  const Icon = isQualifying ? PlayIcon : FlagIcon
+  const Icon = isQualifying ? Play : Flag
   const buttonVariant = isQualifying ? 'primary' : 'success'
 
   return (
@@ -69,7 +69,7 @@ export default function SessionModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <ClockIcon className="w-4 h-4 inline mr-1" />
+              <Clock className="w-4 h-4 inline mr-1" />
               Durée (min)
             </label>
             <input
@@ -83,7 +83,7 @@ export default function SessionModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <ArrowPathIcon className="w-4 h-4 inline mr-1" />
+              <RefreshCw className="w-4 h-4 inline mr-1" />
               Max tours
             </label>
             <input

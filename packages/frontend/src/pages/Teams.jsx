@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { UserGroupIcon } from '@heroicons/react/24/outline'
+import { Users } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
-import { UserGroupIcon as UserGroupSolidIcon } from '@heroicons/react/24/solid'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -68,7 +67,7 @@ export default function Teams() {
               {team.img ? (
                 <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
               ) : (
-                <UserGroupIcon className="w-4 h-4" />
+                <Users className="w-4 h-4" />
               )}
             </div>
             <span className="font-semibold">{team.name}</span>
@@ -110,7 +109,7 @@ export default function Teams() {
   return (
     <ListPage
       title="Équipes"
-      icon={<UserGroupIcon />}
+      icon={<Users />}
       color="orange"
       preferenceKey="teams"
       data={teams}
@@ -179,7 +178,7 @@ function TeamCard({ team, onClick }) {
               {team.img ? (
                 <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
               ) : (
-                <UserGroupSolidIcon className="w-12 h-12 drop-shadow-lg" />
+                <Users className="w-12 h-12 drop-shadow-lg" />
               )}
             </div>
           </div>
@@ -196,7 +195,7 @@ function TeamCard({ team, onClick }) {
         <div className="bg-card/50 rounded-lg p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <UserGroupIcon className="w-5 h-5" style={{ color: teamColor }} />
+              <Users className="w-5 h-5" style={{ color: teamColor }} />
               <span className="text-sm font-bold text-muted-foreground uppercase">Pilotes</span>
             </div>
             <span className="text-2xl font-black" style={{ color: teamColor }}>{team._count?.drivers || 0}</span>
@@ -264,7 +263,7 @@ function TeamFormModal({ team, onClose }) {
       open
       onClose={onClose}
       title={team ? "Modifier l'équipe" : 'Nouvelle équipe'}
-      icon={<UserGroupIcon className="w-5 h-5 text-orange-500" />}
+      icon={<Users className="w-5 h-5 text-orange-500" />}
       onSubmit={handleSubmit}
       isEditing={!!team}
       saving={saving}

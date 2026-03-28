@@ -1,10 +1,4 @@
-import {
-    PlayIcon,
-    PauseIcon,
-    FlagIcon,
-    TrophyIcon,
-    XMarkIcon
-} from '@heroicons/react/24/outline'
+import { Play, Pause, Flag, Trophy, X } from 'lucide-react'
 
 export default function SessionControls({
     isPending,
@@ -33,14 +27,14 @@ export default function SessionControls({
                             disabled={!canStart}
                             className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all"
                         >
-                            <PlayIcon className="w-6 h-6" />
+                            <Play className="w-6 h-6" />
                             Démarrer
                         </button>
                         <button
                             onClick={onShowCancel}
                             className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl"
                         >
-                            <XMarkIcon className="w-6 h-6" />
+                            <X className="w-6 h-6" />
                             Annuler
                         </button>
                     </>
@@ -53,7 +47,7 @@ export default function SessionControls({
                             disabled={!canPause}
                             className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-bold rounded-xl"
                         >
-                            <PauseIcon className="w-6 h-6" />
+                            <Pause className="w-6 h-6" />
                             Pause
                         </button>
                         <button
@@ -61,7 +55,7 @@ export default function SessionControls({
                             disabled={!canFinish}
                             className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
                         >
-                            <FlagIcon className="w-6 h-6" />
+                            <Flag className="w-6 h-6" />
                             Terminer
                         </button>
                     </>
@@ -74,7 +68,7 @@ export default function SessionControls({
                             disabled={!canResume}
                             className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl"
                         >
-                            <PlayIcon className="w-6 h-6" />
+                            <Play className="w-6 h-6" />
                             Reprendre
                         </button>
                         <button
@@ -82,7 +76,7 @@ export default function SessionControls({
                             disabled={!canFinish}
                             className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
                         >
-                            <FlagIcon className="w-6 h-6" />
+                            <Flag className="w-6 h-6" />
                             Terminer
                         </button>
                     </>
@@ -93,7 +87,7 @@ export default function SessionControls({
                         onClick={onShowResults}
                         className="flex items-center gap-2 px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl"
                     >
-                        <TrophyIcon className="w-6 h-6" />
+                        <Trophy className="w-6 h-6" />
                         Voir Résultats
                     </button>
                 )}

@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MagnifyingGlassIcon, ViewColumnsIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
+import { Search, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -172,7 +172,7 @@ export function DataTable({
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
@@ -184,7 +184,7 @@ export function DataTable({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <ViewColumnsIcon className="w-4 h-4" />
+                  <Columns3 className="w-4 h-4" />
                   Colonnes
                 </Button>
               </DropdownMenuTrigger>
@@ -276,10 +276,10 @@ export function DataTable({
                               : flexRender(header.column.columnDef.header, header.getContext())}
                             {canSort && (
                               header.column.getIsSorted() === 'asc'
-                                ? <ChevronUpIcon className="w-4 h-4 text-black dark:text-white" />
+                                ? <ChevronUp className="w-4 h-4 text-black dark:text-white" />
                                 : header.column.getIsSorted() === 'desc'
-                                  ? <ChevronDownIcon className="w-4 h-4 text-black dark:text-white" />
-                                  : <ChevronUpDownIcon className="w-4 h-4 text-black/40 dark:text-white/40" />
+                                  ? <ChevronDown className="w-4 h-4 text-black dark:text-white" />
+                                  : <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
                             )}
                           </div>
                         )

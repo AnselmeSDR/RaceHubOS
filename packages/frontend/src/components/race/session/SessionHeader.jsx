@@ -1,4 +1,4 @@
-import { SignalIcon, SignalSlashIcon } from '@heroicons/react/24/outline'
+import { Wifi, WifiOff } from 'lucide-react'
 import StateChip from '../StateChip'
 
 export default function SessionHeader({
@@ -54,7 +54,7 @@ export default function SessionHeader({
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
                     cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
                 }`}>
-                    {cuConnected ? <SignalIcon className="w-5 h-5" /> : <SignalSlashIcon className="w-5 h-5" />}
+                    {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
                     <span className="text-sm font-medium">{cuConnected ? 'CU OK' : 'CU Off'}</span>
                 </div>
             </div>

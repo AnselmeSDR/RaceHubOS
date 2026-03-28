@@ -1,4 +1,4 @@
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { AlertTriangle } from 'lucide-react'
 import { getImgUrl } from '../../utils/image'
 
 const CONTROLLER_COLORS = {
@@ -67,7 +67,7 @@ export default function ControllerSlot({
           <span className="font-medium text-gray-700">Manette {controller}</span>
         </div>
         {!isConfigured && (
-          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
+          <AlertTriangle className="w-5 h-5 text-yellow-500" />
         )}
       </div>
 

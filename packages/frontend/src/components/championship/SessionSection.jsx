@@ -1,15 +1,5 @@
 import { useMemo } from 'react'
-import {
-  Cog6ToothIcon,
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
-  ClockIcon,
-  ArrowPathIcon,
-  FlagIcon,
-  BeakerIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
+import { Settings, Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, AlertTriangle } from 'lucide-react'
 import { StartLights } from '../ui'
 import { useDevice } from '../../context/DeviceContext'
 import { useSession } from '../../context/SessionContext'
@@ -21,9 +11,9 @@ const SESSION_TYPE_LABELS = {
 }
 
 const SESSION_TYPE_ICONS = {
-  practice: BeakerIcon,
-  qualif: ClockIcon,
-  race: FlagIcon
+  practice: FlaskConical,
+  qualif: Clock,
+  race: Flag
 }
 
 /**
@@ -237,13 +227,13 @@ export default function SessionSection({
   if (!session) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">
-        <FlagIcon className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+        <Flag className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
         Selectionnez une session
       </div>
     )
   }
 
-  const TypeIcon = SESSION_TYPE_ICONS[session.type] || FlagIcon
+  const TypeIcon = SESSION_TYPE_ICONS[session.type] || Flag
   const statusConfig = getStatusConfig(session.status)
   const isActive = session.status === 'active'
   const isPaused = session.status === 'paused'
@@ -278,7 +268,7 @@ export default function SessionSection({
           className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           title="Configurer la session"
         >
-          <Cog6ToothIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 
@@ -290,7 +280,7 @@ export default function SessionSection({
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                  <ClockIcon className="w-4 h-4" />
+                  <Clock className="w-4 h-4" />
                   {formatTime(timeProgress.current)}
                   {timeProgress.pauseTime > 0 && (
                     <span className="text-yellow-600">(+{formatTime(timeProgress.pauseTime)} pause)</span>
@@ -329,7 +319,7 @@ export default function SessionSection({
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                  <ArrowPathIcon className="w-4 h-4" />
+                  <RefreshCw className="w-4 h-4" />
                   {lapsProgress.current} {lapsProgress.total ? `/ ${lapsProgress.total}` : ''} tours
                   {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
                     <span className="text-orange-600 ml-1">(+{lapsProgress.current - lapsProgress.total})</span>
@@ -363,7 +353,7 @@ export default function SessionSection({
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
                 <span className="flex items-center gap-1 text-orange-600 font-medium">
-                  <FlagIcon className="w-4 h-4" />
+                  <Flag className="w-4 h-4" />
                   Drapeau à damier - Finissez votre tour !
                 </span>
                 <span className="font-bold text-orange-700 animate-pulse">
@@ -436,7 +426,7 @@ export default function SessionSection({
       {/* Connection lost warning */}
       {!socketConnected && isActive && (
         <div className="px-4 py-3 bg-red-50 dark:bg-red-900/30 border-t border-red-200 dark:border-red-800 flex items-center gap-2">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+          <AlertTriangle className="w-5 h-5 text-red-500" />
           <span className="text-red-700 dark:text-red-300 font-medium">Connexion perdue - Reconnexion en cours...</span>
         </div>
       )}
@@ -457,7 +447,7 @@ export default function SessionSection({
           )}
           {isCuStopped && (
             <span className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
-              <ExclamationTriangleIcon className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4" />
               CU arrete
             </span>
           )}
@@ -474,7 +464,7 @@ export default function SessionSection({
             <>
               {!deviceConnected && (
                 <span className="text-sm text-orange-600 flex items-center gap-1">
-                  <ExclamationTriangleIcon className="w-4 h-4" />
+                  <AlertTriangle className="w-4 h-4" />
                   Connecter un CU
                 </span>
               )}
@@ -487,7 +477,7 @@ export default function SessionSection({
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                <PlayIcon className="w-4 h-4" />
+                <Play className="w-4 h-4" />
                 Demarrer
               </button>
             </>
@@ -499,7 +489,7 @@ export default function SessionSection({
               onClick={onTriggerCuStart}
               className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-lg hover:bg-green-600 transition-colors animate-pulse"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
               START
             </button>
           )}
@@ -510,7 +500,7 @@ export default function SessionSection({
               onClick={onTriggerCuStart}
               className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-lg hover:bg-orange-600 transition-colors"
             >
-              <ArrowPathIcon className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
               Reprendre CU
             </button>
           )}
@@ -521,7 +511,7 @@ export default function SessionSection({
               onClick={onPause}
               className="flex items-center gap-1.5 px-4 py-2 bg-yellow-500 text-yellow-900 text-sm font-medium rounded-lg hover:bg-yellow-400 transition-colors"
             >
-              <PauseIcon className="w-4 h-4" />
+              <Pause className="w-4 h-4" />
               Pause
             </button>
           )}
@@ -532,7 +522,7 @@ export default function SessionSection({
               onClick={onResume}
               className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-lg hover:bg-green-600 transition-colors"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
               Reprendre
             </button>
           )}
@@ -543,14 +533,14 @@ export default function SessionSection({
               onClick={onStop}
               className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
             >
-              <FlagIcon className="w-4 h-4" />
+              <Flag className="w-4 h-4" />
               Terminer
             </button>
           )}
 
           {isFinishing && (
             <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg">
-              <FlagIcon className="w-4 h-4" />
+              <Flag className="w-4 h-4" />
               Attente fin...
             </span>
           )}

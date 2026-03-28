@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { DriverProfileHeader } from '../components/DriverDisplays'
 import { RecordsList } from '../components/RecordDisplays'
 
@@ -85,7 +85,7 @@ export default function DriverProfile() {
           onClick={() => navigate('/drivers')}
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Retour aux pilotes</span>
         </button>
 
@@ -94,7 +94,7 @@ export default function DriverProfile() {
           disabled={resetting}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-lg transition-colors disabled:opacity-50"
         >
-          <ArrowPathIcon className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
           Reset stats
         </button>
       </div>

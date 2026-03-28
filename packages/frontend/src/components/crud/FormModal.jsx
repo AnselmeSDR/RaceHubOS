@@ -1,4 +1,4 @@
-import { TrashIcon } from '@heroicons/react/24/outline'
+import { Trash2 } from 'lucide-react'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 import ErrorMessage from '../ErrorMessage'
 
@@ -66,7 +66,7 @@ export default function FormModal({
               onClick={onDelete}
               className="flex items-center gap-1 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors mr-auto"
             >
-              <TrashIcon className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
               {deleteLabel}
             </button>
           )}

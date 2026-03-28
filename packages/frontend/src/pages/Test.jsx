@@ -1,17 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
-import {
-  SignalIcon,
-  SignalSlashIcon,
-  TrashIcon,
-  PlayIcon,
-  StopIcon,
-  ArrowPathIcon,
-  XMarkIcon,
-  BoltIcon,
-  UserIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline'
+import { Wifi, WifiOff, Trash2, Play, Square, RefreshCw, X, Zap, User, Settings } from 'lucide-react'
 import { API_URL, CONTROLLER_COLORS, CU_BUTTONS, MODE_FLAGS } from '../constants'
 
 // Auto-assign drivers/cars to controllers based on DB data
@@ -394,14 +383,14 @@ export default function Test() {
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
             connected ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
           }`}>
-            {connected ? <SignalIcon className="w-4 h-4" /> : <SignalSlashIcon className="w-4 h-4" />}
+            {connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
             {connected ? 'Socket OK' : 'Socket Off'}
           </div>
           {/* CU status */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
             cuConnected ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
           }`}>
-            <BoltIcon className="w-4 h-4" />
+            <Zap className="w-4 h-4" />
             {cuConnected ? 'CU Connected' : 'CU Offline'}
           </div>
           {/* Race state */}
@@ -434,7 +423,7 @@ export default function Test() {
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <SignalIcon className="w-4 h-4" />}
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
                 Scan & Connect
               </button>
             ) : (
@@ -446,7 +435,7 @@ export default function Test() {
                     disabled={actionLoading}
                     className="flex items-center gap-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-bold"
                   >
-                    <StopIcon className="w-5 h-5" />
+                    <Square className="w-5 h-5" />
                     STOP
                   </button>
                 ) : (
@@ -455,7 +444,7 @@ export default function Test() {
                     disabled={actionLoading}
                     className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
-                    <PlayIcon className="w-4 h-4" />
+                    <Play className="w-4 h-4" />
                     START
                   </button>
                 )}
@@ -471,7 +460,7 @@ export default function Test() {
                   disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
                 >
-                  <ArrowPathIcon className="w-4 h-4" />
+                  <RefreshCw className="w-4 h-4" />
                   Reset Timer
                 </button>
                 <button
@@ -503,7 +492,7 @@ export default function Test() {
                   disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 ml-2"
                 >
-                  <XMarkIcon className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                   Disconnect
                 </button>
               </>
@@ -525,7 +514,7 @@ export default function Test() {
             onClick={() => setShowConfig(!showConfig)}
             className={`flex items-center gap-1 px-3 py-2 rounded-lg ${showConfig ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'} hover:bg-blue-200 dark:hover:bg-blue-900/70`}
           >
-            <Cog6ToothIcon className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
             Config
           </button>
         </div>
@@ -535,7 +524,7 @@ export default function Test() {
       {showConfig && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
           <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
-            <UserIcon className="w-5 h-5" />
+            <User className="w-5 h-5" />
             Configuration des Controllers
           </h3>
           <div className="grid grid-cols-4 gap-3">
@@ -621,7 +610,7 @@ export default function Test() {
                 className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
                 title="Clear logs"
               >
-                <TrashIcon className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -706,7 +695,7 @@ export default function Test() {
               className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400"
               title="Clear leaderboard"
             >
-              <TrashIcon className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronDownIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChevronDown, Plus } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import SessionSection from '../components/championship/SessionSection'
@@ -292,7 +292,7 @@ export default function FreeSessionPage() {
                 <option key={track.id} value={track.id}>{track.name}</option>
               ))}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
 
           {/* Type selector (pills) */}
@@ -321,7 +321,7 @@ export default function FreeSessionPage() {
             disabled={!selectedTrackId || isSessionActive || loading}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
-            <PlusIcon className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
             Nouvelle session
           </button>
 

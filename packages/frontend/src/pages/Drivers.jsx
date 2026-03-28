@@ -1,12 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  UserIcon,
-  TrophyIcon,
-  FlagIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline'
-import { TrophyIcon as TrophySolidIcon } from '@heroicons/react/24/solid'
+import { User, Trophy, Flag, BarChart3 } from 'lucide-react'
 import { FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Badge } from '@/components/ui/badge'
@@ -117,7 +111,7 @@ export default function Drivers() {
       header: 'Courses',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <FlagIcon className="w-4 h-4" />
+          <Flag className="w-4 h-4" />
           {row.original._count?.sessions || 0}
         </span>
       ),
@@ -128,7 +122,7 @@ export default function Drivers() {
       header: 'Victoires',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <TrophyIcon className="w-4 h-4 text-yellow-500" />
+          <Trophy className="w-4 h-4 text-yellow-500" />
           {row.original.wins || 0}
         </span>
       ),
@@ -147,7 +141,7 @@ export default function Drivers() {
       header: 'Tours',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <ChartBarIcon className="w-4 h-4" />
+          <BarChart3 className="w-4 h-4" />
           {row.original._count?.laps || 0}
         </span>
       ),
@@ -167,7 +161,7 @@ export default function Drivers() {
   return (
     <ListPage
       title="Pilotes"
-      icon={<UserIcon />}
+      icon={<User />}
       color="blue"
       preferenceKey="drivers"
       data={drivers}
@@ -247,7 +241,7 @@ function DriverCard({ driver, onClick }) {
             </div>
             {wins > 0 && (
               <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center ring-2 ring-white shadow-lg">
-                <TrophySolidIcon className="w-4 h-4 text-white" />
+                <Trophy className="w-4 h-4 text-white" />
               </div>
             )}
           </div>
@@ -271,9 +265,9 @@ function DriverCard({ driver, onClick }) {
       <div className="relative px-6 pb-4">
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: <FlagIcon className="w-4 h-4" />, label: 'Courses', value: driver._count?.sessions || 0 },
-            { icon: <TrophyIcon className="w-4 h-4" />, label: 'Podiums', value: podiums, highlight: podiums > 0 },
-            { icon: <ChartBarIcon className="w-4 h-4" />, label: 'Tours', value: driver._count?.laps || 0 },
+            { icon: <Flag className="w-4 h-4" />, label: 'Courses', value: driver._count?.sessions || 0 },
+            { icon: <Trophy className="w-4 h-4" />, label: 'Podiums', value: podiums, highlight: podiums > 0 },
+            { icon: <BarChart3 className="w-4 h-4" />, label: 'Tours', value: driver._count?.laps || 0 },
           ].map((stat) => (
             <div key={stat.label} className={`p-2 rounded-lg text-center ${stat.highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-card/60'}`}>
               <div className="flex items-center justify-center mb-1" style={{ color: stat.highlight ? '#EAB308' : driver.color }}>{stat.icon}</div>
@@ -337,7 +331,7 @@ function DriverFormModal({ driver, teams, onClose }) {
       open
       onClose={onClose}
       title={driver ? 'Modifier le pilote' : 'Nouveau pilote'}
-      icon={<UserIcon className="w-5 h-5 text-blue-500" />}
+      icon={<User className="w-5 h-5 text-blue-500" />}
       onSubmit={handleSubmit}
       isEditing={!!driver}
       saving={saving}
