@@ -174,4 +174,10 @@ echo.
 echo  Pour lancer: double-cliquer sur RaceHubOS-v!VERSION!.bat
 echo  dans le dossier !TARGET_DIR!
 echo.
+echo  ====================================
+echo    Changelog
+echo  ====================================
+echo.
+type "!TARGET_DIR!\CHANGELOG.md"
+echo.
 pause
