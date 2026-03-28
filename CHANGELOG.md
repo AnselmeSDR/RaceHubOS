@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configuration session inline** : remplacement du modal par un formulaire intégré directement dans le bloc session (nom, durée, tours, controllers, statut)
 - **Leaderboard expanded** : tailles agrandies (position, avatar, numéro, nom, stats) quand le classement général est masqué
 - **Page Championnat** : migration shadcn (ChampionshipHeader, ChampionshipConfigModal en Sheet, tokens sémantiques), toggle classement général, config session inline, selects shadcn pour controllers et circuit
+- **Leaderboard stats** : tailles agrandies en mode expanded (labels, tours, temps, gap), LapTime size `xl`
+- **Script upgrade** : `RaceHubOS-upgrade.bat` avec prisma generate, raccourci bureau, launcher versionné
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
