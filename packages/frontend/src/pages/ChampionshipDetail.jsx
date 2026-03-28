@@ -1,16 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-
-// Components
+import { Flag } from 'lucide-react'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
 import SessionSection from '../components/championship/SessionSection'
-import SessionConfigModal from '../components/championship/SessionConfigModal'
 import StandingsTabs from '../components/championship/StandingsTabs'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
+import StartingGrid from '../components/race/StartingGrid'
 import { DataFreshnessIndicator } from '../components/ui'
 import ChampionshipConfigModal from '../components/championship/ChampionshipConfigModal'
-
-// Context
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 
@@ -18,17 +15,11 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function ChampionshipDetail() {
   const { id } = useParams()
-
-  // Device context
-  const {
-    startRace: triggerCuStart,
-  } = useDevice()
-
-  // Session context
+  const { startRace: triggerCuStart } = useDevice()
   const {
     entries: sessionEntries,
+    maxLapsCompleted,
     lastServerTime,
-    finishingSession,
     loadSession,
     startSession,
     pauseSession,
@@ -37,322 +28,186 @@ export default function ChampionshipDetail() {
     resetSession,
   } = useSession()
 
-  // Data state
   const [championship, setChampionship] = useState(null)
   const [sessions, setSessions] = useState([])
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
   const [tracks, setTracks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
-  // UI state
-  const [selectedSessionId, setSelectedSessionId] = useState(() => {
-    return localStorage.getItem(`championship_${id}_session`) || null
-  })
+  const [selectedSessionId, setSelectedSessionId] = useState(() => localStorage.getItem(`championship_${id}_session`) || null)
   const [standingsTab, setStandingsTab] = useState('practice')
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
-
-  // Modal state
+  const [showStandings, setShowStandings] = useState(true)
   const [showChampionshipConfig, setShowChampionshipConfig] = useState(false)
-  const [configSession, setConfigSession] = useState(null)
+  const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
 
-  // Standings data
-  const [standings, setStandings] = useState({
-    practice: [],
-    qualif: [],
-    race: []
-  })
-
-  // Persist selected session
   useEffect(() => {
-    if (selectedSessionId) {
-      localStorage.setItem(`championship_${id}_session`, selectedSessionId)
-    } else {
-      localStorage.removeItem(`championship_${id}_session`)
-    }
+    if (selectedSessionId) localStorage.setItem(`championship_${id}_session`, selectedSessionId)
+    else localStorage.removeItem(`championship_${id}_session`)
   }, [id, selectedSessionId])
 
-  // Fetch championship
   const fetchChampionship = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/championships/${id}`)
       const data = await res.json()
-      if (data.success) {
-        setChampionship(data.data)
-      }
-    } catch (err) {
-      console.error('Error fetching championship:', err)
-      setError(err.message)
-    }
+      if (data.success) setChampionship(data.data)
+    } catch (err) { console.error('Error:', err) }
   }, [id])
 
-  // Fetch sessions
   const fetchSessions = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/sessions?championshipId=${id}`)
       const data = await res.json()
       if (data.success) {
         setSessions(data.data)
-        // Auto-select first session if none selected
-        if (!selectedSessionId && data.data.length > 0) {
-          setSelectedSessionId(data.data[0].id)
-        }
+        if (!selectedSessionId && data.data.length > 0) setSelectedSessionId(data.data[0].id)
       }
-    } catch (err) {
-      console.error('Error fetching sessions:', err)
-    }
+    } catch (err) { console.error('Error:', err) }
   }, [id, selectedSessionId])
 
-  // Fetch drivers, cars, tracks
   const fetchData = useCallback(async () => {
     try {
-      const [driversRes, carsRes, tracksRes] = await Promise.all([
-        fetch(`${API_URL}/api/drivers`),
-        fetch(`${API_URL}/api/cars`),
-        fetch(`${API_URL}/api/tracks`)
+      const [d, c, t] = await Promise.all([
+        fetch(`${API_URL}/api/drivers`).then(r => r.json()),
+        fetch(`${API_URL}/api/cars`).then(r => r.json()),
+        fetch(`${API_URL}/api/tracks`).then(r => r.json()),
       ])
-      const [driversData, carsData, tracksData] = await Promise.all([
-        driversRes.json(),
-        carsRes.json(),
-        tracksRes.json()
-      ])
-      if (driversData.success) setDrivers(driversData.data)
-      if (carsData.success) setCars(carsData.data)
-      if (tracksData.success) setTracks(tracksData.data)
-    } catch (err) {
-      console.error('Error fetching data:', err)
-    }
+      if (d.success) setDrivers(d.data)
+      if (c.success) setCars(c.data)
+      if (t.success) setTracks(t.data)
+    } catch (err) { console.error('Error:', err) }
   }, [])
 
-  // Fetch standings
   const fetchStandings = useCallback(async () => {
     try {
-      const [practiceRes, qualifRes, raceRes] = await Promise.all([
-        fetch(`${API_URL}/api/championships/${id}/standings?type=practice`),
-        fetch(`${API_URL}/api/championships/${id}/standings?type=qualif`),
-        fetch(`${API_URL}/api/championships/${id}/standings?type=race`)
+      const [p, q, r] = await Promise.all([
+        fetch(`${API_URL}/api/championships/${id}/standings?type=practice`).then(r => r.json()),
+        fetch(`${API_URL}/api/championships/${id}/standings?type=qualif`).then(r => r.json()),
+        fetch(`${API_URL}/api/championships/${id}/standings?type=race`).then(r => r.json()),
       ])
-      const [practiceData, qualifData, raceData] = await Promise.all([
-        practiceRes.json(),
-        qualifRes.json(),
-        raceRes.json()
-      ])
-      setStandings({
-        practice: practiceData.standings || [],
-        qualif: qualifData.standings || [],
-        race: raceData.standings || []
-      })
-    } catch (err) {
-      console.error('Error fetching standings:', err)
-    }
+      setStandings({ practice: p.standings || [], qualif: q.standings || [], race: r.standings || [] })
+    } catch (err) { console.error('Error:', err) }
   }, [id])
 
-  // Initial load
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      await Promise.all([
-        fetchChampionship(),
-        fetchSessions(),
-        fetchData(),
-        fetchStandings()
-      ])
+      await Promise.all([fetchChampionship(), fetchSessions(), fetchData(), fetchStandings()])
       setLoading(false)
     }
     load()
   }, [fetchChampionship, fetchSessions, fetchData, fetchStandings])
 
-  // Load session into SyncService when selected (only if it exists in sessions list)
   useEffect(() => {
     if (selectedSessionId && sessions.length > 0) {
-      const sessionExists = sessions.some(s => s.id === selectedSessionId)
-      if (sessionExists) {
-        loadSession(selectedSessionId)
-      } else {
-        // Session was deleted, clear selection
-        setSelectedSessionId(sessions[0]?.id || null)
-      }
+      if (sessions.some(s => s.id === selectedSessionId)) loadSession(selectedSessionId)
+      else setSelectedSessionId(sessions[0]?.id || null)
     }
   }, [selectedSessionId, sessions, loadSession])
 
-  // Listen for events
   useEffect(() => {
-    const handleStandingsChanged = () => fetchStandings()
-    const handleSessionChange = () => {
-      fetchSessions()
-      fetchStandings()
-    }
-
-    window.addEventListener('championship:standings_changed', handleStandingsChanged)
-    window.addEventListener('session:finished', handleSessionChange)
-    window.addEventListener('session:status_changed', handleSessionChange)
-
+    const refresh = () => { fetchSessions(); fetchStandings() }
+    window.addEventListener('session:finished', refresh)
+    window.addEventListener('session:status_changed', refresh)
     return () => {
-      window.removeEventListener('championship:standings_changed', handleStandingsChanged)
-      window.removeEventListener('session:finished', handleSessionChange)
-      window.removeEventListener('session:status_changed', handleSessionChange)
+      window.removeEventListener('session:finished', refresh)
+      window.removeEventListener('session:status_changed', refresh)
     }
   }, [fetchSessions, fetchStandings])
 
-  // Selected session
-  const selectedSession = useMemo(() => {
-    return sessions.find(s => s.id === selectedSessionId) || null
-  }, [sessions, selectedSessionId])
+  const selectedSession = useMemo(() => sessions.find(s => s.id === selectedSessionId) || null, [sessions, selectedSessionId])
 
-  // Sync standings tab with selected session type
   useEffect(() => {
-    if (selectedSession?.type) {
-      setStandingsTab(selectedSession.type)
-    }
+    if (selectedSession?.type) setStandingsTab(selectedSession.type)
   }, [selectedSession?.type])
-
-  // Handlers
-  const handleSelectSession = useCallback((session) => {
-    setSelectedSessionId(session.id)
-  }, [])
-
-  const handleSessionConfig = useCallback((session) => {
-    setConfigSession(session)
-  }, [])
 
   const handleStartSession = useCallback(async () => {
     if (!selectedSession) return
-    const result = await startSession(selectedSession.id)
-    if (result.success) fetchSessions()
+    const r = await startSession(selectedSession.id)
+    if (r.success) fetchSessions()
   }, [selectedSession, startSession, fetchSessions])
 
   const handlePauseSession = useCallback(async () => {
     if (!selectedSession) return
-    const result = await pauseSession(selectedSession.id)
-    if (result.success) fetchSessions()
+    const r = await pauseSession(selectedSession.id)
+    if (r.success) fetchSessions()
   }, [selectedSession, pauseSession, fetchSessions])
 
   const handleResumeSession = useCallback(async () => {
     if (!selectedSession) return
-    const result = await resumeSession(selectedSession.id)
-    if (result.success) fetchSessions()
+    const r = await resumeSession(selectedSession.id)
+    if (r.success) fetchSessions()
   }, [selectedSession, resumeSession, fetchSessions])
 
   const handleStopSession = useCallback(async () => {
     if (!selectedSession) return
-    const result = await stopSession(selectedSession.id)
-    if (result.success) {
-      fetchSessions()
-      fetchStandings()
-    }
+    const r = await stopSession(selectedSession.id)
+    if (r.success) { fetchSessions(); fetchStandings() }
   }, [selectedSession, stopSession, fetchSessions, fetchStandings])
 
-  // Session config handlers
-  const handleSaveSessionConfig = useCallback(async (data) => {
-    if (!configSession) return
-
+  const handleSaveConfig = useCallback(async (data) => {
+    if (!selectedSession) return
     try {
-      await fetch(`${API_URL}/api/sessions/${configSession.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          maxDuration: data.maxDuration,
-          maxLaps: data.maxLaps,
-          gracePeriod: data.gracePeriod
-        })
+      await fetch(`${API_URL}/api/sessions/${selectedSession.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
       })
-
-      if (data.status !== configSession.status) {
-        await fetch(`${API_URL}/api/sessions/${configSession.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+      if (data.status !== selectedSession.status) {
+        await fetch(`${API_URL}/api/sessions/${selectedSession.id}/status`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: data.status })
         })
       }
-
       if (data.drivers?.length > 0) {
-        await fetch(`${API_URL}/api/sessions/${configSession.id}/drivers`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+        await fetch(`${API_URL}/api/sessions/${selectedSession.id}/drivers`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ drivers: data.drivers })
         })
       }
-
       fetchSessions()
-      setConfigSession(null)
-    } catch (err) {
-      console.error('Error saving session config:', err)
-    }
-  }, [configSession, fetchSessions])
+    } catch (err) { console.error('Error:', err) }
+  }, [selectedSession, fetchSessions])
 
   const handleDeleteSession = useCallback(async (sessionId) => {
     try {
       await fetch(`${API_URL}/api/sessions/${sessionId}`, { method: 'DELETE' })
-      fetchSessions()
-      fetchStandings()
-      if (selectedSessionId === sessionId) {
-        setSelectedSessionId(null)
-      }
-    } catch (err) {
-      console.error('Error deleting session:', err)
-    }
+      fetchSessions(); fetchStandings()
+      if (selectedSessionId === sessionId) setSelectedSessionId(null)
+    } catch (err) { console.error('Error:', err) }
   }, [fetchSessions, fetchStandings, selectedSessionId])
 
   const handleResetSession = useCallback(async (sessionId) => {
-    const result = await resetSession(sessionId)
-    if (result.success) {
-      fetchSessions()
-      fetchStandings()
-    }
+    const r = await resetSession(sessionId)
+    if (r.success) { fetchSessions(); fetchStandings() }
   }, [resetSession, fetchSessions, fetchStandings])
 
-  const handleSessionsChange = useCallback(() => {
-    fetchSessions()
-    fetchStandings()
-  }, [fetchSessions, fetchStandings])
-
-  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500" />
-      </div>
-    )
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-red-500">Erreur: {error}</div>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full size-10 border-b-2 border-yellow-500" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Championship Header */}
+    <div className="h-full flex flex-col">
+      {/* Header bar with session tabs */}
       <ChampionshipHeader
         championship={championship}
         sessions={sessions}
         selectedSession={selectedSession}
-        onSelectSession={handleSelectSession}
+        onSelectSession={(s) => setSelectedSessionId(s.id)}
         onConfig={() => setShowChampionshipConfig(true)}
+        showStandings={showStandings}
+        onToggleStandings={() => setShowStandings(s => !s)}
       />
 
       {/* Main content */}
-      <div className="p-4 lg:p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: Session + Leaderboard */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Data freshness indicator */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Session en cours
-              </h2>
-              {selectedSession?.status === 'active' && (
-                <DataFreshnessIndicator lastServerTime={lastServerTime} />
-              )}
-            </div>
-
-            {/* Session Section */}
+      <div className="flex-1 overflow-auto p-4">
+        <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
+          {/* Left: Session + Leaderboard */}
+          <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>
             <SessionSection
               session={selectedSession}
               sessions={sessions}
@@ -363,60 +218,40 @@ export default function ChampionshipDetail() {
               onResume={handleResumeSession}
               onStop={handleStopSession}
               onTriggerCuStart={triggerCuStart}
-              onConfig={handleSessionConfig}
+              onSaveConfig={handleSaveConfig}
+              onDelete={handleDeleteSession}
+              onReset={handleResetSession}
             />
 
-            {/* Finishing countdown */}
-            {finishingSession && finishingSession.sessionId === selectedSessionId && (
-              <div className="bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg p-4 text-center">
-                <div className="text-orange-800 dark:text-orange-200 font-bold text-lg animate-pulse">
-                  DERNIER TOUR
-                </div>
-              </div>
-            )}
-
-            {/* Leaderboard */}
             {selectedSession && (
-              <SessionLeaderboard
-                entries={sessionEntries}
-                sortBy={selectedSession.type === 'practice' ? practiceSortBy :
-                  selectedSession.type === 'qualif' ? 'bestLap' : 'race'}
-                onSortChange={selectedSession.type === 'practice' ? setPracticeSortBy : undefined}
-                sessionType={selectedSession.type}
-              />
+              maxLapsCompleted === 0 && selectedSession.status !== 'finished' ? (
+                <StartingGrid entries={sessionEntries} />
+              ) : (
+                <SessionLeaderboard
+                  entries={sessionEntries}
+                  expanded={!showStandings}
+                  sortBy={selectedSession.type === 'practice' ? practiceSortBy : selectedSession.type === 'qualif' ? 'bestLap' : 'race'}
+                  onSortChange={selectedSession.type === 'practice' ? setPracticeSortBy : undefined}
+                  sessionType={selectedSession.type}
+                />
+              )
             )}
           </div>
 
-          {/* Right column: Standings */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Classement General
-            </h2>
-            <StandingsTabs
-              standings={standings}
-              drivers={drivers}
-              activeTab={standingsTab}
-              onTabChange={setStandingsTab}
-            />
-          </div>
+          {/* Right: Standings */}
+          {showStandings && (
+            <div>
+              <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
+              <StandingsTabs
+                standings={standings}
+                drivers={drivers}
+                activeTab={standingsTab}
+                onTabChange={setStandingsTab}
+              />
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Modals */}
-      {configSession && (
-        <SessionConfigModal
-          session={configSession}
-          sessions={sessions}
-          drivers={drivers}
-          cars={cars}
-          sessionDrivers={configSession.drivers || []}
-          open={!!configSession}
-          onClose={() => setConfigSession(null)}
-          onSave={handleSaveSessionConfig}
-          onDelete={handleDeleteSession}
-          onReset={handleResetSession}
-        />
-      )}
 
       {showChampionshipConfig && (
         <ChampionshipConfigModal
@@ -426,7 +261,7 @@ export default function ChampionshipDetail() {
           open={showChampionshipConfig}
           onClose={() => setShowChampionshipConfig(false)}
           onSave={(updated) => setChampionship(updated)}
-          onSessionsChange={handleSessionsChange}
+          onSessionsChange={() => { fetchSessions(); fetchStandings() }}
         />
       )}
     </div>
