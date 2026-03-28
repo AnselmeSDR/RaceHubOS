@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Leaderboard stats** : tailles agrandies en mode expanded (labels, tours, temps, gap), LapTime size `xl`
 - **Script upgrade** : `RaceHubOS-upgrade.bat` avec prisma generate, raccourci bureau, launcher versionné
 - **Terminer championnat** : bouton dans le header quand toutes les sessions Q/R sont terminées, bouton dans la config pour forcer la fin
+- **Soft delete / hard delete** : DELETE fait un soft delete, re-DELETE fait un hard delete, PATCH restore sur toutes les entités (drivers, cars, tracks, teams, championships, sessions, laps)
+- **ListPage supprimés** : boutons Restaurer + Supprimer définitivement en mode "Afficher les supprimés", confirmation modale, déselection auto après action
+- **Stats laps** : endpoint DELETE/restore pour les laps, filtre "Afficher les supprimés" sur la page Stats
+- **DataTable** : toolbar sticky, empty state avec icône Search
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement

@@ -187,12 +187,59 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    await sessionService.deleteSession(id);
+    const exists = await prisma().session.findUnique({ where: { id } });
+    if (!exists) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    if (exists.deletedAt) {
+      // Hard delete cascade: laps → session drivers → session
+      await prisma().$transaction([
+        prisma().lap.deleteMany({ where: { sessionId: id } }),
+        prisma().sessionDriver.deleteMany({ where: { sessionId: id } }),
+        prisma().session.delete({ where: { id } }),
+      ]);
+    } else {
+      // Soft delete (via service for proper lifecycle handling)
+      await sessionService.deleteSession(id);
+    }
 
     res.json({ success: true, message: 'Session deleted' });
   } catch (error) {
     console.error('Error deleting session:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/sessions/:id/restore - Restore soft-deleted session
+ */
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entity = await prisma().session.findUnique({ where: { id } });
+    if (!entity) return res.status(404).json({ success: false, error: 'Session not found' });
+
+    // Restore cascade: session → session drivers → laps
+    await prisma().session.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    await prisma().sessionDriver.updateMany({
+      where: { sessionId: id, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+
+    await prisma().lap.updateMany({
+      where: { sessionId: id, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+
+    res.json({ success: true, message: 'Session restored' });
+  } catch (error) {
+    console.error('Error restoring session:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore session' });
   }
 });
 

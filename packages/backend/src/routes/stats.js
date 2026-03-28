@@ -482,9 +482,9 @@ router.get('/laptimes', async (req, res) => {
     const parsedOffset = parseInt(offset);
 
     // Build where clause
-    const where = {
-      deletedAt: null, // Only active laps
-    };
+    const where = req.query.deleted === 'true'
+      ? { deletedAt: { not: null } }
+      : { deletedAt: null };
 
     if (driverId) where.driverId = driverId.includes(',') ? { in: driverId.split(',') } : driverId;
     if (carId) where.carId = carId.includes(',') ? { in: carId.split(',') } : carId;
@@ -730,6 +730,41 @@ router.get('/records', async (req, res) => {
       success: false,
       error: 'Failed to fetch records',
     });
+  }
+});
+
+// DELETE /api/stats/laps/:id - Soft or hard delete a lap
+router.delete('/laps/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lap = await prisma.lap.findUnique({ where: { id } });
+    if (!lap) return res.status(404).json({ success: false, error: 'Lap not found' });
+
+    if (lap.deletedAt) {
+      await prisma.lap.delete({ where: { id } });
+    } else {
+      await prisma.lap.update({ where: { id }, data: { deletedAt: new Date() } });
+    }
+
+    res.json({ success: true, message: 'Lap deleted' });
+  } catch (error) {
+    console.error('Error deleting lap:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete lap' });
+  }
+});
+
+// PATCH /api/stats/laps/:id/restore - Restore soft-deleted lap
+router.patch('/laps/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lap = await prisma.lap.findUnique({ where: { id } });
+    if (!lap) return res.status(404).json({ success: false, error: 'Lap not found' });
+
+    await prisma.lap.update({ where: { id }, data: { deletedAt: null } });
+    res.json({ success: true, message: 'Lap restored' });
+  } catch (error) {
+    console.error('Error restoring lap:', error);
+    res.status(500).json({ success: false, error: 'Failed to restore lap' });
   }
 });
 
