@@ -148,8 +148,9 @@ echo.
 :: -------------------------------------------------------
 :: 7. Run database migrations
 :: -------------------------------------------------------
-echo  [7/7] Migration de la base de donnees...
+echo  [7/7] Generation Prisma + migration...
 cd /d "!TARGET_DIR!\packages\backend"
+call npx prisma generate
 call npx prisma db push --accept-data-loss 2>nul || call npx prisma migrate deploy 2>nul
 echo  OK
 echo.
