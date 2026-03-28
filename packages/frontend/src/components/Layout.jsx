@@ -1,26 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink } from 'react-router-dom'
-import {
-  ChartBarIcon,
-  UserGroupIcon,
-  TruckIcon,
-  MapIcon,
-  UsersIcon,
-  BeakerIcon,
-  Squares2X2Icon,
-  FlagIcon,
-  CogIcon,
-  TrophyIcon,
-  XMarkIcon,
-  Bars3Icon,
-  CommandLineIcon,
-  ClockIcon,
-  SunIcon,
-  MoonIcon,
-} from '@heroicons/react/24/outline'
+import { Outlet, useLocation } from 'react-router-dom'
+import { LayoutGridIcon, ListIcon } from 'lucide-react'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import AppSidebar, { allNavItems } from './AppSidebar'
 import BackendStatusPopup from './BackendStatusPopup'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
-import { useTheme } from '../context/ThemeContext'
+import { PageHeaderProvider, usePageHeader } from '../context/PageHeaderContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -37,23 +25,75 @@ const CU_STATE_NAMES = {
   9: 'Stopped'
 }
 
+function useDefaultPageTitle() {
+  const { pathname } = useLocation()
+  const basePath = '/' + (pathname.split('/')[1] || '')
+  const item = allNavItems.find(n =>
+    n.to === '/' ? pathname === '/' : basePath === n.to
+  )
+  return item?.label ?? 'RaceHubOS'
+}
+
+function PageHeader() {
+  const { header } = usePageHeader()
+  const defaultTitle = useDefaultPageTitle()
+
+  if (!header) {
+    return <h1 className="text-sm font-medium">{defaultTitle}</h1>
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2.5 min-w-0">
+        {header.icon && (
+          <div className={`size-7 bg-${header.color}-100 dark:bg-${header.color}-900/30 rounded-lg flex items-center justify-center shrink-0`}>
+            <span className={`text-${header.color}-600 dark:text-${header.color}-400 [&_svg]:size-4`}>{header.icon}</span>
+          </div>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-sm font-medium truncate leading-tight">{header.title}</h1>
+          <p className="text-xs text-muted-foreground leading-tight">
+            {header.loading ? '...' : header.totalCount != null ? `${header.totalCount} résultat${header.totalCount > 1 ? 's' : ''}` : ''}
+          </p>
+        </div>
+      </div>
+      <div className="ml-auto flex items-center gap-2 shrink-0">
+        {header.hasGrid && (
+          <Tabs value={header.viewMode} onValueChange={header.onViewModeChange}>
+            <TabsList>
+              <TabsTrigger value="grid">
+                <LayoutGridIcon className="w-4 h-4" />
+                Grille
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                <ListIcon className="w-4 h-4" />
+                Liste
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+        {header.onAdd && (
+          <Button
+            size="sm"
+            onClick={header.onAdd}
+            className={`bg-${header.color}-500 hover:bg-${header.color}-600 text-white`}
+          >
+            {header.icon}
+            {header.addLabel}
+          </Button>
+        )}
+      </div>
+    </>
+  )
+}
+
 export default function Layout() {
   const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
   const isSimulator = deviceAddress === SIMULATOR_ADDRESS
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('sidebarOpen')
-    return saved !== null ? saved === 'true' : true
-  })
   const [statusPopupOpen, setStatusPopupOpen] = useState(false)
-
-  // Persist sidebar state
-  useEffect(() => {
-    localStorage.setItem('sidebarOpen', sidebarOpen)
-  }, [sidebarOpen])
   const [backendConnected, setBackendConnected] = useState(true)
   const [backendVersion, setBackendVersion] = useState('0.1.0')
 
-  // Check backend health periodically
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -70,162 +110,52 @@ export default function Layout() {
     const interval = setInterval(checkHealth, 5000)
     return () => clearInterval(interval)
   }, [])
-  const { isDark, toggleTheme, isAdmin } = useTheme()
-
-  const allNavItems = [
-    { to: '/', label: 'Dashboard', Icon: ChartBarIcon },
-    { to: '/race', label: 'Mode Libre', Icon: FlagIcon },
-    { to: '/championships', label: 'Championnats', Icon: TrophyIcon },
-    { to: '/history', label: 'Historique', Icon: ClockIcon },
-    { to: '/drivers', label: 'Pilotes', Icon: UserGroupIcon },
-    { to: '/cars', label: 'Voitures', Icon: TruckIcon },
-    { to: '/tracks', label: 'Circuits', Icon: MapIcon },
-    { to: '/teams', label: 'Équipes', Icon: UsersIcon },
-    { to: '/stats', label: 'Statistiques', Icon: TrophyIcon },
-    { to: '/displays', label: 'Displays', Icon: Squares2X2Icon, adminOnly: true },
-    { to: '/simulator', label: 'Simulateur', Icon: BeakerIcon, adminOnly: true },
-    { to: '/test', label: 'Test', Icon: CommandLineIcon, adminOnly: true },
-    { to: '/settings', label: 'Paramètres', Icon: CogIcon },
-  ]
-
-  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin)
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white flex flex-col transition-all duration-300`}>
-        {/* Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-          {sidebarOpen ? (
-            <>
-              <div>
-                <h1 className="text-2xl font-bold">RaceHubOS</h1>
-                <p className="text-sm text-gray-400 mt-1">Carrera Digital 132/124</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                  title={isDark ? 'Mode jour' : 'Mode nuit'}
-                >
-                  {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-                </button>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                  title="Réduire"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-2 mx-auto">
-              <button
-                onClick={toggleTheme}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                title={isDark ? 'Mode jour' : 'Mode nuit'}
-              >
-                {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-              </button>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                title="Agrandir"
-              >
-                <Bars3Icon className="w-6 h-6" />
-              </button>
-            </div>
-          )}
-        </div>
+    <SidebarProvider>
+      <AppSidebar
+        backendConnected={backendConnected}
+        backendVersion={backendVersion}
+        onStatusClick={() => setStatusPopupOpen(true)}
+      />
+      <SidebarInset>
+        <PageHeaderProvider>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-full" />
+            <PageHeader />
+          </header>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {navItems.map((item) => {
-              const { Icon } = item
-              return (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.to === '/'}
-                    className={({ isActive }) =>
-                      `flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                      }`
-                    }
-                    title={!sidebarOpen ? item.label : ''}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    {sidebarOpen && <span className="font-medium">{item.label}</span>}
-                  </NavLink>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
+          <div className="flex-1 overflow-auto [contain:inline-size]">
+            <Outlet />
+          </div>
+        </PageHeaderProvider>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-800">
-          <button
-            onClick={() => setStatusPopupOpen(true)}
-            className={`w-full text-left rounded-lg transition-colors ${sidebarOpen ? 'p-2 hover:bg-gray-800' : ''}`}
-            title="Voir les logs"
-          >
-            {sidebarOpen ? (
-              <div className="text-xs text-gray-400">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <span>{backendConnected ? 'Backend connecté' : 'Backend déconnecté'}</span>
-                </div>
-                <div>Version {backendVersion}</div>
-              </div>
-            ) : (
-              <div className="flex justify-center">
-                <div
-                  className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
-                  title={backendConnected ? 'Backend connecté' : 'Backend déconnecté'}
-                ></div>
-              </div>
-            )}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-auto flex flex-col">
-        <div className="flex-1 overflow-auto">
-          <Outlet />
-        </div>
-        {/* CU Status Footer */}
-        <footer className="bg-gray-900 border-t border-gray-700 px-4 py-1.5 text-xs font-mono flex items-center gap-1 text-gray-400">
-          <div className={`w-1.5 h-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-400') : 'text-red-400'}>
+        <footer className="flex h-8 shrink-0 items-center gap-1 border-t px-4 text-xs font-mono text-muted-foreground">
+          <div className={`size-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-500') : 'text-red-500'}>
             {cuConnected ? (isSimulator ? 'SIMULATOR' : 'CU') : 'NO CU'}
           </span>
-          <span className="text-gray-600 mx-1">|</span>
-          <span className={cuStatus?.start === 0 ? 'text-green-400' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-400' : 'text-gray-500'}>
+          <span className="text-muted-foreground/40 mx-1">|</span>
+          <span className={cuStatus?.start === 0 ? 'text-green-500' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-500' : 'text-muted-foreground'}>
             {CU_STATE_NAMES[cuStatus?.start] || 'Unknown'}
           </span>
-          <span className="text-gray-600 mx-1">|</span>
+          <span className="text-muted-foreground/40 mx-1">|</span>
           <span>Mode {cuStatus?.mode ?? '-'}</span>
           {lastTimer && (
             <>
-              <span className="text-gray-600 mx-1">|</span>
+              <span className="text-muted-foreground/40 mx-1">|</span>
               <span className="text-blue-400">C{lastTimer.controller + 1}</span>
-              <span className="text-green-400 ml-1">{(lastTimer.lapTime / 1000).toFixed(3)}s</span>
+              <span className="text-green-500 ml-1">{(lastTimer.lapTime / 1000).toFixed(3)}s</span>
             </>
           )}
         </footer>
-      </main>
+      </SidebarInset>
 
-      {/* Backend Status Popup */}
       <BackendStatusPopup
         isOpen={statusPopupOpen}
         onClose={() => setStatusPopupOpen(false)}
       />
-    </div>
+    </SidebarProvider>
   )
 }

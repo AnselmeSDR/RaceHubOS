@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmModal } from '@/components/ui/Modal'
+import { useSetPageHeader } from '@/context/PageHeaderContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -73,6 +74,19 @@ export function ListPage({
     }
   }
 
+  useSetPageHeader({
+    title,
+    icon,
+    color,
+    loading,
+    totalCount: totalCount ?? data.length,
+    viewMode,
+    onViewModeChange: handleViewModeChange,
+    hasGrid: !!renderGrid,
+    onAdd,
+    addLabel,
+  })
+
   async function confirmDelete() {
     if (!deleteEndpoint) return
     try {
@@ -91,52 +105,7 @@ export function ListPage({
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {icon && (
-            <div className={`w-10 h-10 bg-${color}-100 dark:bg-${color}-900/30 rounded-xl flex items-center justify-center`}>
-              <span className={`text-${color}-600 dark:text-${color}-400 [&_svg]:w-5 [&_svg]:h-5`}>{icon}</span>
-            </div>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {loading ? '...' : `${totalCount ?? data.length} résultat${(totalCount ?? data.length) > 1 ? 's' : ''}`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          {renderGrid && (
-            <Tabs value={viewMode} onValueChange={handleViewModeChange}>
-              <TabsList>
-                <TabsTrigger value="grid">
-                  <LayoutGridIcon className="w-4 h-4" />
-                  Grille
-                </TabsTrigger>
-                <TabsTrigger value="list">
-                  <ListIcon className="w-4 h-4" />
-                  Liste
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
-          {onAdd && (
-            <Button
-              size="lg"
-              onClick={onAdd}
-              className={`bg-${color}-500 hover:bg-${color}-600 text-white`}
-            >
-              {icon}
-              {addLabel}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Content */}
+    <div className="p-4 space-y-4">
       {loading || !prefsLoaded ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
