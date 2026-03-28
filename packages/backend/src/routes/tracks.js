@@ -13,7 +13,12 @@ router.get('/', async (req, res) => {
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
-    const [tracks, total] = await Promise.all([
+    const isComputedSort = sortBy === 'bestLap';
+    const dbOrderBy = sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
+      : isComputedSort ? undefined
+      : { [sortBy]: sortOrder };
+
+    const [allTracks, total] = await Promise.all([
       prisma.track.findMany({
         where,
         include: {
@@ -23,12 +28,18 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        orderBy: sortBy === 'sessions' ? { sessions: { _count: sortOrder } } : { [sortBy]: sortOrder },
-        skip: parsedOffset,
-        take: parsedLimit,
+        orderBy: dbOrderBy,
+        ...(!isComputedSort ? { skip: parsedOffset, take: parsedLimit } : {}),
       }),
       prisma.track.count({ where }),
     ]);
+
+    let sorted = allTracks;
+    if (isComputedSort) {
+      const dir = sortOrder === 'asc' ? 1 : -1;
+      sorted = [...allTracks].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
+    }
+    const tracks = isComputedSort ? sorted.slice(parsedOffset, parsedOffset + parsedLimit) : sorted;
 
     res.json({
       success: true,

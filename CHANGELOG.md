@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sidebar shadcn/ui** : migration vers le composant Sidebar de shadcn/ui (style dashboard-01) avec `SidebarProvider`, `SidebarInset`, collapsible en mode "icon", raccourci clavier `Ctrl+B`, support mobile via Sheet, tooltips en mode collapsed
 - **Logo** : nouveau logo RaceHubOS dans la sidebar
 - **Header layout** : barre supérieure avec `SidebarTrigger`, titre de page dynamique, compteur de résultats, toggle grille/liste et bouton d'ajout (remontés depuis ListPage)
-- **Footer statut CU** : barre inférieure avec état de connexion CU, mode, dernier tour
+- **Footer statut CU** : barre inférieure fixe avec état de connexion CU, mode, dernier tour
+- **Dark mode Zinc** : palette dark mode passée en Zinc (gris neutres/bleutés)
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
@@ -46,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Toggle grille/liste** : composant shadcn Tabs dans ListPage, préférence sauvegardée en DB
 
 ### Fixed
-- **Tri championnats** : tri par circuit (relation track.name), qualifs (comptage sessions qualif), courses (comptage sessions race) côté serveur
+- **Tri toutes les pages** : tri côté serveur pour les colonnes calculées (relations, comptages, durées) sur championnats, sessions, pilotes, voitures, circuits
 - **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture
 - **Affichage "Pilote non trouvé"** : ajout de vérification `res.ok` avant de parser la réponse JSON dans DriverProfile
 - **Images non affichées en vue liste des voitures** : ajout du rendu conditionnel de `car.img` dans CarTable avec fallback sur l'initiale de la marque
