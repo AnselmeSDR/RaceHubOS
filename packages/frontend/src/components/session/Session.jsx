@@ -1,13 +1,5 @@
 import { useState } from 'react'
-import {
-  PlayIcon,
-  PauseIcon,
-  FlagIcon,
-  XMarkIcon,
-  SignalIcon,
-  SignalSlashIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
+import { Play, Pause, Flag, X, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import StateChip from '../race/StateChip'
 import Leaderboard from '../race/Leaderboard'
 import LapTime from '../race/LapTime'
@@ -142,7 +134,7 @@ export default function Session({
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
             cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
           }`}>
-            {cuConnected ? <SignalIcon className="w-5 h-5" /> : <SignalSlashIcon className="w-5 h-5" />}
+            {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
             <span className="text-sm font-medium">{cuConnected ? 'CU OK' : 'CU Off'}</span>
           </div>
         </div>
@@ -173,7 +165,7 @@ export default function Session({
             <>
               {!cuConnected && (
                 <span className="flex items-center gap-1.5 text-orange-400 text-sm">
-                  <ExclamationTriangleIcon className="w-5 h-5" />
+                  <AlertTriangle className="w-5 h-5" />
                   Connecter un CU
                 </span>
               )}
@@ -182,7 +174,7 @@ export default function Session({
                 disabled={!cuConnected}
                 className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all"
               >
-                <PlayIcon className="w-6 h-6" />
+                <Play className="w-6 h-6" />
                 Préparer
               </button>
             </>
@@ -193,7 +185,7 @@ export default function Session({
             <>
               {!cuConnected && (
                 <span className="flex items-center gap-1.5 text-orange-400 text-sm">
-                  <ExclamationTriangleIcon className="w-5 h-5" />
+                  <AlertTriangle className="w-5 h-5" />
                   Connecter un CU
                 </span>
               )}
@@ -202,14 +194,14 @@ export default function Session({
                 disabled={!canStart}
                 className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all"
               >
-                <PlayIcon className="w-6 h-6" />
+                <Play className="w-6 h-6" />
                 Démarrer
               </button>
               <button
                 onClick={() => setShowCancelConfirm(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl"
               >
-                <XMarkIcon className="w-6 h-6" />
+                <X className="w-6 h-6" />
                 Annuler
               </button>
             </>
@@ -223,7 +215,7 @@ export default function Session({
                 disabled={!canPause}
                 className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-bold rounded-xl"
               >
-                <PauseIcon className="w-6 h-6" />
+                <Pause className="w-6 h-6" />
                 Pause
               </button>
               <button
@@ -231,7 +223,7 @@ export default function Session({
                 disabled={!canFinish}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
               >
-                <FlagIcon className="w-6 h-6" />
+                <Flag className="w-6 h-6" />
                 Terminer
               </button>
             </>
@@ -245,7 +237,7 @@ export default function Session({
                 disabled={!canResume}
                 className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl"
               >
-                <PlayIcon className="w-6 h-6" />
+                <Play className="w-6 h-6" />
                 Reprendre
               </button>
               <button
@@ -253,7 +245,7 @@ export default function Session({
                 disabled={!canFinish}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
               >
-                <FlagIcon className="w-6 h-6" />
+                <Flag className="w-6 h-6" />
                 Terminer
               </button>
             </>

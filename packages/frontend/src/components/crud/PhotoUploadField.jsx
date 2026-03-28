@@ -1,5 +1,5 @@
 import { useState, useRef, useId } from 'react'
-import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ImageIcon, Trash2 } from 'lucide-react'
 import ImageCropper from '../ImageCropper'
 import { getImgUrl } from '../../utils/image'
 
@@ -128,11 +128,11 @@ export default function PhotoUploadField({
                 onClick={handleRemove}
                 className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
               >
-                <TrashIcon className="w-6 h-6 text-white" />
+                <Trash2 className="w-6 h-6 text-white" />
               </button>
             </>
           ) : (
-            <PhotoIcon className="w-8 h-8 text-gray-400" />
+            <ImageIcon className="w-8 h-8 text-gray-400" />
           )}
         </div>
 

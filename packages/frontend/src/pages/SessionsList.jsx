@@ -1,17 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  FlagIcon,
-  UsersIcon,
-  TrophyIcon,
-  ClockIcon,
-  PlayIcon,
-  MapPinIcon,
-} from '@heroicons/react/24/outline'
-import {
-  CheckCircleIcon,
-  ClockIcon as ClockSolidIcon,
-} from '@heroicons/react/24/solid'
+import { Flag, Users2, Trophy, Clock, Play, MapPin, CheckCircle } from 'lucide-react'
 import SessionForm from '../components/SessionForm'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
@@ -93,10 +82,10 @@ export default function SessionsList() {
 
   function getStatusIcon(status) {
     switch (status) {
-      case 'draft': return <ClockIcon className="h-4 w-4 text-gray-500" />
-      case 'ready': return <ClockSolidIcon className="h-4 w-4 text-blue-500" />
-      case 'active': return <PlayIcon className="h-4 w-4 text-green-500 animate-pulse" />
-      case 'finished': return <CheckCircleIcon className="h-4 w-4 text-blue-500" />
+      case 'draft': return <Clock className="h-4 w-4 text-gray-500" />
+      case 'ready': return <Clock className="h-4 w-4 text-blue-500" />
+      case 'active': return <Play className="h-4 w-4 text-green-500 animate-pulse" />
+      case 'finished': return <CheckCircle className="h-4 w-4 text-blue-500" />
       default: return null
     }
   }
@@ -126,7 +115,7 @@ export default function SessionsList() {
           </span>
           {row.original.championship && (
             <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-              <TrophyIcon className="h-3 w-3 text-yellow-500" />
+              <Trophy className="h-3 w-3 text-yellow-500" />
               {row.original.championship.name}
             </div>
           )}
@@ -181,7 +170,7 @@ export default function SessionsList() {
       ),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <MapPinIcon className="w-4 h-4" />
+          <MapPin className="w-4 h-4" />
           {row.original.track?.name || 'Non défini'}
         </span>
       ),
@@ -243,7 +232,7 @@ export default function SessionsList() {
       header: 'Pilotes',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <UsersIcon className="w-4 h-4" />
+          <Users2 className="w-4 h-4" />
           {row.original.drivers?.length || 0}
         </span>
       ),
@@ -254,7 +243,7 @@ export default function SessionsList() {
       header: 'Tours',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <FlagIcon className="w-4 h-4" />
+          <Flag className="w-4 h-4" />
           {row.original._count?.laps || 0}
         </span>
       ),
@@ -286,7 +275,7 @@ export default function SessionsList() {
   return (
     <ListPage
       title="Sessions"
-      icon={<FlagIcon />}
+      icon={<Flag />}
       color="indigo"
       preferenceKey="sessions"
       data={sessions}

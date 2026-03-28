@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Cropper from 'react-easy-crop'
-import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { X, Check } from 'lucide-react'
 
 /**
  * ImageCropper - Composant de recadrage d'image
@@ -65,7 +65,7 @@ export default function ImageCropper({
             onClick={onCancel}
             className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
             Annuler
           </button>
           <button
@@ -73,7 +73,7 @@ export default function ImageCropper({
             onClick={handleComplete}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            <CheckIcon className="w-5 h-5" />
+            <Check className="w-5 h-5" />
             Valider
           </button>
         </div>

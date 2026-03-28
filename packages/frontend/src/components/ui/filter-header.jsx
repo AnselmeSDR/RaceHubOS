@@ -1,6 +1,4 @@
-import { FunnelIcon as FunnelOutline } from '@heroicons/react/24/outline'
-import { FunnelIcon as FunnelSolid } from '@heroicons/react/24/solid'
-import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
+import { Filter, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -35,18 +33,18 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
           {label}
           {canSort && (
             sorted === 'asc'
-              ? <ChevronUpIcon className="w-4 h-4 text-black dark:text-white" />
+              ? <ChevronUp className="w-4 h-4 text-black dark:text-white" />
               : sorted === 'desc'
-                ? <ChevronDownIcon className="w-4 h-4 text-black dark:text-white" />
-                : <ChevronUpDownIcon className="w-4 h-4 text-black/40 dark:text-white/40" />
+                ? <ChevronDown className="w-4 h-4 text-black dark:text-white" />
+                : <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
           )}
         </span>
         <span className="flex-1" />
         <DropdownMenuTrigger asChild>
           <button className="p-1 rounded hover:bg-muted transition-colors">
             {active
-              ? <FunnelSolid className="w-4 h-4 text-primary" />
-              : <FunnelOutline className="w-4 h-4 text-muted-foreground" />
+              ? <Filter className="w-4 h-4 text-primary" />
+              : <Filter className="w-4 h-4 text-muted-foreground" />
             }
           </button>
         </DropdownMenuTrigger>

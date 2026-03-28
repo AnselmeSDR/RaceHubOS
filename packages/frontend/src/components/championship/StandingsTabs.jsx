@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PlayIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline'
+import { Play, Clock, Flag } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
 
@@ -16,9 +16,9 @@ export default function StandingsTabs({
   onTabChange
 }) {
   const tabs = [
-    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: PlayIcon, color: 'purple' },
-    { id: 'qualif', label: 'Qualifications', shortLabel: 'Qualif', icon: ClockIcon, color: 'blue' },
-    { id: 'race', label: 'Courses', shortLabel: 'Course', icon: FlagIcon, color: 'green' }
+    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: Play, color: 'purple' },
+    { id: 'qualif', label: 'Qualifications', shortLabel: 'Qualif', icon: Clock, color: 'blue' },
+    { id: 'race', label: 'Courses', shortLabel: 'Course', icon: Flag, color: 'green' }
   ]
 
   // Get driver info by ID

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { TrashIcon } from '@heroicons/react/24/outline'
+import { Trash2 } from 'lucide-react'
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { DataTable, createSelectColumn } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
@@ -158,7 +158,7 @@ export function ListPage({
           onSortChange={onSortChange}
           renderActions={() => (
             <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-              <TrashIcon className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
               Supprimer
             </Button>
           )}

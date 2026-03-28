@@ -1,4 +1,4 @@
-import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { X, AlertTriangle } from 'lucide-react'
 
 /**
  * Reusable modal component with consistent styling
@@ -41,7 +41,7 @@ export default function Modal({
             onClick={onClose}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            <XMarkIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+            <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
         {children}
@@ -110,7 +110,7 @@ export function ConfirmModal({
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-6 mx-4">
         <div className="flex items-center gap-3 mb-4">
           <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'}`}>
-            <ExclamationTriangleIcon className={`w-6 h-6 ${variant === 'danger' ? 'text-red-600' : 'text-yellow-600'}`} />
+            <AlertTriangle className={`w-6 h-6 ${variant === 'danger' ? 'text-red-600' : 'text-yellow-600'}`} />
           </div>
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">{title}</h2>
         </div>

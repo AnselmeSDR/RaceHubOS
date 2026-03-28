@@ -1,4 +1,4 @@
-import { PlusIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline'
+import { Plus, LayoutGrid, List } from 'lucide-react'
 
 /**
  * Reusable CRUD page header with title, count, view toggle, and add button
@@ -57,7 +57,7 @@ export default function PageHeader({
           style={{ backgroundColor: primaryColor }}
           className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity"
         >
-          <PlusIcon className="w-5 h-5" />
+          <Plus className="w-5 h-5" />
           {addLabel}
         </button>
       </div>
@@ -79,7 +79,7 @@ export function ViewToggleButtons({ mode, onChange }) {
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
         }`}
       >
-        <Squares2X2Icon className="w-4 h-4" />
+        <LayoutGrid className="w-4 h-4" />
         Grille
       </button>
       <button
@@ -90,7 +90,7 @@ export function ViewToggleButtons({ mode, onChange }) {
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
         }`}
       >
-        <ListBulletIcon className="w-4 h-4" />
+        <List className="w-4 h-4" />
         Liste
       </button>
     </div>

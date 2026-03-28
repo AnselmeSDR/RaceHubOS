@@ -1,11 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  TrophyIcon,
-  MapPinIcon,
-  FlagIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline'
+import { Trophy, MapPin, Flag, Clock } from 'lucide-react'
 import { FormModal, TextField, SelectField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
@@ -81,7 +76,7 @@ export default function Championships() {
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-            <TrophyIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+            <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
           </div>
           <span className="font-semibold">{row.original.name}</span>
         </div>
@@ -105,7 +100,7 @@ export default function Championships() {
         const track = tracks.find(t => t.id === row.original.trackId)
         return (
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <MapPinIcon className="w-4 h-4" />
+            <MapPin className="w-4 h-4" />
             {track?.name || 'Non défini'}
           </span>
         )
@@ -117,7 +112,7 @@ export default function Championships() {
       header: 'Qualifs',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <ClockIcon className="w-4 h-4 text-blue-500" />
+          <Clock className="w-4 h-4 text-blue-500" />
           {row.original.sessions?.filter(s => s.type === 'qualif').length || 0}
         </span>
       ),
@@ -128,7 +123,7 @@ export default function Championships() {
       header: 'Courses',
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          <FlagIcon className="w-4 h-4 text-green-500" />
+          <Flag className="w-4 h-4 text-green-500" />
           {row.original.sessions?.filter(s => s.type === 'race').length || 0}
         </span>
       ),
@@ -171,7 +166,7 @@ export default function Championships() {
   return (
     <ListPage
       title="Championnats"
-      icon={<TrophyIcon />}
+      icon={<Trophy />}
       color="yellow"
       preferenceKey="championships"
       data={championships}
@@ -247,7 +242,7 @@ function ChampionshipFormModal({ tracks, onClose }) {
       open
       onClose={onClose}
       title="Nouveau championnat"
-      icon={<TrophyIcon className="w-5 h-5 text-yellow-500" />}
+      icon={<Trophy className="w-5 h-5 text-yellow-500" />}
       onSubmit={handleSubmit}
       saving={saving}
       error={error}

@@ -1,14 +1,9 @@
-import {
-  Cog6ToothIcon,
-  ClockIcon,
-  FlagIcon,
-  BeakerIcon
-} from '@heroicons/react/24/outline'
+import { Settings, Clock, Flag, FlaskConical } from 'lucide-react'
 
 const SESSION_TYPES = {
-  practice: { label: 'EL', color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700', icon: BeakerIcon },
-  qualif: { label: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700', icon: ClockIcon },
-  race: { label: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', icon: FlagIcon }
+  practice: { label: 'EL', color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700', icon: FlaskConical },
+  qualif: { label: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700', icon: Clock },
+  race: { label: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', icon: Flag }
 }
 
 /**
@@ -74,7 +69,7 @@ export default function ChampionshipHeader({
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title="Configuration du championnat"
         >
-          <Cog6ToothIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
       </div>
 

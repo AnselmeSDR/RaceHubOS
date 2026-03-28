@@ -1,4 +1,4 @@
-import { TrophyIcon } from '@heroicons/react/24/outline'
+import { Trophy } from 'lucide-react'
 import LapTime from '../LapTime'
 
 function RecordSection({ title, colorClass, records = [] }) {
@@ -32,7 +32,7 @@ export default function TrackRecordsPanel({ selectedTrack, trackRecords = {} }) 
     return (
         <div className="w-80 border-l bg-white overflow-y-auto p-4">
             <div className="flex items-center gap-2 mb-4">
-                <TrophyIcon className="w-5 h-5 text-yellow-500" />
+                <Trophy className="w-5 h-5 text-yellow-500" />
                 <h2 className="font-semibold text-gray-800">Records</h2>
             </div>
 

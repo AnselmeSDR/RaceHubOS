@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 import LapTime from '../LapTime'
 import { getImgUrl } from '../../../utils/image'
 
@@ -45,9 +45,9 @@ export default function FreePracticeEntry({ entry, index }) {
                         }`}
                     >
                         {entry.positionDelta > 0 ? (
-                            <ArrowUpIcon className="w-3 h-3" />
+                            <ArrowUp className="w-3 h-3" />
                         ) : (
-                            <ArrowDownIcon className="w-3 h-3" />
+                            <ArrowDown className="w-3 h-3" />
                         )}
                         <span>{Math.abs(entry.positionDelta)}</span>
                     </motion.div>

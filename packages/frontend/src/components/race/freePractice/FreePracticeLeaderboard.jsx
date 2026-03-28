@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { FlagIcon, ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Flag, Clock, RefreshCw } from 'lucide-react'
 import FreePracticeEntry from './FreePracticeEntry'
 
 const SORT_OPTIONS = {
@@ -50,7 +50,7 @@ export default function FreePracticeLeaderboard({
             <div className="bg-white rounded-xl shadow-sm border">
                 <div className="px-4 py-3 border-b flex items-center justify-between">
                     <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                        <FlagIcon className="w-5 h-5 text-green-500" />
+                        <Flag className="w-5 h-5 text-green-500" />
                         Classement
                     </h2>
 
@@ -65,7 +65,7 @@ export default function FreePracticeLeaderboard({
                                         : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
-                                <ArrowPathIcon className="w-4 h-4" />
+                                <RefreshCw className="w-4 h-4" />
                                 Tours
                             </button>
                             <button
@@ -76,7 +76,7 @@ export default function FreePracticeLeaderboard({
                                         : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
-                                <ClockIcon className="w-4 h-4" />
+                                <Clock className="w-4 h-4" />
                                 Temps
                             </button>
                         </div>
@@ -92,7 +92,7 @@ export default function FreePracticeLeaderboard({
 
                 {entries.length === 0 ? (
                     <div className="px-4 py-12 text-center text-gray-400">
-                        <FlagIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <Flag className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p>En attente des tours...</p>
                         <p className="text-sm mt-1">Roulez sur le circuit</p>
                     </div>

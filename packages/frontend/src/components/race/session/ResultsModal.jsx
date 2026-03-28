@@ -1,4 +1,4 @@
-import { TrophyIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Trophy, RefreshCw } from 'lucide-react'
 import LapTime from '../LapTime'
 
 export default function ResultsModal({
@@ -13,7 +13,7 @@ export default function ResultsModal({
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-gray-800 rounded-xl max-w-2xl w-full border border-gray-700 my-8">
                 <div className="p-6 border-b border-gray-700 text-center">
-                    <TrophyIcon className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
+                    <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
                     <h2 className="text-2xl font-bold text-white">Résultats</h2>
                     <p className="text-gray-400">{sessionName || sessionTypeLabel}</p>
                 </div>
@@ -87,7 +87,7 @@ export default function ResultsModal({
                         onClick={onDismiss}
                         className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl"
                     >
-                        <ArrowPathIcon className="w-5 h-5" />
+                        <RefreshCw className="w-5 h-5" />
                         Retour au mode libre
                     </button>
                 </div>

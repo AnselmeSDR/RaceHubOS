@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { useTheme } from '../../context/ThemeContext'
@@ -144,9 +144,9 @@ export default function SessionLeaderboard({
                     }`}
                   >
                     {entry.positionDelta > 0 ? (
-                      <ArrowUpIcon className="w-3 h-3" />
+                      <ArrowUp className="w-3 h-3" />
                     ) : (
-                      <ArrowDownIcon className="w-3 h-3" />
+                      <ArrowDown className="w-3 h-3" />
                     )}
                     <span>{Math.abs(entry.positionDelta)}</span>
                   </motion.div>

@@ -1,4 +1,4 @@
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { Plus } from 'lucide-react'
 
 /**
  * Empty state component for lists with no items
@@ -41,7 +41,7 @@ export default function EmptyState({
           style={{ backgroundColor: primaryColor }}
           className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity"
         >
-          <PlusIcon className="w-5 h-5" />
+          <Plus className="w-5 h-5" />
           {actionLabel}
         </button>
       )}
