@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, RefreshCw, Rocket, Clock, Trophy } from 'lucide-react'
+import { MapPin, RefreshCw, Rocket, Clock, Trophy, Pencil } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
@@ -132,6 +132,20 @@ export default function Tracks() {
         </span>
       ),
     },
+    {
+      id: 'actions',
+      header: '',
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); setEditingTrack(row.original); setShowForm(true) }}
+          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil className="size-3.5" />
+        </button>
+      ),
+    },
   ], [])
 
   return (
@@ -161,7 +175,7 @@ export default function Tracks() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((track) => (
-            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} />
+            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} onEdit={() => { setEditingTrack(track); setShowForm(true) }} />
           ))}
         </div>
       )}
@@ -184,7 +198,7 @@ export default function Tracks() {
   )
 }
 
-function TrackCard({ track, onClick }) {
+function TrackCard({ track, onClick, onEdit }) {
   const trackColor = track.color || '#9333EA'
 
   return (
@@ -193,6 +207,12 @@ function TrackCard({ track, onClick }) {
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${trackColor}10 0%, ${trackColor}05 100%)` }}
     >
+      <button
+        onClick={(e) => { e.stopPropagation(); onEdit() }}
+        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+      >
+        <Pencil className="size-3.5" />
+      </button>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: trackColor }} />
 
       <div className="relative p-6 pb-4">
@@ -265,7 +285,7 @@ function TrackCard({ track, onClick }) {
   )
 }
 
-function TrackFormModal({ track, onClose }) {
+export function TrackFormModal({ track, onClose }) {
   const [formData, setFormData] = useState({
     name: track?.name || '',
     length: track?.length || '',

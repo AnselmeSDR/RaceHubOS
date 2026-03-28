@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Zap, Flame, FlaskConical } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Zap, Flame, FlaskConical, Pencil } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { RecordsList } from '../components/RecordDisplays'
+import { CarFormModal } from './Cars'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -11,6 +13,7 @@ export default function CarProfile() {
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [resetting, setResetting] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
 
   useEffect(() => {
     loadCar()
@@ -89,15 +92,21 @@ export default function CarProfile() {
           <span className="font-medium">Retour aux voitures</span>
         </button>
 
-        <button
-          onClick={handleResetStats}
-          disabled={resetting}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
-          Reset stats
-        </button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+            <Pencil className="size-4" />
+            Modifier
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleResetStats} disabled={resetting} className="text-orange-600 dark:text-orange-400">
+            <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
+            Reset stats
+          </Button>
+        </div>
       </div>
+
+      {showEdit && (
+        <CarFormModal car={car} onClose={() => { setShowEdit(false); loadCar() }} />
+      )}
 
       {/* Car Header */}
       <div
