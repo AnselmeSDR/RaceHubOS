@@ -1,6 +1,6 @@
 {
   "name": "racehubos",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Open Source Race Management System for Carrera Digital 132/124",
   "private": true,
   "workspaces": [

@@ -216,27 +216,27 @@ export default function SessionLeaderboard({
               <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-6'} flex-shrink-0`}>
                 {/* Laps */}
                 <div className="text-center">
-                  <div className="text-xs text-muted-foreground/50 uppercase">Tours</div>
-                  <div className={`font-mono font-bold ${expanded ? 'text-xl' : 'text-lg'} text-foreground`}>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Tours</div>
+                  <div className={`font-mono font-bold ${expanded ? 'text-2xl' : 'text-lg'} text-foreground`}>
                     {stats.laps ?? 0}
                   </div>
                 </div>
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-muted-foreground/50 uppercase">Meilleur</div>
-                  <LapTime time={stats.bestLap} size="md" highlight={entry.hasFastestLap} />
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Meilleur</div>
+                  <LapTime time={stats.bestLap} size={expanded ? 'xl' : 'md'} highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-muted-foreground/50 uppercase">Dernier</div>
-                  <LapTime time={stats.lastLap} size="md" />
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Dernier</div>
+                  <LapTime time={stats.lastLap} size={expanded ? 'xl' : 'md'} />
                 </div>
 
                 {/* Gap / Total Time */}
-                <div className="text-center min-w-[80px]">
-                  <div className="text-xs text-muted-foreground/50 uppercase">
+                <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
                     {position === 1 && sortBy === 'race' ? 'Total' : 'Écart'}
                   </div>
                   <GapDisplay
