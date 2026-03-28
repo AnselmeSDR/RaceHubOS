@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import io from 'socket.io-client'
 import {
-  UserGroupIcon,
-  TruckIcon,
-  MapIcon,
-  FlagIcon,
-  UserPlusIcon,
-  BeakerIcon,
-  ArrowRightIcon,
-  CogIcon,
-} from '@heroicons/react/24/outline'
+  Users,
+  Car,
+  Map,
+  Flag,
+  UserPlus,
+  FlaskConical,
+  ArrowRight,
+  Settings,
+} from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useTheme } from '../context/ThemeContext'
@@ -30,13 +31,6 @@ export default function Dashboard() {
     tracks: 0,
     sessions: 0,
     loading: true,
-  })
-
-  const [circuitStatus, setCircuitStatus] = useState({
-    connected: false,
-    running: false,
-    carCount: 0,
-    isMockDevice: true
   })
 
   const [showConfigWarning, setShowConfigWarning] = useState(false)
@@ -65,7 +59,6 @@ export default function Dashboard() {
         loading: false,
       })
 
-      // Check if configuration exists
       if (driversData.count === 0 || carsData.count === 0 || tracksData.count === 0) {
         setShowConfigWarning(true)
       }
@@ -77,220 +70,126 @@ export default function Dashboard() {
   useEffect(() => {
     loadStats()
 
-    // Initialize WebSocket for simulator status
     const socket = io(WS_URL)
-
-    socket.on('race:status', (data) => {
-      setCircuitStatus({
-        connected: data.carCount > 0 && !data.isMockDevice,
-        running: data.running || false,
-        carCount: data.carCount || 0,
-        isMockDevice: data.isMockDevice || false
-      })
-    })
-
-    return () => {
-      socket.disconnect()
-    }
+    socket.on('race:status', () => {})
+    return () => socket.disconnect()
   }, [])
 
-  // isSessionActive comes from useSession()
+  const statCards = [
+    { to: '/drivers', icon: Users, label: 'Pilotes', sub: 'Pilotes enregistrés', value: stats.drivers, color: 'text-blue-500' },
+    { to: '/cars', icon: Car, label: 'Voitures', sub: 'Voitures disponibles', value: stats.cars, color: 'text-green-500' },
+    { to: '/tracks', icon: Map, label: 'Circuits', sub: 'Circuits configurés', value: stats.tracks, color: 'text-purple-500' },
+    { to: '/sessions', icon: Flag, label: 'Sessions', sub: 'Sessions de course', value: stats.sessions, color: 'text-red-500' },
+  ]
+
+  const quickActions = [
+    { to: '/race', icon: Flag, label: 'Mode Course', color: 'text-green-500', bg: 'bg-green-500/10' },
+    { to: '/drivers', icon: UserPlus, label: 'Ajouter un pilote', color: 'text-blue-500', bg: 'bg-muted' },
+    ...(isAdmin ? [{ to: '/simulator', icon: FlaskConical, label: 'Ouvrir le simulateur', color: 'text-purple-500', bg: 'bg-muted' }] : []),
+    { to: '/settings', icon: Settings, label: 'Paramètres', color: 'text-muted-foreground', bg: 'bg-muted' },
+  ]
+
+  const systemStatus = [
+    { label: 'Backend API', connected: true, text: 'Connecté' },
+    { label: 'WebSocket', connected: socketConnected, text: socketConnected ? 'Connecté' : 'Déconnecté' },
+    { label: 'Control Unit', connected: cuConnected, text: cuConnected ? 'Connecté' : 'Non connecté' },
+    { label: 'Base de données', connected: true, text: 'SQLite' },
+  ]
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Tableau de bord</h1>
-        <p className="text-gray-600 dark:text-gray-400">Vue d'ensemble du système RaceHubOS</p>
-      </div>
-
+    <div className="p-4 space-y-4">
       {/* Configuration Warning */}
       {showConfigWarning && (
-        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Configuration requise</h3>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                Configuration incomplète détectée.
-              </p>
-              <div className="mt-2 space-y-1">
-                {stats.drivers === 0 && (
-                  <Link to="/drivers" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
-                    → Ajouter des pilotes
-                  </Link>
-                )}
-                {stats.cars === 0 && (
-                  <Link to="/cars" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
-                    → Ajouter des voitures
-                  </Link>
-                )}
-                {stats.tracks === 0 && (
-                  <Link to="/tracks" className="text-sm text-yellow-700 dark:text-yellow-300 hover:text-yellow-800 dark:hover:text-yellow-200 flex items-center gap-1">
-                    → Ajouter des circuits
-                  </Link>
-                )}
-              </div>
+        <Card className="border-yellow-500/50 bg-yellow-500/10">
+          <CardContent className="">
+            <h3 className="font-semibold text-yellow-600 dark:text-yellow-400">Configuration requise</h3>
+            <p className="text-sm text-yellow-600/80 dark:text-yellow-400/80 mt-1">Configuration incomplète détectée.</p>
+            <div className="mt-2 space-y-1">
+              {stats.drivers === 0 && <Link to="/drivers" className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline block">→ Ajouter des pilotes</Link>}
+              {stats.cars === 0 && <Link to="/cars" className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline block">→ Ajouter des voitures</Link>}
+              {stats.tracks === 0 && <Link to="/tracks" className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline block">→ Ajouter des circuits</Link>}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Active Session Banner */}
       {isSessionActive && (
         <div
-          className="mb-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white cursor-pointer hover:shadow-xl transition-all"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-5 text-white cursor-pointer hover:shadow-xl transition-all"
           onClick={() => navigate('/race')}
         >
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Session en cours</h2>
-              <div className="flex items-center gap-4">
-                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/20">
-                  {session?.status || 'Active'}
-                </span>
-              </div>
+              <h2 className="text-xl font-bold mb-1">Session en cours</h2>
+              <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/20">
+                {session?.status || 'Active'}
+              </span>
             </div>
-            <div className="text-white/80">
-              Cliquez pour accéder →
-            </div>
+            <span className="text-white/70">Cliquez pour accéder →</span>
           </div>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link to="/drivers" className="block">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <UserGroupIcon className="h-10 w-10 text-blue-500" />
-              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.drivers}</span>
-            </div>
-            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Pilotes</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Pilotes enregistrés</p>
-          </div>
-        </Link>
-
-        <Link to="/cars" className="block">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <TruckIcon className="h-10 w-10 text-green-500" />
-              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.cars}</span>
-            </div>
-            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Voitures</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Voitures disponibles</p>
-          </div>
-        </Link>
-
-        <Link to="/tracks" className="block">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <MapIcon className="h-10 w-10 text-purple-500" />
-              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.tracks}</span>
-            </div>
-            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Circuits</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Circuits configurés</p>
-          </div>
-        </Link>
-
-        <Link to="/sessions" className="block">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <FlagIcon className="h-10 w-10 text-red-500" />
-              <span className="text-3xl font-bold text-gray-800 dark:text-white">{stats.sessions}</span>
-            </div>
-            <h3 className="text-gray-600 dark:text-gray-300 font-semibold">Sessions</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sessions de course</p>
-          </div>
-        </Link>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((s) => (
+          <Link key={s.to} to={s.to}>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="">
+                <div className="flex items-center justify-between mb-3">
+                  <s.icon className={`size-8 ${s.color}`} />
+                  <span className="text-2xl font-bold">{s.value}</span>
+                </div>
+                <p className="font-semibold text-sm">{s.label}</p>
+                <p className="text-xs text-muted-foreground">{s.sub}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
       {/* Quick Actions & System Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Actions rapides</h2>
-          <div className="space-y-3">
-            <Link
-              to="/race"
-              className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <FlagIcon className="h-5 w-5 text-green-500" />
-                <span className="font-medium text-gray-800 dark:text-white">Mode Course</span>
-              </div>
-              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-            </Link>
-            <Link
-              to="/drivers"
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <UserPlusIcon className="h-5 w-5 text-blue-500" />
-                <span className="font-medium text-gray-800 dark:text-white">Ajouter un pilote</span>
-              </div>
-              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-            </Link>
-            {isAdmin && (
-              <Link
-                to="/simulator"
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <BeakerIcon className="h-5 w-5 text-purple-500" />
-                  <span className="font-medium text-gray-800 dark:text-white">Ouvrir le simulateur</span>
-                </div>
-                <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-              </Link>
-            )}
-            <Link
-              to="/settings"
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <CogIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                <span className="font-medium text-gray-800 dark:text-white">Paramètres</span>
-              </div>
-              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-            </Link>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="">
+            <h2 className="font-semibold mb-3">Actions rapides</h2>
+            <div className="space-y-2">
+              {quickActions.map((a) => (
+                <Link
+                  key={a.to}
+                  to={a.to}
+                  className={`flex items-center justify-between p-3 ${a.bg} rounded-lg hover:opacity-80 transition-opacity`}
+                >
+                  <div className="flex items-center gap-3">
+                    <a.icon className={`size-4 ${a.color}`} />
+                    <span className="font-medium text-sm">{a.label}</span>
+                  </div>
+                  <ArrowRight className="size-4 text-muted-foreground" />
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">État du système</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-300">Backend API</span>
-              <span className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-600 font-medium">Connecté</span>
-              </span>
+        <Card>
+          <CardContent className="">
+            <h2 className="font-semibold mb-3">État du système</h2>
+            <div className="space-y-3">
+              {systemStatus.map((s) => (
+                <div key={s.label} className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{s.label}</span>
+                  <span className="flex items-center gap-2">
+                    <div className={`size-2 rounded-full ${s.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                    <span className={`text-xs font-medium ${s.connected ? 'text-green-500' : 'text-red-500'}`}>
+                      {s.text}
+                    </span>
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-300">WebSocket</span>
-              <span className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                <span className={`text-sm font-medium ${socketConnected ? 'text-green-600' : 'text-red-600'}`}>
-                  {socketConnected ? 'Connecté' : 'Déconnecté'}
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-300">Control Unit</span>
-              <span className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${cuConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-                <span className={`text-sm font-medium ${cuConnected ? 'text-green-600' : 'text-gray-600 dark:text-gray-400'}`}>
-                  {cuConnected ? 'Connecté' : 'Non connecté'}
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 dark:text-gray-300">Base de données</span>
-              <span className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-600 font-medium">SQLite</span>
-              </span>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
