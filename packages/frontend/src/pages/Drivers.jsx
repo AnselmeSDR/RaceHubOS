@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Trophy, Flag, BarChart3 } from 'lucide-react'
+import { User, Trophy, Flag, BarChart3, Pencil } from 'lucide-react'
 import { FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Badge } from '@/components/ui/badge'
@@ -89,9 +89,10 @@ export default function Drivers() {
       id: 'number',
       accessorKey: 'number',
       header: 'N°',
+      meta: { className: 'text-center' },
       cell: ({ row }) => (
         row.original.number
-          ? <Badge className="bg-gray-100 dark:bg-gray-800 text-foreground font-mono font-bold">{row.original.number}</Badge>
+          ? <Badge className="font-mono font-bold text-white" style={{ backgroundColor: row.original.color || '#3B82F6' }}>{row.original.number}</Badge>
           : <span className="text-muted-foreground">-</span>
       ),
     },
@@ -156,6 +157,20 @@ export default function Drivers() {
         </span>
       ),
     },
+    {
+      id: 'actions',
+      header: '',
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row }) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); setEditingDriver(row.original); setShowForm(true) }}
+          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil className="size-3.5" />
+        </button>
+      ),
+    },
   ], [])
 
   return (
@@ -176,7 +191,7 @@ export default function Drivers() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((driver) => (
-            <DriverCard key={driver.id} driver={driver} onClick={() => navigate(`/drivers/${driver.id}`)} />
+            <DriverCard key={driver.id} driver={driver} onClick={() => navigate(`/drivers/${driver.id}`)} onEdit={() => { setEditingDriver(driver); setShowForm(true) }} />
           ))}
         </div>
       )}
@@ -209,7 +224,7 @@ export default function Drivers() {
   )
 }
 
-function DriverCard({ driver, onClick }) {
+function DriverCard({ driver, onClick, onEdit }) {
   const wins = driver.wins || 0
   const podiums = driver.podiums || 0
 
@@ -222,6 +237,12 @@ function DriverCard({ driver, onClick }) {
         boxShadow: `0 4px 6px rgba(0,0,0,0.1), 0 0 20px ${driver.color}40`
       }}
     >
+      <button
+        onClick={(e) => { e.stopPropagation(); onEdit() }}
+        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+      >
+        <Pencil className="size-3.5" />
+      </button>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: driver.color }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `repeating-linear-gradient(45deg, ${driver.color}, ${driver.color} 10px, transparent 10px, transparent 20px)` }} />
 
@@ -289,7 +310,7 @@ function DriverCard({ driver, onClick }) {
   )
 }
 
-function DriverFormModal({ driver, teams, onClose }) {
+export function DriverFormModal({ driver, teams, onClose }) {
   const [formData, setFormData] = useState({
     name: driver?.name || '',
     number: driver?.number || '',

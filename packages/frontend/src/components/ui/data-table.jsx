@@ -98,7 +98,7 @@ export function DataTable({
 
   function handleDragEnter(e, colId) {
     e.preventDefault()
-    if (!dragCol.current || colId === dragCol.current || e.currentTarget !== e.target) return
+    if (!dragCol.current || colId === dragCol.current || colId === 'actions' || e.currentTarget !== e.target) return
     setColumnOrder(prev => {
       const order = prev.length ? [...prev] : table.getAllLeafColumns().map(c => c.id)
       const fromIdx = order.indexOf(dragCol.current)
@@ -107,6 +107,12 @@ export function DataTable({
       const next = [...order]
       next.splice(fromIdx, 1)
       next.splice(toIdx, 0, dragCol.current)
+      // Keep actions at the end
+      const actionsIdx = next.indexOf('actions')
+      if (actionsIdx !== -1 && actionsIdx !== next.length - 1) {
+        next.splice(actionsIdx, 1)
+        next.push('actions')
+      }
       return next
     })
   }
@@ -163,7 +169,7 @@ export function DataTable({
   }, [rowSelection])
 
   const toggleableColumns = table.getAllColumns().filter(
-    col => col.getCanHide() && col.id !== 'select'
+    col => col.getCanHide() && col.id !== 'select' && col.id !== 'actions'
   )
 
   return (
@@ -238,14 +244,19 @@ export function DataTable({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
-                const canDrag = header.column.id !== 'select'
+                const isFixed = header.column.id === 'select' || header.column.id === 'actions'
+                const canDrag = !isFixed
                 return (
                   <motion.th
                     key={header.id}
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-head"
-                    className="relative group h-12 px-4 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0"
+                    className={cn(
+                      "relative group h-12 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0",
+                      header.column.id === 'actions' ? 'px-1 w-8 text-center' : header.column.id === 'select' ? 'p-2 w-8 text-center' : 'px-4',
+                      header.column.columnDef.meta?.className
+                    )}
                     onDragEnter={(e) => canDrag && handleDragEnter(e, header.column.id)}
                     onDragOver={handleDragOver}
                   >
@@ -309,7 +320,11 @@ export function DataTable({
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-cell"
-                    className="px-4 py-3 align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0"
+                    className={cn(
+                      "align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+                      cell.column.id === 'actions' ? 'px-1 py-1 text-center' : cell.column.id === 'select' ? 'p-2 text-center' : 'px-4 py-3',
+                      cell.column.columnDef.meta?.className
+                    )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </motion.td>

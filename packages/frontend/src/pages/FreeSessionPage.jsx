@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronDown, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import StartingGrid from '../components/race/StartingGrid'
@@ -33,7 +42,6 @@ export default function FreeSessionPage() {
     clearSession,
   } = useSession()
 
-  // Data
   const [tracks, setTracks] = useState([])
   const [selectedTrackId, setSelectedTrackId] = useState(null)
   const [selectedType, setSelectedType] = useState('practice')
@@ -44,7 +52,6 @@ export default function FreeSessionPage() {
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
 
-  // Fetch tracks, drivers, cars on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,15 +61,11 @@ export default function FreeSessionPage() {
           fetch(`${API_URL}/api/cars`),
         ])
         const [tracksData, driversData, carsData] = await Promise.all([
-          tracksRes.json(),
-          driversRes.json(),
-          carsRes.json(),
+          tracksRes.json(), driversRes.json(), carsRes.json(),
         ])
         if (tracksData.success && tracksData.data?.length > 0) {
           setTracks(tracksData.data)
-          if (!selectedTrackId) {
-            setSelectedTrackId(tracksData.data[0].id)
-          }
+          if (!selectedTrackId) setSelectedTrackId(tracksData.data[0].id)
         }
         if (driversData.success) setDrivers(driversData.data || [])
         if (carsData.success) setCars(carsData.data || [])
@@ -73,14 +76,10 @@ export default function FreeSessionPage() {
     fetchData()
   }, [])
 
-  // Load session when track or type changes
   useEffect(() => {
-    if (selectedTrackId && selectedType) {
-      handleLoadSession()
-    }
+    if (selectedTrackId && selectedType) handleLoadSession()
   }, [selectedTrackId, selectedType])
 
-  // Fetch standings (records for free sessions)
   const fetchStandings = useCallback(async () => {
     if (!selectedTrackId) {
       setStandings({ practice: [], qualif: [], race: [] })
@@ -90,22 +89,10 @@ export default function FreeSessionPage() {
       const res = await fetch(`${API_URL}/api/records/track/${selectedTrackId}?championshipId=null`)
       const data = await res.json()
       if (data.success) {
-        // Transform records to standings format
         setStandings({
-          practice: (data.data.practice || []).map(lap => ({
-            ...lap,
-            lapTime: lap.lapTime,
-            bestTime: lap.lapTime,
-          })),
-          qualif: (data.data.qualif || []).map(lap => ({
-            ...lap,
-            bestTime: lap.lapTime,
-          })),
-          race: (data.data.race || []).map(lap => ({
-            ...lap,
-            bestTime: lap.lapTime,
-            totalTime: lap.lapTime,
-          })),
+          practice: (data.data.practice || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
+          qualif: (data.data.qualif || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
+          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalTime: lap.lapTime })),
         })
       }
     } catch (error) {
@@ -113,25 +100,14 @@ export default function FreeSessionPage() {
     }
   }, [selectedTrackId])
 
-  // Fetch standings when track changes
-  useEffect(() => {
-    fetchStandings()
-  }, [fetchStandings])
+  useEffect(() => { fetchStandings() }, [fetchStandings])
 
   const handleLoadSession = useCallback(async () => {
     if (!selectedTrackId || !selectedType) return
-
     setLoading(true)
     try {
-      const foundSession = await findOrCreateFreeSession({
-        trackId: selectedTrackId,
-        type: selectedType,
-      })
-
-      // Load session data and leaderboard
-      if (foundSession) {
-        await loadSession(foundSession.id)
-      }
+      const foundSession = await findOrCreateFreeSession({ trackId: selectedTrackId, type: selectedType })
+      if (foundSession) await loadSession(foundSession.id)
     } catch (error) {
       console.error('Error loading session:', error)
     } finally {
@@ -139,23 +115,10 @@ export default function FreeSessionPage() {
     }
   }, [selectedTrackId, selectedType, findOrCreateFreeSession, loadSession])
 
-  // Handle track change
-  const handleTrackChange = (trackId) => {
-    setSelectedTrackId(trackId)
-  }
-
-  // Handle type change
-  const handleTypeChange = (type) => {
-    setSelectedType(type)
-  }
-
-  // Handle new session (force create, copy config from last session)
   const handleNewSession = async () => {
     if (!selectedTrackId || !selectedType) return
-
     setLoading(true)
     try {
-      // Create session with config from previous session
       const result = await createSession({
         trackId: selectedTrackId,
         type: selectedType,
@@ -164,20 +127,15 @@ export default function FreeSessionPage() {
         maxLaps: session?.maxLaps || null,
         gracePeriod: session?.gracePeriod || 30000,
       })
-
-      // Copy drivers from previous session
       if (result.success && result.data?.id && session?.drivers?.length > 0) {
         const driversConfig = session.drivers.map(sd => ({
-          controller: sd.controller,
-          driverId: sd.driverId,
-          carId: sd.carId,
+          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
         }))
         await fetch(`${API_URL}/api/sessions/${result.data.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ drivers: driversConfig })
         })
-        // Reload session to get updated drivers
         await loadSession(result.data.id)
       }
     } catch (error) {
@@ -187,34 +145,15 @@ export default function FreeSessionPage() {
     }
   }
 
-  // Session handlers
-  const handleStart = async () => {
-    if (!session?.id) return
-    await startSession(session.id)
-  }
-
-  const handlePause = async () => {
-    if (!session?.id) return
-    await pauseSession(session.id)
-  }
-
-  const handleResume = async () => {
-    if (!session?.id) return
-    await resumeSession(session.id)
-  }
-
+  const handleStart = async () => { if (session?.id) await startSession(session.id) }
+  const handlePause = async () => { if (session?.id) await pauseSession(session.id) }
+  const handleResume = async () => { if (session?.id) await resumeSession(session.id) }
   const handleStop = async () => {
     if (!session?.id) return
     await stopSession(session.id)
-    // Refresh standings after session ends
     await fetchStandings()
   }
-
-  const handleConfig = () => {
-    if (session) {
-      setConfigSession(session)
-    }
-  }
+  const handleConfig = () => { if (session) setConfigSession(session) }
 
   const handleSaveSessionConfig = async (data) => {
     if (!configSession) return
@@ -222,12 +161,7 @@ export default function FreeSessionPage() {
       await fetch(`${API_URL}/api/sessions/${configSession.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          maxDuration: data.maxDuration,
-          maxLaps: data.maxLaps,
-          gracePeriod: data.gracePeriod
-        })
+        body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
       })
       if (data.status !== configSession.status) {
         await fetch(`${API_URL}/api/sessions/${configSession.id}/status`, {
@@ -263,92 +197,63 @@ export default function FreeSessionPage() {
 
   const handleResetSession = async (sessionId) => {
     const result = await resetSession(sessionId)
-    if (result.success) {
-      await fetchStandings()
-    }
+    if (result.success) await fetchStandings()
   }
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId)
-  // Only block changes if session is actively running (not finished)
-  const isSessionActive = session &&
-    ['active', 'paused', 'finishing'].includes(session.status) &&
-    session.type === selectedType
+  const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === selectedType
 
   return (
     <div className="h-full flex flex-col">
-      {/* Top bar: Track & Type selection */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Track selector */}
-          <div className="relative">
-            <select
-              value={selectedTrackId || ''}
-              onChange={(e) => handleTrackChange(e.target.value)}
-              disabled={isSessionActive}
-              className="appearance-none bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-10 font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50"
-            >
-              <option value="">Sélectionner circuit...</option>
+      {/* Top bar */}
+      <div className="border-b px-4 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId} disabled={isSessionActive}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Sélectionner circuit..." />
+            </SelectTrigger>
+            <SelectContent>
               {tracks.map(track => (
-                <option key={track.id} value={track.id}>{track.name}</option>
+                <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>
               ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
+            </SelectContent>
+          </Select>
 
-          {/* Type selector (pills) */}
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-            {SESSION_TYPES.map(type => (
-              <button
-                key={type.value}
-                onClick={() => handleTypeChange(type.value)}
-                disabled={isSessionActive}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
-                  selectedType === type.value
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
+          <Tabs value={selectedType} onValueChange={setSelectedType}>
+            <TabsList>
+              {SESSION_TYPES.map(type => (
+                <TabsTrigger key={type.value} value={type.value} disabled={isSessionActive}>
+                  {type.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* New session button */}
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleNewSession}
             disabled={!selectedTrackId || isSessionActive || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="size-4" />
             Nouvelle session
-          </button>
-
-          {/* Track info */}
-          {selectedTrack && (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {selectedTrack.length && `${selectedTrack.length}m`}
-            </div>
-          )}
+          </Button>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: Session + Leaderboard */}
+      <div className="flex-1 overflow-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left: Session + Leaderboard */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Session en cours
-            </h2>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+                <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
               </div>
             ) : (
               <>
-                {/* Session Section */}
                 <SessionSection
                   session={session}
                   sessions={[]}
@@ -362,15 +267,13 @@ export default function FreeSessionPage() {
                   onConfig={handleConfig}
                 />
 
-                {/* Leaderboard or Grid */}
                 {session && (
                   maxLapsCompleted === 0 && session.status !== 'finished' ? (
                     <StartingGrid entries={entries} />
                   ) : (
                     <SessionLeaderboard
                       entries={entries}
-                      sortBy={session.type === 'practice' ? practiceSortBy :
-                        session.type === 'qualif' ? 'bestLap' : 'race'}
+                      sortBy={session.type === 'practice' ? practiceSortBy : session.type === 'qualif' ? 'bestLap' : 'race'}
                       onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
                       sessionType={session.type}
                     />
@@ -380,11 +283,9 @@ export default function FreeSessionPage() {
             )}
           </div>
 
-          {/* Right column: Standings */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Classement Général
-            </h2>
+          {/* Right: Standings */}
+          <div>
+            <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
             <StandingsTabs
               standings={standings}
               drivers={drivers}
@@ -395,7 +296,6 @@ export default function FreeSessionPage() {
         </div>
       </div>
 
-      {/* Session Config Modal */}
       {configSession && (
         <SessionConfigModal
           session={configSession}

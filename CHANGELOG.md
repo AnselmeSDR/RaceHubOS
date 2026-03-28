@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings** : migration vers composants shadcn/ui (Card, Button, icônes lucide), suppression header/lien retour redondants
 - **Backend Status** : migration vers Sheet shadcn/ui (slide-in panel), icônes lucide, filtres par type de log
 - **Migration lucide-react** : remplacement complet de `@heroicons/react` par `lucide-react` sur les 47 fichiers, suppression du package heroicons
+- **Bouton édition (crayon)** : ajouté sur les cartes grille, les lignes de table (colonne actions fixe non déplaçable) et les pages profil (Pilotes, Voitures, Circuits)
+- **Mode Libre** : migration vers composants shadcn/ui (Select, Tabs, Button)
+- **DataTable** : support `meta.className` sur les colonnes, padding réduit sur colonnes select/actions
+- **Sidebar** : réorganisation du menu (Mode Libre, Championnats, Historique, Circuits, Équipes, Pilotes, Voitures, Stats)
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
