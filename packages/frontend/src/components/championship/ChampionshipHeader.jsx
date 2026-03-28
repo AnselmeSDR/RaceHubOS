@@ -1,103 +1,83 @@
-import { Settings, Clock, Flag, FlaskConical } from 'lucide-react'
+import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 const SESSION_TYPES = {
-  practice: { label: 'EL', color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700', icon: FlaskConical },
-  qualif: { label: 'Q', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700', icon: Clock },
-  race: { label: 'R', color: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', icon: Flag }
+  practice: { label: 'EL', color: 'bg-purple-500/15 text-purple-600', icon: FlaskConical },
+  qualif: { label: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
+  race: { label: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
 }
 
-/**
- * ChampionshipHeader - Header section for championship detail page
- * Displays: Championship name | Circuit | Config button
- * Session buttons: [EL] [Q1] [Q2] [R1] [R2]
- */
 export default function ChampionshipHeader({
   championship,
   sessions = [],
   selectedSession,
   onSelectSession,
-  onConfig
+  onConfig,
+  showStandings,
+  onToggleStandings,
 }) {
-  // Get session label (EL, Q1, Q2, R1, R2, etc.)
   const getSessionLabel = (session) => {
     if (session.type === 'practice') return 'EL'
     const sameType = sessions.filter(s => s.type === session.type)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const index = sameType.findIndex(s => s.id === session.id) + 1
-    const prefix = session.type === 'qualif' ? 'Q' : 'R'
-    return `${prefix}${index}`
+    return `${session.type === 'qualif' ? 'Q' : 'R'}${index}`
   }
 
-  // Get status indicator for session button
-  const getStatusIndicator = (session) => {
-    switch (session.status) {
-      case 'active':
-        return <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-      case 'finishing':
-        return <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-      case 'finished':
-        return <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full" />
-      default:
-        return null
-    }
+  const getStatusDot = (session) => {
+    if (session.status === 'active') return 'bg-green-500 animate-pulse'
+    if (session.status === 'finishing') return 'bg-orange-500 animate-pulse'
+    if (session.status === 'finished') return 'bg-muted-foreground/50'
+    return null
   }
 
-  // Sort sessions: practice first, then by order, then by creation date
   const sortedSessions = [...sessions].sort((a, b) => {
     if (a.type === 'practice') return -1
     if (b.type === 'practice') return 1
-    // Sort by order first, then by createdAt
-    if ((a.order ?? 0) !== (b.order ?? 0)) {
-      return (a.order ?? 0) - (b.order ?? 0)
-    }
+    if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0)
     return new Date(a.createdAt) - new Date(b.createdAt)
   })
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-      {/* Main header row */}
-      <div className="px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{championship?.name || 'Championnat'}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{championship?.track?.name || 'Circuit non defini'}</p>
-          </div>
+    <div className="border-b px-4 py-2.5 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <div>
+          <h1 className="text-sm font-semibold">{championship?.name || 'Championnat'}</h1>
+          <p className="text-xs text-muted-foreground">{championship?.track?.name || 'Circuit non défini'}</p>
         </div>
 
-        <button
-          onClick={onConfig}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          title="Configuration du championnat"
-        >
-          <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-        </button>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {sortedSessions.map(session => {
+            const config = SESSION_TYPES[session.type]
+            const isSelected = selectedSession?.id === session.id
+            const Icon = config.icon
+            const dot = getStatusDot(session)
+
+            return (
+              <button
+                key={session.id}
+                onClick={() => onSelectSession(session)}
+                className={`relative flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  isSelected
+                    ? `${config.color} ring-2 ring-current/30`
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <Icon className="size-3.5" />
+                {getSessionLabel(session)}
+                {dot && <span className={`absolute -top-0.5 -right-0.5 size-2 rounded-full ${dot}`} />}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Sessions row */}
-      <div className="px-6 pb-4 flex items-center gap-2 flex-wrap">
-        {/* Session buttons */}
-        {sortedSessions.map(session => {
-          const config = SESSION_TYPES[session.type]
-          const isSelected = selectedSession?.id === session.id
-          const Icon = config.icon
-
-          return (
-            <button
-              key={session.id}
-              onClick={() => onSelectSession(session)}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                isSelected
-                  ? `${config.color} border-2 shadow-sm`
-                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {getSessionLabel(session)}
-              {getStatusIndicator(session)}
-            </button>
-          )
-        })}
-
+      <div className="flex items-center gap-1">
+        <button onClick={onToggleStandings} className="p-1.5 hover:bg-muted rounded transition-colors" title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
+          {showStandings ? <PanelRightClose className="size-4 text-muted-foreground" /> : <PanelRightOpen className="size-4 text-muted-foreground" />}
+        </button>
+        <button onClick={onConfig} className="p-1.5 hover:bg-muted rounded transition-colors" title="Configuration">
+          <Settings className="size-4 text-muted-foreground" />
+        </button>
       </div>
     </div>
   )

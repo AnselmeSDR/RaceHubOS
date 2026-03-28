@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Settings, Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, AlertTriangle, Trash2, Copy, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StartLights } from '../ui'
 import { useDevice } from '../../context/DeviceContext'
 import { useSession } from '../../context/SessionContext'
@@ -333,24 +334,26 @@ export default function SessionSection({
                         <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
                       </td>
                       <td className="px-3 py-1.5">
-                        <select
-                          value={controllerConfigs[ctrl]?.driverId || ''}
-                          onChange={(e) => handleControllerChange(ctrl, 'driverId', e.target.value)}
-                          className="w-full px-2 py-1 border border-border rounded text-sm bg-background"
-                        >
-                          <option value="">---</option>
-                          {getAvailableDrivers(ctrl).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                        </select>
+                        <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue placeholder="---" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">---</SelectItem>
+                            {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-3 py-1.5">
-                        <select
-                          value={controllerConfigs[ctrl]?.carId || ''}
-                          onChange={(e) => handleControllerChange(ctrl, 'carId', e.target.value)}
-                          className="w-full px-2 py-1 border border-border rounded text-sm bg-background"
-                        >
-                          <option value="">---</option>
-                          {getAvailableCars(ctrl).map(c => <option key={c.id} value={c.id}>{c.brand} {c.model}</option>)}
-                        </select>
+                        <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue placeholder="---" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">---</SelectItem>
+                            {getAvailableCars(ctrl).map(c => <SelectItem key={c.id} value={c.id}>{c.brand} {c.model}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-3 py-1.5">
                         <Input
@@ -358,7 +361,7 @@ export default function SessionSection({
                           value={controllerConfigs[ctrl]?.gridPos || ''}
                           onChange={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
                           placeholder="-"
-                          className="text-center h-7"
+                          className="text-center h-7 w-16"
                         />
                       </td>
                     </tr>
