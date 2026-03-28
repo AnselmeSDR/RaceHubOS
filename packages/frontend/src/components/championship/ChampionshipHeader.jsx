@@ -1,4 +1,6 @@
-import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 const SESSION_TYPES = {
   practice: { label: 'EL', color: 'bg-purple-500/15 text-purple-600', icon: FlaskConical },
@@ -12,6 +14,7 @@ export default function ChampionshipHeader({
   selectedSession,
   onSelectSession,
   onConfig,
+  onFinish,
   showStandings,
   onToggleStandings,
 }) {
@@ -29,6 +32,11 @@ export default function ChampionshipHeader({
     if (session.status === 'finished') return 'bg-muted-foreground/50'
     return null
   }
+
+  const isFinished = championship?.status === 'finished'
+  const qrSessions = sessions.filter(s => s.type === 'qualif' || s.type === 'race')
+  const allSessionsFinished = qrSessions.length > 0 && qrSessions.every(s => s.status === 'finished')
+  const canFinish = allSessionsFinished && !isFinished
 
   const sortedSessions = [...sessions].sort((a, b) => {
     if (a.type === 'practice') return -1
@@ -71,7 +79,16 @@ export default function ChampionshipHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        {isFinished && (
+          <Badge className="bg-muted text-muted-foreground">Terminé</Badge>
+        )}
+        {canFinish && (
+          <Button size="sm" onClick={onFinish} className="bg-yellow-500 hover:bg-yellow-600 text-white">
+            <Trophy className="size-3.5" />
+            Terminer le championnat
+          </Button>
+        )}
         <button onClick={onToggleStandings} className="p-1.5 hover:bg-muted rounded transition-colors" title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
           {showStandings ? <PanelRightClose className="size-4 text-muted-foreground" /> : <PanelRightOpen className="size-4 text-muted-foreground" />}
         </button>

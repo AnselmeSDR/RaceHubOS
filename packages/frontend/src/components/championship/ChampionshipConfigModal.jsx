@@ -26,6 +26,7 @@ export default function ChampionshipConfigModal({
   open,
   onClose,
   onSave,
+  onFinish,
   onSessionsChange
 }) {
   const [name, setName] = useState(championship?.name || '')
@@ -291,11 +292,19 @@ export default function ChampionshipConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border">
-          <Button variant="outline" onClick={onClose}>Fermer</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Sauvegarde...' : 'Enregistrer'}
-          </Button>
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
+          {championship?.status !== 'finished' && onFinish ? (
+            <Button variant="destructive" size="sm" onClick={() => { onFinish(); onClose() }}>
+              <Flag className="size-3.5" />
+              Terminer le championnat
+            </Button>
+          ) : <div />}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onClose}>Fermer</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Sauvegarde...' : 'Enregistrer'}
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

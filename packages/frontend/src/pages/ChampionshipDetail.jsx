@@ -182,6 +182,19 @@ export default function ChampionshipDetail() {
     if (r.success) { fetchSessions(); fetchStandings() }
   }, [resetSession, fetchSessions, fetchStandings])
 
+  const handleFinishChampionship = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/championships/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'finished' })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setChampionship(data.data)
+      }
+    } catch (err) { console.error('Error finishing championship:', err) }
+  }, [id])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -199,6 +212,7 @@ export default function ChampionshipDetail() {
         selectedSession={selectedSession}
         onSelectSession={(s) => setSelectedSessionId(s.id)}
         onConfig={() => setShowChampionshipConfig(true)}
+        onFinish={handleFinishChampionship}
         showStandings={showStandings}
         onToggleStandings={() => setShowStandings(s => !s)}
       />
@@ -261,6 +275,7 @@ export default function ChampionshipDetail() {
           open={showChampionshipConfig}
           onClose={() => setShowChampionshipConfig(false)}
           onSave={(updated) => setChampionship(updated)}
+          onFinish={handleFinishChampionship}
           onSessionsChange={() => { fetchSessions(); fetchStandings() }}
         />
       )}
