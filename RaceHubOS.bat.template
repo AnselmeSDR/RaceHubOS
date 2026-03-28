@@ -1,0 +1,24 @@
+@echo off
+title RaceHubOS __VERSION__
+cd /d "__TARGET_DIR__"
+
+echo.
+echo  ====================================
+echo    RaceHubOS __VERSION__ - Starting...
+echo  ====================================
+echo.
+
+echo  Checking ports...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001 ^| findstr LISTENING') do taskkill /F /PID %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do taskkill /F /PID %%a >nul 2>&1
+echo  Ports cleared.
+echo.
+echo  Frontend: http://localhost:5173
+echo  Backend:  http://localhost:3001
+echo.
+echo  Fermer cette fenetre pour arreter.
+echo.
+
+start /b cmd /c "timeout /t 5 /nobreak >nul && start http://localhost:5173"
+
+npm run dev
