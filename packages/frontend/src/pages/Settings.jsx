@@ -18,6 +18,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
+const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export default function Settings() {
