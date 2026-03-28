@@ -809,7 +809,7 @@ export class SessionService extends EventEmitter {
    * @param {Object} params - { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying }
    */
   async createSession(params) {
-    const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying } = params;
+    const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status: initialStatus } = params;
 
     if (!['practice', 'qualif', 'race'].includes(type)) {
       throw new Error('Invalid session type. Must be practice, qualif, or race');
@@ -834,7 +834,7 @@ export class SessionService extends EventEmitter {
       data: {
         name: name || (type === 'qualif' ? 'Qualifying' : type === 'race' ? 'Race' : 'Practice'),
         type,
-        status: 'draft',
+        status: initialStatus || 'draft',
         trackId: finalTrackId,
         championshipId: championshipId || null,
         maxDuration: maxDuration || null,

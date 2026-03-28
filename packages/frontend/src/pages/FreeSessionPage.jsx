@@ -15,7 +15,6 @@ import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import StartingGrid from '../components/race/StartingGrid'
 import StandingsTabs from '../components/championship/StandingsTabs'
-import SessionConfigModal from '../components/championship/SessionConfigModal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -48,7 +47,6 @@ export default function FreeSessionPage() {
   const [loading, setLoading] = useState(false)
   const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
-  const [configSession, setConfigSession] = useState(null)
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
   const [showStandings, setShowStandings] = useState(true)
@@ -124,6 +122,7 @@ export default function FreeSessionPage() {
         trackId: selectedTrackId,
         type: selectedType,
         name: `${SESSION_TYPES.find(t => t.value === selectedType)?.label || selectedType} libre`,
+        status: 'ready',
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
         gracePeriod: session?.gracePeriod || 30000,
@@ -154,32 +153,29 @@ export default function FreeSessionPage() {
     await stopSession(session.id)
     await fetchStandings()
   }
-  const handleConfig = () => { if (session) setConfigSession(session) }
-
-  const handleSaveSessionConfig = async (data) => {
-    if (!configSession) return
+  const handleSaveConfig = async (data) => {
+    if (!session?.id) return
     try {
-      await fetch(`${API_URL}/api/sessions/${configSession.id}`, {
+      await fetch(`${API_URL}/api/sessions/${session.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
       })
-      if (data.status !== configSession.status) {
-        await fetch(`${API_URL}/api/sessions/${configSession.id}/status`, {
+      if (data.status !== session.status) {
+        await fetch(`${API_URL}/api/sessions/${session.id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: data.status })
         })
       }
       if (data.drivers?.length > 0) {
-        await fetch(`${API_URL}/api/sessions/${configSession.id}/drivers`, {
+        await fetch(`${API_URL}/api/sessions/${session.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ drivers: data.drivers })
         })
       }
-      await loadSession(configSession.id)
-      setConfigSession(null)
+      await loadSession(session.id)
     } catch (err) {
       console.error('Error saving session config:', err)
     }
@@ -188,7 +184,6 @@ export default function FreeSessionPage() {
   const handleDeleteSession = async (sessionId) => {
     try {
       await fetch(`${API_URL}/api/sessions/${sessionId}`, { method: 'DELETE' })
-      setConfigSession(null)
       clearSession()
       await handleLoadSession()
     } catch (err) {
@@ -273,7 +268,9 @@ export default function FreeSessionPage() {
                   onResume={handleResume}
                   onStop={handleStop}
                   onTriggerCuStart={triggerCuStart}
-                  onConfig={handleConfig}
+                  onSaveConfig={handleSaveConfig}
+                  onDelete={handleDeleteSession}
+                  onReset={handleResetSession}
                 />
 
                 {session && (
@@ -282,6 +279,7 @@ export default function FreeSessionPage() {
                   ) : (
                     <SessionLeaderboard
                       entries={entries}
+                      expanded={!showStandings}
                       sortBy={session.type === 'practice' ? practiceSortBy : session.type === 'qualif' ? 'bestLap' : 'race'}
                       onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
                       sessionType={session.type}
@@ -305,20 +303,6 @@ export default function FreeSessionPage() {
         </div>
       </div>
 
-      {configSession && (
-        <SessionConfigModal
-          session={configSession}
-          sessions={[]}
-          drivers={drivers}
-          cars={cars}
-          sessionDrivers={configSession.drivers || []}
-          open={!!configSession}
-          onClose={() => setConfigSession(null)}
-          onSave={handleSaveSessionConfig}
-          onDelete={handleDeleteSession}
-          onReset={handleResetSession}
-        />
-      )}
     </div>
   )
 }

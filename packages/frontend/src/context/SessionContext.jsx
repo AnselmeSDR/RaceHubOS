@@ -202,7 +202,7 @@ export function SessionProvider({ children }) {
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, name: `${type} libre` })
+        body: JSON.stringify({ trackId, type, name: `${type} libre`, status: 'ready' })
       })
       const createData = await createRes.json()
 

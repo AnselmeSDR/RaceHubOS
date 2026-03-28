@@ -22,7 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mode Libre** : migration vers composants shadcn/ui (Select, Tabs, Button)
 - **DataTable** : support `meta.className` sur les colonnes, padding réduit sur colonnes select/actions
 - **Sidebar** : réorganisation du menu (Mode Libre, Championnats, Historique, Circuits, Équipes, Pilotes, Voitures, Stats)
-- **Mode Libre** : select circuit et type toujours cliquables (plus bloqués par session active), toggle classement général, tokens sémantiques sur SessionSection/SessionLeaderboard/StandingsTabs/StartingGrid, couleurs podium vives, empty state shadcn Card
+- **Mode Libre** : select circuit et type toujours cliquables, toggle classement général, tokens sémantiques, couleurs podium vives, empty state shadcn Card, sessions libres créées en statut "prêt" par défaut
+- **Configuration session inline** : remplacement du modal par un formulaire intégré directement dans le bloc session (nom, durée, tours, controllers, statut)
+- **Leaderboard expanded** : tailles agrandies (position, avatar, numéro, nom, stats) quand le classement général est masqué
 - **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
 - **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
 - **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
