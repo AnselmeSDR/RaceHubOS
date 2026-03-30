@@ -40,7 +40,6 @@ export const allNavItems = [
   { to: '/cars', label: 'Voitures', Icon: Car },
   { to: '/stats', label: 'Statistiques', Icon: BarChart3 },
   { to: '/displays', label: 'Displays', Icon: LayoutGrid, adminOnly: true },
-  { to: '/simulator', label: 'Simulateur', Icon: FlaskConical, adminOnly: true },
   { to: '/test', label: 'Test', Icon: Terminal, adminOnly: true },
   { to: '/settings', label: 'Paramètres', Icon: Settings },
 ]
