@@ -35,7 +35,6 @@ router.get('/track/:trackId', async (req, res) => {
           session: { type, ...sessionFilter }
         },
         orderBy: { lapTime: 'asc' },
-        take: 5,
         distinct: ['driverId', 'carId'],
         include: {
           driver: true,

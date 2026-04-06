@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { io } from 'socket.io-client'
+import { useApp } from './AppContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export const SESSION_STATUS = {
   DRAFT: 'draft',
-  READY: 'ready',
   ACTIVE: 'active',
   FINISHING: 'finishing',
   FINISHED: 'finished',
@@ -15,6 +15,8 @@ export const SESSION_STATUS = {
 const SessionContext = createContext(null)
 
 export function SessionProvider({ children }) {
+  const { setSessionActive } = useApp()
+
   // Current session
   const [session, setSession] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
@@ -202,7 +204,7 @@ export function SessionProvider({ children }) {
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, name: `${type} libre`, status: 'ready' })
+        body: JSON.stringify({ trackId, type, status: 'draft' })
       })
       const createData = await createRes.json()
 
@@ -247,13 +249,18 @@ export function SessionProvider({ children }) {
   const loadSession = useCallback(async (sessionId) => {
     if (!sessionId) return { success: false, error: 'No session ID' }
 
-    // Clear previous session data immediately
-    setLeaderboard([])
-    setElapsed(0)
-    setRemaining(null)
-    setGracePeriodRemaining(null)
-    setStartedAt(null)
-    setPauses([])
+    // Only clear data when switching to a different session
+    setSession(prev => {
+      if (prev?.id !== sessionId) {
+        setLeaderboard([])
+        setElapsed(0)
+        setRemaining(null)
+        setGracePeriodRemaining(null)
+        setStartedAt(null)
+        setPauses([])
+      }
+      return prev
+    })
 
     try {
       // First, get session data
@@ -269,21 +276,28 @@ export function SessionProvider({ children }) {
       setSession(sessionInfo)
 
       // Initialize timing state from session data
-      if (sessionInfo.startedAt) setStartedAt(sessionInfo.startedAt)
+      setStartedAt(sessionInfo.startedAt || null)
       if (sessionInfo.pauses) {
         const pausesData = typeof sessionInfo.pauses === 'string' ? JSON.parse(sessionInfo.pauses) : sessionInfo.pauses
         setPauses(pausesData)
-
-        // Calculate total pause duration from pauses array
         const totalPause = pausesData.reduce((sum, p) => {
           if (p.end) return sum + (p.end - p.start)
           return sum
         }, 0)
         setTotalPauseDuration(Math.floor(totalPause / 1000))
+      } else {
+        setPauses([])
+        setTotalPauseDuration(0)
+      }
+      if (!sessionInfo.startedAt) {
+        setElapsed(0)
+        setRemaining(null)
+        setGracePeriodRemaining(null)
+        setFinishingSession(null)
       }
 
-      // For active/ready sessions, load into SyncService
-      if (['ready', 'active', 'paused'].includes(sessionInfo.status)) {
+      // For draft/active sessions, load into SyncService
+      if (['draft', 'active', 'paused'].includes(sessionInfo.status)) {
         await fetch(`${API_URL}/api/sync/load-session/${sessionId}`, { method: 'POST' })
       }
 
@@ -384,7 +398,15 @@ export function SessionProvider({ children }) {
       if (data.success) {
         setSession(data.data)
         setLeaderboard([])
-          }
+        setElapsed(0)
+        setRemaining(null)
+        setGracePeriodRemaining(null)
+        setStartedAt(null)
+        setPauses([])
+        setTotalPauseDuration(0)
+        setFinishingSession(null)
+        setSessionResults(null)
+      }
       return data
     } catch (error) {
       console.error('[SessionContext] Error resetting session:', error)
@@ -415,6 +437,11 @@ export function SessionProvider({ children }) {
   const isActive = session?.status === 'active'
   const isFinishing = session?.status === 'finishing'
   const isFinished = session?.status === 'finished'
+
+  // Notify AppContext of session active state
+  useEffect(() => {
+    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status))
+  }, [session?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ==================== Computed Data ====================
 

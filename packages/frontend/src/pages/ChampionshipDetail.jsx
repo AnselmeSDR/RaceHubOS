@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Flag } from 'lucide-react'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
@@ -10,7 +10,7 @@ import { DataFreshnessIndicator } from '../components/ui'
 import ChampionshipConfigModal from '../components/championship/ChampionshipConfigModal'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
-import { useSidebar } from '@/components/ui/sidebar'
+import { useApp } from '../context/AppContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -39,7 +39,6 @@ export default function ChampionshipDetail() {
   const [selectedSessionId, setSelectedSessionId] = useState(() => localStorage.getItem(`championship_${id}_session`) || null)
   const [standingsTab, setStandingsTab] = useState('practice')
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
-  const [showStandings, setShowStandings] = useState(true)
   const [showChampionshipConfig, setShowChampionshipConfig] = useState(false)
   const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
 
@@ -47,6 +46,8 @@ export default function ChampionshipDetail() {
     if (selectedSessionId) localStorage.setItem(`championship_${id}_session`, selectedSessionId)
     else localStorage.removeItem(`championship_${id}_session`)
   }, [id, selectedSessionId])
+
+  const { showStandings, toggleStandings } = useApp()
 
   const fetchChampionship = useCallback(async () => {
     try {
@@ -98,7 +99,7 @@ export default function ChampionshipDetail() {
       setLoading(false)
     }
     load()
-  }, [fetchChampionship, fetchSessions, fetchData, fetchStandings])
+  }, [id])
 
   useEffect(() => {
     if (selectedSessionId && sessions.length > 0) {
@@ -107,15 +108,20 @@ export default function ChampionshipDetail() {
     }
   }, [selectedSessionId, sessions, loadSession])
 
+  const fetchSessionsRef = useRef(fetchSessions)
+  const fetchStandingsRef = useRef(fetchStandings)
+  fetchSessionsRef.current = fetchSessions
+  fetchStandingsRef.current = fetchStandings
+
   useEffect(() => {
-    const refresh = () => { fetchSessions(); fetchStandings() }
+    const refresh = () => { fetchSessionsRef.current(); fetchStandingsRef.current() }
     window.addEventListener('session:finished', refresh)
     window.addEventListener('session:status_changed', refresh)
     return () => {
       window.removeEventListener('session:finished', refresh)
       window.removeEventListener('session:status_changed', refresh)
     }
-  }, [fetchSessions, fetchStandings])
+  }, [])
 
   const selectedSession = useMemo(() => sessions.find(s => s.id === selectedSessionId) || null, [sessions, selectedSessionId])
 
@@ -123,17 +129,11 @@ export default function ChampionshipDetail() {
     if (selectedSession?.type) setStandingsTab(selectedSession.type)
   }, [selectedSession?.type])
 
-  const { setOpen: setSidebarOpen } = useSidebar()
-
   const handleStartSession = useCallback(async () => {
     if (!selectedSession) return
     const r = await startSession(selectedSession.id)
-    if (r.success) {
-      fetchSessions()
-      setShowStandings(false)
-      setSidebarOpen(false)
-    }
-  }, [selectedSession, startSession, fetchSessions, setSidebarOpen])
+    if (r.success) fetchSessions()
+  }, [selectedSession, startSession, fetchSessions])
 
   const handlePauseSession = useCallback(async () => {
     if (!selectedSession) return
@@ -156,11 +156,13 @@ export default function ChampionshipDetail() {
   const handleSaveConfig = useCallback(async (data) => {
     if (!selectedSession) return
     try {
-      await fetch(`${API_URL}/api/sessions/${selectedSession.id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
-      })
-      if (data.status !== selectedSession.status) {
+      if (data.name !== undefined || data.maxDuration !== undefined || data.maxLaps !== undefined || data.gracePeriod !== undefined) {
+        await fetch(`${API_URL}/api/sessions/${selectedSession.id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
+        })
+      }
+      if (data.status !== undefined && data.status !== selectedSession.status) {
         await fetch(`${API_URL}/api/sessions/${selectedSession.id}/status`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: data.status })
@@ -173,8 +175,9 @@ export default function ChampionshipDetail() {
         })
       }
       fetchSessions()
+      await loadSession(selectedSession.id)
     } catch (err) { console.error('Error:', err) }
-  }, [selectedSession, fetchSessions])
+  }, [selectedSession, fetchSessions, loadSession])
 
   const handleDeleteSession = useCallback(async (sessionId) => {
     try {
@@ -221,7 +224,7 @@ export default function ChampionshipDetail() {
         onConfig={() => setShowChampionshipConfig(true)}
         onFinish={handleFinishChampionship}
         showStandings={showStandings}
-        onToggleStandings={() => setShowStandings(s => !s)}
+        onToggleStandings={toggleStandings}
       />
 
       {/* Main content */}

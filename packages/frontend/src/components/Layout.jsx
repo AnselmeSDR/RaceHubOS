@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AppSidebar, { allNavItems } from './AppSidebar'
 import BackendStatusPopup from './BackendStatusPopup'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
+import { useApp } from '../context/AppContext'
 import { PageHeaderProvider, usePageHeader } from '../context/PageHeaderContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -88,6 +89,7 @@ function PageHeader() {
 }
 
 export default function Layout() {
+  const { sidebarOpen, setSidebarOpen } = useApp()
   const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
   const isSimulator = deviceAddress === SIMULATOR_ADDRESS
   const [statusPopupOpen, setStatusPopupOpen] = useState(false)
@@ -112,7 +114,7 @@ export default function Layout() {
   }, [])
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar
         backendConnected={backendConnected}
         backendVersion={backendVersion}

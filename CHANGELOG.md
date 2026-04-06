@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-06
+
+### Added
+- **AppContext** : contexte unifié pour les préférences UI (theme, admin, sidebar, standings), remplace ThemeContext
+- **Titre session éditable** : clic sur le titre pour éditer inline (contentEditable), auto-save au blur
+- **Config session inline** : table controllers toujours visible avec selects inline et auto-save, plus de mode formulaire
+- **Config durée/tours/grace** : inputs inline pour qualif et course (sessions libres et championnats)
+- **Podium fin de course** : affichage visuel du podium (1er/2ème/3ème) avec avatars, écarts, meilleur tour et stats
+- **Feux de départ** : sons bip à chaque feu, touche Espace pour lancer, touche Échap et bouton croix pour annuler
+- **Persistance sidebar/standings** : état sauvegardé dans localStorage, fermeture auto en course, restauration après
+- **Sync config sessions libres** : modification pilotes/voitures propagée aux autres types (practice/qualif/race)
+- **Migration DB** : sessions 'ready' migrées vers 'draft'
+
+### Changed
+- **Status ready supprimé** : cycle simplifié draft → active → paused → finishing → finished
+- **Démarrage direct** : bouton "Démarrer" depuis draft (plus besoin de passer par "Prêt")
+- **Classement général** : couleurs podium flashy (badges ronds colorés, gradients, bordures), plus de limite 5 pilotes
+- **Gradient dark mode** : utilise `var(--card)` au lieu de hex hardcodé
+- **Grille de départ** : border et gradient toujours à gauche
+- **Reset session** : soft delete des laps pour tous les types (plus de hard delete pour qualif/race)
+- **Barres de progression** : masquées quand session terminée (infos dans le podium)
+- **Config incomplète** : bloque le démarrage si pilote sans voiture ou inversement
+
+### Fixed
+- **gridPos** : ajouté au leaderboard endpoint et SessionService (positions grille fonctionnelles)
+- **Re-renders infinis** : fix useEffect deps dans FreeSessionPage, ChampionshipDetail, SessionSection
+- **Timing après reset** : remise à zéro du timing dans resetSession et loadSession
+- **handleSaveConfig** : pas de PUT/PATCH inutiles quand seuls les drivers changent
+- **Nom session libre** : plus de doublon "Essais libres libre"
+
+### Removed
+- **ThemeContext** : fusionné dans AppContext
+- **Tests obsolètes** : 4 fichiers de tests supprimés (importaient des modules renommés/supprimés)
+
 ## [1.2.0] - 2026-03-28
 
 ### Added

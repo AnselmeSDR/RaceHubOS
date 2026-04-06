@@ -72,9 +72,9 @@ export default function SessionConfigModal({
   const isPractice = session?.type === 'practice'
   const isActive = session?.status === 'active'
   const isFinished = session?.status === 'finished'
-  const canEdit = ['draft', 'ready'].includes(session?.status)
+  const canEdit = session?.status === 'draft'
   const canDelete = canEdit || isFinished
-  const canReset = session?.status === 'ready' || isActive || isFinished
+  const canReset = isActive || isFinished
 
   // Find practice session to copy from (only for non-practice sessions in a championship)
   const practiceSession = useMemo(() => {
@@ -169,7 +169,7 @@ export default function SessionConfigModal({
         }))
 
       // Force draft status if incomplete config (safety check)
-      const finalStatus = hasIncompleteConfig && status === 'ready' ? 'draft' : status
+      const finalStatus = status
 
       await onSave({
         name: name || null,
@@ -390,18 +390,6 @@ export default function SessionConfigModal({
                   className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">Brouillon</span>
-              </label>
-              <label className={`flex items-center gap-2 ${canSetReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                <input
-                  type="radio"
-                  name="status"
-                  value="ready"
-                  checked={status === 'ready'}
-                  onChange={(e) => canSetReady && setStatus(e.target.value)}
-                  disabled={!canSetReady}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Prêt</span>
               </label>
             </div>
 

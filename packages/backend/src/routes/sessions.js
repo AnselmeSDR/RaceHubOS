@@ -300,7 +300,7 @@ router.patch('/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status: newStatus } = req.body;
 
-    const validStatuses = ['draft', 'ready', 'active', 'paused', 'finishing', 'finished'];
+    const validStatuses = ['draft', 'active', 'paused', 'finishing', 'finished'];
     if (!newStatus || !validStatuses.includes(newStatus)) {
       return res.status(400).json({
         success: false,
@@ -319,8 +319,7 @@ router.patch('/:id/status', async (req, res) => {
 
     const currentStatus = session.status;
     const allowedTransitions = {
-      'draft': ['ready'],
-      'ready': ['draft', 'active'],
+      'draft': ['active'],
       'active': ['paused', 'finishing', 'finished'],
       'paused': ['active', 'finished'],
       'finishing': ['finished'],
@@ -335,7 +334,7 @@ router.patch('/:id/status', async (req, res) => {
     }
 
     // Delegate to SessionService for lifecycle transitions
-    if (newStatus === 'active' && currentStatus === 'ready') {
+    if (newStatus === 'active' && currentStatus === 'draft') {
       await sessionService.startSession(id);
     } else if (newStatus === 'paused' && currentStatus === 'active') {
       await sessionService.pauseSession();
@@ -344,7 +343,7 @@ router.patch('/:id/status', async (req, res) => {
     } else if (newStatus === 'finished') {
       await sessionService.stopSession();
     } else {
-      // Simple status update (draft <-> ready, finished -> draft)
+      // Simple status update (finished -> draft)
       const updateData = { status: newStatus };
       if (newStatus === 'draft' && currentStatus === 'finished') {
         updateData.startedAt = null;
@@ -378,10 +377,10 @@ router.post('/:id/start', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    if (session.status !== 'ready') {
+    if (session.status !== 'draft') {
       return res.status(400).json({
         success: false,
-        error: `Session must be 'ready' to start, current: ${session.status}`
+        error: `Session must be 'draft' to start, current: ${session.status}`
       });
     }
 
@@ -556,6 +555,7 @@ router.get('/:id/leaderboard', async (req, res) => {
         driverId: sd.driverId,
         driver: sd.driver,
         car: sd.car,
+        gridPos: sd.gridPos,
         totalLaps: laps.length,
         totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
         bestLapTime: laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null,

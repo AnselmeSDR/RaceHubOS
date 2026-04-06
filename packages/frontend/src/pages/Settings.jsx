@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
-import { useTheme } from '../context/ThemeContext'
+import { useApp } from '../context/AppContext'
 import {
   Wifi,
   Cpu,
@@ -35,7 +35,7 @@ export default function Settings() {
     disconnect,
     removeDevice,
   } = useDevice()
-  const { isDark, toggleTheme, isAdmin, toggleAdmin } = useTheme()
+  const { isDark, toggleTheme, isAdmin, toggleAdmin } = useApp()
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [logs, setLogs] = useState([])

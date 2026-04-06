@@ -1,7 +1,7 @@
 import { Play, Pause, Flag, Trophy, X } from 'lucide-react'
 
 export default function SessionControls({
-    isPending,
+    isDraft,
     isRunning,
     isPaused,
     isResults,
@@ -20,7 +20,7 @@ export default function SessionControls({
     return (
         <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 px-6 py-4">
             <div className="flex justify-center gap-4">
-                {isPending && (
+                {isDraft && (
                     <>
                         <button
                             onClick={onStart}

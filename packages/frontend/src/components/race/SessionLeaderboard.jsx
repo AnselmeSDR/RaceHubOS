@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
-import { useTheme } from '../../context/ThemeContext'
+import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
 
 /**
@@ -18,8 +18,8 @@ export default function SessionLeaderboard({
   sessionType = 'race',
   expanded = false,
 }) {
-  const { isDark } = useTheme()
-  const gradientEnd = isDark ? '#1f2937' : 'white' // gray-800 in dark mode
+  const { isDark } = useApp()
+  const gradientEnd = 'var(--card)'
 
   // Sort entries based on sortBy prop
   const sortedEntries = [...entries].sort((a, b) => {

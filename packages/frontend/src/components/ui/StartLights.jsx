@@ -1,11 +1,12 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { X } from 'lucide-react'
 import { useDevice } from '../../context/DeviceContext'
 
 /**
  * StartLights - F1-style start lights animation
  * Consumes cuStatus directly from DeviceContext
  */
-export default function StartLights() {
+export default function StartLights({ onCancel }) {
   const { cuStatus, startRace } = useDevice()
   const cuStart = cuStatus?.start ?? 9
 
@@ -13,6 +14,52 @@ export default function StartLights() {
   const [visible, setVisible] = useState(false)
   const prevStart = useRef(cuStart)
   const wasInSequence = useRef(false)
+
+  const audioCtxRef = useRef(null)
+
+  const playBeep = useCallback((freq = 800, duration = 0.15) => {
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+      const ctx = audioCtxRef.current
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = freq
+      osc.type = 'sine'
+      gain.gain.setValueAtTime(0.4, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration)
+      osc.start()
+      osc.stop(ctx.currentTime + duration)
+    } catch {}
+  }, [])
+
+  // Play sound on each light change
+  useEffect(() => {
+    if (cuStart >= 1 && cuStart <= 5) {
+      playBeep(600, 0.2)
+    } else if ((cuStart === 7 || cuStart === 0) && wasInSequence.current) {
+      playBeep(1200, 0.5)
+    } else if (cuStart === 6) {
+      playBeep(300, 0.4)
+    }
+  }, [cuStart, playBeep])
+
+  const handleCancel = useCallback(() => {
+    if (onCancel) onCancel()
+  }, [onCancel])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') handleCancel()
+      if (e.key === ' ' && cuStart === 1) {
+        e.preventDefault()
+        startRace()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleCancel])
 
   useEffect(() => {
     if (cuStart >= 1 && cuStart <= 5) {
@@ -52,6 +99,16 @@ export default function StartLights() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-black/90 via-black/85 to-black/90 backdrop-blur-md">
+      {/* Cancel button */}
+      {onCancel && (
+        <button
+          onClick={handleCancel}
+          className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors z-10"
+          title="Annuler (Échap)"
+        >
+          <X className="size-6" />
+        </button>
+      )}
       {/* Ambient glow effect */}
       <div className={`absolute inset-0 transition-opacity duration-500 ${
         showGo ? 'opacity-30' : isLightsOn ? 'opacity-20' : 'opacity-0'
@@ -124,12 +181,6 @@ export default function StartLights() {
             </button>
           )}
 
-          {/* Waiting indicator at lights 1 */}
-          {showStartButton && (
-            <p className="text-zinc-400 text-sm animate-pulse">
-              Appuyez pour lancer le décompte
-            </p>
-          )}
         </div>
       </div>
     </div>
