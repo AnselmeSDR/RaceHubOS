@@ -83,7 +83,6 @@ export default function SessionsList() {
   function getStatusIcon(status) {
     switch (status) {
       case 'draft': return <Clock className="h-4 w-4 text-gray-500" />
-      case 'ready': return <Clock className="h-4 w-4 text-blue-500" />
       case 'active': return <Play className="h-4 w-4 text-green-500 animate-pulse" />
       case 'finished': return <CheckCircle className="h-4 w-4 text-blue-500" />
       default: return null
@@ -187,7 +186,6 @@ export default function SessionsList() {
           value={filtersRef.current.status}
           options={[
             { value: 'draft', label: 'Brouillon' },
-            { value: 'ready', label: 'Prête' },
             { value: 'active', label: 'En cours' },
             { value: 'finished', label: 'Terminée' },
           ]}
@@ -198,7 +196,7 @@ export default function SessionsList() {
         <span className="flex items-center gap-1.5">
           {getStatusIcon(row.original.status)}
           <span className="text-muted-foreground">
-            {{ draft: 'Brouillon', ready: 'Prête', active: 'En cours', finished: 'Terminée' }[row.original.status] || row.original.status}
+            {{ draft: 'Brouillon', active: 'En cours', finished: 'Terminée' }[row.original.status] || row.original.status}
           </span>
         </span>
       ),

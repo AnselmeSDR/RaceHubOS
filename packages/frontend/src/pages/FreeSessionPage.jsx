@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
-import { useSidebar } from '@/components/ui/sidebar'
+import { useApp } from '../context/AppContext'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -50,7 +50,7 @@ export default function FreeSessionPage() {
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
-  const [showStandings, setShowStandings] = useState(true)
+  const { showStandings, toggleStandings } = useApp()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,7 +100,7 @@ export default function FreeSessionPage() {
     }
   }, [selectedTrackId])
 
-  useEffect(() => { fetchStandings() }, [fetchStandings])
+  useEffect(() => { fetchStandings() }, [selectedTrackId])
 
   const handleLoadSession = useCallback(async () => {
     if (!selectedTrackId || !selectedType) return
@@ -122,8 +122,8 @@ export default function FreeSessionPage() {
       const result = await createSession({
         trackId: selectedTrackId,
         type: selectedType,
-        name: `${SESSION_TYPES.find(t => t.value === selectedType)?.label || selectedType} libre`,
-        status: 'ready',
+        name: SESSION_TYPES.find(t => t.value === selectedType)?.label || selectedType,
+        status: 'draft',
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
         gracePeriod: session?.gracePeriod || 30000,
@@ -146,13 +146,9 @@ export default function FreeSessionPage() {
     }
   }
 
-  const { setOpen: setSidebarOpen } = useSidebar()
-
   const handleStart = async () => {
     if (!session?.id) return
     await startSession(session.id)
-    setShowStandings(false)
-    setSidebarOpen(false)
   }
   const handlePause = async () => { if (session?.id) await pauseSession(session.id) }
   const handleResume = async () => { if (session?.id) await resumeSession(session.id) }
@@ -164,12 +160,14 @@ export default function FreeSessionPage() {
   const handleSaveConfig = async (data) => {
     if (!session?.id) return
     try {
-      await fetch(`${API_URL}/api/sessions/${session.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
-      })
-      if (data.status !== session.status) {
+      if (data.name !== undefined || data.maxDuration !== undefined || data.maxLaps !== undefined || data.gracePeriod !== undefined) {
+        await fetch(`${API_URL}/api/sessions/${session.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
+        })
+      }
+      if (data.status !== undefined && data.status !== session.status) {
         await fetch(`${API_URL}/api/sessions/${session.id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -177,11 +175,28 @@ export default function FreeSessionPage() {
         })
       }
       if (data.drivers?.length > 0) {
+        // Save to current session
         await fetch(`${API_URL}/api/sessions/${session.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ drivers: data.drivers })
         })
+        // Sync to other free sessions on same track
+        const otherTypes = SESSION_TYPES.map(t => t.value).filter(t => t !== selectedType)
+        for (const type of otherTypes) {
+          const res = await fetch(`${API_URL}/api/sessions?trackId=${selectedTrackId}&type=${type}&championshipId=null`)
+          const result = await res.json()
+          if (result.success && result.data?.length > 0) {
+            const otherSession = [...result.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+            if (otherSession.status === 'draft') {
+              await fetch(`${API_URL}/api/sessions/${otherSession.id}/drivers`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ drivers: data.drivers })
+              })
+            }
+          }
+        }
       }
       await loadSession(session.id)
     } catch (err) {
@@ -247,7 +262,7 @@ export default function FreeSessionPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowStandings(s => !s)}
+            onClick={toggleStandings}
             title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}
           >
             {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}

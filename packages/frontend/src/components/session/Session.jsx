@@ -50,14 +50,13 @@ export default function Session({
   }
 
   const status = session.status
-  const isIdle = status === 'draft'
-  const isPending = status === 'ready'
+  const isDraft = status === 'draft'
   const isRunning = status === 'active'
   const isPaused = status === 'paused'
   const isFinishing = status === 'finishing'
   const isFinished = status === 'finished'
 
-  const canStart = isPending && cuConnected
+  const canStart = isDraft && cuConnected
   const canPause = isRunning
   const canResume = isPaused
   const canFinish = isRunning || isPaused || isFinishing
@@ -160,28 +159,8 @@ export default function Session({
       {/* Controls */}
       <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 px-6 py-4">
         <div className="flex justify-center gap-4">
-          {/* Draft: Ready to prepare */}
-          {isIdle && (
-            <>
-              {!cuConnected && (
-                <span className="flex items-center gap-1.5 text-orange-400 text-sm">
-                  <AlertTriangle className="w-5 h-5" />
-                  Connecter un CU
-                </span>
-              )}
-              <button
-                onClick={onStart}
-                disabled={!cuConnected}
-                className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all"
-              >
-                <Play className="w-6 h-6" />
-                Préparer
-              </button>
-            </>
-          )}
-
-          {/* Pending: Start or cancel */}
-          {isPending && (
+          {/* Draft: Start */}
+          {isDraft && (
             <>
               {!cuConnected && (
                 <span className="flex items-center gap-1.5 text-orange-400 text-sm">
@@ -196,13 +175,6 @@ export default function Session({
               >
                 <Play className="w-6 h-6" />
                 Démarrer
-              </button>
-              <button
-                onClick={() => setShowCancelConfirm(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl"
-              >
-                <X className="w-6 h-6" />
-                Annuler
               </button>
             </>
           )}
@@ -288,7 +260,7 @@ export default function Session({
       )}
 
       {/* Start lights overlay */}
-      {isRunning && <StartLights />}
+      {isRunning && <StartLights onCancel={onReset ? () => onReset(session.id) : undefined} />}
     </div>
   )
 }

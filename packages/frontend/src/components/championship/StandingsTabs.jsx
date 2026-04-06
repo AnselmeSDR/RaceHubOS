@@ -133,17 +133,17 @@ export default function StandingsTabs({
                 <div
                   key={`${activeTab}-${standing.driverId}-${standing.carId || index}`}
                   className={`flex items-center gap-3 px-4 py-3 hover:bg-muted ${
-                    position === 1 ? 'bg-yellow-500/30' :
-                    position === 2 ? 'bg-zinc-400/25' :
-                    position === 3 ? 'bg-amber-700/25' : ''
+                    position === 1 ? 'bg-gradient-to-r from-yellow-500/40 to-transparent border-l-4 border-yellow-400' :
+                    position === 2 ? 'bg-gradient-to-r from-gray-400/30 to-transparent border-l-4 border-gray-300' :
+                    position === 3 ? 'bg-gradient-to-r from-orange-500/30 to-transparent border-l-4 border-orange-400' : ''
                   }`}
                 >
                   {/* Position */}
-                  <span className={`w-6 text-center font-bold text-sm ${
-                    position === 1 ? 'text-yellow-500' :
-                    position === 2 ? 'text-zinc-400' :
-                    position === 3 ? 'text-amber-600' :
-                    'text-foreground'
+                  <span className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm ${
+                    position === 1 ? 'bg-yellow-400 text-yellow-950' :
+                    position === 2 ? 'bg-gray-300 text-gray-800' :
+                    position === 3 ? 'bg-orange-400 text-orange-950' :
+                    'text-muted-foreground'
                   }`}>
                     {position}
                   </span>

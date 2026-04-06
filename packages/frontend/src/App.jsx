@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ThemeProvider } from './context/ThemeContext'
 import { DeviceProvider } from './context/DeviceContext'
 import { SessionProvider } from './context/SessionContext'
+import { AppProvider } from './context/AppContext'
 import { TooltipProvider } from './components/ui/tooltip'
 import Layout from './components/Layout'
 
@@ -29,7 +29,7 @@ const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'))
 function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
+      <AppProvider>
         <DeviceProvider>
           <SessionProvider>
           <TooltipProvider>
@@ -68,7 +68,7 @@ function App() {
           </TooltipProvider>
           </SessionProvider>
         </DeviceProvider>
-      </ThemeProvider>
+      </AppProvider>
     </BrowserRouter>
   )
 }

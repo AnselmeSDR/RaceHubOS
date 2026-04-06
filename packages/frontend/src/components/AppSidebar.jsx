@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar'
-import { useTheme } from '../context/ThemeContext'
+import { useApp } from '../context/AppContext'
 
 export const allNavItems = [
   { to: '/', label: 'Dashboard', Icon: BarChart3 },
@@ -45,7 +45,7 @@ export const allNavItems = [
 ]
 
 export default function AppSidebar({ backendConnected, backendVersion, onStatusClick, ...props }) {
-  const { isDark, toggleTheme, isAdmin } = useTheme()
+  const { isDark, toggleTheme, isAdmin } = useApp()
   const location = useLocation()
 
   const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin)

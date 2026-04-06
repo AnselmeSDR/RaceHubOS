@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Settings, Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, AlertTriangle, Trash2, Copy, Check, X } from 'lucide-react'
+import { useState, useMemo, useRef } from 'react'
+import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, AlertTriangle, Trash2, Copy, Trophy, Timer, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -49,31 +49,52 @@ export default function SessionSection({
     finishingSession,
   } = useSession()
 
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState('')
-  const [durationMinutes, setDurationMinutes] = useState(0)
-  const [maxLaps, setMaxLapsState] = useState(0)
-  const [gracePeriodSeconds, setGracePeriodSeconds] = useState(30)
-  const [status, setStatus] = useState('draft')
-  const [controllerConfigs, setControllerConfigs] = useState({})
-  const [saving, setSaving] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [inlineName, setInlineName] = useState('')
+  const nameInputRef = useRef(null)
 
-  const gracePeriodTotal = finishingSession?.gracePeriodMs ? finishingSession.gracePeriodMs / 1000 : 30
-
-  function startEditing() {
-    setName(session?.name || '')
-    setDurationMinutes(session?.maxDuration ? Math.round(session.maxDuration / 60000) : 0)
-    setMaxLapsState(session?.maxLaps || 0)
-    setGracePeriodSeconds(session?.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30)
-    setStatus(session?.status || 'draft')
+  const controllerConfigs = useMemo(() => {
     const configs = {}
     for (let i = 0; i < 6; i++) {
       const sd = (session?.drivers || []).find(d => Number(d.controller) === i)
       configs[i] = { driverId: sd?.driverId || null, carId: sd?.carId || null, gridPos: sd?.gridPos || null }
     }
-    setControllerConfigs(configs)
-    setEditing(true)
+    return configs
+  }, [JSON.stringify(session?.drivers?.map(d => ({ id: d.id, controller: d.controller, driverId: d.driverId, carId: d.carId, gridPos: d.gridPos })))])
+
+  const gracePeriodTotal = finishingSession?.gracePeriodMs ? finishingSession.gracePeriodMs / 1000 : 30
+
+  function startEditingName() {
+    if (!canEdit) return
+    setInlineName(session?.name || '')
+    setEditingName(true)
+    setTimeout(() => nameInputRef.current?.focus(), 0)
   }
+
+  async function saveInlineName(text) {
+    setEditingName(false)
+    const value = typeof text === 'string' ? text : inlineName
+    const newName = value.trim() || null
+    if (newName === (session?.name || null)) return
+    try {
+      await onSaveConfig({ name: newName })
+    } catch (err) {
+      console.error('Failed to save name:', err)
+    }
+    // Reset contentEditable text to type label if empty
+    if (!newName && nameInputRef.current) {
+      nameInputRef.current.textContent = SESSION_TYPE_LABELS[session.type]
+    }
+  }
+
+  function handleNameKeyDown(e) {
+    if (e.key === 'Enter') nameInputRef.current?.blur()
+    if (e.key === 'Escape') {
+      setInlineName(session?.name || '')
+      setEditingName(false)
+    }
+  }
+
 
   const usedDriverIds = useMemo(() => Object.values(controllerConfigs).map(c => c.driverId).filter(Boolean), [controllerConfigs])
   const usedCarIds = useMemo(() => Object.values(controllerConfigs).map(c => c.carId).filter(Boolean), [controllerConfigs])
@@ -87,8 +108,16 @@ export default function SessionSection({
     return cars.filter(c => c.id === currentId || !usedCarIds.includes(c.id))
   }
 
-  const handleControllerChange = (controller, field, value) => {
-    setControllerConfigs(prev => ({ ...prev, [controller]: { ...prev[controller], [field]: value || null } }))
+  const handleControllerChange = async (controller, field, value) => {
+    const updated = { ...controllerConfigs, [controller]: { ...controllerConfigs[controller], [field]: value || null } }
+    const driversPayload = Object.entries(updated)
+      .filter(([, c]) => c.driverId || c.carId)
+      .map(([ctrl, c]) => ({ controller: Number(ctrl), driverId: c.driverId || null, carId: c.carId || null, gridPos: c.gridPos || null }))
+    try {
+      await onSaveConfig({ drivers: driversPayload })
+    } catch (err) {
+      console.error('Failed to save controller config:', err)
+    }
   }
 
   const incompleteControllers = useMemo(() => {
@@ -97,43 +126,25 @@ export default function SessionSection({
       .map(([ctrl, c]) => ({ controller: Number(ctrl), hasDriver: !!c.driverId, hasCar: !!c.carId }))
   }, [controllerConfigs])
   const hasIncompleteConfig = incompleteControllers.length > 0
-  const canSetReady = !hasIncompleteConfig
 
   const practiceSession = useMemo(() => {
     if (session?.type === 'practice' || !session?.championshipId) return null
     return sessions.find(s => s.type === 'practice' && s.drivers?.length > 0)
   }, [sessions, session])
 
-  const handleCopyFromPractice = () => {
+  const handleCopyFromPractice = async () => {
     if (!practiceSession?.drivers) return
-    const newConfigs = {}
+    const driversPayload = []
     for (let i = 0; i < 6; i++) {
       const sd = practiceSession.drivers.find(d => Number(d.controller) === i)
-      newConfigs[i] = { driverId: sd?.driverId || null, carId: sd?.carId || null, gridPos: sd?.gridPos || null }
+      if (sd?.driverId || sd?.carId) {
+        driversPayload.push({ controller: i, driverId: sd?.driverId || null, carId: sd?.carId || null, gridPos: sd?.gridPos || null })
+      }
     }
-    setControllerConfigs(newConfigs)
-  }
-
-  async function handleSave() {
-    setSaving(true)
     try {
-      const driversPayload = Object.entries(controllerConfigs)
-        .filter(([, c]) => c.driverId || c.carId)
-        .map(([ctrl, c]) => ({ controller: Number(ctrl), driverId: c.driverId || null, carId: c.carId || null, gridPos: c.gridPos || null }))
-      const finalStatus = hasIncompleteConfig && status === 'ready' ? 'draft' : status
-      await onSaveConfig({
-        name: name || null,
-        maxDuration: durationMinutes > 0 ? durationMinutes * 60000 : null,
-        maxLaps: maxLaps > 0 ? maxLaps : null,
-        gracePeriod: gracePeriodSeconds > 0 ? gracePeriodSeconds * 1000 : 30000,
-        status: finalStatus,
-        drivers: driversPayload,
-      })
-      setEditing(false)
+      await onSaveConfig({ drivers: driversPayload })
     } catch (err) {
-      console.error('Failed to save:', err)
-    } finally {
-      setSaving(false)
+      console.error('Failed to copy from practice:', err)
     }
   }
 
@@ -198,7 +209,7 @@ export default function SessionSection({
     return { type: 'laps', percentage, current: currentLaps, total: session.maxLaps, remaining: Math.max(session.maxLaps - currentLaps, 0), isComplete: currentLaps >= session.maxLaps }
   }, [session, maxLapsCompleted])
 
-  const hasProgress = timeProgress || lapsProgress || (session?.status === 'finishing' && gracePeriodRemaining !== null)
+  const hasProgress = session?.status !== 'finished' && (timeProgress || lapsProgress || (session?.status === 'finishing' && gracePeriodRemaining !== null))
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60)
@@ -217,7 +228,6 @@ export default function SessionSection({
       case 'paused': return { label: 'En pause', color: 'bg-yellow-100 text-yellow-700' }
       case 'finishing': return { label: 'Fin de session...', color: 'bg-orange-100 text-orange-700', pulse: true }
       case 'finished': return { label: 'Terminé', color: 'bg-muted text-muted-foreground' }
-      case 'ready': return { label: 'Prêt', color: 'bg-blue-100 text-blue-700' }
       default: return { label: 'Brouillon', color: 'bg-yellow-100 text-yellow-700' }
     }
   }
@@ -237,7 +247,7 @@ export default function SessionSection({
   const isPaused = session.status === 'paused'
   const isFinishing = session.status === 'finishing'
   const isFinished = session.status === 'finished'
-  const canStart = session.status === 'ready'
+  const canStart = session.status === 'draft'
   const isLights = isActive && cuStatus?.start >= 1 && cuStatus?.start <= 5
   const isRacing = isActive && cuStatus?.start === 0
   const isCuStopped = isActive && cuStatus?.start >= 8
@@ -245,8 +255,7 @@ export default function SessionSection({
   const canResumeFromPause = isPaused && socketConnected
   const canResumeCu = isCuStopped && socketConnected
   const canStop = (isRacing || isPaused) && socketConnected
-  const canEdit = ['draft', 'ready'].includes(session.status)
-  const showControllers = canEdit && !editing
+  const canEdit = session.status === 'draft'
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -254,148 +263,102 @@ export default function SessionSection({
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <TypeIcon className="w-5 h-5 text-muted-foreground" />
-          <h2 className="font-semibold text-foreground">
-            {sessionLabel} - {session.name || SESSION_TYPE_LABELS[session.type]}
+          <h2 className="font-semibold text-foreground flex items-center gap-1">
+            {sessionLabel} -{' '}
+            {editingName ? (
+              <span
+                ref={nameInputRef}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => saveInlineName(e.target.textContent)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); e.target.blur() }
+                  if (e.key === 'Escape') { e.target.textContent = session?.name || SESSION_TYPE_LABELS[session.type]; setEditingName(false) }
+                }}
+                className="outline-none cursor-text"
+              >
+                {inlineName || SESSION_TYPE_LABELS[session.type]}
+              </span>
+            ) : (
+              <span
+                onClick={startEditingName}
+                className={canEdit ? 'cursor-text hover:text-muted-foreground transition-colors' : ''}
+              >
+                {session.name || SESSION_TYPE_LABELS[session.type]}
+              </span>
+            )}
           </h2>
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.pulse ? 'animate-pulse' : ''}`}>
             {statusConfig.label}
           </span>
         </div>
 
-        {canEdit && !editing && (
-          <button onClick={startEditing} className="p-1.5 hover:bg-muted rounded transition-colors" title="Configurer">
-            <Settings className="w-5 h-5 text-muted-foreground" />
-          </button>
-        )}
-        {editing && (
-          <div className="flex items-center gap-1">
-            <Button size="sm" onClick={handleSave} disabled={saving}>
-              <Check className="size-4" />
-              {saving ? 'Sauvegarde...' : 'Enregistrer'}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
-              <X className="size-4" />
-            </Button>
-          </div>
-        )}
       </div>
 
-      {/* Inline config form */}
-      {editing && (
-        <div className="p-4 border-b border-border space-y-4">
-          {/* Name + settings */}
-          <div className={`grid gap-3 ${session.type === 'practice' ? 'grid-cols-1' : 'grid-cols-4'}`}>
-            <div className={session.type === 'practice' ? '' : 'col-span-1'}>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nom</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={SESSION_TYPE_LABELS[session.type]} />
+      {/* Session config + Controllers table */}
+      {canEdit && (
+        <div className="p-4 border-b border-border space-y-3">
+          {practiceSession && (
+            <div className="flex justify-end">
+              <button onClick={handleCopyFromPractice} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600">
+                <Copy className="size-3" /> Copier depuis EL
+              </button>
             </div>
-            {session.type !== 'practice' && (
-              <>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Durée (min)</label>
-                  <Input type="number" value={durationMinutes} onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)} min="0" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Max tours</label>
-                  <Input type="number" value={maxLaps} onChange={(e) => setMaxLapsState(parseInt(e.target.value) || 0)} min="0" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Grace (sec)</label>
-                  <Input type="number" value={gracePeriodSeconds} onChange={(e) => setGracePeriodSeconds(parseInt(e.target.value) || 30)} min="5" max="300" />
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Controllers config */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Controllers</span>
-              {practiceSession && (
-                <button onClick={handleCopyFromPractice} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600">
-                  <Copy className="size-3" /> Copier depuis EL
-                </button>
-              )}
-            </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground uppercase bg-muted/50">
-                    <th className="px-3 py-1.5 font-medium w-12">Ctrl</th>
-                    <th className="px-3 py-1.5 font-medium">Pilote</th>
-                    <th className="px-3 py-1.5 font-medium">Voiture</th>
-                    <th className="px-3 py-1.5 font-medium w-16">Grille</th>
+          )}
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground text-xs uppercase">
+                <th className="pb-2 font-medium w-12">Ctrl</th>
+                <th className="pb-2 font-medium">Pilote</th>
+                <th className="pb-2 font-medium">Voiture</th>
+                <th className="pb-2 font-medium w-16">Grille</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {[0, 1, 2, 3, 4, 5].map(ctrl => {
+                const sd = sessionDrivers.find(d => Number(d.controller) === ctrl)
+                return (
+                  <tr key={ctrl} className="text-foreground">
+                    <td className="py-2">
+                      <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
+                    </td>
+                    <td className="py-2">
+                      <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
+                        <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
+                          <SelectValue placeholder="---" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none">---</SelectItem>
+                          {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-2">
+                      <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
+                        <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
+                          <SelectValue placeholder="---" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none">---</SelectItem>
+                          {getAvailableCars(ctrl).map(c => <SelectItem key={c.id} value={c.id}>{c.brand} {c.model}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-2">
+                      <Input
+                        key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
+                        type="number" min="1" max="6"
+                        defaultValue={controllerConfigs[ctrl]?.gridPos || ''}
+                        onBlur={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
+                        placeholder="-"
+                        className="text-center h-7 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                      />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {[0, 1, 2, 3, 4, 5].map(ctrl => (
-                    <tr key={ctrl}>
-                      <td className="px-3 py-1.5">
-                        <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
-                          <SelectTrigger className="w-full h-7 text-xs">
-                            <SelectValue placeholder="---" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="_none">---</SelectItem>
-                            {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
-                          <SelectTrigger className="w-full h-7 text-xs">
-                            <SelectValue placeholder="---" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="_none">---</SelectItem>
-                            {getAvailableCars(ctrl).map(c => <SelectItem key={c.id} value={c.id}>{c.brand} {c.model}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <Input
-                          type="number" min="1" max="6"
-                          value={controllerConfigs[ctrl]?.gridPos || ''}
-                          onChange={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
-                          placeholder="-"
-                          className="text-center h-7 w-16"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Status + warnings */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer text-sm">
-                <input type="radio" value="draft" checked={status === 'draft'} onChange={(e) => setStatus(e.target.value)} className="accent-yellow-500" />
-                Brouillon
-              </label>
-              <label className={`flex items-center gap-2 text-sm ${canSetReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                <input type="radio" value="ready" checked={status === 'ready'} onChange={(e) => canSetReady && setStatus(e.target.value)} disabled={!canSetReady} className="accent-blue-500" />
-                Prêt
-              </label>
-            </div>
-            <div className="flex items-center gap-1">
-              {onReset && (
-                <Button variant="ghost" size="sm" onClick={() => onReset(session.id)} className="text-orange-500">
-                  <RefreshCw className="size-3.5" /> Reset
-                </Button>
-              )}
-              {onDelete && session.type !== 'practice' && (
-                <Button variant="ghost" size="sm" onClick={() => onDelete(session.id)} className="text-destructive">
-                  <Trash2 className="size-3.5" /> Supprimer
-                </Button>
-              )}
-            </div>
-          </div>
+                )
+              })}
+            </tbody>
+          </table>
 
           {hasIncompleteConfig && (
             <div className="p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-start gap-2">
@@ -403,6 +366,54 @@ export default function SessionSection({
               <p className="text-xs text-orange-600">
                 {incompleteControllers.map(ic => ic.hasDriver ? `Ctrl ${ic.controller + 1}: pilote sans voiture` : `Ctrl ${ic.controller + 1}: voiture sans pilote`).join(' · ')}
               </p>
+            </div>
+          )}
+          {session.type !== 'practice' && (
+            <div className="grid gap-3 grid-cols-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Durée (min)</label>
+                <Input
+                  key={`dur-${session.id}-${session.maxDuration}`}
+                  type="number"
+                  defaultValue={session.maxDuration ? Math.round(session.maxDuration / 60000) : 0}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    onSaveConfig({ maxDuration: val > 0 ? val * 60000 : null })
+                  }}
+                  min="0"
+                  placeholder="0 = illimité"
+                  className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Max tours</label>
+                <Input
+                  key={`laps-${session.id}-${session.maxLaps}`}
+                  type="number"
+                  defaultValue={session.maxLaps || 0}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    onSaveConfig({ maxLaps: val > 0 ? val : null })
+                  }}
+                  min="0"
+                  placeholder="0 = illimité"
+                  className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Grace (sec)</label>
+                <Input
+                  key={`grace-${session.id}-${session.gracePeriod}`}
+                  type="number"
+                  defaultValue={session.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 30
+                    onSaveConfig({ gracePeriod: Math.max(5, Math.min(300, val)) * 1000 })
+                  }}
+                  min="5" max="300"
+                  className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -470,43 +481,121 @@ export default function SessionSection({
         </div>
       )}
 
-      {/* Read-only controller table (draft/ready, not editing) */}
-      {showControllers && (
-        <div className="p-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground text-xs uppercase">
-                <th className="pb-2 font-medium">Ctrl</th>
-                <th className="pb-2 font-medium">Pilote</th>
-                <th className="pb-2 font-medium">Voiture</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {[0, 1, 2, 3, 4, 5].map(controller => {
-                const sd = sessionDrivers.find(d => Number(d.controller) === controller)
-                return (
-                  <tr key={controller} className="text-foreground">
-                    <td className="py-2">
-                      <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[controller]}`}>{controller + 1}</span>
-                    </td>
-                    <td className="py-2">
-                      {sd?.driver ? (
-                        <span className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: sd.driver.color || '#6B7280' }}>{sd.driver.name?.charAt(0) || '?'}</span>
-                          {sd.driver.name}
-                        </span>
-                      ) : <span className="text-muted-foreground/50">---</span>}
-                    </td>
-                    <td className="py-2">
-                      {sd?.car ? <span>{sd.car.brand} {sd.car.model}</span> : <span className="text-muted-foreground/50">---</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+      {/* Finished summary */}
+      {isFinished && sessionDrivers.length > 0 && (() => {
+        const sorted = [...sessionDrivers]
+          .filter(sd => sd.driver && (sd.totalLaps > 0 || sd.bestLapTime))
+          .sort((a, b) => {
+            if (session.type === 'practice') return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+            const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
+            if (lapsB !== lapsA) return lapsB - lapsA
+            return (a.totalTime || Infinity) - (b.totalTime || Infinity)
+          })
+        const podium = sorted.slice(0, 3)
+        const fastest = sorted.reduce((best, sd) => (!best || (sd.bestLapTime && sd.bestLapTime < best.bestLapTime)) ? sd : best, null)
+        const totalLaps = sorted.reduce((sum, sd) => sum + (sd.totalLaps || 0), 0)
+        const podiumBorder = ['border-yellow-400', 'border-gray-300', 'border-orange-400']
+        const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
+        const podiumHeight = ['h-44', 'h-32', 'h-28']
+        const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
+        const podiumLabel = ['1er', '2ème', '3ème']
+        // Reorder for visual: 2nd - 1st - 3rd
+        const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
+        const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
+
+        const formatLapTime = (ms) => {
+          if (!ms) return '--'
+          const s = ms / 1000
+          return s >= 60 ? `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, '0')}` : `${s.toFixed(3)}s`
+        }
+
+        return (
+          <div className="border-b border-border">
+            {/* Podium visual */}
+            <div className="px-4 pt-4 pb-2">
+              <div className="flex items-end justify-center gap-2">
+                {podiumOrder.map((sd, visualIdx) => {
+                  const realIdx = podiumIndexOrder[visualIdx]
+                  return (
+                    <div key={sd.id} className="flex flex-col items-center flex-1 max-w-[140px]">
+                      {/* Driver avatar */}
+                      <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden mb-2 shadow-lg ring-2 ring-offset-2 ring-offset-card"
+                        style={{ ringColor: sd.driver?.color || '#6B7280' }}
+                        style={{ backgroundColor: sd.driver?.color || '#6B7280' }}
+                      >
+                        {sd.driver?.img
+                          ? <img src={sd.driver.img} alt="" className="w-full h-full object-cover" />
+                          : <span className="text-lg">{sd.driver?.name?.charAt(0) || '?'}</span>}
+                      </div>
+                      {/* Driver name */}
+                      <span className="text-xs font-bold text-foreground truncate w-full text-center mb-1">
+                        {sd.driver?.name?.split(' ').pop()}
+                      </span>
+                      {/* Podium block */}
+                      <div className={`w-full ${podiumHeight[realIdx]} ${podiumBg[realIdx]} border-t-2 ${podiumBorder[realIdx]} rounded-t-lg flex flex-col items-center justify-between pt-2 pb-2 shadow-md ${podiumGlow[realIdx]}`}>
+                        <span className="text-2xl font-black text-foreground/80">{podiumLabel[realIdx]}</span>
+                        <div className="text-center space-y-0.5">
+                          {realIdx === 0 ? (
+                            <div className="font-mono text-xs text-green-400">Vainqueur</div>
+                          ) : (
+                            <div className="font-mono text-xs text-red-400">
+                              {session.type === 'practice'
+                                ? `+${formatLapTime((sd.bestLapTime || 0) - (podium[0]?.bestLapTime || 0))}`
+                                : (sd.totalLaps || 0) < (podium[0]?.totalLaps || 0)
+                                  ? `+${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0)} tour${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) > 1 ? 's' : ''}`
+                                  : `+${formatLapTime((sd.totalTime || 0) - (podium[0]?.totalTime || 0))}`
+                              }
+                            </div>
+                          )}
+                          <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
+                          {session.type !== 'practice' && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} tours</div>}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Stats summary */}
+            <div className="px-4 py-3 bg-muted/30 flex items-center justify-between text-center">
+              <div>
+                <div className="text-lg font-bold text-foreground">{sorted[0]?.totalLaps || 0}</div>
+                <div className="text-xs text-muted-foreground">Tours</div>
+              </div>
+              {timeProgress && (
+                <div>
+                  <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
+                    <Timer className="size-4" />
+                    {formatTime(timeProgress.current)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Durée</div>
+                </div>
+              )}
+              {session.gracePeriod && (
+                <div>
+                  <div className="text-lg font-bold text-orange-500 flex items-center justify-center gap-1">
+                    <Flag className="size-4" />
+                    {Math.round(session.gracePeriod / 1000)}s
+                  </div>
+                  <div className="text-xs text-muted-foreground">Grace</div>
+                </div>
+              )}
+              {fastest && (
+                <div>
+                  <div className="text-lg font-bold text-purple-500 flex items-center justify-center gap-1">
+                    <Zap className="size-4" />
+                    {formatLapTime(fastest.bestLapTime)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{fastest.driver?.name}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Connection warning */}
       {!socketConnected && isActive && (
@@ -528,7 +617,8 @@ export default function SessionSection({
           {canStart && (
             <>
               {!deviceConnected && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Connecter un CU</span>}
-              <Button onClick={onStart} disabled={!deviceConnected}><Play className="size-4" /> Démarrer</Button>
+              {hasIncompleteConfig && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Config incomplète</span>}
+              <Button onClick={onStart} disabled={!deviceConnected || hasIncompleteConfig}><Play className="size-4" /> Démarrer</Button>
             </>
           )}
           {isLights && <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse"><Play className="size-4" /> START</Button>}
@@ -537,11 +627,13 @@ export default function SessionSection({
           {canResumeFromPause && <Button onClick={onResume} className="bg-green-500 hover:bg-green-600"><Play className="size-4" /> Reprendre</Button>}
           {canStop && <Button onClick={onStop} variant="destructive"><Flag className="size-4" /> Terminer</Button>}
           {isFinishing && <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg"><Flag className="w-4 h-4" /> Attente fin...</span>}
-          {isFinished && <span className="text-sm text-muted-foreground">Session terminée</span>}
+          {isFinished && onReset && (
+            <Button variant="ghost" size="sm" onClick={() => onReset(session.id)} className="text-orange-500"><RefreshCw className="size-3.5" /> Reset</Button>
+          )}
         </div>
       </div>
 
-      {isActive && <StartLights />}
+      {isActive && <StartLights onCancel={onReset ? () => onReset(session.id) : undefined} />}
     </div>
   )
 }

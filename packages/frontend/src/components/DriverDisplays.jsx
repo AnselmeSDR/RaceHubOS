@@ -1,5 +1,5 @@
 import { Trophy, Flag, BarChart3 } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { useApp } from '../context/AppContext'
 
 import { getImgUrl } from '../utils/image'
 
@@ -124,20 +124,17 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
  * Affichage ROW 1, ROW 2, etc.
  */
 export function DriverGridPosition({ driver, side = 'left' }) {
-  const { isDark } = useTheme()
-  const gradientEnd = isDark ? '#1f2937' : 'white'
+  const { isDark } = useApp()
   const driverColor = driver.color || '#3B82F6'
 
   return (
     <div className={`flex items-center gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
       {/* Driver card */}
       <div
-        className="flex items-center gap-3 p-3 rounded-lg flex-1"
+        className="flex items-center gap-3 p-3 rounded-lg flex-1 shadow-sm dark:shadow-none"
         style={{
-          background: `linear-gradient(to ${side === 'left' ? 'right' : 'left'}, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, ${gradientEnd})`,
-          borderLeft: side === 'left' ? `5px solid ${driverColor}` : 'none',
-          borderRight: side === 'right' ? `5px solid ${driverColor}` : 'none',
-          boxShadow: isDark ? 'none' : `0 2px 12px ${driverColor}40`,
+          background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, var(--card))`,
+          borderLeft: `5px solid ${driverColor}`,
         }}
       >
         {/* Photo */}

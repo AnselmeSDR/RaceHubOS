@@ -159,6 +159,7 @@ export class SessionService extends EventEmitter {
       carId: sd.carId,
       driver: sd.driver,
       car: sd.car,
+      gridPos: sd.gridPos,
       position: sd.position || 0,
       totalLaps: sd.totalLaps || 0,
       totalTime: sd.totalTime || 0,
@@ -233,7 +234,7 @@ export class SessionService extends EventEmitter {
     this.startHeartbeat();
 
     this.emit('session:started', { sessionId });
-    this.emitStatusChanged('active', 'ready');
+    this.emitStatusChanged('active', 'draft');
 
     return this.getState();
   }
@@ -311,7 +312,7 @@ export class SessionService extends EventEmitter {
   async resetForNewSession() {
     this.stopHeartbeat();
 
-    this.sessionDrivers = [];
+    // Keep sessionDrivers for leaderboard queries until new session loads
     if (this.previousPositions) {
       this.previousPositions.clear();
     }
@@ -897,7 +898,7 @@ export class SessionService extends EventEmitter {
   }
 
   /**
-   * Reset session to ready state
+   * Reset session to draft state
    * - Practice: soft delete laps (for stats)
    * - Qualif/Race: hard delete laps
    */
@@ -918,16 +919,11 @@ export class SessionService extends EventEmitter {
     // Send stop signal to CU/Simulator
     await this.syncService?.stopRace();
 
-    // Practice: soft delete (keep for stats)
-    // Qualif/Race: hard delete
-    if (session.type === 'practice') {
-      await this.prisma.lap.updateMany({
-        where: { sessionId, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
-    } else {
-      await this.prisma.lap.deleteMany({ where: { sessionId } });
-    }
+    // Soft delete laps (keep for stats)
+    await this.prisma.lap.updateMany({
+      where: { sessionId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
 
     // Reset session driver stats
     await this.prisma.sessionDriver.updateMany({
@@ -944,10 +940,10 @@ export class SessionService extends EventEmitter {
       },
     });
 
-    // Reset session to ready
+    // Reset session to draft
     await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'ready', startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
+      data: { status: 'draft', startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
     });
 
     // Emit internal event for ChampionshipService
