@@ -1,8 +1,14 @@
 # 🏁 RaceHubOS
 
-Open Source Race Management System for Carrera Digital 132/124
+**Free & open source race management for Carrera Digital 132/124**
 
 ![Podium](docs/screenshots/podium.png)
+
+Carrera dropped their official app. SmartRace is paid and closed source. We believe slot racing deserves better — a free, open, community-driven tool that anyone can use, improve, and adapt to their setup.
+
+RaceHubOS is a full-featured race management system that runs in your browser. No app store, no subscription, no vendor lock-in. Just plug your Carrera Control Unit, open a browser, and race.
+
+Built by slot racers, for slot racers. 🏎️
 
 **[English](#-features)** | **[Français](#-version-française)**
 
@@ -175,6 +181,12 @@ Vibe coded with [Claude Code](https://claude.ai/code)
 ---
 
 ## 🇫🇷 Version française
+
+Carrera a abandonné son app officielle. SmartRace est payante et fermée. On pense que le slot racing mérite mieux — un outil gratuit, ouvert et communautaire que chacun peut utiliser, améliorer et adapter à son installation.
+
+RaceHubOS est un système complet de gestion de course qui tourne dans le navigateur. Pas de store, pas d'abonnement, pas de dépendance éditeur. Branchez votre Control Unit Carrera, ouvrez un navigateur, et roulez.
+
+Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
 ### Fonctionnalités
 
