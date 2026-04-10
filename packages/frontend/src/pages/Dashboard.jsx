@@ -205,7 +205,7 @@ export default function Dashboard() {
                       <DriverAvatar driver={d} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{d.name}</p>
-                        <p className="text-xs text-muted-foreground">{d.statistics?.wins || 0}V · {d.statistics?.podiums || 0}P</p>
+                        <p className="text-xs"><span className="text-blue-500 font-medium">{d.statistics?.totalRaces || 0}C</span> · <span className="text-yellow-500 font-medium">{d.statistics?.wins || 0}V</span> · <span className="text-orange-400 font-medium">{d.statistics?.podiums || 0}P</span></p>
                       </div>
                       {d.statistics?.bestLap && (
                         <span className="text-xs font-mono text-muted-foreground">{formatLap(d.statistics.bestLap)}</span>

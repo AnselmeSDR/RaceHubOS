@@ -19,8 +19,8 @@ const TYPE_LABELS = {
 }
 
 const TYPE_COLORS = {
-  practice: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  qualif: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  qualif: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   race: 'bg-green-500/10 text-green-600 dark:text-green-400',
   balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
 }
