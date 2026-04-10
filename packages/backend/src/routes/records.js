@@ -86,10 +86,48 @@ router.get('/track/:trackId', async (req, res) => {
       });
     };
 
-    const [practiceLaps, qualifLaps, raceLaps, track] = await Promise.all([
+    // Best lap per car (not per driver+car) for balancing sessions
+    const getBalancingBestByCar = async () => {
+      const laps = await prisma.lap.findMany({
+        where: {
+          trackId,
+          deletedAt: null,
+          session: { type: 'balancing', ...sessionFilter }
+        },
+        orderBy: { lapTime: 'asc' },
+        distinct: ['carId'],
+        include: {
+          car: true,
+          driver: true,
+          session: { select: { id: true, type: true, name: true } }
+        }
+      });
+
+      const lapCounts = await prisma.lap.groupBy({
+        by: ['carId'],
+        where: {
+          trackId,
+          deletedAt: null,
+          session: { type: 'balancing', ...sessionFilter }
+        },
+        _count: { id: true }
+      });
+
+      const countMap = new Map(lapCounts.map(c => [c.carId, c._count.id]));
+
+      return laps.map(lap => ({
+        ...lap,
+        car: withImageUrl(lap.car),
+        driver: withImageUrl(lap.driver),
+        laps: countMap.get(lap.carId) || 0,
+      }));
+    };
+
+    const [practiceLaps, qualifLaps, raceLaps, balancingLaps, track] = await Promise.all([
       getBestByType('practice'),
       getBestByType('qualif'),
       getBestByType('race'),
+      getBalancingBestByCar(),
       prisma.track.findUnique({ where: { id: trackId } })
     ]);
 
@@ -99,7 +137,8 @@ router.get('/track/:trackId', async (req, res) => {
         track: withImageUrl(track),
         practice: practiceLaps,
         qualif: qualifLaps,
-        race: raceLaps
+        race: raceLaps,
+        balancing: balancingLaps
       }
     });
   } catch (error) {

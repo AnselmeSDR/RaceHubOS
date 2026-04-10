@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react'
-import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, AlertTriangle, Trash2, Copy, Trophy, Timer, Zap } from 'lucide-react'
+import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, Scale, AlertTriangle, Trash2, Copy, Trophy, Timer, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -10,13 +10,15 @@ import { useSession } from '../../context/SessionContext'
 const SESSION_TYPE_LABELS = {
   practice: 'Essais Libres',
   qualif: 'Qualifications',
-  race: 'Course'
+  race: 'Course',
+  balancing: 'Équilibrage'
 }
 
 const SESSION_TYPE_ICONS = {
   practice: FlaskConical,
   qualif: Clock,
-  race: Flag
+  race: Flag,
+  balancing: Scale
 }
 
 const CONTROLLER_COLORS = [
@@ -482,12 +484,12 @@ export default function SessionSection({
       )}
 
 
-      {/* Finished summary */}
-      {isFinished && sessionDrivers.length > 0 && (() => {
+      {/* Finished summary (skip for balancing) */}
+      {isFinished && session.type !== 'balancing' && sessionDrivers.length > 0 && (() => {
         const sorted = [...sessionDrivers]
           .filter(sd => sd.driver && (sd.totalLaps > 0 || sd.bestLapTime))
           .sort((a, b) => {
-            if (session.type === 'practice') {
+            if (session.type === 'practice' || session.type === 'balancing') {
               const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
               if (lapsB !== lapsA) return lapsB - lapsA
               return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)

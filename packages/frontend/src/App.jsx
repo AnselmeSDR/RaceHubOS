@@ -24,6 +24,7 @@ const Stats = lazy(() => import('./pages/Stats'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Test = lazy(() => import('./pages/Test'))
 const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
+const BalancingPage = lazy(() => import('./pages/BalancingPage'))
 const Championships = lazy(() => import('./pages/Championships'))
 const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'))
 
@@ -41,6 +42,7 @@ function App() {
             <Route index element={<Suspense><Dashboard /></Suspense>} />
             {/* Free session mode */}
             <Route path="race" element={<Suspense><FreeSessionPage /></Suspense>} />
+            <Route path="balancing" element={<Suspense><BalancingPage /></Suspense>} />
             {/* Championships */}
             <Route path="championships" element={<Suspense><Championships /></Suspense>} />
             <Route path="championships/:id" element={<Suspense><ChampionshipDetail /></Suspense>} />

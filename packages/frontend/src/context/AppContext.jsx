@@ -7,6 +7,7 @@ const KEYS = {
   standings: 'racehubos-show-standings',
   freeTrack: 'racehubos-free-track',
   freeType: 'racehubos-free-type',
+  balancingTrack: 'racehubos-balancing-track',
 }
 
 function loadBool(key, defaultValue) {
@@ -72,6 +73,14 @@ export function AppProvider({ children }) {
     localStorage.setItem(KEYS.freeType, type)
   }, [])
 
+  // Balancing session preferences
+  const [balancingTrack, _setBalancingTrack] = useState(() => localStorage.getItem(KEYS.balancingTrack) || null)
+
+  const setBalancingTrack = useCallback((id) => {
+    _setBalancingTrack(id)
+    if (id) localStorage.setItem(KEYS.balancingTrack, id)
+  }, [])
+
   // Race override: SessionContext calls setSessionActive
   const [sessionActive, setSessionActive] = useState(false)
   const wasActiveRef = useRef(false)
@@ -100,6 +109,8 @@ export function AppProvider({ children }) {
       // Free session
       freeTrack, setFreeTrack,
       freeType, setFreeType,
+      // Balancing session
+      balancingTrack, setBalancingTrack,
       // Session active (called by SessionContext)
       setSessionActive,
     }}>

@@ -122,6 +122,9 @@ export function SessionProvider({ children }) {
       })
       window.dispatchEvent(new CustomEvent('session:finished', { detail: data }))
 
+      // Skip podium/voice for balancing sessions
+      if (data.sessionType === 'balancing') return
+
       // Play finish music then announce podium
       try {
         const audio = new Audio('/sounds/race-finish.mp3')
@@ -499,7 +502,7 @@ export function SessionProvider({ children }) {
 
   // Notify AppContext of session active state
   useEffect(() => {
-    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status))
+    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== 'balancing')
   }, [session?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ==================== Computed Data ====================
@@ -530,7 +533,8 @@ export function SessionProvider({ children }) {
       position: p.position || 0,
       positionDelta: p.positionDelta || 0, // From backend
       hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
-      isDNF: p.isDNF || false
+      isDNF: p.isDNF || false,
+      laps: p.laps || [], // Lap history for balancing chart
     })).sort((a, b) => (a.position || 99) - (b.position || 99))
   }, [leaderboard, session])
 
