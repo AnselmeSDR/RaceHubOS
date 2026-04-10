@@ -53,7 +53,7 @@ async function main() {
       data: {
         name: 'Anselme SDR',
         number: 42,
-        email: 'anselme@mail.fr',
+        email: 'anselme@example.com',
         color: '#060d08',
         teamId: null,
       },
@@ -62,7 +62,7 @@ async function main() {
       data: {
         name: 'Fanny Benoit',
         number: 2,
-        email: 'fanny@mail.fr',
+        email: 'fanny@example.com',
         color: '#f12835',
         teamId: null,
       },
@@ -71,7 +71,7 @@ async function main() {
       data: {
         name: 'Romain Danna',
         number: 71,
-        email: 'romain@mail.fr',
+        email: 'romain@example.com',
         color: '#74b9d2',
         teamId: null,
       },
@@ -80,7 +80,7 @@ async function main() {
       data: {
         name: 'Lisa Furnari',
         number: 7,
-        email: 'lisa@mail.fr',
+        email: 'lisa@example.com',
         color: '#c5b9d5',
         teamId: null,
       },
