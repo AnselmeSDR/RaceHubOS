@@ -17,7 +17,6 @@ Open Source Race Management System for Carrera Digital 132/124
   - [macOS / Linux](#-macos---linux)
   - [Windows](#-windows)
   - [Upgrade](#-upgrade)
-- [Project Structure](#-project-structure)
 - [Development](#-development)
   - [Simulator](#-simulator)
   - [WebSocket Events](#-websocket-events)
@@ -120,39 +119,6 @@ Double-click the **RaceHubOS** shortcut on the Desktop. The browser opens automa
 4. Creates a new launcher and shortcut
 5. Displays the changelog at the end
 6. Previous versions are kept (rollback possible)
-
-## 📁 Project Structure
-
-```
-racehubos/
-├── packages/
-│   ├── backend/
-│   │   ├── src/
-│   │   │   ├── index.js              # Main server + WebSocket
-│   │   │   ├── routes/               # REST API (14 route files)
-│   │   │   └── services/
-│   │   │       ├── SessionService.js  # Session lifecycle + leaderboard
-│   │   │       ├── SyncService.js     # Hardware sync (CU/Simulator)
-│   │   │       ├── ChampionshipService.js
-│   │   │       ├── ConfigService.js
-│   │   │       ├── controlUnit.js     # Carrera CU protocol
-│   │   │       ├── simulator.js       # Built-in race simulator
-│   │   │       └── ble.js             # Bluetooth LE
-│   │   └── prisma/
-│   │       └── schema.prisma          # Database schema
-│   └── frontend/
-│       └── src/
-│           ├── context/               # App, Session, Device, Voice, PageHeader
-│           ├── components/
-│           │   ├── ui/                # shadcn/ui components
-│           │   ├── race/              # Leaderboard, LapTime, GapDisplay, StartingGrid
-│           │   ├── championship/      # SessionSection, StandingsTabs, ConfigModal
-│           │   ├── session/           # Session components
-│           │   └── crud/              # Generic CRUD components
-│           └── pages/                 # 18 pages (Dashboard, Championships, Drivers, etc.)
-├── CHANGELOG.md
-└── RaceHubOS-upgrade.bat              # Windows upgrade script
-```
 
 ## 🧑‍💻 Development
 
