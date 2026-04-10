@@ -24,6 +24,20 @@
 - Grace période remplacée par input Temps max
 - Sidebar reste ouverte pendant les sessions
 
+### Détail session
+- Refonte complète : migration shadcn/ui (Card, Badge, Button), tokens sémantiques
+- Podium réutilisable (`Podium.jsx`) extrait de SessionSection
+- Podium stats : tours réalisés/max, durée réelle/configurée, grace période si utilisée
+- Leaderboard intégré via SessionLeaderboard (plus d'appel API séparé par phase)
+- Support balancing : affiche BalancingChart au lieu du leaderboard
+- Historique des tours : tableau scrollable avec highlight meilleur tour
+- DNF listés
+- Liens cliquables vers circuit et championnat
+
+### Historique sessions
+- Tri par défaut : `updatedAt` desc (sessions modifiées/reset remontent)
+- Colonne Date : affiche `updatedAt`
+
 ### Backend
 - `balancing` ajouté à SessionService (validation, phase, tri par bestLap)
 - `lapHistory` Map en RAM pour les données de graphe (chargée depuis DB au loadSession)

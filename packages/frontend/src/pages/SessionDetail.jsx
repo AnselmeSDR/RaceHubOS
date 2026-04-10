@@ -1,331 +1,358 @@
-/**
- * SessionDetail - View session history details (read-only)
- *
- * NOTE: This page is for viewing completed session history.
- * For live race control, use /race (RaceControl page).
- */
-import { ArrowLeft, Zap, Clock, Flag, MapPin, Trash2, Trophy, Users2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import ErrorMessage from '../components/ErrorMessage'
+import { useEffect, useState, useMemo } from 'react'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { ArrowLeft, Flag, MapPin, Trash2, Trophy, Users2, Clock, Timer, Pause, Scale } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import SessionLeaderboard from '../components/race/SessionLeaderboard'
+import BalancingChart from '../components/balancing/BalancingChart'
+import Podium from '../components/race/Podium'
+import LapTime from '../components/race/LapTime'
+import { getImgUrl } from '../utils/image'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+const TYPE_LABELS = {
+  practice: 'Essais Libres',
+  qualif: 'Qualifications',
+  race: 'Course',
+  balancing: 'Équilibrage',
+}
+
+const STATUS_LABELS = {
+  draft: 'Brouillon',
+  active: 'Active',
+  paused: 'En pause',
+  finishing: 'Drapeau',
+  finished: 'Terminée',
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return '--'
+  const totalSec = Math.floor(ms / 1000)
+  const min = Math.floor(totalSec / 60)
+  const sec = totalSec % 60
+  if (min === 0) return `${sec}s`
+  return `${min}m${sec > 0 ? ` ${sec}s` : ''}`
+}
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export default function SessionDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [phaseLeaderboards, setPhaseLeaderboards] = useState({
-    practice: [],
-    qualif: [],
-    race: []
-  })
-  const [activePhaseTab, setActivePhaseTab] = useState('practice')
 
   useEffect(() => {
-    loadSession()
-    loadAllLeaderboards()
+    async function load() {
+      try {
+        const res = await fetch(`${API_URL}/api/sessions/${id}`)
+        const data = await res.json()
+        if (data.success) setSession(data.data)
+      } catch (err) {
+        console.error('Error loading session:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [id])
 
-  async function loadSession() {
-    try {
-      const res = await fetch(`${API_URL}/sessions/${id}`)
-      const data = await res.json()
+  // Build entries from session.drivers (same format as SessionContext entries)
+  const entries = useMemo(() => {
+    if (!session?.drivers?.length) return []
 
-      if (data.success) {
-        setSession(data.data)
-      } else {
-        setError('Session introuvable')
+    const drivers = session.drivers
+    const allBestLaps = drivers.map(d => d.bestLapTime).filter(t => t && t > 0)
+    const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
+
+    // Sort
+    const isRace = session.type === 'race'
+    const sorted = [...drivers].sort((a, b) => {
+      if (isRace) {
+        if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
+        return (a.totalTime || Infinity) - (b.totalTime || Infinity)
       }
-    } catch (err) {
-      console.error('Error loading session:', err)
-      setError('Erreur lors du chargement de la session')
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!a.bestLapTime && !b.bestLapTime) return 0
+      if (!a.bestLapTime) return 1
+      if (!b.bestLapTime) return -1
+      return a.bestLapTime - b.bestLapTime
+    })
 
-  async function loadAllLeaderboards() {
-    try {
-      const phases = ['practice', 'qualif', 'race']
-      const results = await Promise.all(
-        phases.map(phase =>
-          fetch(`${API_URL}/stats/leaderboard/drivers?sessionId=${id}&phase=${phase}`)
-            .then(res => res.json())
-        )
-      )
+    const leader = sorted[0]
 
-      const newLeaderboards = {}
-      phases.forEach((phase, index) => {
-        if (results[index].success) {
-          newLeaderboards[phase] = results[index].data || []
+    return sorted.map((sd, i) => {
+      let gap = null
+      if (i > 0 && leader) {
+        if (isRace) {
+          const lapDiff = (leader.totalLaps || 0) - (sd.totalLaps || 0)
+          if (lapDiff > 0) gap = { type: 'laps', value: lapDiff }
+          else gap = { type: 'time', value: (sd.totalTime || 0) - (leader.totalTime || 0) }
+        } else {
+          if (leader.bestLapTime && sd.bestLapTime) gap = { type: 'time', value: sd.bestLapTime - leader.bestLapTime }
         }
-      })
+      }
 
-      setPhaseLeaderboards(newLeaderboards)
-    } catch (err) {
-      console.error('Error loading leaderboards:', err)
+      return {
+        id: sd.id,
+        controller: sd.controller,
+        driver: sd.driver,
+        car: sd.car,
+        gridPos: sd.gridPos ?? null,
+        stats: {
+          laps: sd.totalLaps || 0,
+          bestLap: sd.bestLapTime || null,
+          lastLap: sd.lastLapTime || null,
+          totalTime: sd.totalTime || 0,
+          gap,
+        },
+        position: i + 1,
+        positionDelta: 0,
+        hasFastestLap: fastestLapTime && sd.bestLapTime === fastestLapTime,
+        isDNF: sd.isDNF || false,
+      }
+    })
+  }, [session])
+
+  // Build entries for balancing chart (needs laps array per controller)
+  const balancingEntries = useMemo(() => {
+    if (!session || session.type !== 'balancing' || !session.laps?.length) return []
+
+    // Group laps by controller
+    const lapsByCtrl = new Map()
+    for (const lap of session.laps) {
+      if (!lapsByCtrl.has(lap.controller)) lapsByCtrl.set(lap.controller, [])
+      lapsByCtrl.get(lap.controller).push({ lapNumber: lap.lapNumber, lapTime: Math.round(lap.lapTime) })
     }
-  }
+
+    return (session.drivers || []).map(sd => ({
+      id: sd.id,
+      controller: sd.controller,
+      driver: sd.driver,
+      car: sd.car,
+      laps: (lapsByCtrl.get(sd.controller) || []).sort((a, b) => a.lapNumber - b.lapNumber),
+      stats: { laps: sd.totalLaps || 0, bestLap: sd.bestLapTime || null },
+    }))
+  }, [session])
+
+  // Session duration
+  const sessionDuration = useMemo(() => {
+    if (!session?.startedAt || !session?.finishedAt) return null
+    const start = new Date(session.startedAt).getTime()
+    const end = new Date(session.finishedAt).getTime()
+    return end - start
+  }, [session])
+
+  // Total pause duration
+  const totalPauseDuration = useMemo(() => {
+    if (!session?.pauses) return 0
+    const pauses = typeof session.pauses === 'string' ? JSON.parse(session.pauses) : session.pauses
+    return pauses.reduce((sum, p) => sum + (p.end ? p.end - p.start : 0), 0)
+  }, [session])
+
+  // Total laps
+  const totalLaps = useMemo(() => {
+    return (session?.drivers || []).reduce((sum, d) => sum + (d.totalLaps || 0), 0)
+  }, [session])
+
+  // Fastest lap
+  const fastestLap = useMemo(() => {
+    const times = (session?.drivers || []).map(d => d.bestLapTime).filter(t => t && t > 0)
+    return times.length > 0 ? Math.min(...times) : null
+  }, [session])
+
+  const fastestDriver = useMemo(() => {
+    if (!fastestLap || !session?.drivers) return null
+    const sd = session.drivers.find(d => d.bestLapTime === fastestLap)
+    return sd?.driver
+  }, [fastestLap, session])
 
   async function handleDelete() {
+    if (!confirm('Supprimer cette session ?')) return
     try {
-      const res = await fetch(`${API_URL}/sessions/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        navigate('/history')
-      } else {
-        setError('Erreur lors de la suppression')
-      }
+      const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: 'DELETE' })
+      if (res.ok) navigate('/history')
     } catch (err) {
       console.error('Error deleting session:', err)
-      setError('Erreur lors de la suppression')
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400 text-lg">Chargement de la session...</p>
-        </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
       </div>
     )
   }
 
   if (!session) {
     return (
-      <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <button
-          onClick={() => navigate('/history')}
-          className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mb-8"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Retour à l'historique
-        </button>
-        <div className="text-center text-gray-500 dark:text-gray-400">Session introuvable</div>
+      <div className="p-8">
+        <Button variant="ghost" onClick={() => navigate('/history')}>
+          <ArrowLeft className="size-4" /> Retour
+        </Button>
+        <p className="text-center text-muted-foreground mt-8">Session introuvable</p>
       </div>
     )
   }
 
-  const sessionColor = session.track?.color || '#6366F1'
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  const isBalancing = session.type === 'balancing'
+  const TypeIcon = isBalancing ? Scale : session.type === 'race' ? Flag : Clock
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div
-        className="relative"
-        style={{
-          background: session.track?.img
-            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${session.track.img})`
-            : `linear-gradient(135deg, ${sessionColor} 0%, ${sessionColor}dd 100%)`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      >
-        <div className="max-w-7xl mx-auto p-8">
-          {/* Navigation */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate('/history')}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Retour
-            </button>
-          </div>
-
-          {/* Session Info */}
-          <div className="flex items-start justify-between gap-6 text-white pb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  session.type === 'race' ? 'bg-green-500/30 border border-green-400' :
-                  session.type === 'qualif' ? 'bg-purple-500/30 border border-purple-400' :
-                  'bg-blue-500/30 border border-blue-400'
-                }`}>
-                  {session.type === 'race' ? 'Course' : session.type === 'qualif' ? 'Qualifications' : 'Essais'}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  session.status === 'finished' ? 'bg-blue-500/30 border border-blue-400' :
-                  session.status === 'active' ? 'bg-green-500/30 border border-green-400' :
-                  'bg-gray-500/30 border border-gray-400'
-                }`}>
-                  {session.status === 'finished' ? 'Terminée' : session.status === 'active' ? 'Active' : session.status}
-                </span>
-              </div>
-              <h1 className="text-4xl font-bold mb-2">
-                {session.name || `Session #${session.id.slice(0, 8)}`}
-              </h1>
-              <p className="text-white/70">
-                {formatDate(session.createdAt)}
-              </p>
+      <div className="border-b px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/history')}>
+            <ArrowLeft className="size-4" />
+          </Button>
+          <TypeIcon className="size-5 text-muted-foreground" />
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-bold text-lg">{session.name || `Session #${session.id.slice(0, 8)}`}</h1>
+              <Badge variant="outline">{TYPE_LABELS[session.type] || session.type}</Badge>
+              <Badge variant={session.status === 'finished' ? 'default' : 'secondary'}>
+                {STATUS_LABELS[session.status] || session.status}
+              </Badge>
             </div>
-
-            <button
-              onClick={handleDelete}
-              className="p-3 bg-red-500/80 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-all"
-              title="Supprimer la session"
-            >
-              <Trash2 className="w-6 h-6" />
-            </button>
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              {session.track && (
+                <Link to={`/tracks/${session.track.id}`} className="hover:underline flex items-center gap-1">
+                  <MapPin className="size-3" />
+                  {session.track.name}
+                </Link>
+              )}
+              {session.championship && (
+                <Link to={`/championships/${session.championship.id}`} className="hover:underline flex items-center gap-1">
+                  <Trophy className="size-3" />
+                  {session.championship.name}
+                </Link>
+              )}
+              <span>· {formatDate(session.createdAt)}</span>
+            </div>
           </div>
         </div>
+        <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive hover:text-destructive">
+          <Trash2 className="size-4" />
+        </Button>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 -mt-8 relative z-10 pb-8">
-        {error && (
-          <div className="mb-6">
-            <ErrorMessage type="error" message={error} onClose={() => setError('')} />
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4 space-y-4">
+        {/* Podium (finished sessions, not balancing) */}
+        {session.status === 'finished' && !isBalancing && session.drivers?.length > 0 && (
+          <Card>
+            <CardContent className="p-0 overflow-hidden">
+              <Podium
+                drivers={session.drivers}
+                sessionType={session.type}
+                stats={{
+                  duration: sessionDuration ? Math.floor(sessionDuration / 1000) : null,
+                  maxDuration: session.maxDuration,
+                  maxLaps: session.maxLaps,
+                  gracePeriod: session.gracePeriod,
+                  gracePeriodUsed: !!session.finishingAt,
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* DNF drivers */}
+        {entries.some(e => e.isDNF) && (
+          <div className="flex items-center gap-2 text-sm text-orange-500">
+            <Flag className="size-4" />
+            DNF : {entries.filter(e => e.isDNF).map(e => e.driver?.name || `Ctrl ${e.controller + 1}`).join(', ')}
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="flex flex-wrap gap-6 mb-8">
-          {/* Circuit */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
-            <div className="flex items-center gap-3 mb-3">
-              <MapPin className="w-8 h-8 text-indigo-500" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">{session.track?.name}</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">Circuit</p>
-          </div>
+        {/* Main content: Leaderboard or Balancing Chart */}
+        {isBalancing ? (
+          balancingEntries.some(e => e.laps.length > 0) ? (
+            <BalancingChart entries={balancingEntries} />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Aucune donnée de tour
+              </CardContent>
+            </Card>
+          )
+        ) : (
+          entries.length > 0 ? (
+            <SessionLeaderboard
+              entries={entries}
+              sortBy={session.type === 'race' ? 'race' : 'bestLap'}
+              sessionType={session.type}
+              expanded
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Aucun participant
+              </CardContent>
+            </Card>
+          )
+        )}
 
-          {/* Pilotes */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
-            <div className="flex items-center gap-3 mb-3">
-              <Users2 className="w-8 h-8 text-indigo-500" />
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">{session.drivers?.length || 0}</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">Pilotes</p>
-          </div>
-
-          {/* Tours */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
-            <div className="flex items-center gap-3 mb-3">
-              <Flag className="w-8 h-8 text-green-500" />
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">{session._count?.laps || 0}</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">Tours complétés</p>
-          </div>
-
-          {/* Championnat */}
-          {session.championship && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex-1 min-w-[240px]">
-              <div className="flex items-center gap-3 mb-3">
-                <Trophy className="w-8 h-8 text-yellow-500" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">{session.championship.name}</span>
+        {/* Lap history table */}
+        {session.laps?.length > 0 && !isBalancing && (
+          <Card>
+            <CardContent className="p-0">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold">Historique des tours ({session.laps.length})</h3>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">Championnat</p>
-            </div>
-          )}
-        </div>
-
-        {/* Leaderboard Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex">
-              {['practice', 'qualif', 'race'].map((phase) => (
-                <button
-                  key={phase}
-                  onClick={() => setActivePhaseTab(phase)}
-                  className={`px-6 py-4 font-medium transition-all flex items-center gap-2 ${
-                    activePhaseTab === phase
-                      ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  {phase === 'practice' && <Clock className="w-5 h-5" />}
-                  {phase === 'qualif' && <Zap className="w-5 h-5" />}
-                  {phase === 'race' && <Flag className="w-5 h-5" />}
-                  {phase === 'practice' ? 'Essais' : phase === 'qualif' ? 'Qualifications' : 'Course'}
-                  {phaseLeaderboards[phase]?.length > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full">
-                      {phaseLeaderboards[phase].length}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-8">
-            {phaseLeaderboards[activePhaseTab]?.length > 0 ? (
-              <div className="space-y-4">
-                {phaseLeaderboards[activePhaseTab].map((entry, idx) => (
-                  <div
-                    key={entry.driver?.id || idx}
-                    className={`flex items-center justify-between p-4 rounded-lg ${
-                      idx === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-600' :
-                      idx === 1 ? 'bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-300 dark:border-gray-600' :
-                      idx === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-600' :
-                      'bg-gray-50 dark:bg-gray-700/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`text-3xl font-bold ${
-                        idx === 0 ? 'text-yellow-600 dark:text-yellow-400' :
-                        idx === 1 ? 'text-gray-600 dark:text-gray-400' :
-                        idx === 2 ? 'text-orange-600 dark:text-orange-400' :
-                        'text-gray-900 dark:text-white'
-                      }`}>
-                        #{idx + 1}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {entry.driver?.img ? (
-                          <img
-                            src={entry.driver.img}
-                            alt={entry.driver.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold"
-                            style={{ backgroundColor: entry.driver?.color || sessionColor }}
-                          >
-                            {entry.driver?.name?.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold text-gray-900 dark:text-white">{entry.driver?.name}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {entry.car?.brand} {entry.car?.model}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900 dark:text-white">{entry.laps || 0} tours</p>
-                      {entry.bestLap && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Meilleur : {(entry.bestLap / 1000).toFixed(3)}s
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="max-h-96 overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-xs text-muted-foreground uppercase">
+                      <th className="px-4 py-2 font-medium">Tour</th>
+                      <th className="px-4 py-2 font-medium">Pilote</th>
+                      <th className="px-4 py-2 font-medium">Voiture</th>
+                      <th className="px-4 py-2 font-medium text-right">Temps</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {session.laps.map((lap, i) => {
+                      const driver = session.drivers?.find(d => d.controller === lap.controller)
+                      return (
+                        <tr key={lap.id || i} className={`${lap.lapTime === fastestLap ? 'bg-purple-500/10' : ''}`}>
+                          <td className="px-4 py-1.5 font-mono text-muted-foreground">{lap.lapNumber}</td>
+                          <td className="px-4 py-1.5">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="size-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                                style={{ backgroundColor: driver?.driver?.color || '#6B7280' }}
+                              >
+                                {(driver?.driver?.name || '?').charAt(0)}
+                              </span>
+                              <span className="truncate">{driver?.driver?.name || `Ctrl ${lap.controller + 1}`}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-1.5 text-muted-foreground truncate">
+                            {driver?.car?.brand} {driver?.car?.model}
+                          </td>
+                          <td className="px-4 py-1.5 text-right">
+                            <LapTime time={Math.round(lap.lapTime)} size="sm" highlight={lap.lapTime === fastestLap} />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                <Flag className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-                <p className="font-medium">Aucune donnée pour cette phase</p>
-              </div>
-            )}
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

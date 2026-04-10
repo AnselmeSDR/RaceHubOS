@@ -258,11 +258,11 @@ export default function SessionsList() {
     },
     {
       id: 'date',
-      accessorFn: (row) => row.createdAt,
+      accessorFn: (row) => row.updatedAt,
       header: 'Date',
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {formatDate(row.original.createdAt)}
+          {formatDate(row.original.updatedAt)}
         </span>
       ),
     },

@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
-import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, Scale, AlertTriangle, Trash2, Copy, Trophy, Timer, Zap } from 'lucide-react'
+import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, Scale, AlertTriangle, Trash2, Copy, Trophy, Timer } from 'lucide-react'
+import Podium from '../race/Podium'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -511,123 +512,21 @@ export default function SessionSection({
 
 
       {/* Finished summary (skip for balancing) */}
-      {isFinished && session.type !== 'balancing' && sessionDrivers.length > 0 && (() => {
-        const sorted = [...sessionDrivers]
-          .filter(sd => sd.driver && (sd.totalLaps > 0 || sd.bestLapTime))
-          .sort((a, b) => {
-            if (session.type === 'practice' || session.type === 'balancing') {
-              const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
-              if (lapsB !== lapsA) return lapsB - lapsA
-              return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
-            }
-            if (session.type === 'qualif') return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
-            const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
-            if (lapsB !== lapsA) return lapsB - lapsA
-            return (a.totalTime || Infinity) - (b.totalTime || Infinity)
-          })
-        const podium = sorted.slice(0, 3)
-        const fastest = sorted.reduce((best, sd) => (!best || (sd.bestLapTime && sd.bestLapTime < best.bestLapTime)) ? sd : best, null)
-        const totalLaps = sorted.reduce((sum, sd) => sum + (sd.totalLaps || 0), 0)
-        const podiumBorder = ['border-yellow-400', 'border-gray-300', 'border-orange-400']
-        const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
-        const podiumHeight = ['h-44', 'h-32', 'h-28']
-        const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
-        const podiumLabel = ['1er', '2ème', '3ème']
-        // Reorder for visual: 2nd - 1st - 3rd
-        const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
-        const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
-
-        const formatLapTime = (ms) => {
-          if (!ms) return '--'
-          const s = ms / 1000
-          return s >= 60 ? `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, '0')}` : `${s.toFixed(3)}s`
-        }
-
-        return (
-          <div className="border-b border-border">
-            {/* Podium visual */}
-            <div className="px-4 pt-4 pb-2">
-              <div className="flex items-end justify-center gap-2">
-                {podiumOrder.map((sd, visualIdx) => {
-                  const realIdx = podiumIndexOrder[visualIdx]
-                  return (
-                    <div key={sd.id} className="flex flex-col items-center flex-1 max-w-[140px]">
-                      {/* Driver avatar */}
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden mb-2 shadow-lg ring-2 ring-offset-2 ring-offset-card"
-                        style={{ '--tw-ring-color': sd.driver?.color || '#6B7280', backgroundColor: sd.driver?.color || '#6B7280' }}
-                      >
-                        {sd.driver?.img
-                          ? <img src={sd.driver.img} alt="" className="w-full h-full object-cover" />
-                          : <span className="text-lg">{sd.driver?.name?.charAt(0) || '?'}</span>}
-                      </div>
-                      {/* Driver name */}
-                      <span className="text-xs font-bold text-foreground truncate w-full text-center mb-1">
-                        {sd.driver?.name?.split(' ').pop()}
-                      </span>
-                      {/* Podium block */}
-                      <div className={`w-full ${podiumHeight[realIdx]} ${podiumBg[realIdx]} border-t-2 ${podiumBorder[realIdx]} rounded-t-lg flex flex-col items-center justify-between pt-2 pb-2 shadow-md ${podiumGlow[realIdx]}`}>
-                        <span className="text-2xl font-black text-foreground/80">{podiumLabel[realIdx]}</span>
-                        <div className="text-center space-y-0.5">
-                          {realIdx === 0 ? (
-                            <div className="font-mono text-xs text-green-400">Vainqueur</div>
-                          ) : (
-                            <div className="font-mono text-xs text-red-400">
-                              {session.type === 'practice'
-                                ? `+${formatLapTime((sd.bestLapTime || 0) - (podium[0]?.bestLapTime || 0))}`
-                                : (sd.totalLaps || 0) < (podium[0]?.totalLaps || 0)
-                                  ? `+${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0)} tour${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) > 1 ? 's' : ''}`
-                                  : `+${formatLapTime((sd.totalTime || 0) - (podium[0]?.totalTime || 0))}`
-                              }
-                            </div>
-                          )}
-                          <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
-                          {session.type !== 'practice' && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} tours</div>}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Stats summary */}
-            <div className="px-4 py-3 bg-muted/30 flex items-center justify-between text-center">
-              <div>
-                <div className="text-lg font-bold text-foreground">{sorted[0]?.totalLaps || 0}</div>
-                <div className="text-xs text-muted-foreground">Tours</div>
-              </div>
-              {timeProgress && (
-                <div>
-                  <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
-                    <Timer className="size-4" />
-                    {formatTime(timeProgress.current)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Durée</div>
-                </div>
-              )}
-              {session.gracePeriod && (
-                <div>
-                  <div className="text-lg font-bold text-orange-500 flex items-center justify-center gap-1">
-                    <Flag className="size-4" />
-                    {Math.round(session.gracePeriod / 1000)}s
-                  </div>
-                  <div className="text-xs text-muted-foreground">Grace</div>
-                </div>
-              )}
-              {fastest && (
-                <div>
-                  <div className="text-lg font-bold text-purple-500 flex items-center justify-center gap-1">
-                    <Zap className="size-4" />
-                    {formatLapTime(fastest.bestLapTime)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{fastest.driver?.name}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
+      {isFinished && session.type !== 'balancing' && sessionDrivers.length > 0 && (
+        <div className="border-b border-border">
+          <Podium
+            drivers={sessionDrivers}
+            sessionType={session.type}
+            stats={{
+              duration: timeProgress?.current,
+              maxDuration: session.maxDuration,
+              maxLaps: session.maxLaps,
+              gracePeriod: session.gracePeriod,
+              gracePeriodUsed: !!session.finishingAt,
+            }}
+          />
+        </div>
+      )}
 
       {/* Connection warning */}
       {!socketConnected && isActive && (
