@@ -17,9 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Écart qualif/practice** : le leader affiche son meilleur tour en violet au lieu de "Leader"
 - **event session:finished** : inclut désormais `sessionType` pour différencier race/qualif dans les annonces
+- **Persistance session libre** : circuit et mode (practice/qualif/race) sauvegardés dans localStorage via AppContext
+- **Copie auto drivers** : changement de type en session libre copie la config pilotes/voitures de la session précédente
+- **Tri podium practice** : aligné avec le leaderboard (tours desc → bestLap asc) pour éviter les incohérences
 
 ### Fixed
 - **Double attribut style** : fix du podium SessionSection (ringColor + backgroundColor fusionnés)
+- **Podium non affiché** : session.drivers mis à jour avec le leaderboard final à la fin de session
+- **Classement race vide** : mapping `totalLaps` manquant dans les records de sessions libres
+- **Classement non rafraîchi** : refetch standings automatique après fin de session (event listener)
 
 ## [1.5.0] - 2026-04-06
 
