@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Zap, Flame, FlaskConical, Pencil } from 'lucide-react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { RecordsList } from '../components/RecordDisplays'
 import { CarFormModal } from './Cars'
+import LapTime from '../components/race/LapTime'
+import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+
+const TYPE_LABELS = {
+  practice: 'Essais',
+  qualif: 'Qualif',
+  race: 'Course',
+  balancing: 'Équilibrage',
+}
+
+const TYPE_COLORS = {
+  practice: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  qualif: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  race: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+}
 
 export default function CarProfile() {
   const { id } = useParams()
@@ -15,17 +33,12 @@ export default function CarProfile() {
   const [resetting, setResetting] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
-  useEffect(() => {
-    loadCar()
-  }, [id])
+  useEffect(() => { loadCar() }, [id])
 
   async function loadCar() {
     try {
       const res = await fetch(`${API_URL}/api/cars/${id}`)
-      if (!res.ok) {
-        console.error('Failed to load car: HTTP', res.status)
-        return
-      }
+      if (!res.ok) return
       const data = await res.json()
       setCar(data.data)
     } catch (error) {
@@ -37,13 +50,10 @@ export default function CarProfile() {
 
   async function handleResetStats() {
     if (!confirm('Remettre à zéro toutes les statistiques de cette voiture ?')) return
-
     setResetting(true)
     try {
       const res = await fetch(`${API_URL}/api/cars/${id}/reset-stats`, { method: 'POST' })
-      if (res.ok) {
-        loadCar()
-      }
+      if (res.ok) loadCar()
     } catch (error) {
       console.error('Failed to reset stats:', error)
     } finally {
@@ -54,10 +64,7 @@ export default function CarProfile() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
+        <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
       </div>
     )
   }
@@ -65,15 +72,10 @@ export default function CarProfile() {
   if (!car) {
     return (
       <div className="p-8">
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">Voiture non trouvée</p>
-          <button
-            onClick={() => navigate('/cars')}
-            className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            Retour aux voitures
-          </button>
-        </div>
+        <Button variant="ghost" onClick={() => navigate('/cars')}>
+          <ArrowLeft className="size-4" /> Retour
+        </Button>
+        <p className="text-center text-muted-foreground mt-8">Voiture non trouvée</p>
       </div>
     )
   }
@@ -81,25 +83,44 @@ export default function CarProfile() {
   const carColor = car.color || '#22C55E'
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => navigate('/cars')}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Retour aux voitures</span>
-        </button>
-
+      <div className="border-b px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/cars')}>
+            <ArrowLeft className="size-4" />
+          </Button>
+          {car.img ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background" style={{ '--tw-ring-color': carColor }}>
+              <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0" style={{ backgroundColor: carColor }}>
+              {car.brand.charAt(0)}
+            </div>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-black text-lg" style={{ color: carColor }}>{car.brand} {car.model}</h1>
+              {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center gap-3">
+              <span className="flex items-center gap-1"><Zap className="size-3 text-green-500" />{car.maxSpeed}%</span>
+              <span className="flex items-center gap-1"><Flame className="size-3 text-red-500" />{car.brakeForce}%</span>
+              <span className="flex items-center gap-1"><FlaskConical className="size-3 text-blue-500" />{car.fuelCapacity}</span>
+              <span>{car._count?.sessions || 0} sessions</span>
+              {car.bestLap && (
+                <span className="flex items-center gap-1">Record <LapTime time={car.bestLap} size="sm" /></span>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
-            Modifier
           </Button>
           <Button variant="outline" size="sm" onClick={handleResetStats} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
-            Reset stats
           </Button>
         </div>
       </div>
@@ -108,157 +129,58 @@ export default function CarProfile() {
         <CarFormModal car={car} onClose={() => { setShowEdit(false); loadCar() }} />
       )}
 
-      {/* Car Header */}
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-2xl mb-8"
-        style={{
-          background: `linear-gradient(135deg, ${carColor}20 0%, ${carColor}05 100%)`,
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, ${carColor}, ${carColor} 10px, transparent 10px, transparent 20px)`
-          }}
-        />
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Records */}
+          <RecordsList
+            title="Top 10 Records"
+            records={car.records}
+            showDriverAvatar={true}
+            showCarAvatar={false}
+            showCar={false}
+            showTrack={true}
+          />
 
-        <div className="relative p-8">
-          <div className="flex items-start gap-6">
-            {/* Car image */}
-            <div className="relative flex-shrink-0">
-              <div
-                className="absolute inset-0 rounded-2xl blur-xl opacity-50"
-                style={{ backgroundColor: carColor }}
-              />
-              <div
-                className="relative w-32 h-32 rounded-2xl flex items-center justify-center text-white font-black text-5xl ring-4 ring-white shadow-2xl overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)`,
-                }}
-              >
-                {car.img ? (
-                  <img
-                    src={car.img}
-                    alt={`${car.brand} ${car.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="drop-shadow-lg">{car.brand.charAt(0)}</span>
-                )}
+          {/* Recent Sessions */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold">Sessions récentes</h3>
               </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1">
-              {car.year && (
-                <div
-                  className="inline-block px-4 py-1 rounded-full text-sm font-bold text-white shadow-md mb-3"
-                  style={{ backgroundColor: carColor }}
-                >
-                  {car.year}
+              {car.sessions?.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {car.sessions.slice(0, 8).map((sd) => (
+                    <Link
+                      key={sd.id}
+                      to={`/sessions/${sd.session?.id || sd.sessionId}`}
+                      className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${TYPE_COLORS[sd.session?.type] || ''}`}>
+                          {TYPE_LABELS[sd.session?.type] || sd.session?.type}
+                        </Badge>
+                        <span className="text-sm text-foreground truncate">
+                          {sd.session?.track?.name || 'Circuit inconnu'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        {sd.finalPos && (
+                          <span className="font-black text-base" style={{ color: carColor }}>P{sd.finalPos}</span>
+                        )}
+                        {sd.bestLapTime && <LapTime time={sd.bestLapTime} size="sm" />}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Aucune session
                 </div>
               )}
-
-              <h1
-                className="font-black text-4xl tracking-tight mb-1"
-                style={{ color: carColor }}
-              >
-                {car.brand.toUpperCase()}
-              </h1>
-              <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">{car.model}</p>
-
-              {/* Specs */}
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                <SpecCard
-                  icon={<Zap className="w-5 h-5" />}
-                  label="Vitesse"
-                  value={`${car.maxSpeed}%`}
-                  color="#22C55E"
-                />
-                <SpecCard
-                  icon={<Flame className="w-5 h-5" />}
-                  label="Freinage"
-                  value={`${car.brakeForce}%`}
-                  color="#EF4444"
-                />
-                <SpecCard
-                  icon={<FlaskConical className="w-5 h-5" />}
-                  label="Réservoir"
-                  value={car.fuelCapacity}
-                  color="#3B82F6"
-                />
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-
-        <div
-          className="absolute top-0 left-0 w-2 h-full"
-          style={{ backgroundColor: carColor }}
-        />
-      </div>
-
-      {/* Records & Sessions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top 10 Records */}
-        <RecordsList
-          title="Top 10 Records"
-          records={car.records}
-          primaryColor={carColor}
-          showDriverAvatar={true}
-          showCarAvatar={false}
-          showCar={false}
-          showTrack={true}
-        />
-
-        {/* Recent Sessions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Sessions récentes</h2>
-          {car.sessions && car.sessions.length > 0 ? (
-            <div className="space-y-3">
-              {car.sessions.slice(0, 5).map((sessionDriver) => (
-                <div
-                  key={sessionDriver.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {sessionDriver.session?.track?.name || 'Circuit inconnu'}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {sessionDriver.session?.type === 'race' ? 'Course' :
-                       sessionDriver.session?.type === 'qualif' ? 'Qualifications' :
-                       'Essais'}
-                    </div>
-                  </div>
-                  {sessionDriver.finalPos && (
-                    <div className="text-right">
-                      <div className="text-2xl font-black" style={{ color: carColor }}>
-                        P{sessionDriver.finalPos}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucune session enregistrée</p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SpecCard({ icon, label, value, color }) {
-  return (
-    <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-center">
-      <div className="flex items-center justify-center mb-1" style={{ color }}>
-        {icon}
-      </div>
-      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase mb-1">{label}</div>
-      <div className="text-xl font-black tabular-nums" style={{ color }}>
-        {value}
       </div>
     </div>
   )

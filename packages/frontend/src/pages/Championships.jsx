@@ -242,12 +242,11 @@ function ChampionshipFormModal({ tracks, onClose }) {
       open
       onClose={onClose}
       title="Nouveau championnat"
-      icon={<Trophy className="w-5 h-5 text-yellow-500" />}
+      icon={<Trophy className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       saving={saving}
       error={error}
       success={success}
-      primaryColor="#EAB308"
       saveLabel="Créer"
     >
       <TextField

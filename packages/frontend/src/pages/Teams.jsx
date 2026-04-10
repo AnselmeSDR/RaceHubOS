@@ -263,16 +263,15 @@ function TeamFormModal({ team, onClose }) {
       open
       onClose={onClose}
       title={team ? "Modifier l'équipe" : 'Nouvelle équipe'}
-      icon={<Users className="w-5 h-5 text-orange-500" />}
+      icon={<Users className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!team}
       saving={saving}
       error={error}
       success={success}
-      primaryColor="#F97316"
     >
       <TextField label="Nom" value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder="Red Bull Racing" required />
-      <PhotoUploadField label="Logo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" primaryColor="#F97316" onError={setError} uploadType="teams" />
+      <PhotoUploadField label="Logo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="teams" />
       <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
     </FormModal>
   )

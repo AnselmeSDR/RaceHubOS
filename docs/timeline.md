@@ -34,6 +34,16 @@
 - DNF listés
 - Liens cliquables vers circuit et championnat
 
+### Pages détail (Track, Driver, Car)
+- Refonte complète : header compact avec avatar, stats inline, tokens sémantiques
+- Sessions récentes cliquables avec badge type coloré (balancing inclus)
+- Plus de gros headers gradient, SpecCards séparées, ni primaryColor
+
+### Composants CRUD
+- Migration shadcn/ui : FormModal (Button), Modal (bg-card, Button), PageHeader, EmptyState, EntityCard, ColorPickerField (Input), RangeField, PhotoUploadField (Button), RecordDisplays (Card, Badge, LapTime)
+- Suppression complète de la prop primaryColor (0 occurrence restante)
+- ModalButton utilise Button shadcn avec mapping variants
+
 ### Historique sessions
 - Tri par défaut : `updatedAt` desc (sessions modifiées/reset remontent)
 - Colonne Date : affiche `updatedAt`

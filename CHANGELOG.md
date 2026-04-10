@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sidebar** : entrée "Équilibrage" ajoutée après Statistiques (icône Scale)
 - **event session:bestlap** : inclut désormais `sessionType` pour désactiver les annonces vocales en balancing
 - **Sidebar en session** : reste ouverte pendant les sessions d'équilibrage (pas de collapse automatique)
+- **Refonte pages détail** : TrackProfile, DriverProfile, CarProfile migrées en shadcn/ui avec header compact, stats inline, sessions cliquables
+- **Migration composants CRUD** : FormModal, Modal, PageHeader, EmptyState, EntityCard, ColorPickerField, RangeField, PhotoUploadField, RecordDisplays en shadcn/ui
+- **Suppression primaryColor** : toutes les couleurs hardcodées remplacées par tokens sémantiques (`text-primary`, `bg-card`, `border-border`)
 - **Tri historique sessions** : tri par `updatedAt` (au lieu de `createdAt`) pour que les sessions modifiées/reset remontent
 - **Colonne Date historique** : affiche `updatedAt` au lieu de `createdAt`
 - **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s

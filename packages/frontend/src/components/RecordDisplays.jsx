@@ -1,22 +1,16 @@
-import { Trophy, Clock, MapPin, Flag } from 'lucide-react'
+import { Trophy, Clock, MapPin } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import LapTime from './race/LapTime'
 import { getImgUrl } from '../utils/image'
 
-const positionStyles = {
-  1: { bg: 'bg-gradient-to-r from-yellow-400 to-yellow-500', text: 'text-yellow-900', ring: 'ring-yellow-300' },
-  2: { bg: 'bg-gradient-to-r from-gray-300 to-gray-400', text: 'text-gray-700', ring: 'ring-gray-200' },
-  3: { bg: 'bg-gradient-to-r from-orange-400 to-orange-500', text: 'text-orange-900', ring: 'ring-orange-300' },
-}
-
 const sessionTypeLabels = {
-  race: { label: 'Course', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  qualif: { label: 'Qualif', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  practice: { label: 'Essais', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  race: { label: 'Course', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+  qualif: { label: 'Qualif', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+  practice: { label: 'Essais', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+  balancing: { label: 'Équilibrage', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
 }
 
-/**
- * RecordItem - Display a single record with driver/car/track info
- * Style inspired by F1/NASCAR standings
- */
 export function RecordItem({
   position,
   lapTime,
@@ -24,48 +18,41 @@ export function RecordItem({
   car,
   track,
   sessionType,
-  primaryColor = '#3B82F6',
   showDriverAvatar = true,
   showCarAvatar = true,
   showCar = true,
   onClick,
 }) {
-  const posStyle = positionStyles[position]
   const isTopThree = position <= 3
   const sessionInfo = sessionTypeLabels[sessionType] || sessionTypeLabels.practice
 
   return (
     <div
       onClick={onClick}
-      className={`
-        relative flex items-center gap-3 p-3 rounded-xl transition-all duration-200
-        ${onClick ? 'cursor-pointer hover:scale-[1.02] hover:shadow-lg' : ''}
-        ${isTopThree ? 'bg-white dark:bg-gray-800 shadow-md' : 'bg-gray-50 dark:bg-gray-700/50'}
-      `}
-      style={isTopThree ? {
-        borderLeft: `4px solid ${position === 1 ? '#EAB308' : position === 2 ? '#9CA3AF' : '#F97316'}`
-      } : undefined}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+        onClick ? 'cursor-pointer' : ''
+      } hover:bg-muted ${
+        position === 1 ? 'bg-gradient-to-r from-yellow-500/15 to-transparent border-l-4 border-yellow-400' :
+        position === 2 ? 'bg-gradient-to-r from-gray-400/10 to-transparent border-l-4 border-gray-300' :
+        position === 3 ? 'bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-400' : ''
+      }`}
     >
-      {/* Position badge */}
-      <div
-        className={`
-          w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg flex-shrink-0 shadow
-          ${posStyle ? `${posStyle.bg} ${posStyle.text} ring-2 ${posStyle.ring}` : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}
-        `}
-      >
-        {position === 1 ? (
-          <Trophy className="w-5 h-5" />
-        ) : (
-          position
-        )}
-      </div>
+      {/* Position */}
+      <span className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm flex-shrink-0 ${
+        position === 1 ? 'bg-yellow-400 text-yellow-950' :
+        position === 2 ? 'bg-gray-300 text-gray-800' :
+        position === 3 ? 'bg-orange-400 text-orange-950' :
+        'text-muted-foreground'
+      }`}>
+        {position === 1 ? <Trophy className="size-3.5" /> : position}
+      </span>
 
-      {/* Driver & Car avatars */}
+      {/* Avatars */}
       <div className="flex items-center -space-x-2 flex-shrink-0">
         {showDriverAvatar && driver && (
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md overflow-hidden ring-2 ring-white dark:ring-gray-700 z-10"
-            style={{ backgroundColor: driver.color || primaryColor }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card z-10"
+            style={{ backgroundColor: driver.color || '#6B7280' }}
           >
             {driver.img ? (
               <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
@@ -76,13 +63,13 @@ export function RecordItem({
         )}
         {showCarAvatar && car && (
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md overflow-hidden ring-2 ring-white dark:ring-gray-700"
-            style={{ backgroundColor: car.color || '#666' }}
+            className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card"
+            style={{ backgroundColor: car.color || '#6B7280' }}
           >
             {car.img ? (
               <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xs">{car.brand?.charAt(0) || '?'}</span>
+              <span>{car.brand?.charAt(0) || '?'}</span>
             )}
           </div>
         )}
@@ -91,28 +78,23 @@ export function RecordItem({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-gray-900 dark:text-white truncate">
+          <span className="font-semibold text-sm text-foreground truncate">
             {driver?.name || 'Inconnu'}
           </span>
-          <span
-            className={`px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${sessionInfo.color}`}
-          >
+          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionInfo.color}`}>
             {sessionInfo.label}
-          </span>
+          </Badge>
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
           {showCar && car && (
             <span className="flex items-center gap-1 truncate">
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: car.color || '#666' }}
-              />
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: car.color || '#6B7280' }} />
               {car.brand} {car.model}
             </span>
           )}
           {track && (
             <span className="flex items-center gap-1 truncate">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <MapPin className="size-3 flex-shrink-0" />
               {track.name}
             </span>
           )}
@@ -120,25 +102,16 @@ export function RecordItem({
       </div>
 
       {/* Lap time */}
-      <div className="flex-shrink-0 text-right">
-        <div
-          className="text-xl font-black tabular-nums"
-          style={{ color: isTopThree ? (position === 1 ? '#EAB308' : primaryColor) : primaryColor }}
-        >
-          {(lapTime / 1000).toFixed(3)}s
-        </div>
+      <div className="flex-shrink-0">
+        <LapTime time={lapTime} size={isTopThree ? 'lg' : 'md'} highlight={position === 1} />
       </div>
     </div>
   )
 }
 
-/**
- * RecordsList - List of records with title
- */
 export function RecordsList({
   title = 'Top 10 Records',
   records,
-  primaryColor = '#3B82F6',
   emptyMessage = 'Aucun record enregistré',
   showDriverAvatar = true,
   showCarAvatar = true,
@@ -146,27 +119,13 @@ export function RecordsList({
   showTrack = true,
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-      {/* Header */}
-      <div
-        className="px-6 py-4 border-b border-gray-100 dark:border-gray-700"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}10 0%, transparent 100%)` }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${primaryColor}20` }}
-          >
-            <Trophy className="w-5 h-5" style={{ color: primaryColor }} />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+    <Card>
+      <CardContent className="p-0">
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-sm font-semibold">{title}</h3>
         </div>
-      </div>
-
-      {/* Records */}
-      <div className="p-4">
         {records && records.length > 0 ? (
-          <div className="space-y-2">
+          <div className="p-2 space-y-0.5">
             {records.map((record, index) => (
               <RecordItem
                 key={record.id}
@@ -176,7 +135,6 @@ export function RecordsList({
                 car={record.car}
                 track={showTrack ? record.track : null}
                 sessionType={record.sessionType}
-                primaryColor={primaryColor}
                 showDriverAvatar={showDriverAvatar}
                 showCarAvatar={showCarAvatar}
                 showCar={showCar}
@@ -185,11 +143,11 @@ export function RecordsList({
           </div>
         ) : (
           <div className="text-center py-12">
-            <Clock className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
+            <Clock className="size-10 mx-auto text-muted-foreground/30 mb-3" />
+            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

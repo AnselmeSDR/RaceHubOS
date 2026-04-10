@@ -1,12 +1,5 @@
-/**
- * Color picker field with preview
- *
- * @param {object} props
- * @param {string} props.label - Field label
- * @param {string} props.value - Current color value
- * @param {function} props.onChange - Color change handler
- * @param {Array} props.presets - Optional preset colors
- */
+import { Input } from '@/components/ui/input'
+
 export default function ColorPickerField({
   label = 'Couleur',
   value = '#3B82F6',
@@ -19,43 +12,31 @@ export default function ColorPickerField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-foreground mb-2">{label}</label>
 
       <div className="flex items-center gap-3">
-        {/* Color input */}
-        <div className="relative">
-          <input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-12 h-12 rounded-lg cursor-pointer border-2 border-gray-200 dark:border-gray-600"
-          />
-        </div>
-
-        {/* Preview circle */}
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-12 h-12 rounded-lg cursor-pointer border-2 border-border"
+        />
         <div
-          className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-600 shadow-md"
+          className="w-10 h-10 rounded-full border-2 border-card shadow-md"
           style={{ backgroundColor: value }}
         />
-
-        {/* Hex value */}
-        <input
+        <Input
           type="text"
           value={value}
           onChange={(e) => {
             const hex = e.target.value
-            if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-              onChange(hex)
-            }
+            if (/^#[0-9A-Fa-f]{6}$/.test(hex)) onChange(hex)
           }}
-          className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm font-mono uppercase"
+          className="w-24 font-mono uppercase"
           placeholder="#000000"
         />
       </div>
 
-      {/* Presets */}
       {presets.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
           {presets.map((color) => (
@@ -64,7 +45,7 @@ export default function ColorPickerField({
               type="button"
               onClick={() => onChange(color)}
               className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                value === color ? 'border-gray-900 dark:border-white scale-110' : 'border-white dark:border-gray-600 shadow-sm'
+                value === color ? 'border-foreground scale-110' : 'border-card shadow-sm'
               }`}
               style={{ backgroundColor: color }}
             />

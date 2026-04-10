@@ -1,20 +1,6 @@
 import { Plus, LayoutGrid, List } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
-/**
- * Reusable CRUD page header with title, count, view toggle, and add button
- *
- * @param {object} props
- * @param {string} props.title - Page title
- * @param {React.ReactNode} props.icon - Title icon component
- * @param {number} props.count - Number of items
- * @param {string} props.countLabel - Label for count (e.g., "pilotes", "voitures")
- * @param {function} props.onAdd - Add button click handler
- * @param {string} props.addLabel - Add button label (default: "Ajouter")
- * @param {string} props.primaryColor - Primary color for styling
- * @param {boolean} props.showViewToggle - Show grid/list toggle
- * @param {'grid' | 'list'} props.viewMode - Current view mode
- * @param {function} props.onViewModeChange - View mode change handler
- */
 export default function PageHeader({
   title,
   icon,
@@ -22,7 +8,6 @@ export default function PageHeader({
   countLabel = 'éléments',
   onAdd,
   addLabel = 'Ajouter',
-  primaryColor = '#3B82F6',
   showViewToggle = false,
   viewMode = 'grid',
   onViewModeChange
@@ -30,67 +15,51 @@ export default function PageHeader({
   return (
     <div className="flex items-center justify-between mb-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-          {icon && (
-            <span style={{ color: primaryColor }}>
-              {icon}
-            </span>
-          )}
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          {icon && <span className="text-primary">{icon}</span>}
           {title}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           {count} {countLabel}
         </p>
       </div>
 
       <div className="flex items-center gap-3">
         {showViewToggle && onViewModeChange && (
-          <ViewToggleButtons
-            mode={viewMode}
-            onChange={onViewModeChange}
-            primaryColor={primaryColor}
-          />
+          <ViewToggleButtons mode={viewMode} onChange={onViewModeChange} />
         )}
-
-        <button
-          onClick={onAdd}
-          style={{ backgroundColor: primaryColor }}
-          className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-5 h-5" />
+        <Button onClick={onAdd}>
+          <Plus className="size-4" />
           {addLabel}
-        </button>
+        </Button>
       </div>
     </div>
   )
 }
 
-/**
- * Grid/List view toggle buttons
- */
 export function ViewToggleButtons({ mode, onChange }) {
   return (
-    <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+    <div className="flex bg-muted rounded-lg p-1">
       <button
         onClick={() => onChange('grid')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           mode === 'grid'
-            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'
         }`}
       >
-        <LayoutGrid className="w-4 h-4" />
+        <LayoutGrid className="size-4" />
         Grille
       </button>
       <button
         onClick={() => onChange('list')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           mode === 'list'
-            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground'
         }`}
       >
-        <List className="w-4 h-4" />
+        <List className="size-4" />
         Liste
       </button>
     </div>

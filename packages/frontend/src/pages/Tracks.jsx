@@ -332,13 +332,12 @@ export function TrackFormModal({ track, onClose }) {
       open
       onClose={onClose}
       title={track ? 'Modifier le circuit' : 'Nouveau circuit'}
-      icon={<MapPin className="w-5 h-5 text-purple-500" />}
+      icon={<MapPin className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!track}
       saving={saving}
       error={error}
       success={success}
-      primaryColor="#9333EA"
     >
       <TextField
         label="Nom"
@@ -352,7 +351,6 @@ export function TrackFormModal({ track, onClose }) {
         value={formData.img}
         onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="rect"
-        primaryColor="#9333EA"
         onError={setError}
         uploadType="tracks"
       />
