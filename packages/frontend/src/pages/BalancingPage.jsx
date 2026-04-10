@@ -40,6 +40,16 @@ export default function BalancingPage() {
   const [standings, setStandings] = useState([])
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
+  const [maxLapTime, setMaxLapTime] = useState(() => {
+    const stored = localStorage.getItem('racehubos-balancing-maxlaptime')
+    return stored ? parseInt(stored) : null
+  })
+
+  const handleMaxLapTimeChange = useCallback((value) => {
+    setMaxLapTime(value)
+    if (value) localStorage.setItem('racehubos-balancing-maxlaptime', value)
+    else localStorage.removeItem('racehubos-balancing-maxlaptime')
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -272,10 +282,12 @@ export default function BalancingPage() {
                   onSaveConfig={handleSaveConfig}
                   onDelete={handleDeleteSession}
                   onReset={handleResetSession}
+                  maxLapTime={maxLapTime}
+                  onMaxLapTimeChange={handleMaxLapTimeChange}
                 />
 
                 {session && maxLapsCompleted > 0 && (
-                  <BalancingChart entries={entries} />
+                  <BalancingChart entries={entries} maxLapTime={maxLapTime} />
                 )}
               </>
             )}

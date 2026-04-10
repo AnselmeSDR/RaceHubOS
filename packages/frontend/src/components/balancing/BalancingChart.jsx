@@ -33,7 +33,7 @@ function computeTrend(laps) {
   return { direction: delta > 0 ? 'slower' : 'faster', delta }
 }
 
-export default function BalancingChart({ entries = [] }) {
+export default function BalancingChart({ entries = [], maxLapTime = null }) {
   const { chartData, cars, medians } = useMemo(() => {
     const cars = []
     const carLapsMap = {}
@@ -45,8 +45,10 @@ export default function BalancingChart({ entries = [] }) {
 
       const key = `${name}-${entry.controller}`
       cars.push({ key, name, color })
-      // Exclude first lap (pit exit) from chart and calculations
-      carLapsMap[key] = entry.laps.slice(1)
+      // Exclude first lap (pit exit) and laps exceeding maxLapTime
+      let laps = entry.laps.slice(1)
+      if (maxLapTime) laps = laps.filter(l => l.lapTime <= maxLapTime)
+      carLapsMap[key] = laps
     }
 
     // Build chart data: one row per lap number
@@ -69,7 +71,7 @@ export default function BalancingChart({ entries = [] }) {
     }
 
     return { chartData, cars, medians }
-  }, [entries])
+  }, [entries, maxLapTime])
 
   // Stats per car for the summary below the chart
   const carStats = useMemo(() => {
@@ -78,8 +80,10 @@ export default function BalancingChart({ entries = [] }) {
       .map(entry => {
         const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || `Voiture ${entry.controller + 1}`
         const key = `${name}-${entry.controller}`
-        // Exclude first lap from calculations
-        const times = entry.laps.slice(1).map(l => l.lapTime)
+        // Exclude first lap and outliers from calculations
+        let filteredLaps = entry.laps.slice(1)
+        if (maxLapTime) filteredLaps = filteredLaps.filter(l => l.lapTime <= maxLapTime)
+        const times = filteredLaps.map(l => l.lapTime)
         if (times.length === 0) return null
         const best = Math.min(...times)
 
@@ -113,7 +117,7 @@ export default function BalancingChart({ entries = [] }) {
       ...s,
       deltaToFastest: s.bestMedian && fastestMedian ? s.bestMedian - fastestMedian : null,
     }))
-  }, [entries])
+  }, [entries, maxLapTime])
 
   if (cars.length === 0) {
     return (
@@ -137,7 +141,7 @@ export default function BalancingChart({ entries = [] }) {
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis
                 dataKey="lap"
-                label={{ value: 'Tour', position: 'insideBottom', offset: -15 }}
+                label={{ value: 'Tour(s)', position: 'insideBottomRight', offset: -5 }}
                 tick={{ fontSize: 12 }}
               />
               <YAxis
