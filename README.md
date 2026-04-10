@@ -48,6 +48,7 @@ Built by slot racers, for slot racers. 🏎️
 - 🔌 Bluetooth LE connectivity to Carrera Control Unit via AppConnect
 - 🎮 Built-in simulator for development (no hardware required)
 - 🏎️ Free session mode with persistent track/type selection
+- ⚖️ Car balancing mode with lap time chart, median tracking and outlier filtering
 - 📺 Driver displays for external screens
 
 ## 🛠️ Tech Stack
@@ -203,6 +204,7 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 - 🔌 Connexion Bluetooth LE à la Control Unit Carrera via AppConnect
 - 🎮 Simulateur intégré pour le développement (pas de matériel requis)
 - 🏎️ Mode session libre avec mémorisation du circuit et du type
+- ⚖️ Mode équilibrage voitures avec graphe temps au tour, suivi médiane et filtre outliers
 - 📺 Affichages pilotes pour écrans externes
 
 ### Installation

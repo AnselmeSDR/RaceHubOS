@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-04-11
+
+### Added
+- **Sessions d'équilibrage** : nouveau type de session `balancing` dédié à l'équilibrage des voitures
+- **Page Équilibrage** (`/balancing`) : page dédiée avec sélecteur de circuit, config simplifiée (contrôleur + voiture uniquement)
+- **Graphe temps au tour** : LineChart recharts en temps réel remplaçant le leaderboard, une courbe par voiture
+- **Statistiques par voiture** : meilleur tour, meilleure médiane (par tranche de 5 tours), indicateur de tendance (accélère/ralentit/stable)
+- **Écart entre voitures** : delta de meilleure médiane affiché pour comparer les performances
+- **Classement général par voiture** : best lap + meilleure médiane par voiture (pas par pilote) dans le panneau droit
+- **Historique des sessions** : évolution de la meilleure médiane session par session avec indicateurs colorés (vert = amélioré, rouge = dégradé)
+- **Filtre outliers** : input "Temps max" dans la config pour exclure les tours aberrants du graphe et des calculs
+- **Exclusion premier tour** : le tour de sortie de pit est automatiquement ignoré dans les calculs et le graphe
+
+### Changed
+- **SessionSection** : colonnes Pilote et Grille masquées pour les sessions balancing, Grace période remplacée par Temps max
+- **Sidebar** : entrée "Équilibrage" ajoutée après Statistiques (icône Scale)
+- **event session:bestlap** : inclut désormais `sessionType` pour désactiver les annonces vocales en balancing
+- **Sidebar en session** : reste ouverte pendant les sessions d'équilibrage (pas de collapse automatique)
+
 ## [1.6.0] - 2026-04-10
 
 ### Added
