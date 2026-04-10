@@ -21,7 +21,6 @@ Open Source Race Management System for Carrera Digital 132/124
   - [Simulator](#-simulator)
   - [WebSocket Events](#-websocket-events)
 - [Contributing](#-contributing)
-- [Screenshots](#-screenshots)
 - [License](#-license)
 - [Credits](#-credits)
 - [Version française](#-version-française)
@@ -157,15 +156,6 @@ All contributions are welcome — whether it's a feature, a bug fix, a design id
 - **Code** — Fork, branch, and submit a pull request
 - **Questions** — Reach out at anselme8@icloud.com
 
-## 📸 Screenshots
-
-| | |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) **Dashboard** | ![Race](docs/screenshots/race.png) **Race** |
-| ![Free Session](docs/screenshots/free-session.png) **Free Session** | ![Championships](docs/screenshots/championships.png) **Championships** |
-| ![Drivers](docs/screenshots/drivers.png) **Drivers** | ![Stats](docs/screenshots/stats.png) **Statistics** |
-| ![Sessions](docs/screenshots/sessions.png) **Sessions** | ![Settings](docs/screenshots/settings.png) **Settings** |
-
 ## 📄 License
 
 Apache-2.0
@@ -287,3 +277,14 @@ Apache-2.0
 - OpenLap : Thomas Kemmer
 
 Vibe codé avec [Claude Code](https://claude.ai/code)
+
+---
+
+## 📸 Screenshots
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) **Dashboard** | ![Race](docs/screenshots/race.png) **Race** |
+| ![Free Session](docs/screenshots/free-session.png) **Free Session** | ![Championships](docs/screenshots/championships.png) **Championships** |
+| ![Drivers](docs/screenshots/drivers.png) **Drivers** | ![Stats](docs/screenshots/stats.png) **Statistics** |
+| ![Sessions](docs/screenshots/sessions.png) **Sessions** | ![Settings](docs/screenshots/settings.png) **Settings** |
