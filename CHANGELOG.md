@@ -17,12 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Historique des sessions** : évolution de la meilleure médiane session par session avec indicateurs colorés (vert = amélioré, rouge = dégradé)
 - **Filtre outliers** : input "Temps max" dans la config pour exclure les tours aberrants du graphe et des calculs
 - **Exclusion premier tour** : le tour de sortie de pit est automatiquement ignoré dans les calculs et le graphe
+- **Composant Podium** : extrait en composant réutilisable (`Podium.jsx`) avec stats résumé (tours réalisés/configurés, durée réelle/configurée, grace période, meilleur tour)
+- **Refonte page détail session** : migration shadcn/ui, podium, leaderboard intégré, historique des tours, support balancing avec graphe, DNF
 
 ### Changed
 - **SessionSection** : colonnes Pilote et Grille masquées pour les sessions balancing, Grace période remplacée par Temps max
 - **Sidebar** : entrée "Équilibrage" ajoutée après Statistiques (icône Scale)
 - **event session:bestlap** : inclut désormais `sessionType` pour désactiver les annonces vocales en balancing
 - **Sidebar en session** : reste ouverte pendant les sessions d'équilibrage (pas de collapse automatique)
+- **Tri historique sessions** : tri par `updatedAt` (au lieu de `createdAt`) pour que les sessions modifiées/reset remontent
+- **Colonne Date historique** : affiche `updatedAt` au lieu de `createdAt`
+- **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s
 
 ## [1.6.0] - 2026-04-10
 

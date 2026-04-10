@@ -16,7 +16,7 @@ const prisma = () => sessionService.prisma;
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, championshipId, trackId, type, deleted, limit = '50', offset = '0', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { status, championshipId, trackId, type, deleted, limit = '50', offset = '0', sortBy = 'updatedAt', sortOrder = 'desc' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     if (status && status !== 'all') where.status = status.includes(',') ? { in: status.split(',') } : status;
     if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
