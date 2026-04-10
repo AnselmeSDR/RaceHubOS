@@ -135,17 +135,19 @@ export default function SessionsList() {
             { value: 'practice', label: 'Essais libres' },
             { value: 'qualif', label: 'Qualifications' },
             { value: 'race', label: 'Course' },
+            { value: 'balancing', label: 'Équilibrage' },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, type: v }))}
         />
       ),
       cell: ({ row }) => {
         const colors = {
-          practice: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300',
-          qualif: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300',
-          race: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300',
+          practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+          qualif: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+          race: 'bg-green-500/10 text-green-600 dark:text-green-400',
+          balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
         }
-        const labels = { practice: 'Essais', qualif: 'Qualif', race: 'Course' }
+        const labels = { practice: 'Essais', qualif: 'Qualif', race: 'Course', balancing: 'Équilibrage' }
         return (
           <Badge className={colors[row.original.type] || ''}>
             {labels[row.original.type] || row.original.type}

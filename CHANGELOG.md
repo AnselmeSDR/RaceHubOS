@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tri historique sessions** : tri par `updatedAt` (au lieu de `createdAt`) pour que les sessions modifiées/reset remontent
 - **Colonne Date historique** : affiche `updatedAt` au lieu de `createdAt`
 - **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s
+- **Couleurs types de session unifiées** : essais=violet, qualif=bleu, course=vert, équilibrage=orange sur toutes les pages
+- **Dashboard classement pilotes** : courses/victoires/podiums colorés, nombre de courses affiché
 
 ## [1.6.0] - 2026-04-10
 

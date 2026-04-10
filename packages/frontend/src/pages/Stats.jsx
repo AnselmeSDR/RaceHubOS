@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const sessionTypeLabels = {
-  race: { label: 'Course', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  qualif: { label: 'Qualif', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  practice: { label: 'Essais', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  race: { label: 'Course', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+  qualif: { label: 'Qualif', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+  practice: { label: 'Essais', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+  balancing: { label: 'Équilibrage', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
 }
 
 export default function Stats() {
