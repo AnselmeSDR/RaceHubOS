@@ -230,6 +230,33 @@ Pour mettre à jour, relancer le même `.bat` — il détecte la version install
 
 > **Note :** L'application tourne actuellement en mode développement (`npm run dev`). Des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus à terme.
 
+### Stack technique
+
+**Frontend :** React 19, Vite, TailwindCSS + shadcn/ui, Socket.io-client, Framer Motion
+
+**Backend :** Node.js 20+, Express + Socket.io, Prisma + SQLite (WAL), Simulateur intégré
+
+### Développement
+
+#### Simulateur
+
+Le simulateur intégré reproduit le comportement de la Control Unit Carrera. Aucun matériel requis.
+
+1. Ouvrir les Paramètres
+2. Se connecter au "Simulateur"
+3. Configurer une session et démarrer
+
+#### Événements WebSocket
+
+Événements principaux émis par le backend :
+- `session:leaderboard` — Classement en temps réel
+- `session:heartbeat` — Timing, temps/tours restants, sync leaderboard
+- `session:bestlap` — Nouveau meilleur tour de session (déclenche l'annonce vocale)
+- `session:finished` — Fin de session avec classement final
+- `session:status_changed` — Transitions du cycle de vie de la session
+- `cu:status` — État de la Control Unit (feux, mode, carburant)
+- `cu:timer` — Temps bruts tours/secteurs depuis le matériel
+
 ### Contribuer
 
 Le projet est en développement actif et ouvert aux contributions :
@@ -243,3 +270,20 @@ Le projet est en développement actif et ouvert aux contributions :
 - **Idées et bugs** — [Ouvrir une issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branche, et pull request
 - **Questions** — anselme8@icloud.com
+
+### Licence
+
+Apache-2.0
+
+### Crédits
+
+**Projet**
+- Anselme Schneider — Fondateur & Développeur (anselme8@icloud.com)
+- Romain Danna — Co-auteur (expertise course & métier)
+
+**Librairies & Références**
+- Reverse engineering du protocole : Stephan Hess (slotbaer.de)
+- carreralib : Thomas Kemmer
+- OpenLap : Thomas Kemmer
+
+Vibe codé avec [Claude Code](https://claude.ai/code)
