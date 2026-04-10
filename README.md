@@ -4,7 +4,7 @@ Open Source Race Management System for Carrera Digital 132/124
 
 ![Podium](docs/screenshots/podium.png)
 
-**[English](#-features)** | **[Français](#-fonctionnalités)**
+**[English](#-features)** | **[Français](#-version-française)**
 
 ---
 
