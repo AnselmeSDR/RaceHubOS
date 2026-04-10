@@ -164,8 +164,8 @@ RaceHubOS is an active project with a lot of room to grow. Here are some directi
 
 All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
 
-- **Ideas & bugs** — [Open an issue](https://gitlab.com/AnselmeSDR/RaceHubOS/-/issues)
-- **Code** — Fork, branch, and submit a merge request
+- **Ideas & bugs** — [Open an issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
+- **Code** — Fork, branch, and submit a pull request
 - **Questions** — Reach out at anselme8@icloud.com
 
 ## 📄 License
