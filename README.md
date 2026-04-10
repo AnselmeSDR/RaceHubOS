@@ -40,10 +40,17 @@ Open Source Race Management System for Carrera Digital 132/124
 
 - Node.js 20+
 - npm 10+
+- Git
 
-### Installation (development)
+> **Note :** L'application tourne actuellement en mode **développement** (`npm run dev`) sur toutes les plateformes. Le backend Express ne sert pas encore les fichiers statiques du frontend buildé — le frontend nécessite le serveur Vite pour fonctionner. À terme, des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus pour simplifier l'installation et supprimer la dépendance à Node.js.
+
+### 🍎 macOS / 🐧 Linux
 
 ```bash
+# Clone the repo
+git clone https://gitlab.com/AnselmeSDR/RaceHubOS.git
+cd RaceHubOS
+
 # Install dependencies
 npm install
 
@@ -53,35 +60,39 @@ npx prisma generate
 npx prisma db push
 cd ../..
 
-# Run in development mode (starts both frontend and backend)
+# Start the app (frontend + backend)
 npm run dev
 ```
 
-The frontend will be available at http://localhost:5173
-The backend will be available at http://localhost:3001
+L'app s'ouvre sur http://localhost:5173 (frontend) et http://localhost:3001 (backend API).
 
-### 🪟 Installation (Windows - production)
+### 🪟 Windows
 
-1. Download `RaceHubOS-upgrade.bat` from the repo
-2. Place it on the Desktop
-3. Double-click to launch
+#### Première installation
 
-The script:
-- Clones the repo into `C:\Users\<user>\RaceHubOS-v<version>`
-- Installs dependencies (`npm install`)
-- Copies the database and uploads from the previous version
-- Generates the Prisma client and applies migrations
-- Creates a launcher `RaceHubOS-v<version>.bat`
-- Creates a Desktop shortcut with the icon
+1. Télécharger `RaceHubOS-upgrade.bat` depuis le repo
+2. Le placer sur le Bureau
+3. Double-cliquer pour lancer
 
-### 🔄 Upgrade
+Le script automatise tout :
+- Clone le repo dans `C:\Users\<user>\RaceHubOS-v<version>`
+- Installe les dépendances (`npm install`)
+- Génère le client Prisma et applique les migrations
+- Crée un lanceur `RaceHubOS-v<version>.bat` (lance `npm run dev` + ouvre le navigateur)
+- Crée un raccourci sur le Bureau avec l'icône
 
-1. Double-click `RaceHubOS-upgrade.bat` on the Desktop
-2. The script auto-detects the latest installed version (semver sort)
-3. Clones the new version, copies data, installs dependencies
-4. Creates a new launcher and shortcut
-5. Displays the changelog at the end
-6. Previous versions are not deleted (rollback possible)
+#### Utilisation
+
+Double-cliquer sur le raccourci **RaceHubOS** sur le Bureau. Le navigateur s'ouvre automatiquement après quelques secondes.
+
+#### 🔄 Mise à jour
+
+1. Double-cliquer sur `RaceHubOS-upgrade.bat` sur le Bureau
+2. Le script détecte automatiquement la dernière version installée (tri semver)
+3. Clone la nouvelle version, copie la base de données et les uploads
+4. Crée un nouveau lanceur et raccourci
+5. Affiche le changelog à la fin
+6. Les anciennes versions ne sont pas supprimées (rollback possible)
 
 ## 📁 Project Structure
 
