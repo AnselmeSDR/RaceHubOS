@@ -149,12 +149,11 @@ RaceHubOS is an active project with a lot of room to grow. Here are some directi
 - 📺 **External displays** — Dedicated screens for spectators (leaderboard, live timing, standings)
 - 🏗️ **Packaged builds** — Standalone `.exe`, `.app`, `.AppImage`
 - 🧩 **New features** — Penalties, fuel strategy, team relay races, lap charts, and more
-
-All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
-
 - **Ideas & bugs** — [Open an issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branch, and submit a pull request
 - **Questions** — Reach out at anselme8@icloud.com
+
+All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
 
 ## 📄 License
 
@@ -256,7 +255,6 @@ Le projet est en développement actif et ouvert aux contributions :
 - 📺 **Écrans externes** — Affichages dédiés pour les spectateurs
 - 🏗️ **Builds packagés** — Exécutables standalone
 - 🧩 **Nouvelles features** — Pénalités, stratégie carburant, relais par équipe, graphiques de tours, etc.
-
 - **Idées et bugs** — [Ouvrir une issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branche, et pull request
 - **Questions** — anselme8@icloud.com
