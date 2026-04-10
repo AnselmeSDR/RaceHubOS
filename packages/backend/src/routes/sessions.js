@@ -550,7 +550,7 @@ router.get('/:id/leaderboard', async (req, res) => {
         orderBy: { timestamp: 'desc' }
       });
 
-      entries.push({
+      const entry = {
         controller: sd.controller,
         driverId: sd.driverId,
         driver: sd.driver,
@@ -560,7 +560,18 @@ router.get('/:id/leaderboard', async (req, res) => {
         totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
         bestLapTime: laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null,
         lastLapTime: laps.length > 0 ? laps[0].lapTime : null,
-      });
+      };
+
+      // Include lap history for balancing sessions (needed for chart)
+      if (session.type === 'balancing') {
+        const sortedLaps = [...laps].sort((a, b) => a.lapNumber - b.lapNumber);
+        entry.laps = sortedLaps.map(l => ({
+          lapNumber: l.lapNumber,
+          lapTime: Math.round(l.lapTime),
+        }));
+      }
+
+      entries.push(entry);
     }
 
     // Calculate gaps and positions

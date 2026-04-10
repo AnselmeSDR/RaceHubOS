@@ -40,6 +40,9 @@ export class SessionService extends EventEmitter {
 
     // Heartbeat
     this.heartbeatInterval = null;
+
+    // Lap history for balancing sessions (controller -> [{lapNumber, lapTime}])
+    this.lapHistory = new Map();
   }
 
   setSyncService(syncService) {
@@ -77,6 +80,18 @@ export class SessionService extends EventEmitter {
     // 1. Update RAM
     driver.totalLaps++;
     driver.lastLapTime = Math.round(lapTime);
+
+    // Track lap history for balancing chart
+    if (this.currentPhase === 'balancing') {
+      if (!this.lapHistory.has(controller)) {
+        this.lapHistory.set(controller, []);
+      }
+      this.lapHistory.get(controller).push({
+        lapNumber: driver.totalLaps,
+        lapTime: Math.round(lapTime),
+      });
+    }
+
     const previousSessionBest = this.getSessionBestLapTime();
     if (driver.bestLapTime === null || lapTime < driver.bestLapTime) {
       driver.bestLapTime = Math.round(lapTime);
@@ -142,7 +157,8 @@ export class SessionService extends EventEmitter {
     this.activeSessionId = session.id;
     this.activeTrackId = session.trackId;
     this.currentPhase = session.type === 'qualif' ? 'qualif' :
-                        session.type === 'practice' ? 'practice' : 'race';
+                        session.type === 'practice' ? 'practice' :
+                        session.type === 'balancing' ? 'balancing' : 'race';
 
     // Reset position tracking for new session
     if (!this.previousPositions) {
@@ -184,6 +200,24 @@ export class SessionService extends EventEmitter {
       gap: null,
       crossings: sd.totalLaps || 0, // Track line crossings (first doesn't count as lap)
     }));
+
+    // Load lap history for balancing sessions (needed for chart data)
+    this.lapHistory = new Map();
+    if (session.type === 'balancing') {
+      const existingLaps = await this.prisma.lap.findMany({
+        where: { sessionId: session.id, deletedAt: null },
+        orderBy: { lapNumber: 'asc' },
+      });
+      for (const lap of existingLaps) {
+        if (!this.lapHistory.has(lap.controller)) {
+          this.lapHistory.set(lap.controller, []);
+        }
+        this.lapHistory.get(lap.controller).push({
+          lapNumber: lap.lapNumber,
+          lapTime: Math.round(lap.lapTime),
+        });
+      }
+    }
 
     this.raceFinishTime = null;
     this.recalculatePositions();
@@ -341,6 +375,7 @@ export class SessionService extends EventEmitter {
     this.currentPhase = 'practice';
     this.sessionConfig = null;
     this.sessionStatus = null;
+    this.lapHistory = new Map();
 
     if (this.gracePeriodTimer) {
       clearTimeout(this.gracePeriodTimer);
@@ -483,8 +518,18 @@ export class SessionService extends EventEmitter {
     }
   }
 
+  getEnrichedLeaderboard() {
+    if (this.currentPhase === 'balancing' && this.lapHistory.size > 0) {
+      return this.sessionDrivers.map(d => ({
+        ...d,
+        laps: this.lapHistory.get(d.controller) || [],
+      }));
+    }
+    return this.sessionDrivers;
+  }
+
   emitLeaderboard() {
-    this.emit('session:leaderboard', this.sessionDrivers);
+    this.emit('session:leaderboard', this.getEnrichedLeaderboard());
   }
 
   /**
@@ -593,7 +638,7 @@ export class SessionService extends EventEmitter {
         pauseDuration: currentPauseDuration,
         totalPauseDuration,
         pauses,
-        leaderboard: this.sessionDrivers,
+        leaderboard: this.getEnrichedLeaderboard(),
       });
     }, 1000);
   }
@@ -750,7 +795,7 @@ export class SessionService extends EventEmitter {
       reason,
       championshipId,
       sessionType: this.currentPhase,
-      leaderboard: this.sessionDrivers
+      leaderboard: this.getEnrichedLeaderboard()
     });
     this.emitStatusChanged('finished', previousStatus);
 
@@ -833,8 +878,8 @@ export class SessionService extends EventEmitter {
   async createSession(params) {
     const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status: initialStatus } = params;
 
-    if (!['practice', 'qualif', 'race'].includes(type)) {
-      throw new Error('Invalid session type. Must be practice, qualif, or race');
+    if (!['practice', 'qualif', 'race', 'balancing'].includes(type)) {
+      throw new Error('Invalid session type. Must be practice, qualif, race, or balancing');
     }
 
     // Resolve trackId from championship if needed
@@ -854,7 +899,7 @@ export class SessionService extends EventEmitter {
     // Create session
     const session = await this.prisma.session.create({
       data: {
-        name: name || (type === 'qualif' ? 'Qualifying' : type === 'race' ? 'Race' : 'Practice'),
+        name: name || (type === 'qualif' ? 'Qualifying' : type === 'race' ? 'Race' : type === 'balancing' ? 'Balancing' : 'Practice'),
         type,
         status: initialStatus || 'draft',
         trackId: finalTrackId,
@@ -1044,7 +1089,7 @@ export class SessionService extends EventEmitter {
   }
 
   getLeaderboard() {
-    return this.sessionDrivers;
+    return this.getEnrichedLeaderboard();
   }
 
   isActive() {
