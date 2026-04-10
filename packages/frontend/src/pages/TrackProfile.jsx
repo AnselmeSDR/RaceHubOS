@@ -1,12 +1,29 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Rocket, Flag, MapPin, Trophy, Pencil } from 'lucide-react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, RefreshCw, Flag, MapPin, Trophy, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { RecordsList } from '../components/RecordDisplays'
 import { TrackFormModal } from './Tracks'
+import LapTime from '../components/race/LapTime'
+import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-const PRIMARY_COLOR = '#9333EA'
+
+const TYPE_LABELS = {
+  practice: 'Essais',
+  qualif: 'Qualif',
+  race: 'Course',
+  balancing: 'Équilibrage',
+}
+
+const TYPE_COLORS = {
+  practice: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  qualif: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  race: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+}
 
 export default function TrackProfile() {
   const { id } = useParams()
@@ -16,17 +33,12 @@ export default function TrackProfile() {
   const [resetting, setResetting] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
-  useEffect(() => {
-    loadTrack()
-  }, [id])
+  useEffect(() => { loadTrack() }, [id])
 
   async function loadTrack() {
     try {
       const res = await fetch(`${API_URL}/api/tracks/${id}`)
-      if (!res.ok) {
-        console.error('Failed to load track: HTTP', res.status)
-        return
-      }
+      if (!res.ok) return
       const data = await res.json()
       setTrack(data.data)
     } catch (error) {
@@ -38,13 +50,10 @@ export default function TrackProfile() {
 
   async function handleResetStats() {
     if (!confirm('Remettre à zéro toutes les statistiques de ce circuit ?')) return
-
     setResetting(true)
     try {
       const res = await fetch(`${API_URL}/api/tracks/${id}/reset-stats`, { method: 'POST' })
-      if (res.ok) {
-        loadTrack()
-      }
+      if (res.ok) loadTrack()
     } catch (error) {
       console.error('Failed to reset stats:', error)
     } finally {
@@ -55,10 +64,7 @@ export default function TrackProfile() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
-        </div>
+        <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
       </div>
     )
   }
@@ -66,41 +72,48 @@ export default function TrackProfile() {
   if (!track) {
     return (
       <div className="p-8">
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">Circuit non trouvé</p>
-          <button
-            onClick={() => navigate('/tracks')}
-            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            Retour aux circuits
-          </button>
-        </div>
+        <Button variant="ghost" onClick={() => navigate('/tracks')}>
+          <ArrowLeft className="size-4" /> Retour
+        </Button>
+        <p className="text-center text-muted-foreground mt-8">Circuit non trouvé</p>
       </div>
     )
   }
 
-  const trackColor = track.color || PRIMARY_COLOR
+  const trackColor = track.color || '#9333EA'
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => navigate('/tracks')}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Retour aux circuits</span>
-        </button>
-
+      <div className="border-b px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/tracks')}>
+            <ArrowLeft className="size-4" />
+          </Button>
+          {track.img ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background" style={{ '--tw-ring-color': trackColor }}>
+              <img src={getImgUrl(track.img)} alt={track.name} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0" style={{ backgroundColor: trackColor }}>
+              <MapPin className="size-5" />
+            </div>
+          )}
+          <div>
+            <h1 className="font-black text-lg" style={{ color: trackColor }}>{track.name}</h1>
+            <div className="text-xs text-muted-foreground flex items-center gap-3">
+              {track.length && <span>{track.length}m</span>}
+              {track.corners && <span>{track.corners} virages</span>}
+              <span>{track._count?.sessions || 0} sessions</span>
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
-            Modifier
           </Button>
           <Button variant="outline" size="sm" onClick={handleResetStats} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
-            Reset stats
           </Button>
         </div>
       </div>
@@ -109,173 +122,72 @@ export default function TrackProfile() {
         <TrackFormModal track={track} onClose={() => { setShowEdit(false); loadTrack() }} />
       )}
 
-      {/* Track Header */}
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-2xl mb-8"
-        style={{
-          background: `linear-gradient(135deg, ${trackColor}20 0%, ${trackColor}05 100%)`,
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, ${trackColor}, ${trackColor} 10px, transparent 10px, transparent 20px)`
-          }}
-        />
-
-        <div className="relative p-8">
-          <div className="flex items-start gap-6">
-            {/* Track image */}
-            <div className="relative flex-shrink-0">
-              <div
-                className="absolute inset-0 rounded-2xl blur-xl opacity-50"
-                style={{ backgroundColor: trackColor }}
-              />
-              <div
-                className="relative w-32 h-32 rounded-2xl flex items-center justify-center text-white ring-4 ring-white shadow-2xl overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${trackColor} 0%, ${trackColor}CC 100%)`,
-                }}
-              >
-                {track.img ? (
-                  <img
-                    src={track.img}
-                    alt={track.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <MapPin className="w-16 h-16 drop-shadow-lg" />
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4 space-y-4">
+        {/* Record */}
+        {track.bestLap && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-4">
+              <Trophy className="size-8 text-yellow-500 flex-shrink-0" />
+              <div>
+                <div className="text-xs text-muted-foreground uppercase font-medium">Record du circuit</div>
+                <LapTime time={track.bestLap} size="xl" highlight />
+                {track.bestLapBy && (
+                  <div className="text-sm text-muted-foreground mt-0.5">par {track.bestLapBy}</div>
                 )}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Info */}
-            <div className="flex-1">
-              <h1
-                className="font-black text-4xl tracking-tight mb-2"
-                style={{ color: trackColor }}
-              >
-                {track.name.toUpperCase()}
-              </h1>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Records */}
+          <RecordsList
+            title="Top 10 Records"
+            records={track.records}
+            showDriverAvatar={true}
+            showCarAvatar={true}
+            showCar={true}
+            showTrack={false}
+          />
 
-              {/* Specs */}
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                {track.length && (
-                  <SpecCard
-                    icon={<Rocket className="w-5 h-5" />}
-                    label="Longueur"
-                    value={`${track.length}m`}
-                    color={trackColor}
-                  />
-                )}
-                {track.corners && (
-                  <SpecCard
-                    icon={<RefreshCw className="w-5 h-5" />}
-                    label="Virages"
-                    value={track.corners}
-                    color={trackColor}
-                  />
-                )}
-                <SpecCard
-                  icon={<Flag className="w-5 h-5" />}
-                  label="Courses"
-                  value={track._count?.sessions || 0}
-                  color={trackColor}
-                />
+          {/* Recent Sessions */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold">Sessions récentes</h3>
               </div>
-
-              {/* Best lap */}
-              {track.bestLap && (
-                <div className="mt-6 inline-block">
-                  <div className="bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg px-6 py-3 shadow-md">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Trophy className="w-5 h-5 text-yellow-600" />
-                      <span className="text-xs text-yellow-900 dark:text-yellow-300 uppercase tracking-wide font-bold">
-                        Record du circuit
-                      </span>
-                    </div>
-                    <div className="text-3xl font-black tabular-nums text-yellow-600 dark:text-yellow-400">
-                      {(track.bestLap / 1000).toFixed(3)}s
-                    </div>
-                    {track.bestLapBy && (
-                      <div className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-                        par {track.bestLapBy}
+              {track.sessions?.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {track.sessions.slice(0, 8).map((session) => (
+                    <Link
+                      key={session.id}
+                      to={`/sessions/${session.id}`}
+                      className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${TYPE_COLORS[session.type] || ''}`}>
+                          {TYPE_LABELS[session.type] || session.type}
+                        </Badge>
+                        <span className="text-sm text-foreground">
+                          {session.name || TYPE_LABELS[session.type]}
+                        </span>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{session._count?.drivers || 0} pilotes</span>
+                        <span>{new Date(session.createdAt).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Aucune session
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-
-        <div
-          className="absolute top-0 left-0 w-2 h-full"
-          style={{ backgroundColor: trackColor }}
-        />
-      </div>
-
-      {/* Stats & Sessions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Track Records */}
-        <RecordsList
-          title="Top 10 Records"
-          records={track.records}
-          primaryColor={trackColor}
-          showDriverAvatar={true}
-          showCarAvatar={true}
-          showCar={true}
-          showTrack={false}
-        />
-
-        {/* Recent Sessions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Sessions récentes</h2>
-          {track.sessions && track.sessions.length > 0 ? (
-            <div className="space-y-3">
-              {track.sessions.slice(0, 5).map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
-                  onClick={() => navigate(`/sessions/${session.id}`)}
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {session.type === 'race' ? 'Course' :
-                       session.type === 'qualif' ? 'Qualifications' :
-                       'Essais'}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(session.createdAt).toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-black" style={{ color: trackColor }}>
-                      {session._count?.drivers || 0}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">pilotes</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucune session enregistrée</p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SpecCard({ icon, label, value, color }) {
-  return (
-    <div className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-center">
-      <div className="flex items-center justify-center mb-1" style={{ color }}>
-        {icon}
-      </div>
-      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase mb-1">{label}</div>
-      <div className="text-xl font-black tabular-nums" style={{ color }}>
-        {value}
       </div>
     </div>
   )

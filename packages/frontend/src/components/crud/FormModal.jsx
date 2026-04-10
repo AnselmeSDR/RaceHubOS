@@ -1,26 +1,11 @@
 import { Trash2 } from 'lucide-react'
-import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
+import Modal, { ModalFooter } from '../ui/Modal'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import ErrorMessage from '../ErrorMessage'
 
 /**
  * Reusable CRUD form modal with consistent styling
- * Reduces ~100 lines of duplicated modal code per CRUD page
- *
- * @param {object} props
- * @param {boolean} props.open - Modal visibility
- * @param {function} props.onClose - Close handler
- * @param {string} props.title - Modal title
- * @param {React.ReactNode} props.icon - Title icon
- * @param {function} props.onSubmit - Form submit handler
- * @param {function} props.onDelete - Optional delete handler (shows delete button)
- * @param {boolean} props.isEditing - Whether editing existing item
- * @param {boolean} props.saving - Whether save is in progress
- * @param {string} props.error - Error message
- * @param {string} props.success - Success message
- * @param {string} props.primaryColor - Primary color for buttons
- * @param {string} props.saveLabel - Save button label
- * @param {string} props.deleteLabel - Delete button label
- * @param {React.ReactNode} props.children - Form fields
  */
 export default function FormModal({
   open,
@@ -33,7 +18,6 @@ export default function FormModal({
   saving = false,
   error,
   success,
-  primaryColor = '#3B82F6',
   saveLabel = 'Enregistrer',
   deleteLabel = 'Supprimer',
   children
@@ -46,7 +30,6 @@ export default function FormModal({
   return (
     <Modal open={open} onClose={onClose} title={title} icon={icon} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Error/Success messages */}
         {(error || success) && (
           <ErrorMessage
             message={error || success}
@@ -54,35 +37,28 @@ export default function FormModal({
           />
         )}
 
-        {/* Form fields */}
         {children}
 
-        {/* Footer with actions */}
         <ModalFooter className="border-t mt-6 pt-4">
-          {/* Delete button (left side) */}
           {isEditing && onDelete && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onDelete}
-              className="flex items-center gap-1 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors mr-auto"
+              className="text-destructive hover:text-destructive mr-auto"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="size-4" />
               {deleteLabel}
-            </button>
+            </Button>
           )}
 
-          {/* Cancel / Save buttons (right side) */}
-          <ModalButton variant="secondary" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Annuler
-          </ModalButton>
-          <button
-            type="submit"
-            disabled={saving}
-            style={{ backgroundColor: primaryColor }}
-            className="px-6 py-2 text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
+          </Button>
+          <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement...' : saveLabel}
-          </button>
+          </Button>
         </ModalFooter>
       </form>
     </Modal>
@@ -95,13 +71,13 @@ export default function FormModal({
 export function FormField({ label, required, error, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-sm font-medium text-foreground mb-1">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       {children}
       {error && (
-        <p className="text-red-500 text-xs mt-1">{error}</p>
+        <p className="text-destructive text-xs mt-1">{error}</p>
       )}
     </div>
   )
@@ -121,13 +97,12 @@ export function TextField({
 }) {
   return (
     <FormField label={label} required={required} error={error}>
-      <input
+      <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
       />
     </FormField>
   )
@@ -151,7 +126,7 @@ export function SelectField({
         value={value || ''}
         onChange={(e) => onChange(e.target.value || null)}
         required={required}
-        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (

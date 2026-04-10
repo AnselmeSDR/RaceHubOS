@@ -336,24 +336,23 @@ export function CarFormModal({ car, onClose }) {
       open
       onClose={onClose}
       title={car ? 'Modifier la voiture' : 'Nouvelle voiture'}
-      icon={<Car className="w-5 h-5 text-green-500" />}
+      icon={<Car className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!car}
       saving={saving}
       error={error}
       success={success}
-      primaryColor="#22C55E"
     >
       <div className="grid grid-cols-2 gap-4">
         <TextField label="Marque" value={formData.brand} onChange={(v) => setFormData(f => ({ ...f, brand: v }))} placeholder="Ferrari" required />
         <TextField label="Modèle" value={formData.model} onChange={(v) => setFormData(f => ({ ...f, model: v }))} placeholder="SF-23" required />
       </div>
       <TextField label="Année" type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
-      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" primaryColor="#22C55E" onError={setError} uploadType="cars" />
+      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="cars" />
       <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <RangeField label="Vitesse max" value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} color="#22C55E" />
-      <RangeField label="Force de freinage" value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
-      <RangeField label="Capacité carburant" value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
+      <RangeField label="Vitesse max" value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} />
+      <RangeField label="Force de freinage" value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} />
+      <RangeField label="Capacité carburant" value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} />
     </FormModal>
   )
 }

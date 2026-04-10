@@ -352,20 +352,19 @@ export function DriverFormModal({ driver, teams, onClose }) {
       open
       onClose={onClose}
       title={driver ? 'Modifier le pilote' : 'Nouveau pilote'}
-      icon={<User className="w-5 h-5 text-blue-500" />}
+      icon={<User className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!driver}
       saving={saving}
       error={error}
       success={success}
-      primaryColor="#3B82F6"
     >
       <TextField label="Nom" value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder="Lewis Hamilton" required />
       <div className="grid grid-cols-2 gap-4">
         <TextField label="Numéro" type="number" value={formData.number} onChange={(v) => setFormData(f => ({ ...f, number: v ? parseInt(v) : '' }))} placeholder="44" />
         <TextField label="Email" type="email" value={formData.email} onChange={(v) => setFormData(f => ({ ...f, email: v }))} placeholder="lewis@example.com" />
       </div>
-      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="round" primaryColor="#3B82F6" onError={setError} uploadType="drivers" />
+      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="round" onError={setError} uploadType="drivers" />
       <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
       <SelectField label="Équipe" value={formData.teamId} onChange={(v) => setFormData(f => ({ ...f, teamId: v }))} options={teams.map(t => ({ value: t.id, label: t.name }))} placeholder="Aucune équipe" />
     </FormModal>
