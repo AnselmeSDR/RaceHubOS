@@ -115,11 +115,43 @@ router.get('/track/:trackId', async (req, res) => {
 
       const countMap = new Map(lapCounts.map(c => [c.carId, c._count.id]));
 
+      // Compute best median (per 5 laps) for each car, excluding first lap of each session
+      const allLapsByCar = await prisma.lap.findMany({
+        where: {
+          trackId,
+          deletedAt: null,
+          session: { type: 'balancing', ...sessionFilter },
+          lapNumber: { gt: 1 }, // Exclude first lap (pit exit)
+        },
+        orderBy: { lapTime: 'asc' },
+        select: { carId: true, lapTime: true }
+      });
+
+      const carTimesMap = new Map();
+      for (const l of allLapsByCar) {
+        if (!carTimesMap.has(l.carId)) carTimesMap.set(l.carId, []);
+        carTimesMap.get(l.carId).push(l.lapTime);
+      }
+
+      const bestMedianMap = new Map();
+      for (const [carId, times] of carTimesMap) {
+        const sorted = [...times].sort((a, b) => a - b);
+        let bestMed = null;
+        for (let i = 5; i <= sorted.length; i += 5) {
+          const slice = sorted.slice(0, i);
+          const mid = Math.floor(slice.length / 2);
+          const med = slice.length % 2 !== 0 ? slice[mid] : (slice[mid - 1] + slice[mid]) / 2;
+          if (bestMed === null || med < bestMed) bestMed = med;
+        }
+        bestMedianMap.set(carId, bestMed);
+      }
+
       return laps.map(lap => ({
         ...lap,
         car: withImageUrl(lap.car),
         driver: withImageUrl(lap.driver),
         laps: countMap.get(lap.carId) || 0,
+        bestMedian: bestMedianMap.get(lap.carId) || null,
       }));
     };
 
