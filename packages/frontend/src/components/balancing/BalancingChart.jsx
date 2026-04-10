@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import LapTime from '../race/LapTime'
 
@@ -20,6 +21,18 @@ function fixColor(c) {
   return c
 }
 
+function computeTrend(laps) {
+  if (laps.length < 10) return null
+  const half = Math.floor(laps.length / 2)
+  const firstHalf = computeMedian(laps.slice(0, half))
+  const secondHalf = computeMedian(laps.slice(half))
+  if (!firstHalf || !secondHalf) return null
+  const delta = secondHalf - firstHalf
+  // Threshold: 50ms difference to be considered a trend
+  if (Math.abs(delta) < 50) return { direction: 'stable', delta }
+  return { direction: delta > 0 ? 'slower' : 'faster', delta }
+}
+
 export default function BalancingChart({ entries = [] }) {
   const { chartData, cars, medians } = useMemo(() => {
     const cars = []
@@ -30,16 +43,16 @@ export default function BalancingChart({ entries = [] }) {
       const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || `Voiture ${entry.controller + 1}`
       const color = fixColor(entry.car.color)
 
-      // Avoid duplicate car names by appending controller
       const key = `${name}-${entry.controller}`
       cars.push({ key, name, color })
-      carLapsMap[key] = entry.laps
+      // Exclude first lap (pit exit) from chart and calculations
+      carLapsMap[key] = entry.laps.slice(1)
     }
 
     // Build chart data: one row per lap number
     const maxLap = Math.max(0, ...Object.values(carLapsMap).flatMap(l => l.map(x => x.lapNumber)))
     const chartData = []
-    for (let i = 1; i <= maxLap; i++) {
+    for (let i = 2; i <= maxLap; i++) {
       const row = { lap: i }
       for (const [key, laps] of Object.entries(carLapsMap)) {
         const found = laps.find(l => l.lapNumber === i)
@@ -48,7 +61,7 @@ export default function BalancingChart({ entries = [] }) {
       chartData.push(row)
     }
 
-    // Calculate medians
+    // Calculate medians (excluding first lap)
     const medians = {}
     for (const [key, laps] of Object.entries(carLapsMap)) {
       const times = laps.map(l => l.lapTime / 1000)
@@ -60,12 +73,14 @@ export default function BalancingChart({ entries = [] }) {
 
   // Stats per car for the summary below the chart
   const carStats = useMemo(() => {
-    return entries
-      .filter(e => e.car && e.laps?.length > 0)
+    const stats = entries
+      .filter(e => e.car && e.laps?.length > 1)
       .map(entry => {
         const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || `Voiture ${entry.controller + 1}`
         const key = `${name}-${entry.controller}`
-        const times = entry.laps.map(l => l.lapTime)
+        // Exclude first lap from calculations
+        const times = entry.laps.slice(1).map(l => l.lapTime)
+        if (times.length === 0) return null
         const best = Math.min(...times)
 
         // Compute median every 5 laps
@@ -75,6 +90,9 @@ export default function BalancingChart({ entries = [] }) {
         }
         const bestMedian = medians.length > 0 ? Math.min(...medians.map(m => m.value)) : null
 
+        // Compute trend
+        const trend = computeTrend(times)
+
         return {
           key,
           name,
@@ -83,9 +101,18 @@ export default function BalancingChart({ entries = [] }) {
           best,
           bestMedian,
           medians,
-          totalLaps: entry.laps.length,
+          trend,
+          totalLaps: times.length,
         }
       })
+      .filter(Boolean)
+
+    // Compute delta to fastest best median
+    const fastestMedian = stats.reduce((min, s) => s.bestMedian && (!min || s.bestMedian < min) ? s.bestMedian : min, null)
+    return stats.map(s => ({
+      ...s,
+      deltaToFastest: s.bestMedian && fastestMedian ? s.bestMedian - fastestMedian : null,
+    }))
   }, [entries])
 
   if (cars.length === 0) {
@@ -164,7 +191,7 @@ export default function BalancingChart({ entries = [] }) {
       {/* Stats summary per car */}
       {carStats.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {carStats.map(({ key, name, color, car, best, bestMedian, medians, totalLaps }) => (
+          {carStats.map(({ key, name, color, car, best, bestMedian, medians, trend, totalLaps, deltaToFastest }) => (
             <Card key={key}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -173,7 +200,19 @@ export default function BalancingChart({ entries = [] }) {
                     style={{ backgroundColor: color }}
                   />
                   <span className="font-semibold text-sm truncate">{name}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{totalLaps} tours</span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {trend && (
+                      <span className={`flex items-center gap-0.5 text-xs ${
+                        trend.direction === 'faster' ? 'text-green-500' :
+                        trend.direction === 'slower' ? 'text-red-500' : 'text-muted-foreground'
+                      }`}>
+                        {trend.direction === 'faster' && <TrendingDown className="size-3" />}
+                        {trend.direction === 'slower' && <TrendingUp className="size-3" />}
+                        {trend.direction === 'stable' && <Minus className="size-3" />}
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">{totalLaps} tours</span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-2">
                   <div>
@@ -182,12 +221,19 @@ export default function BalancingChart({ entries = [] }) {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground/60 uppercase">Meilleure méd.</div>
-                    <LapTime time={bestMedian} size="md" />
+                    <div className="flex items-center gap-2">
+                      <LapTime time={bestMedian} size="md" />
+                      {deltaToFastest > 0 && (
+                        <span className="text-xs font-mono text-red-400">
+                          +{(deltaToFastest / 1000).toFixed(3)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 {medians.length > 0 && (
                   <div className="border-t border-border pt-2">
-                    <div className="text-xs text-muted-foreground/60 uppercase mb-1.5">Médiane</div>
+                    <div className="text-xs text-muted-foreground/60 uppercase mb-1.5">Médiane / 5 tours</div>
                     <div className="flex gap-4">
                       {[0, 1].map(col => {
                         const half = Math.ceil(medians.length / 2)
