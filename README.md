@@ -2,14 +2,38 @@
 
 Open Source Race Management System for Carrera Digital 132/124
 
+**[English](#-features)** | **[Français](#-fonctionnalités)**
+
+---
+
+## Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [macOS / Linux](#-macos---linux)
+  - [Windows](#-windows)
+  - [Upgrade](#-upgrade)
+- [Project Structure](#-project-structure)
+- [Development](#-development)
+  - [Simulator](#-simulator)
+  - [WebSocket Events](#-websocket-events)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Credits](#-credits)
+- [Version française](#-version-française)
+
+---
+
 ## ✨ Features
 
 - 📊 Real-time race leaderboard with animated positions
 - 👤 Driver, car, track and team management with photos
 - 🏆 Championship system with multi-session support (Practice, Qualifying, Race)
 - 📈 Standings and statistics per championship and session type
-- ⚙️ Session configuration inline (controllers, duration, laps, grace period)
-- 🥇 Podium display at end of session with gap and best lap info
+- ⚙️ Inline session configuration (controllers, duration, laps, grace period)
+- 🥇 Podium display at end of session with gaps and best lap
 - 🗣️ Voice announcements (best lap, podium results) via Web Speech API
 - 🎙️ Configurable voice settings (voice selection, min laps threshold)
 - 🚦 Start lights sequence with audio cues
@@ -42,13 +66,13 @@ Open Source Race Management System for Carrera Digital 132/124
 - npm 10+
 - Git
 
-> **Note :** L'application tourne actuellement en mode **développement** (`npm run dev`) sur toutes les plateformes. Le backend Express ne sert pas encore les fichiers statiques du frontend buildé — le frontend nécessite le serveur Vite pour fonctionner. À terme, des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus pour simplifier l'installation et supprimer la dépendance à Node.js.
+> **Note:** The app currently runs in **development mode** (`npm run dev`) on all platforms. The Express backend does not yet serve the built frontend — the Vite dev server is required. Standalone packaged builds (`.exe`, `.app`, `.AppImage`) are planned for the future.
 
 ### 🍎 macOS / 🐧 Linux
 
 ```bash
 # Clone the repo
-git clone https://gitlab.com/AnselmeSDR/RaceHubOS.git
+git clone https://github.com/AnselmeSDR/RaceHubOS.git
 cd RaceHubOS
 
 # Install dependencies
@@ -64,35 +88,35 @@ cd ../..
 npm run dev
 ```
 
-L'app s'ouvre sur http://localhost:5173 (frontend) et http://localhost:3001 (backend API).
+The frontend will be available at http://localhost:5173 and the backend API at http://localhost:3001.
 
 ### 🪟 Windows
 
-#### Première installation
+#### First install
 
-1. Télécharger `RaceHubOS-upgrade.bat` depuis le repo
-2. Le placer sur le Bureau
-3. Double-cliquer pour lancer
+1. Download `RaceHubOS-upgrade.bat` from the repo
+2. Place it on the Desktop
+3. Double-click to run
 
-Le script automatise tout :
-- Clone le repo dans `C:\Users\<user>\RaceHubOS-v<version>`
-- Installe les dépendances (`npm install`)
-- Génère le client Prisma et applique les migrations
-- Crée un lanceur `RaceHubOS-v<version>.bat` (lance `npm run dev` + ouvre le navigateur)
-- Crée un raccourci sur le Bureau avec l'icône
+The script handles everything:
+- Clones the repo into `C:\Users\<user>\RaceHubOS-v<version>`
+- Installs dependencies (`npm install`)
+- Generates the Prisma client and applies migrations
+- Creates a launcher `RaceHubOS-v<version>.bat` (runs `npm run dev` + opens the browser)
+- Creates a Desktop shortcut with the icon
 
-#### Utilisation
+#### Usage
 
-Double-cliquer sur le raccourci **RaceHubOS** sur le Bureau. Le navigateur s'ouvre automatiquement après quelques secondes.
+Double-click the **RaceHubOS** shortcut on the Desktop. The browser opens automatically after a few seconds.
 
-#### 🔄 Mise à jour
+### 🔄 Upgrade
 
-1. Double-cliquer sur `RaceHubOS-upgrade.bat` sur le Bureau
-2. Le script détecte automatiquement la dernière version installée (tri semver)
-3. Clone la nouvelle version, copie la base de données et les uploads
-4. Crée un nouveau lanceur et raccourci
-5. Affiche le changelog à la fin
-6. Les anciennes versions ne sont pas supprimées (rollback possible)
+1. Double-click `RaceHubOS-upgrade.bat` on the Desktop
+2. The script auto-detects the latest installed version (semver sort)
+3. Clones the new version, copies the database and uploads
+4. Creates a new launcher and shortcut
+5. Displays the changelog at the end
+6. Previous versions are kept (rollback possible)
 
 ## 📁 Project Structure
 
@@ -127,10 +151,6 @@ racehubos/
 └── RaceHubOS-upgrade.bat              # Windows upgrade script
 ```
 
-## 📖 Documentation
-
-- [CHANGELOG](CHANGELOG.md) - Version history
-
 ## 🧑‍💻 Development
 
 ### 🎮 Simulator
@@ -144,13 +164,13 @@ The built-in simulator mimics the Carrera Control Unit. No hardware required.
 ### 🔌 WebSocket Events
 
 Key events emitted by the backend:
-- `session:leaderboard` - Real-time leaderboard updates
-- `session:heartbeat` - Timing, remaining time/laps, leaderboard sync
-- `session:bestlap` - New session best lap (triggers voice announcement)
-- `session:finished` - Session end with final leaderboard
-- `session:status_changed` - Session lifecycle transitions
-- `cu:status` - Control Unit status (lights, mode, fuel)
-- `cu:timer` - Raw lap/sector times from hardware
+- `session:leaderboard` — Real-time leaderboard updates
+- `session:heartbeat` — Timing, remaining time/laps, leaderboard sync
+- `session:bestlap` — New session best lap (triggers voice announcement)
+- `session:finished` — Session end with final leaderboard
+- `session:status_changed` — Session lifecycle transitions
+- `cu:status` — Control Unit status (lights, mode, fuel)
+- `cu:timer` — Raw lap/sector times from hardware
 
 ## 🤝 Contributing
 
@@ -184,3 +204,64 @@ Apache-2.0
 - OpenLap: Thomas Kemmer
 
 Vibe coded with [Claude Code](https://claude.ai/code)
+
+---
+
+## 🇫🇷 Version française
+
+### Fonctionnalités
+
+- 📊 Classement en temps réel avec animations de positions
+- 👤 Gestion des pilotes, voitures, circuits et équipes avec photos
+- 🏆 Système de championnat multi-sessions (Essais libres, Qualifications, Course)
+- 📈 Classements et statistiques par championnat et type de session
+- ⚙️ Configuration de session inline (contrôleurs, durée, tours, période de grâce)
+- 🥇 Podium en fin de session avec écarts et meilleur tour
+- 🗣️ Annonces vocales (meilleur tour, résultats podium) via Web Speech API
+- 🎙️ Réglages voix configurables (choix de la voix, seuil de tours minimum)
+- 🚦 Séquence de feux de départ avec sons
+- 🌙 Mode sombre (palette Zinc)
+- 🔌 Connexion Bluetooth LE à la Control Unit Carrera via AppConnect
+- 🎮 Simulateur intégré pour le développement (pas de matériel requis)
+- 🏎️ Mode session libre avec mémorisation du circuit et du type
+- 📺 Affichages pilotes pour écrans externes
+
+### Installation
+
+#### macOS / Linux
+
+```bash
+git clone https://github.com/AnselmeSDR/RaceHubOS.git
+cd RaceHubOS
+npm install
+cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+npm run dev
+```
+
+Le frontend est accessible sur http://localhost:5173 et l'API backend sur http://localhost:3001.
+
+#### Windows
+
+1. Télécharger `RaceHubOS-upgrade.bat` depuis le dépôt
+2. Le placer sur le Bureau
+3. Double-cliquer pour lancer
+
+Le script gère tout automatiquement : clone, installation, base de données, lanceur et raccourci Bureau.
+
+Pour mettre à jour, relancer le même `.bat` — il détecte la version installée, clone la nouvelle, copie les données et crée un nouveau raccourci. Les anciennes versions sont conservées.
+
+> **Note :** L'application tourne actuellement en mode développement (`npm run dev`). Des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus à terme.
+
+### Contribuer
+
+Le projet est en développement actif et ouvert aux contributions :
+
+- 🍓 **Raspberry Pi** — Faire tourner l'app sur un Pi dédié
+- 📱 **Contrôle tablette** — Interface tactile pour la direction de course
+- 📺 **Écrans externes** — Affichages dédiés pour les spectateurs
+- 🏗️ **Builds packagés** — Exécutables standalone
+- 🧩 **Nouvelles features** — Pénalités, stratégie carburant, relais par équipe, graphiques de tours, etc.
+
+- **Idées et bugs** — [Ouvrir une issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
+- **Code** — Fork, branche, et pull request
+- **Questions** — anselme8@icloud.com
