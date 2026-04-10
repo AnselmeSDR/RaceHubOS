@@ -90,7 +90,7 @@ export default function FreeSessionPage() {
         setStandings({
           practice: (data.data.practice || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
           qualif: (data.data.qualif || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
-          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalLaps: lap.laps || 0 })),
+          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalLaps: lap.totalLaps || lap.laps || 0, totalTime: lap.totalTime || null })),
         })
       }
     } catch (error) {

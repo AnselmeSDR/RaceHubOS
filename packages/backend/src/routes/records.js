@@ -56,12 +56,34 @@ router.get('/track/:trackId', async (req, res) => {
 
       const countMap = new Map(lapCounts.map(c => [`${c.driverId}-${c.carId}`, c._count.id]));
 
-      return laps.map(lap => ({
-        ...lap,
-        driver: withImageUrl(lap.driver),
-        car: withImageUrl(lap.car),
-        laps: countMap.get(`${lap.driverId}-${lap.carId}`) || 0
-      }));
+      // For race type, get totalTime from SessionDriver
+      let raceStatsMap = new Map();
+      if (type === 'race') {
+        const sessionIds = [...new Set(laps.map(l => l.sessionId))];
+        const sessionDrivers = await prisma.sessionDriver.findMany({
+          where: { sessionId: { in: sessionIds } },
+        });
+        // Keep best totalTime per driver+car
+        for (const sd of sessionDrivers) {
+          const key = `${sd.driverId}-${sd.carId}`;
+          const existing = raceStatsMap.get(key);
+          if (!existing || (sd.totalTime && sd.totalTime > (existing.totalTime || 0))) {
+            raceStatsMap.set(key, { totalTime: sd.totalTime, totalLaps: sd.totalLaps });
+          }
+        }
+      }
+
+      return laps.map(lap => {
+        const key = `${lap.driverId}-${lap.carId}`;
+        const raceStats = raceStatsMap.get(key);
+        return {
+          ...lap,
+          driver: withImageUrl(lap.driver),
+          car: withImageUrl(lap.car),
+          laps: countMap.get(key) || 0,
+          ...(raceStats ? { totalTime: raceStats.totalTime, totalLaps: raceStats.totalLaps } : {}),
+        };
+      });
     };
 
     const [practiceLaps, qualifLaps, raceLaps, track] = await Promise.all([
