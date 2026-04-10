@@ -43,14 +43,12 @@ export default function FreeSessionPage() {
   } = useSession()
 
   const [tracks, setTracks] = useState([])
-  const [selectedTrackId, setSelectedTrackId] = useState(null)
-  const [selectedType, setSelectedType] = useState('practice')
   const [loading, setLoading] = useState(false)
+  const { showStandings, toggleStandings, freeTrack: selectedTrackId, setFreeTrack: setSelectedTrackId, freeType: selectedType, setFreeType: setSelectedType } = useApp()
   const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
-  const { showStandings, toggleStandings } = useApp()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +90,7 @@ export default function FreeSessionPage() {
         setStandings({
           practice: (data.data.practice || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
           qualif: (data.data.qualif || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
-          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalTime: lap.lapTime })),
+          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalLaps: lap.laps || 0 })),
         })
       }
     } catch (error) {
@@ -102,18 +100,39 @@ export default function FreeSessionPage() {
 
   useEffect(() => { fetchStandings() }, [selectedTrackId])
 
+  // Refetch standings when a session finishes (auto-finish by time/laps)
+  useEffect(() => {
+    const onFinished = () => fetchStandings()
+    window.addEventListener('session:finished', onFinished)
+    return () => window.removeEventListener('session:finished', onFinished)
+  }, [fetchStandings])
+
   const handleLoadSession = useCallback(async () => {
     if (!selectedTrackId || !selectedType) return
+    const previousDrivers = session?.drivers || []
     setLoading(true)
     try {
       const foundSession = await findOrCreateFreeSession({ trackId: selectedTrackId, type: selectedType })
-      if (foundSession) await loadSession(foundSession.id)
+      if (!foundSession) return
+
+      // If newly created session has no drivers, copy from previous session
+      if ((!foundSession.drivers || foundSession.drivers.length === 0) && previousDrivers.length > 0) {
+        const driversConfig = previousDrivers.map(sd => ({
+          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
+        }))
+        await fetch(`${API_URL}/api/sessions/${foundSession.id}/drivers`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ drivers: driversConfig })
+        })
+      }
+      await loadSession(foundSession.id)
     } catch (error) {
       console.error('Error loading session:', error)
     } finally {
       setLoading(false)
     }
-  }, [selectedTrackId, selectedType, findOrCreateFreeSession, loadSession])
+  }, [selectedTrackId, selectedType, session?.drivers, findOrCreateFreeSession, loadSession])
 
   const handleNewSession = async () => {
     if (!selectedTrackId || !selectedType) return

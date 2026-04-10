@@ -5,6 +5,8 @@ const KEYS = {
   admin: 'racehubos-admin',
   sidebar: 'racehubos-sidebar',
   standings: 'racehubos-show-standings',
+  freeTrack: 'racehubos-free-track',
+  freeType: 'racehubos-free-type',
 }
 
 function loadBool(key, defaultValue) {
@@ -56,6 +58,20 @@ export function AppProvider({ children }) {
     })
   }, [])
 
+  // Free session preferences
+  const [freeTrack, _setFreeTrack] = useState(() => localStorage.getItem(KEYS.freeTrack) || null)
+  const [freeType, _setFreeType] = useState(() => localStorage.getItem(KEYS.freeType) || 'practice')
+
+  const setFreeTrack = useCallback((id) => {
+    _setFreeTrack(id)
+    if (id) localStorage.setItem(KEYS.freeTrack, id)
+  }, [])
+
+  const setFreeType = useCallback((type) => {
+    _setFreeType(type)
+    localStorage.setItem(KEYS.freeType, type)
+  }, [])
+
   // Race override: SessionContext calls setSessionActive
   const [sessionActive, setSessionActive] = useState(false)
   const wasActiveRef = useRef(false)
@@ -81,6 +97,9 @@ export function AppProvider({ children }) {
       sidebarOpen, setSidebarOpen,
       // Standings
       showStandings, toggleStandings,
+      // Free session
+      freeTrack, setFreeTrack,
+      freeType, setFreeType,
       // Session active (called by SessionContext)
       setSessionActive,
     }}>

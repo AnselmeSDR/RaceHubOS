@@ -2,7 +2,7 @@
  * LapTime - Formatted lap time display
  * Displays times in mm:ss.SSS or ss.SSS format
  */
-export default function LapTime({ time, size = 'md', highlight = false }) {
+export default function LapTime({ time, size = 'md', highlight = false, format = 'lap' }) {
   const sizes = {
     sm: 'text-sm',
     md: 'text-base',
@@ -22,6 +22,14 @@ export default function LapTime({ time, size = 'md', highlight = false }) {
   // Format time from milliseconds
   const formatTime = (ms) => {
     const totalSeconds = ms / 1000
+
+    if (format === 'total') {
+      // Always show MM:SS.mmm for total race time
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
+      return `${minutes}:${seconds.toFixed(3).padStart(6, '0')}`
+    }
+
     const minutes = Math.floor(totalSeconds / 60)
     const seconds = totalSeconds % 60
 

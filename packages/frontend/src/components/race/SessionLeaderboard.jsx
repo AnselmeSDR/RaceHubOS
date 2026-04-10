@@ -75,7 +75,7 @@ export default function SessionLeaderboard({
       ...entry,
       position,
       displayGap,
-      leaderTotalTime: index === 0 && sortBy === 'race' ? entry.stats?.totalTime : null
+      leaderTotalTime: null
     }
   })
 
@@ -234,17 +234,20 @@ export default function SessionLeaderboard({
                   <LapTime time={stats.lastLap} size={expanded ? 'xl' : 'md'} />
                 </div>
 
-                {/* Gap / Total Time */}
+                {/* Gap / Total */}
                 <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
-                    {position === 1 && sortBy === 'race' ? 'Total' : 'Écart'}
+                    {sortBy === 'race' ? (position === 1 ? 'Total' : 'Écart') : 'Écart'}
                   </div>
-                  <GapDisplay
-                    gap={entry.displayGap || stats.gap}
-                    position={position}
-                    leaderTotalTime={entry.leaderTotalTime}
-                    isRace={sortBy === 'race'}
-                  />
+                  {sortBy === 'race' && position === 1 ? (
+                    <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
+                  ) : (
+                    <GapDisplay
+                      gap={entry.displayGap || stats.gap}
+                      position={position}
+                      leaderBestLap={position === 1 && sortBy !== 'race' ? stats.bestLap : null}
+                    />
+                  )}
                 </div>
               </div>
             </motion.div>

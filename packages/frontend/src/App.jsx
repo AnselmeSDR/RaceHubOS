@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { DeviceProvider } from './context/DeviceContext'
 import { SessionProvider } from './context/SessionContext'
 import { AppProvider } from './context/AppContext'
+import { VoiceProvider } from './context/VoiceContext'
 import { TooltipProvider } from './components/ui/tooltip'
 import Layout from './components/Layout'
 
@@ -31,6 +32,7 @@ function App() {
     <BrowserRouter>
       <AppProvider>
         <DeviceProvider>
+          <VoiceProvider>
           <SessionProvider>
           <TooltipProvider>
           <Routes>
@@ -67,6 +69,7 @@ function App() {
           </Routes>
           </TooltipProvider>
           </SessionProvider>
+          </VoiceProvider>
         </DeviceProvider>
       </AppProvider>
     </BrowserRouter>

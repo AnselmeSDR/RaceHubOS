@@ -77,8 +77,23 @@ export class SessionService extends EventEmitter {
     // 1. Update RAM
     driver.totalLaps++;
     driver.lastLapTime = Math.round(lapTime);
+    const previousSessionBest = this.getSessionBestLapTime();
     if (driver.bestLapTime === null || lapTime < driver.bestLapTime) {
       driver.bestLapTime = Math.round(lapTime);
+    }
+
+    // Check if this is a new session best lap
+    const roundedLap = Math.round(lapTime);
+    if (previousSessionBest === null || roundedLap < previousSessionBest) {
+      this.emit('session:bestlap', {
+        controller: driver.controller,
+        driverName: driver.driver?.name || null,
+        carBrand: driver.car?.brand || null,
+        carModel: driver.car?.model || null,
+        lapTime: roundedLap,
+        totalLaps: driver.totalLaps,
+        maxLapsCompleted: Math.max(...this.sessionDrivers.map(d => d.totalLaps)),
+      });
     }
 
     // Only accumulate time up to maxLaps (for race classification)
@@ -398,6 +413,11 @@ export class SessionService extends EventEmitter {
 
   getDriverByController(controller) {
     return this.sessionDrivers.find(d => d.controller === controller);
+  }
+
+  getSessionBestLapTime() {
+    const times = this.sessionDrivers.map(d => d.bestLapTime).filter(t => t && t > 0);
+    return times.length > 0 ? Math.min(...times) : null;
   }
 
   recalculatePositions(lapController = null) {
@@ -729,6 +749,7 @@ export class SessionService extends EventEmitter {
       sessionId,
       reason,
       championshipId,
+      sessionType: this.currentPhase,
       leaderboard: this.sessionDrivers
     });
     this.emitStatusChanged('finished', previousStatus);
