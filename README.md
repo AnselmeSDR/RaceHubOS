@@ -152,13 +152,35 @@ Key events emitted by the backend:
 - `cu:status` - Control Unit status (lights, mode, fuel)
 - `cu:timer` - Raw lap/sector times from hardware
 
+## 🤝 Contributing
+
+RaceHubOS is an active project with a lot of room to grow. Here are some directions we'd love help with:
+
+- 🍓 **Raspberry Pi** — Run the app on a dedicated Pi for a permanent race station
+- 📱 **Tablet control** — Touch-friendly interface for race direction from a tablet
+- 📺 **External displays** — Dedicated screens for spectators (leaderboard, live timing, standings)
+- 🏗️ **Packaged builds** — Standalone `.exe`, `.app`, `.AppImage`
+- 🧩 **New features** — Penalties, fuel strategy, team relay races, lap charts, and more
+
+All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
+
+- **Ideas & bugs** — [Open an issue](https://gitlab.com/AnselmeSDR/RaceHubOS/-/issues)
+- **Code** — Fork, branch, and submit a merge request
+- **Questions** — Reach out at anselme8@icloud.com
+
 ## 📄 License
 
 Apache-2.0
 
 ## 🙏 Credits
 
+**Project**
+- Anselme Schneider — Founder & Developer (anselme8@icloud.com)
+- Romain Danna — Co-author (domain & race expertise)
+
+**Libraries & References**
 - Protocol reverse engineering: Stephan Hess (slotbaer.de)
 - carreralib: Thomas Kemmer
 - OpenLap: Thomas Kemmer
-- Vibe coded with [Claude Code](https://claude.ai/code)
+
+Vibe coded with [Claude Code](https://claude.ai/code)
