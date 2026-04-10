@@ -129,7 +129,7 @@ export function SessionProvider({ children }) {
         audio.play().catch(() => {})
 
         const v = voiceRef.current
-        if (v.enabledRef.current && data.leaderboard?.length > 0) {
+        if (v.podiumEnabledRef.current && data.leaderboard?.length > 0) {
           const isQualif = data.sessionType === 'qualif'
           const sorted = [...data.leaderboard]
             .filter(d => d.driver && (d.totalLaps > 0 || d.bestLapTime))
@@ -197,7 +197,7 @@ export function SessionProvider({ children }) {
     // Best lap voice announcement
     socket.on('session:bestlap', (data) => {
       const v = voiceRef.current
-      if (!v.enabledRef.current) return
+      if (!v.bestLapEnabledRef.current) return
       if (data.maxLapsCompleted < v.minLapsRef.current) return
 
       const name = data.driverName || [data.carBrand, data.carModel].filter(Boolean).join(' ') || `Voiture ${data.controller + 1}`

@@ -40,7 +40,7 @@ export default function Settings() {
     removeDevice,
   } = useDevice()
   const { isDark, toggleTheme, isAdmin, toggleAdmin } = useApp()
-  const { enabled: bestLapVoiceEnabled, saveEnabled, minLaps: bestLapVoiceMinLaps, saveMinLaps, voiceId: bestLapVoiceId, saveVoiceId, speak } = useVoice()
+  const { bestLapEnabled, saveBestLapEnabled, podiumEnabled, savePodiumEnabled, minLaps: bestLapVoiceMinLaps, saveMinLaps, voiceId: bestLapVoiceId, saveVoiceId, speak } = useVoice()
   const [voices, setVoices] = useState([])
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
@@ -68,7 +68,11 @@ export default function Settings() {
   }
 
   function handleBestLapVoiceToggle() {
-    saveEnabled(!bestLapVoiceEnabled)
+    saveBestLapEnabled(!bestLapEnabled)
+  }
+
+  function handlePodiumVoiceToggle() {
+    savePodiumEnabled(!podiumEnabled)
   }
 
   const loadVoices = useCallback(() => {
@@ -285,7 +289,7 @@ export default function Settings() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Volume2 className={`size-4 ${bestLapVoiceEnabled ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              <Volume2 className={`size-4 ${bestLapEnabled ? 'text-orange-500' : 'text-muted-foreground'}`} />
               <div>
                 <p className="font-medium text-sm">Annonce meilleur tour</p>
                 <p className="text-xs text-muted-foreground">
@@ -295,54 +299,73 @@ export default function Settings() {
             </div>
             <button
               onClick={handleBestLapVoiceToggle}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${bestLapVoiceEnabled ? 'bg-orange-600' : 'bg-muted'}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${bestLapEnabled ? 'bg-orange-600' : 'bg-muted'}`}
             >
-              <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${bestLapVoiceEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${bestLapEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
 
-          {bestLapVoiceEnabled && (
-            <div className="space-y-3 pl-7">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Tours minimum avant annonce</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps - 1)}
-                    className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center font-mono text-sm">{bestLapVoiceMinLaps}</span>
-                  <button
-                    onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps + 1)}
-                    className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+          {bestLapEnabled && (
+            <div className="flex items-center justify-between pl-7">
+              <p className="text-sm text-muted-foreground">Tours minimum avant annonce</p>
               <div className="flex items-center gap-2">
-                <Select value={bestLapVoiceId || '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Voix par défaut" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
-                    <SelectItem value="_default">Voix par défaut</SelectItem>
-                    {voices.map(v => (
-                      <SelectItem key={v.voiceURI} value={v.voiceURI}>
-                        {v.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <button
-                  onClick={testVoice}
-                  className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
-                  title="Tester la voix"
+                  onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps - 1)}
+                  className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
                 >
-                  <Play className="size-3.5" />
+                  -
+                </button>
+                <span className="w-8 text-center font-mono text-sm">{bestLapVoiceMinLaps}</span>
+                <button
+                  onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps + 1)}
+                  className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
+                >
+                  +
                 </button>
               </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Volume2 className={`size-4 ${podiumEnabled ? 'text-yellow-500' : 'text-muted-foreground'}`} />
+              <div>
+                <p className="font-medium text-sm">Annonce podium</p>
+                <p className="text-xs text-muted-foreground">
+                  Résultats vocaux en fin de session
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handlePodiumVoiceToggle}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${podiumEnabled ? 'bg-yellow-600' : 'bg-muted'}`}
+            >
+              <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${podiumEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {(bestLapEnabled || podiumEnabled) && (
+            <div className="flex items-center gap-2 pl-7">
+              <Select value={bestLapVoiceId || '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Voix par défaut" />
+                </SelectTrigger>
+                <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
+                  <SelectItem value="_default">Voix par défaut</SelectItem>
+                  {voices.map(v => (
+                    <SelectItem key={v.voiceURI} value={v.voiceURI}>
+                      {v.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <button
+                onClick={testVoice}
+                className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
+                title="Tester la voix"
+              >
+                <Play className="size-3.5" />
+              </button>
             </div>
           )}
 
