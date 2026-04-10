@@ -38,6 +38,8 @@ export default function SessionSection({
   onSaveConfig,
   onDelete,
   onReset,
+  maxLapTime,
+  onMaxLapTimeChange,
 }) {
   const { cuStatus, socketConnected, connected: deviceConnected } = useDevice()
   const {
@@ -311,9 +313,9 @@ export default function SessionSection({
             <thead>
               <tr className="text-left text-muted-foreground text-xs uppercase">
                 <th className="pb-2 font-medium w-12">Ctrl</th>
-                <th className="pb-2 font-medium">Pilote</th>
+                {session.type !== 'balancing' && <th className="pb-2 font-medium">Pilote</th>}
                 <th className="pb-2 font-medium">Voiture</th>
-                <th className="pb-2 font-medium w-16">Grille</th>
+                {session.type !== 'balancing' && <th className="pb-2 font-medium w-16">Grille</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -324,17 +326,19 @@ export default function SessionSection({
                     <td className="py-2">
                       <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
                     </td>
-                    <td className="py-2">
-                      <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
-                        <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
-                          <SelectValue placeholder="---" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="_none">---</SelectItem>
-                          {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </td>
+                    {session.type !== 'balancing' && (
+                      <td className="py-2">
+                        <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
+                          <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
+                            <SelectValue placeholder="---" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">---</SelectItem>
+                            {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    )}
                     <td className="py-2">
                       <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
                         <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
@@ -346,16 +350,18 @@ export default function SessionSection({
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="py-2">
-                      <Input
-                        key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
-                        type="number" min="1" max="6"
-                        defaultValue={controllerConfigs[ctrl]?.gridPos || ''}
-                        onBlur={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="-"
-                        className="text-center h-7 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
-                      />
-                    </td>
+                    {session.type !== 'balancing' && (
+                      <td className="py-2">
+                        <Input
+                          key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
+                          type="number" min="1" max="6"
+                          defaultValue={controllerConfigs[ctrl]?.gridPos || ''}
+                          onBlur={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
+                          placeholder="-"
+                          className="text-center h-7 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                        />
+                      </td>
+                    )}
                   </tr>
                 )
               })}
@@ -371,7 +377,7 @@ export default function SessionSection({
             </div>
           )}
           {session.type !== 'practice' && (
-            <div className="grid gap-3 grid-cols-3">
+            <div className={`grid gap-3 ${session.type === 'balancing' ? 'grid-cols-3' : 'grid-cols-3'}`}>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Durée (min)</label>
                 <Input
@@ -402,20 +408,40 @@ export default function SessionSection({
                   className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
                 />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Grace (sec)</label>
-                <Input
-                  key={`grace-${session.id}-${session.gracePeriod}`}
-                  type="number"
-                  defaultValue={session.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30}
-                  onBlur={(e) => {
-                    const val = parseInt(e.target.value) || 30
-                    onSaveConfig({ gracePeriod: Math.max(5, Math.min(300, val)) * 1000 })
-                  }}
-                  min="5" max="300"
-                  className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
-                />
-              </div>
+              {session.type !== 'balancing' && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Grace (sec)</label>
+                  <Input
+                    key={`grace-${session.id}-${session.gracePeriod}`}
+                    type="number"
+                    defaultValue={session.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30}
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value) || 30
+                      onSaveConfig({ gracePeriod: Math.max(5, Math.min(300, val)) * 1000 })
+                    }}
+                    min="5" max="300"
+                    className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                  />
+                </div>
+              )}
+              {session.type === 'balancing' && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Temps max (sec)</label>
+                  <Input
+                    key={`maxlap-${session.id}-${maxLapTime}`}
+                    type="number"
+                    step="0.1"
+                    defaultValue={maxLapTime ? (maxLapTime / 1000).toFixed(1) : ''}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value) || 0
+                      onMaxLapTimeChange?.(val > 0 ? Math.round(val * 1000) : null)
+                    }}
+                    min="0"
+                    placeholder="0 = pas de filtre"
+                    className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
