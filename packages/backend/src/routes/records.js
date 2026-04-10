@@ -115,26 +115,29 @@ router.get('/track/:trackId', async (req, res) => {
 
       const countMap = new Map(lapCounts.map(c => [c.carId, c._count.id]));
 
-      // Compute best median (per 5 laps) for each car, excluding first lap of each session
-      const allLapsByCar = await prisma.lap.findMany({
+      // Get all laps grouped by session+car for median calculations (excluding first lap)
+      const allLaps = await prisma.lap.findMany({
         where: {
           trackId,
           deletedAt: null,
           session: { type: 'balancing', ...sessionFilter },
-          lapNumber: { gt: 1 }, // Exclude first lap (pit exit)
+          lapNumber: { gt: 1 },
         },
-        orderBy: { lapTime: 'asc' },
-        select: { carId: true, lapTime: true }
+        select: { carId: true, sessionId: true, lapTime: true },
+        orderBy: { lapTime: 'asc' }
       });
 
-      const carTimesMap = new Map();
-      for (const l of allLapsByCar) {
-        if (!carTimesMap.has(l.carId)) carTimesMap.set(l.carId, []);
-        carTimesMap.get(l.carId).push(l.lapTime);
-      }
+      // Get session dates for ordering
+      const sessionIds = [...new Set(allLaps.map(l => l.sessionId))];
+      const sessions = await prisma.session.findMany({
+        where: { id: { in: sessionIds } },
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: 'asc' }
+      });
+      const sessionOrder = new Map(sessions.map((s, i) => [s.id, i]));
 
-      const bestMedianMap = new Map();
-      for (const [carId, times] of carTimesMap) {
+      // Helper: compute best median from sorted times
+      const computeBestMedian = (times) => {
         const sorted = [...times].sort((a, b) => a - b);
         let bestMed = null;
         for (let i = 5; i <= sorted.length; i += 5) {
@@ -143,7 +146,40 @@ router.get('/track/:trackId', async (req, res) => {
           const med = slice.length % 2 !== 0 ? slice[mid] : (slice[mid - 1] + slice[mid]) / 2;
           if (bestMed === null || med < bestMed) bestMed = med;
         }
-        bestMedianMap.set(carId, bestMed);
+        return bestMed;
+      };
+
+      // Group by car -> all times (for global best median)
+      // Group by car -> session -> times (for per-session history)
+      const carTimesMap = new Map();
+      const carSessionTimesMap = new Map(); // carId -> Map<sessionId, times[]>
+      for (const l of allLaps) {
+        if (!carTimesMap.has(l.carId)) carTimesMap.set(l.carId, []);
+        carTimesMap.get(l.carId).push(l.lapTime);
+
+        if (!carSessionTimesMap.has(l.carId)) carSessionTimesMap.set(l.carId, new Map());
+        const sessionMap = carSessionTimesMap.get(l.carId);
+        if (!sessionMap.has(l.sessionId)) sessionMap.set(l.sessionId, []);
+        sessionMap.get(l.sessionId).push(l.lapTime);
+      }
+
+      // Compute global best median per car
+      const bestMedianMap = new Map();
+      for (const [carId, times] of carTimesMap) {
+        bestMedianMap.set(carId, computeBestMedian(times));
+      }
+
+      // Compute per-session best median history per car (ordered chronologically)
+      const historyMap = new Map();
+      for (const [carId, sessionMap] of carSessionTimesMap) {
+        const history = [...sessionMap.entries()]
+          .sort((a, b) => (sessionOrder.get(a[0]) ?? 0) - (sessionOrder.get(b[0]) ?? 0))
+          .map(([sessionId, times]) => ({
+            bestMedian: computeBestMedian(times),
+            laps: times.length,
+          }))
+          .filter(h => h.bestMedian !== null);
+        historyMap.set(carId, history);
       }
 
       return laps.map(lap => ({
@@ -152,6 +188,7 @@ router.get('/track/:trackId', async (req, res) => {
         driver: withImageUrl(lap.driver),
         laps: countMap.get(lap.carId) || 0,
         bestMedian: bestMedianMap.get(lap.carId) || null,
+        history: historyMap.get(lap.carId) || [],
       }));
     };
 
