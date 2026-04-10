@@ -1,5 +1,48 @@
 # RaceHubOS — Timeline
 
+## v1.6.0
+
+### Voice announcements
+- VoiceContext dédié : speak(), formatTimeVoice(), préférences persistées
+- Annonce meilleur tour : nom du pilote + temps quand un record de session est battu
+- Annonce podium fin de course : 3e → 2e → 1er avec temps total (race) ou meilleur tour (qualif)
+- Toggles séparés : meilleur tour (orange) et podium (jaune)
+- Seuil configurable : tours minimum avant annonce (défaut 3)
+- Sélecteur de voix FR avec bouton test dans Settings
+- Protection anti-doublon (speechSynthesis.speaking)
+
+### Leaderboard
+- Race : colonne Total/Écart fusionnée (leader = temps total, autres = écart)
+- Qualif/Practice : leader affiche son meilleur tour en violet au lieu de "Leader"
+- Tri podium aligné avec leaderboard (practice : tours desc → bestLap asc)
+
+### Session libre
+- Persistance circuit et type sélectionnés dans AppContext (localStorage)
+- Copie auto des drivers lors du changement de type (practice → qualif → race)
+- Refetch standings après fin de session (event listener session:finished)
+- Fix classement race vide (mapping totalLaps manquant)
+- session.drivers mis à jour avec leaderboard final (fix podium non affiché)
+
+### Backend
+- SessionService émet `session:bestlap` avec driver/car info
+- `session:finished` inclut `sessionType`
+- `getSessionBestLapTime()` helper
+
+### Repo & docs
+- Miroir GitHub (dual push origin → GitLab + GitHub)
+- Branch main protégée sur les deux (PR required, force push admin only)
+- Discussions activées sur GitHub
+- README bilingue EN/FR avec table des matières et screenshots
+- Purge historique git (db, backups, shm/wal)
+- Docs consolidés dans docs/ (plans, bluetooth, phases, architecture)
+
+### Fixes
+- Double attribut style dans SessionSection (ringColor + backgroundColor)
+- Emails perso remplacés par @example.com dans seed.js
+- Suppression fichiers inutiles (react.svg, WORK_LOG.txt)
+
+---
+
 ## v1.5.0
 
 ### Architecture
