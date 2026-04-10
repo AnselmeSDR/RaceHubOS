@@ -1,34 +1,37 @@
-# RaceHubOS 🏁
+# RaceHubOS
 
 Open Source Race Management System for Carrera Digital 132/124
 
 ## Features
 
-- 📊 Real-time race scoreboard
-- 👤 Driver management
-- 🏆 Championship tracking
-- 📈 Advanced statistics
-- 🔌 Bluetooth LE connectivity via AppConnect
-- 🎮 Built-in simulator for development
-- 🏁 **Multi-phase sessions** (Practice → Qualifying → Race)
-  - Separate leaderboards per phase
-  - Smart sorting based on phase type
-  - Real-time phase switching
+- Real-time race leaderboard with animated positions
+- Driver, car, track and team management with photos
+- Championship system with multi-session support (Practice, Qualifying, Race)
+- Standings and statistics per championship and session type
+- Session configuration inline (controllers, duration, laps, grace period)
+- Podium display at end of session with gap and best lap info
+- Voice announcements (best lap, podium results) via Web Speech API
+- Configurable voice settings (voice selection, min laps threshold)
+- Start lights sequence with audio cues
+- Dark mode (Zinc palette)
+- Bluetooth LE connectivity to Carrera Control Unit via AppConnect
+- Built-in simulator for development (no hardware required)
+- Free session mode with persistent track/type selection
+- Driver displays for external screens
 
 ## Tech Stack
 
 **Frontend:**
 - React 19 + JavaScript (ES6+)
 - Vite
-- TailwindCSS
+- TailwindCSS + shadcn/ui
 - Socket.io-client
-- Web Bluetooth API
+- Framer Motion
 
 **Backend:**
 - Node.js 20+ + JavaScript (ES6+ modules)
-- Express
-- Socket.io
-- Prisma + SQLite
+- Express + Socket.io
+- Prisma + SQLite (WAL mode)
 - Built-in race simulator
 
 ## Getting Started
@@ -59,90 +62,84 @@ The backend will be available at http://localhost:3001
 
 ### Installation (Windows - production)
 
-1. Télécharger `RaceHubOS-upgrade.bat` depuis le repo
-2. Le placer sur le Bureau
-3. Double-cliquer pour lancer
+1. Download `RaceHubOS-upgrade.bat` from the repo
+2. Place it on the Desktop
+3. Double-click to launch
 
-Le script :
-- Clone le repo dans `C:\Users\<user>\RaceHubOS-v<version>`
-- Installe les dépendances (`npm install`)
-- Copie la base de données et les uploads depuis la version précédente
-- Génère le client Prisma et applique les migrations
-- Crée un lanceur `RaceHubOS-v<version>.bat`
-- Crée un raccourci sur le Bureau avec l'icône
+The script:
+- Clones the repo into `C:\Users\<user>\RaceHubOS-v<version>`
+- Installs dependencies (`npm install`)
+- Copies the database and uploads from the previous version
+- Generates the Prisma client and applies migrations
+- Creates a launcher `RaceHubOS-v<version>.bat`
+- Creates a Desktop shortcut with the icon
 
-### Mise à jour (upgrade)
+### Upgrade
 
-1. Double-cliquer sur `RaceHubOS-upgrade.bat` sur le Bureau
-2. Le script détecte automatiquement la dernière version installée (tri semver)
-3. Clone la nouvelle version, copie les données, installe les dépendances
-4. Crée un nouveau lanceur et raccourci
-5. Affiche le changelog à la fin
-6. Les anciennes versions ne sont pas supprimées (rollback possible)
-
-### Development with Simulator
-
-The app includes a built-in simulator that mimics the Carrera Control Unit.
-No physical hardware required for development!
-
-To use the simulator:
-1. Open http://localhost:5173
-2. Click "▶ Démarrer" in the "Simulateur de Course" section
-3. Watch 6 simulated cars race in real-time with lap times, fuel consumption, and pit stops
-
-The simulator provides:
-- Realistic lap times and sector progression
-- Automatic fuel consumption and pit stops
-- Real-time leaderboard updates
-- WebSocket events for all race data
+1. Double-click `RaceHubOS-upgrade.bat` on the Desktop
+2. The script auto-detects the latest installed version (semver sort)
+3. Clones the new version, copies data, installs dependencies
+4. Creates a new launcher and shortcut
+5. Displays the changelog at the end
+6. Previous versions are not deleted (rollback possible)
 
 ## Project Structure
 
 ```
 racehubos/
 ├── packages/
-│   ├── backend/       # Node.js API + WebSocket server + Simulator
+│   ├── backend/
 │   │   ├── src/
-│   │   │   ├── index.js          # Main server
+│   │   │   ├── index.js              # Main server + WebSocket
+│   │   │   ├── routes/               # REST API (14 route files)
 │   │   │   └── services/
-│   │   │       └── simulator.js  # Race simulator
+│   │   │       ├── SessionService.js  # Session lifecycle + leaderboard
+│   │   │       ├── SyncService.js     # Hardware sync (CU/Simulator)
+│   │   │       ├── ChampionshipService.js
+│   │   │       ├── ConfigService.js
+│   │   │       ├── controlUnit.js     # Carrera CU protocol
+│   │   │       ├── simulator.js       # Built-in race simulator
+│   │   │       └── ble.js             # Bluetooth LE
 │   │   └── prisma/
-│   │       └── schema.prisma     # Database schema
-│   └── frontend/      # React application
+│   │       └── schema.prisma          # Database schema
+│   └── frontend/
 │       └── src/
-│           ├── App.jsx
-│           └── pages/
-│               └── Home.jsx      # Main dashboard
-└── docs/              # Documentation
+│           ├── context/               # App, Session, Device, Voice, PageHeader
+│           ├── components/
+│           │   ├── ui/                # shadcn/ui components
+│           │   ├── race/              # Leaderboard, LapTime, GapDisplay, StartingGrid
+│           │   ├── championship/      # SessionSection, StandingsTabs, ConfigModal
+│           │   ├── session/           # Session components
+│           │   └── crud/              # Generic CRUD components
+│           └── pages/                 # 18 pages (Dashboard, Championships, Drivers, etc.)
+├── CHANGELOG.md
+└── RaceHubOS-upgrade.bat              # Windows upgrade script
 ```
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - System architecture and design decisions
-- [Multi-Phase Sessions](packages/backend/PHASES.md) - Session phases system (Practice/Qualifying/Race)
-- [CHANGELOG](CHANGELOG.md) - Version history and changes
-
-## API
-
-**REST Endpoints:**
-- `GET /health` - Health check
-- `GET /api` - API information
-- `GET /api/simulator` - Simulator state
-- `POST /api/simulator/start` - Start simulator
-- `POST /api/simulator/stop` - Stop simulator
-- `POST /api/simulator/pause` - Pause/resume simulator
-
-**WebSocket Events:**
-- `race:status` - Race status updates
-- `race:carData` - Car data updates (every second)
-- `race:lap` - Lap completion events
-- `race:sector` - Sector completion events
-- `race:pitStop` - Pit stop events
-- `race:leaderboard` - Leaderboard updates
+- [CHANGELOG](CHANGELOG.md) - Version history
 
 ## Development
 
-This project was vibe coded with Claude Code.
+### Simulator
+
+The built-in simulator mimics the Carrera Control Unit. No hardware required.
+
+1. Open Settings
+2. Connect to "Simulator"
+3. Configure a session and start
+
+### WebSocket Events
+
+Key events emitted by the backend:
+- `session:leaderboard` - Real-time leaderboard updates
+- `session:heartbeat` - Timing, remaining time/laps, leaderboard sync
+- `session:bestlap` - New session best lap (triggers voice announcement)
+- `session:finished` - Session end with final leaderboard
+- `session:status_changed` - Session lifecycle transitions
+- `cu:status` - Control Unit status (lights, mode, fuel)
+- `cu:timer` - Raw lap/sector times from hardware
 
 ## License
 
@@ -150,6 +147,7 @@ Apache-2.0
 
 ## Credits
 
-- Protocol reverse engineering: Stephan Heß (slotbaer.de)
+- Protocol reverse engineering: Stephan Hess (slotbaer.de)
 - carreralib: Thomas Kemmer
 - OpenLap: Thomas Kemmer
+- Vibe coded with Claude Code
