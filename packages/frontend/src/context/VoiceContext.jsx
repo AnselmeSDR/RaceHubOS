@@ -5,13 +5,16 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 const VoiceContext = createContext(null)
 
 export function VoiceProvider({ children }) {
-  const [enabled, setEnabled] = useState(true)
+  const [bestLapEnabled, setBestLapEnabled] = useState(true)
+  const [podiumEnabled, setPodiumEnabled] = useState(true)
   const [minLaps, setMinLaps] = useState(3)
   const [voiceId, setVoiceId] = useState('')
 
   // Refs for access from socket listeners
-  const enabledRef = useRef(enabled)
-  enabledRef.current = enabled
+  const bestLapEnabledRef = useRef(bestLapEnabled)
+  bestLapEnabledRef.current = bestLapEnabled
+  const podiumEnabledRef = useRef(podiumEnabled)
+  podiumEnabledRef.current = podiumEnabled
   const minLapsRef = useRef(minLaps)
   minLapsRef.current = minLaps
   const voiceIdRef = useRef(voiceId)
@@ -20,7 +23,10 @@ export function VoiceProvider({ children }) {
   // Load preferences
   useEffect(() => {
     fetch(`${API_URL}/api/preferences/bestLapVoice:enabled`).then(r => r.json()).then(d => {
-      if (d.success && d.data !== null) setEnabled(d.data)
+      if (d.success && d.data !== null) setBestLapEnabled(d.data)
+    }).catch(() => {})
+    fetch(`${API_URL}/api/preferences/podiumVoice:enabled`).then(r => r.json()).then(d => {
+      if (d.success && d.data !== null) setPodiumEnabled(d.data)
     }).catch(() => {})
     fetch(`${API_URL}/api/preferences/bestLapVoice:minLaps`).then(r => r.json()).then(d => {
       if (d.success && d.data !== null) setMinLaps(d.data)
@@ -31,9 +37,18 @@ export function VoiceProvider({ children }) {
   }, [])
 
   // Save helpers
-  const saveEnabled = useCallback((value) => {
-    setEnabled(value)
+  const saveBestLapEnabled = useCallback((value) => {
+    setBestLapEnabled(value)
     fetch(`${API_URL}/api/preferences/bestLapVoice:enabled`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    }).catch(() => {})
+  }, [])
+
+  const savePodiumEnabled = useCallback((value) => {
+    setPodiumEnabled(value)
+    fetch(`${API_URL}/api/preferences/podiumVoice:enabled`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value }),
@@ -96,10 +111,11 @@ export function VoiceProvider({ children }) {
 
   return (
     <VoiceContext.Provider value={{
-      enabled, saveEnabled,
+      bestLapEnabled, saveBestLapEnabled,
+      podiumEnabled, savePodiumEnabled,
       minLaps, saveMinLaps,
       voiceId, saveVoiceId,
-      enabledRef, minLapsRef, voiceIdRef,
+      bestLapEnabledRef, podiumEnabledRef, minLapsRef, voiceIdRef,
       speak, getVoice, formatTimeVoice,
     }}>
       {children}
