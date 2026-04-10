@@ -208,7 +208,7 @@ export default function Dashboard() {
                         <p className="text-xs"><span className="text-blue-500 font-medium">{d.statistics?.totalRaces || 0}C</span> · <span className="text-yellow-500 font-medium">{d.statistics?.wins || 0}V</span> · <span className="text-orange-400 font-medium">{d.statistics?.podiums || 0}P</span></p>
                       </div>
                       {d.statistics?.bestLap && (
-                        <span className="text-xs font-mono text-muted-foreground">{formatLap(d.statistics.bestLap)}</span>
+                        <span className="text-xs font-mono text-purple-500 font-bold">{formatLap(d.statistics.bestLap)}</span>
                       )}
                     </Link>
                   )
@@ -235,7 +235,7 @@ export default function Dashboard() {
                       <p className="text-sm font-medium truncate">{lap.driver?.name || '?'}</p>
                       <p className="text-xs text-muted-foreground truncate">{lap.car?.brand} {lap.car?.model} · {lap.track?.name}</p>
                     </div>
-                    <span className="font-mono font-bold text-green-500 text-xs">{formatLap(lap.lapTime)}</span>
+                    <span className="font-mono font-bold text-purple-500 text-xs">{formatLap(lap.lapTime)}</span>
                   </div>
                 ))}
               </div>
