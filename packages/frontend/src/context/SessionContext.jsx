@@ -197,8 +197,9 @@ export function SessionProvider({ children }) {
       }
     })
 
-    // Best lap voice announcement
+    // Best lap voice announcement (skip for balancing)
     socket.on('session:bestlap', (data) => {
+      if (data.sessionType === 'balancing') return
       const v = voiceRef.current
       if (!v.bestLapEnabledRef.current) return
       if (data.maxLapsCompleted < v.minLapsRef.current) return

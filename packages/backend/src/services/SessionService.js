@@ -105,6 +105,7 @@ export class SessionService extends EventEmitter {
         driverName: driver.driver?.name || null,
         carBrand: driver.car?.brand || null,
         carModel: driver.car?.model || null,
+        sessionType: this.currentPhase,
         lapTime: roundedLap,
         totalLaps: driver.totalLaps,
         maxLapsCompleted: Math.max(...this.sessionDrivers.map(d => d.totalLaps)),

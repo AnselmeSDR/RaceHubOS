@@ -1,5 +1,38 @@
 # RaceHubOS — Timeline
 
+## v1.7.0
+
+### Équilibrage
+- Nouveau type de session `balancing` isolé des autres types
+- Page dédiée `/balancing` avec sélecteur circuit
+- Graphe recharts LineChart temps au tour en temps réel (une courbe par voiture)
+- Médiane tous les 5 tours + meilleure médiane par voiture
+- Delta entre voitures (écart meilleure médiane)
+- Indicateur tendance : accélère / ralentit / stable (comparaison 1ère vs 2ème moitié)
+- Premier tour (sortie pit) exclu automatiquement
+- Filtre outliers configurable (temps max en secondes)
+- Pas de podium, voice ni grille de départ
+
+### Classement équilibrage
+- Classement par voiture (distinct carId, pas driver+car)
+- Best lap + meilleure médiane dans le panneau droit
+- Historique meilleure médiane par session (badges colorés vert/rouge/neutre)
+- Nombre de sessions et tours totaux par voiture
+
+### Config balancing
+- Colonnes Pilote et Grille masquées
+- Grace période remplacée par input Temps max
+- Sidebar reste ouverte pendant les sessions
+
+### Backend
+- `balancing` ajouté à SessionService (validation, phase, tri par bestLap)
+- `lapHistory` Map en RAM pour les données de graphe (chargée depuis DB au loadSession)
+- Leaderboard/heartbeat enrichis avec `laps[]` pour les sessions balancing
+- Records API : `getBalancingBestByCar()` avec best median + historique par session
+- `session:bestlap` inclut `sessionType`
+
+---
+
 ## v1.6.0
 
 ### Voice announcements

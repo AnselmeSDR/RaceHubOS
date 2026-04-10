@@ -87,18 +87,17 @@ export default function BalancingStandings({ standings = [] }) {
                 {/* Stats */}
                 <div className="text-right space-y-0.5">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="text-xs text-muted-foreground/60">Best</span>
+                    <span className="text-xs text-muted-foreground/60 w-7 text-left">Best</span>
                     <LapTime time={standing.lapTime} size="sm" />
-                    {gap !== null && (
-                      <span className="font-mono text-xs text-muted-foreground w-16 text-right">
-                        +{(gap / 1000).toFixed(3)}
-                      </span>
-                    )}
+                    <span className="font-mono text-xs text-muted-foreground w-16 text-right">
+                      {gap !== null ? `+${(gap / 1000).toFixed(3)}` : ''}
+                    </span>
                   </div>
                   {standing.bestMedian && (
                     <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-muted-foreground/60">Méd.</span>
+                      <span className="text-xs text-muted-foreground/60 w-7 text-left">Méd.</span>
                       <LapTime time={standing.bestMedian} size="sm" />
+                      <span className="w-16" />
                     </div>
                   )}
                 </div>
