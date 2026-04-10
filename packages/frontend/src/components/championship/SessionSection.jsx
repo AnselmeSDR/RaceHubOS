@@ -487,7 +487,12 @@ export default function SessionSection({
         const sorted = [...sessionDrivers]
           .filter(sd => sd.driver && (sd.totalLaps > 0 || sd.bestLapTime))
           .sort((a, b) => {
-            if (session.type === 'practice') return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+            if (session.type === 'practice') {
+              const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
+              if (lapsB !== lapsA) return lapsB - lapsA
+              return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+            }
+            if (session.type === 'qualif') return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
             const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
             if (lapsB !== lapsA) return lapsB - lapsA
             return (a.totalTime || Infinity) - (b.totalTime || Infinity)
@@ -522,8 +527,7 @@ export default function SessionSection({
                       {/* Driver avatar */}
                       <div
                         className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden mb-2 shadow-lg ring-2 ring-offset-2 ring-offset-card"
-                        style={{ ringColor: sd.driver?.color || '#6B7280' }}
-                        style={{ backgroundColor: sd.driver?.color || '#6B7280' }}
+                        style={{ '--tw-ring-color': sd.driver?.color || '#6B7280', backgroundColor: sd.driver?.color || '#6B7280' }}
                       >
                         {sd.driver?.img
                           ? <img src={sd.driver.img} alt="" className="w-full h-full object-cover" />

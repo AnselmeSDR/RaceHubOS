@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { io } from 'socket.io-client'
 import { useApp } from './AppContext'
+import { useVoice } from './VoiceContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -16,6 +17,7 @@ const SessionContext = createContext(null)
 
 export function SessionProvider({ children }) {
   const { setSessionActive } = useApp()
+  const voice = useVoice()
 
   // Current session
   const [session, setSession] = useState(null)
@@ -41,6 +43,9 @@ export function SessionProvider({ children }) {
   // Socket ref
   const socketRef = useRef(null)
 
+  // Ref for voice access from socket listeners
+  const voiceRef = useRef(voice)
+  voiceRef.current = voice
 
   // Check data freshness
   useEffect(() => {
@@ -100,7 +105,11 @@ export function SessionProvider({ children }) {
 
     // Session finished
     socket.on('session:finished', (data) => {
-      setSession(prev => prev?.id === data.sessionId ? { ...prev, status: 'finished' } : prev)
+      setSession(prev => {
+        if (prev?.id !== data.sessionId) return prev
+        const drivers = data.leaderboard?.length > 0 ? data.leaderboard : prev.drivers
+        return { ...prev, status: 'finished', drivers }
+      })
       setFinishingSession(null)
       // Keep final leaderboard
       if (data.leaderboard && Array.isArray(data.leaderboard)) {
@@ -113,11 +122,50 @@ export function SessionProvider({ children }) {
       })
       window.dispatchEvent(new CustomEvent('session:finished', { detail: data }))
 
-      // Play finish music
+      // Play finish music then announce podium
       try {
         const audio = new Audio('/sounds/race-finish.mp3')
         audio.volume = 0.7
         audio.play().catch(() => {})
+
+        const v = voiceRef.current
+        if (v.enabledRef.current && data.leaderboard?.length > 0) {
+          const isQualif = data.sessionType === 'qualif'
+          const sorted = [...data.leaderboard]
+            .filter(d => d.driver && (d.totalLaps > 0 || d.bestLapTime))
+            .sort((a, b) => {
+              if (isQualif) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+              if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
+              return (a.totalTime || Infinity) - (b.totalTime || Infinity)
+            })
+          const podium = sorted.slice(0, 3)
+          const labels = ['premier', 'deuxième', 'troisième']
+
+          // Announce 3rd, 2nd, 1st
+          const announceOrder = [...podium].reverse()
+          const labelsReversed = [...labels].reverse()
+
+          const delay = 3000
+          setTimeout(() => {
+            const queue = []
+            announceOrder.forEach((driver, i) => {
+              if (!driver.driver) return
+              const pos = labelsReversed[i]
+              const name = driver.driver.name
+              const time = isQualif
+                ? v.formatTimeVoice(driver.bestLapTime)
+                : v.formatTimeVoice(driver.totalTime)
+              queue.push(`${pos}, ${name}, ${time}`)
+            })
+
+            const speakNext = (index) => {
+              if (index >= queue.length) return
+              const utterance = v.speak(queue[index], { rate: 1.0, force: true })
+              if (utterance) utterance.onend = () => setTimeout(() => speakNext(index + 1), 500)
+            }
+            speakNext(0)
+          }, delay)
+        }
       } catch {}
     })
 
@@ -144,6 +192,17 @@ export function SessionProvider({ children }) {
       if (data.leaderboard && Array.isArray(data.leaderboard)) {
         setLeaderboard(data.leaderboard)
       }
+    })
+
+    // Best lap voice announcement
+    socket.on('session:bestlap', (data) => {
+      const v = voiceRef.current
+      if (!v.enabledRef.current) return
+      if (data.maxLapsCompleted < v.minLapsRef.current) return
+
+      const name = data.driverName || [data.carBrand, data.carModel].filter(Boolean).join(' ') || `Voiture ${data.controller + 1}`
+      const timeInSeconds = (data.lapTime / 1000).toFixed(3).replace('.', ',')
+      v.speak(`Meilleur tour, ${name}, ${timeInSeconds} secondes`)
     })
 
     // Championship events

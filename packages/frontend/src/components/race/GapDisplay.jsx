@@ -3,14 +3,12 @@
  * Shows time difference with color coding
  * For races: leader shows total time, others show gap (laps or time)
  */
-export default function GapDisplay({ gap, position, leaderTotalTime, isRace }) {
-  // Leader in race mode: show total time
-  if (position === 1 && isRace && leaderTotalTime) {
-    return <FormattedTime time={leaderTotalTime} />
-  }
-
-  // Leader in other modes
+export default function GapDisplay({ gap, position, leaderBestLap }) {
+  // Leader: show best lap if available, otherwise "Leader"
   if (position === 1) {
+    if (leaderBestLap && leaderBestLap > 0) {
+      return <FormattedTime time={leaderBestLap} />
+    }
     return (
       <span className="text-sm font-bold text-purple-600 uppercase tracking-wide">
         Leader
@@ -59,7 +57,7 @@ function FormattedTime({ time }) {
   const seconds = totalSeconds % 60
 
   return (
-    <span className="font-mono tabular-nums text-sm font-bold text-gray-900">
+    <span className="font-mono tabular-nums text-sm font-bold text-purple-600">
       {minutes}:{seconds.toFixed(3).padStart(6, '0')}
     </span>
   )

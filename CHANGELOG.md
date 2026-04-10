@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-04-10
+
+### Added
+- **Annonce vocale meilleur tour** : synthèse vocale FR quand un nouveau record de session est établi (nom du pilote + temps)
+- **Annonce podium fin de course** : annonce vocale 3e → 2e → 1er avec temps total (race) ou meilleur tour (qualif) après la musique de fin
+- **VoiceContext** : service dédié pour la gestion vocale (speak, formatTimeVoice, préférences)
+- **Settings voix** : toggle activation, seuil tours minimum configurable (1-20, défaut 3), sélecteur de voix FR avec bouton test
+- **Colonne Total (race)** : le leader affiche son temps total, les autres l'écart — colonne unique fusionnée
+
+### Changed
+- **Écart qualif/practice** : le leader affiche son meilleur tour en violet au lieu de "Leader"
+- **event session:finished** : inclut désormais `sessionType` pour différencier race/qualif dans les annonces
+
+### Fixed
+- **Double attribut style** : fix du podium SessionSection (ringColor + backgroundColor fusionnés)
+
 ## [1.5.0] - 2026-04-06
 
 ### Added

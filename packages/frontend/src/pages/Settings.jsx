@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
+import { useVoice } from '../context/VoiceContext'
 import {
   Wifi,
   Cpu,
@@ -14,9 +15,12 @@ import {
   Shield,
   LayoutGrid,
   List,
+  Volume2,
+  Play,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -36,6 +40,8 @@ export default function Settings() {
     removeDevice,
   } = useDevice()
   const { isDark, toggleTheme, isAdmin, toggleAdmin } = useApp()
+  const { enabled: bestLapVoiceEnabled, saveEnabled, minLaps: bestLapVoiceMinLaps, saveMinLaps, voiceId: bestLapVoiceId, saveVoiceId, speak } = useVoice()
+  const [voices, setVoices] = useState([])
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [logs, setLogs] = useState([])
@@ -59,6 +65,34 @@ export default function Settings() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value: mode }),
     }).catch(() => {})
+  }
+
+  function handleBestLapVoiceToggle() {
+    saveEnabled(!bestLapVoiceEnabled)
+  }
+
+  const loadVoices = useCallback(() => {
+    const allVoices = speechSynthesis.getVoices()
+    const frVoices = allVoices.filter(v => v.lang.startsWith('fr'))
+    setVoices(frVoices)
+  }, [])
+
+  useEffect(() => {
+    loadVoices()
+    speechSynthesis.addEventListener('voiceschanged', loadVoices)
+    return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+  }, [loadVoices])
+
+  function handleVoiceChange(voiceURI) {
+    saveVoiceId(voiceURI)
+  }
+
+  function testVoice() {
+    speak('Meilleur tour, Anselme, 6,142 secondes')
+  }
+
+  function handleBestLapVoiceMinLaps(value) {
+    saveMinLaps(value)
   }
 
   useEffect(() => {
@@ -246,6 +280,71 @@ export default function Settings() {
               <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${defaultViewMode === 'grid' ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+
+          <div className="border-t border-border" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Volume2 className={`size-4 ${bestLapVoiceEnabled ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              <div>
+                <p className="font-medium text-sm">Annonce meilleur tour</p>
+                <p className="text-xs text-muted-foreground">
+                  Voix quand un nouveau record est établi
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleBestLapVoiceToggle}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${bestLapVoiceEnabled ? 'bg-orange-600' : 'bg-muted'}`}
+            >
+              <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${bestLapVoiceEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {bestLapVoiceEnabled && (
+            <div className="space-y-3 pl-7">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Tours minimum avant annonce</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps - 1)}
+                    className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-mono text-sm">{bestLapVoiceMinLaps}</span>
+                  <button
+                    onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps + 1)}
+                    className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={bestLapVoiceId || '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Voix par défaut" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
+                    <SelectItem value="_default">Voix par défaut</SelectItem>
+                    {voices.map(v => (
+                      <SelectItem key={v.voiceURI} value={v.voiceURI}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={testVoice}
+                  className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
+                  title="Tester la voix"
+                >
+                  <Play className="size-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="border-t border-border" />
 
