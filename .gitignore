@@ -41,5 +41,9 @@ packages/backend/prisma/dev.db-wal
 # Uploads (generated at runtime)
 packages/backend/public/uploads/
 
+# Backups
+*.backup-*
+*.tar.gz
+
 # Claude notes (contains credentials)
 CLAUDE.md
