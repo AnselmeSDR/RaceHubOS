@@ -33,16 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s
 - **Couleurs types de session unifiées** : essais=violet, qualif=bleu, course=vert, équilibrage=orange sur toutes les pages
 - **Dashboard classement pilotes** : courses/victoires/podiums colorés, nombre de courses affiché
-- **Script upgrade macOS** (`RaceHubOS-upgrade.command`) : installation en un clic, auto-install Homebrew/Git/Node.js, création app .app sur le Bureau avec icône
-- **Script upgrade Windows** : auto-install Git/Node.js via winget, création .env automatique
+- **Mode production** : le backend Express sert le frontend buildé sur un seul port (3001), démarrage instantané
+- **Mise à jour depuis l'app** : section dans Settings pour vérifier et appliquer les mises à jour (git pull, npm install, build, prisma, restart automatique)
+- **Progression mise à jour** : barre de progression WebSocket en temps réel, affichage erreurs, auto-reconnect après restart
+- **Scripts d'installation** : `RaceHubOS-install-mac.command` et `RaceHubOS-install-win.bat` — un seul script à télécharger et lancer
+- **Auto-install prérequis** : Homebrew/Git/Node.js (Mac) ou Git/Node.js via winget (Windows)
+- **App Bureau macOS** : `.app` avec icône custom, lance le serveur + ouvre le navigateur
+- **Launcher avec auto-restart** : boucle restart (exit code 42) pour supporter les mises à jour depuis l'app
+- **Kill port au lancement** : le launcher libère le port 3001 si déjà occupé
 - **Fallback DATABASE_URL** : le backend crée automatiquement la connexion SQLite si .env absent
-- **Mode production** : le backend Express sert le frontend buildé (un seul port, démarrage instantané)
-- **Scripts npm** : `npm run build` build le frontend, `npm start` lance le serveur de production
+- **Version dynamique** : lue depuis package.json, plus de valeur hardcodée
 
 ### Fixed
-- **isPitLap** : champ inexistant remplacé par `deletedAt` dans stats.js (erreur Prisma au chargement dashboard)
-- **Mise à jour depuis Settings** : affichage erreurs (fond rouge, bouton fermer), détection déconnexion WebSocket, auto-check à l'ouverture
-- **Git pull safe** : `checkout + pull --ff-only` au lieu de `reset --hard` pour préserver DB/uploads/.env
+- **isPitLap** : champ inexistant remplacé par `deletedAt` dans stats.js
+- **Git pull safe** : `checkout + pull --ff-only` préserve DB/uploads/.env
+- **Cache version GitHub** : utilise l'API GitHub au lieu de raw.githubusercontent (pas de cache CDN)
 - **react-is** : dépendance manquante de recharts ajoutée
 
 ## [1.6.0] - 2026-04-10
