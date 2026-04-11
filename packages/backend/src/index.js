@@ -131,7 +131,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.8.0'
+    version: '1.8.1'
   });
 });
 
@@ -139,7 +139,7 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'RaceHubOS API',
-    version: '1.8.0',
+    version: '1.8.1',
     endpoints: {
       drivers: '/api/drivers',
       cars: '/api/cars',
