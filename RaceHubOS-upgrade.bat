@@ -150,6 +150,18 @@ move "%TEMP_DIR%" "!TARGET_DIR!" >nul
 echo  OK
 echo.
 
+:: Self-update: re-exec from new version if script changed
+if not defined RACEHUBOS_REEXEC (
+    fc /b "%~f0" "!TARGET_DIR!\RaceHubOS-upgrade.bat" >nul 2>&1
+    if errorlevel 1 (
+        echo  Script d'upgrade mis a jour, relancement avec la nouvelle version...
+        echo.
+        set "RACEHUBOS_REEXEC=1"
+        call "!TARGET_DIR!\RaceHubOS-upgrade.bat"
+        exit /b
+    )
+)
+
 :: -------------------------------------------------------
 :: 5. Install dependencies
 :: -------------------------------------------------------
