@@ -173,7 +173,7 @@ Apache-2.0
 - Romain Danna — Co-author (domain & race expertise)
 
 **Libraries & References**
-- Protocol reverse engineering: [Stephan Hess (slotbaer.de)](https://www.slotbaer.de/)
+- Protocol reverse engineering: [Stephan Hess (slotbaer.de)](http://www.slotbaer.de/)
 - [carreralib](https://github.com/tkem/carreralib): Thomas Kemmer
 - [OpenLap](https://github.com/tkem/openlap): Thomas Kemmer
 
@@ -296,7 +296,7 @@ Apache-2.0
 - Romain Danna — Co-auteur (expertise course & métier)
 
 **Librairies & Références**
-- Reverse engineering du protocole : [Stephan Hess (slotbaer.de)](https://www.slotbaer.de/)
+- Reverse engineering du protocole : [Stephan Hess (slotbaer.de)](http://www.slotbaer.de/)
 - [carreralib](https://github.com/tkem/carreralib) : Thomas Kemmer
 - [OpenLap](https://github.com/tkem/openlap) : Thomas Kemmer
 
