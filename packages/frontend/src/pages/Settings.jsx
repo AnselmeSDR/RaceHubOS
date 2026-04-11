@@ -65,10 +65,14 @@ export default function Settings() {
     fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()).then(d => {
       if (d.success && d.data) setDefaultViewMode(d.data)
     }).catch(() => {})
-    // Load current version
-    fetch(`${API_URL}/api/health`).then(r => r.json()).then(d => {
-      setUpdateInfo({ currentVersion: d.version })
-    }).catch(() => {})
+    // Check for updates on mount
+    fetch(`${API_URL}/api/update/check`).then(r => r.json()).then(d => {
+      if (d.success) setUpdateInfo(d.data)
+    }).catch(() => {
+      fetch(`${API_URL}/api/health`).then(r => r.json()).then(d => {
+        setUpdateInfo({ currentVersion: d.version })
+      }).catch(() => {})
+    })
   }, [])
 
   function handleDefaultViewChange(mode) {
