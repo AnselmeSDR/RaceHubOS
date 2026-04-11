@@ -108,6 +108,7 @@ router.post('/apply', async (req, res) => {
     // Exit with code 42 so launcher restarts
     setTimeout(() => process.exit(42), 2000);
   } catch (error) {
+    console.error('Update error:', error);
     isUpdating = false;
     emitProgress(0, `Erreur: ${error.message}`, 'error');
   }

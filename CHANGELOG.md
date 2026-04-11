@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **isPitLap** : champ inexistant remplacé par `deletedAt` dans stats.js (erreur Prisma au chargement dashboard)
+- **Mise à jour depuis Settings** : affichage erreurs (fond rouge, bouton fermer), détection déconnexion WebSocket, auto-check à l'ouverture
+- **Git pull safe** : `checkout + pull --ff-only` au lieu de `reset --hard` pour préserver DB/uploads/.env
+- **react-is** : dépendance manquante de recharts ajoutée
 
 ## [1.6.0] - 2026-04-10
 
