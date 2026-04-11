@@ -173,9 +173,9 @@ Apache-2.0
 - Romain Danna — Co-author (domain & race expertise)
 
 **Libraries & References**
-- Protocol reverse engineering: Stephan Hess (slotbaer.de)
-- carreralib: Thomas Kemmer
-- OpenLap: Thomas Kemmer
+- Protocol reverse engineering: [Stephan Hess (slotbaer.de)](https://www.slotbaer.de/)
+- [carreralib](https://github.com/tkem/carreralib): Thomas Kemmer
+- [OpenLap](https://github.com/tkem/openlap): Thomas Kemmer
 
 Vibe coded with [Claude Code](https://claude.ai/code)
 
@@ -296,9 +296,9 @@ Apache-2.0
 - Romain Danna — Co-auteur (expertise course & métier)
 
 **Librairies & Références**
-- Reverse engineering du protocole : Stephan Hess (slotbaer.de)
-- carreralib : Thomas Kemmer
-- OpenLap : Thomas Kemmer
+- Reverse engineering du protocole : [Stephan Hess (slotbaer.de)](https://www.slotbaer.de/)
+- [carreralib](https://github.com/tkem/carreralib) : Thomas Kemmer
+- [OpenLap](https://github.com/tkem/openlap) : Thomas Kemmer
 
 Vibe codé avec [Claude Code](https://claude.ai/code)
 
