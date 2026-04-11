@@ -79,9 +79,12 @@ router.post('/apply', async (req, res) => {
       fs.copyFileSync(dbPath, dbPath + '.backup');
     }
 
-    // Git pull
+    // Git pull (clean merge, preserve untracked files like db/uploads)
     emitProgress(2, 'Téléchargement de la mise à jour...');
-    await execAsync('git pull origin main', { cwd: rootDir, timeout: 60000 });
+    await execAsync('git fetch origin main', { cwd: rootDir, timeout: 60000 });
+    // Stash any local tracked changes, then reset to remote
+    await execAsync('git checkout -- .', { cwd: rootDir, timeout: 10000 }).catch(() => {});
+    await execAsync('git pull origin main --ff-only', { cwd: rootDir, timeout: 60000 });
 
     // npm install
     emitProgress(3, 'Installation des dépendances...');
