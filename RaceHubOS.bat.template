@@ -4,7 +4,7 @@ cd /d "__TARGET_DIR__"
 
 echo.
 echo  ====================================
-echo    RaceHubOS __VERSION__ - Starting...
+echo    RaceHubOS __VERSION__
 echo  ====================================
 echo.
 
@@ -13,10 +13,15 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001 ^| findstr LISTENING') 
 echo  Ports cleared.
 echo.
 echo  App: http://localhost:3001
-echo.
 echo  Fermer cette fenetre pour arreter.
 echo.
 
 start /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:3001"
 
+:loop
 npm start
+if %errorlevel% equ 42 (
+    echo  Redemarrage apres mise a jour...
+    timeout /t 2 /nobreak >nul
+    goto loop
+)

@@ -1,0 +1,113 @@
+import express from 'express';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.join(__dirname, '../../../..');
+
+const router = express.Router();
+const execAsync = promisify(exec);
+
+let isUpdating = false;
+let io = null;
+
+export function setUpdateIo(socketIo) {
+  io = socketIo;
+}
+
+function getLocalVersion() {
+  const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+  return pkg.version;
+}
+
+function emitProgress(step, message, status = 'running') {
+  io?.emit('update:progress', { step, message, status });
+}
+
+/**
+ * GET /api/update/check
+ * Compare local version with GitHub
+ */
+router.get('/check', async (req, res) => {
+  try {
+    const currentVersion = getLocalVersion();
+
+    const response = await fetch(
+      'https://raw.githubusercontent.com/AnselmeSDR/RaceHubOS/main/package.json'
+    );
+    if (!response.ok) {
+      return res.json({ success: true, data: { currentVersion, latestVersion: null, updateAvailable: false, error: 'Impossible de contacter GitHub' } });
+    }
+
+    const remotePkg = await response.json();
+    const latestVersion = remotePkg.version;
+    const updateAvailable = latestVersion !== currentVersion;
+
+    res.json({
+      success: true,
+      data: { currentVersion, latestVersion, updateAvailable }
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      data: { currentVersion: getLocalVersion(), latestVersion: null, updateAvailable: false, error: error.message }
+    });
+  }
+});
+
+/**
+ * POST /api/update/apply
+ * Pull latest, install, build, migrate, restart
+ */
+router.post('/apply', async (req, res) => {
+  if (isUpdating) {
+    return res.status(409).json({ success: false, error: 'Mise à jour déjà en cours' });
+  }
+
+  isUpdating = true;
+  res.json({ success: true, message: 'Mise à jour lancée' });
+
+  try {
+    // Backup database
+    const dbPath = path.join(rootDir, 'packages/backend/prisma/dev.db');
+    if (fs.existsSync(dbPath)) {
+      emitProgress(1, 'Sauvegarde de la base de données...');
+      fs.copyFileSync(dbPath, dbPath + '.backup');
+    }
+
+    // Git pull
+    emitProgress(2, 'Téléchargement de la mise à jour...');
+    await execAsync('git pull origin main', { cwd: rootDir, timeout: 60000 });
+
+    // npm install
+    emitProgress(3, 'Installation des dépendances...');
+    await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
+
+    // Prisma
+    emitProgress(4, 'Migration de la base de données...');
+    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 });
+    await execAsync('npx prisma db push --accept-data-loss', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
+
+    // Build frontend
+    emitProgress(5, 'Build du frontend...');
+    await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
+
+    // Read new version
+    const newVersion = getLocalVersion();
+    emitProgress(6, `Mise à jour v${newVersion} terminée. Redémarrage...`, 'complete');
+
+    isUpdating = false;
+
+    // Exit with code 42 so launcher restarts
+    setTimeout(() => process.exit(42), 2000);
+  } catch (error) {
+    isUpdating = false;
+    emitProgress(0, `Erreur: ${error.message}`, 'error');
+  }
+});
+
+export default router;

@@ -10,6 +10,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const rootDir = path.join(__dirname, '../../..');
+const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
+const APP_VERSION = pkg.version;
 import { PrismaClient } from '@prisma/client';
 import { CarreraSimulator } from './services/simulator.js';
 import { SyncService } from './services/SyncService.js';
@@ -30,6 +33,7 @@ import recordsRouter from './routes/records.js';
 import uploadRouter from './routes/upload.js';
 import devicesRouter from './routes/devices.js';
 import preferencesRouter from './routes/preferences.js';
+import updateRouter, { setUpdateIo } from './routes/update.js';
 
 // Import services
 import { SessionService } from './services/SessionService.js';
@@ -96,6 +100,7 @@ sessionService.on('sessionDeleted', ({ sessionId, championshipId }) => {
 
 // Pass io to settings
 setSettingsIo(io);
+setUpdateIo(io);
 
 // Connect services
 championshipService.setSessionService(sessionService);
@@ -131,7 +136,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.8.1'
+    version: APP_VERSION
   });
 });
 
@@ -139,7 +144,7 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'RaceHubOS API',
-    version: '1.8.1',
+    version: APP_VERSION,
     endpoints: {
       drivers: '/api/drivers',
       cars: '/api/cars',
@@ -173,6 +178,7 @@ app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/preferences', preferencesRouter);
+app.use('/api/update', updateRouter);
 
 // SyncService endpoints (hardware control)
 app.get('/api/sync/state', (req, res) => {
