@@ -35,7 +35,7 @@ router.get('/drivers', async (req, res) => {
     // Calculate statistics for each driver
     const stats = drivers.map(driver => {
       const allLaps = driver.laps || [];
-      const validLaps = allLaps.filter(lap => !lap.isPitLap);
+      const validLaps = allLaps.filter(lap => !lap.deletedAt);
 
       // Calculate best lap
       const bestLap = validLaps.length > 0
@@ -133,7 +133,7 @@ router.get('/cars', async (req, res) => {
 
     const stats = cars.map(car => {
       const allLaps = car.laps || [];
-      const validLaps = allLaps.filter(lap => !lap.isPitLap);
+      const validLaps = allLaps.filter(lap => !lap.deletedAt);
 
       const bestLap = validLaps.length > 0
         ? Math.min(...validLaps.map(lap => lap.lapTime))
@@ -621,7 +621,7 @@ router.get('/records', async (req, res) => {
     // Get fastest lap ever
     const fastestLap = await prisma.lap.findFirst({
       where: {
-        isPitLap: false,
+        deletedAt: null,
         session: champFilter,
       },
       orderBy: {

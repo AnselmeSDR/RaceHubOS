@@ -12,7 +12,7 @@ echo.
 :: -------------------------------------------------------
 :: 0. Check Node.js and Git
 :: -------------------------------------------------------
-echo  [0/7] Verification des prerequis...
+echo  [0/8] Verification des prerequis...
 
 where git >nul 2>&1
 if errorlevel 1 (
@@ -72,7 +72,7 @@ echo.
 :: -------------------------------------------------------
 :: 1. Stop running processes
 :: -------------------------------------------------------
-echo  [1/7] Arret des processus en cours...
+echo  [1/8] Arret des processus en cours...
 taskkill /F /IM node.exe >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001 ^| findstr LISTENING') do taskkill /F /PID %%a >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do taskkill /F /PID %%a >nul 2>&1
@@ -90,9 +90,9 @@ for /f "delims=" %%d in ('powershell -NoProfile -Command "Get-ChildItem '%USERPR
 )
 
 if defined SOURCE_DIR (
-    echo  [2/7] Source trouvee: !SOURCE_DIR!
+    echo  [2/8] Source trouvee: !SOURCE_DIR!
 ) else (
-    echo  [2/7] Aucune version precedente trouvee (installation neuve)
+    echo  [2/8] Aucune version precedente trouvee (installation neuve)
 )
 echo.
 
@@ -102,7 +102,7 @@ echo.
 set "REPO_URL=https://github.com/AnselmeSDR/RaceHubOS.git"
 set "TEMP_DIR=%USERPROFILE%\RaceHubOS-temp"
 
-echo  [3/7] Telechargement de la derniere version...
+echo  [3/8] Telechargement de la derniere version...
 if exist "%TEMP_DIR%" rmdir /s /q "%TEMP_DIR%"
 git clone --depth 1 "%REPO_URL%" "%TEMP_DIR%"
 if errorlevel 1 (
@@ -128,7 +128,7 @@ if not defined VERSION (
 )
 
 set "TARGET_DIR=%USERPROFILE%\RaceHubOS-v!VERSION!"
-echo  [4/7] Version detectee: v!VERSION!
+echo  [4/8] Version detectee: v!VERSION!
 echo         Destination: !TARGET_DIR!
 
 :: Check if already exists
@@ -165,7 +165,7 @@ if not defined RACEHUBOS_REEXEC (
 :: -------------------------------------------------------
 :: 5. Install dependencies
 :: -------------------------------------------------------
-echo  [5/7] Installation des dependances (npm install)...
+echo  [5/8] Installation des dependances (npm install)...
 cd /d "!TARGET_DIR!"
 call npm install --legacy-peer-deps
 if errorlevel 1 (
@@ -180,7 +180,7 @@ echo.
 :: 6. Copy data from source
 :: -------------------------------------------------------
 if defined SOURCE_DIR (
-    echo  [6/7] Copie des donnees depuis !SOURCE_DIR!...
+    echo  [6/8] Copie des donnees depuis !SOURCE_DIR!...
 
     :: Copy database
     if exist "!SOURCE_DIR!\packages\backend\prisma\dev.db" (
@@ -204,14 +204,14 @@ if defined SOURCE_DIR (
         echo         Frontend .env copie
     )
 ) else (
-    echo  [6/7] Pas de donnees a copier (installation neuve)
+    echo  [6/8] Pas de donnees a copier (installation neuve)
 )
 echo.
 
 :: -------------------------------------------------------
 :: 7. Create .env if missing + database migrations
 :: -------------------------------------------------------
-echo  [7/7] Configuration + Prisma...
+echo  [7/8] Configuration + Prisma...
 
 :: Create backend .env if not copied from previous install
 if not exist "!TARGET_DIR!\packages\backend\.env" (
@@ -223,6 +223,15 @@ if not exist "!TARGET_DIR!\packages\backend\.env" (
 cd /d "!TARGET_DIR!\packages\backend"
 call npx prisma generate
 call npx prisma db push --accept-data-loss 2>nul || call npx prisma migrate deploy 2>nul
+echo  OK
+echo.
+
+:: -------------------------------------------------------
+:: 8. Build frontend
+:: -------------------------------------------------------
+echo  [8/8] Build du frontend...
+cd /d "!TARGET_DIR!"
+call npm run build
 echo  OK
 echo.
 

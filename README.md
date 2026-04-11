@@ -74,7 +74,7 @@ Built by slot racers, for slot racers. 🏎️
 - npm 10+
 - Git
 
-> **Note:** The app currently runs in **development mode** (`npm run dev`) on all platforms. The Express backend does not yet serve the built frontend — the Vite dev server is required. Standalone packaged builds (`.exe`, `.app`, `.AppImage`) are planned for the future.
+> **Note:** In production, `npm run build && npm start` builds the frontend and starts the backend on a single port (3001). In development, `npm run dev` runs both Vite and Express with hot reload.
 
 ### 🍎 macOS / 🐧 Linux
 
@@ -155,7 +155,7 @@ RaceHubOS is an active project with a lot of room to grow. Here are some directi
 - 🍓 **Raspberry Pi** — Run the app on a dedicated Pi for a permanent race station
 - 📱 **Tablet control** — Touch-friendly interface for race direction from a tablet
 - 📺 **External displays** — Dedicated screens for spectators (leaderboard, live timing, standings)
-- 🏗️ **Packaged builds** — Standalone `.exe`, `.app`, `.AppImage`
+- 🏗️ **Packaged builds** — Standalone `.exe`, `.AppImage` for easier distribution
 - 🧩 **New features** — Penalties, fuel strategy, team relay races, lap charts, and more
 - **Ideas & bugs** — [Open an issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branch, and submit a pull request
@@ -240,7 +240,7 @@ Le frontend est accessible sur http://localhost:5173 et l'API backend sur http:/
 
 Relancer le même script d'upgrade (`.command` sur macOS, `.bat` sur Windows). Il détecte la version installée, clone la nouvelle, copie les données et crée un nouveau raccourci. Les anciennes versions sont conservées.
 
-> **Note :** L'application tourne actuellement en mode développement (`npm run dev`). Des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus à terme.
+> **Note :** En production, `npm run build && npm start` build le frontend et lance le backend sur un seul port (3001). En développement, `npm run dev` lance Vite et Express avec hot reload.
 
 ### Stack technique
 

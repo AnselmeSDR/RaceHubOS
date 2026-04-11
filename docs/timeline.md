@@ -48,6 +48,13 @@
 - Tri par défaut : `updatedAt` desc (sessions modifiées/reset remontent)
 - Colonne Date : affiche `updatedAt`
 
+### Mode production
+- Backend Express sert le frontend buildé (`express.static` + SPA fallback)
+- Un seul process, un seul port (3001), pas de Vite en prod
+- `npm run build` + `npm start` remplace `npm run dev`
+- Fallback DATABASE_URL si .env absent
+- CORS Socket.IO élargi pour accepter même origin
+
 ### Déploiement
 - Script upgrade macOS (`RaceHubOS-upgrade.command`) : cliquable, auto-install Homebrew/Git/Node.js
 - App .app sur le Bureau avec icône custom (sips + iconutil)

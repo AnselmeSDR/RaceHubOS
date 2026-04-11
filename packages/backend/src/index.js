@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,7 +52,7 @@ configureSQLite().catch(console.error);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
     methods: ['GET', 'POST'],
   },
   pingTimeout: 60000,
@@ -130,7 +131,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.7.6'
+    version: '1.8.0'
   });
 });
 
@@ -138,7 +139,7 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'RaceHubOS API',
-    version: '1.7.6',
+    version: '1.8.0',
     endpoints: {
       drivers: '/api/drivers',
       cars: '/api/cars',
@@ -330,15 +331,27 @@ io.on('connection', (socket) => {
   });
 });
 
+// Serve frontend build (production mode)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA fallback: non-API routes serve index.html
+  app.get('{*path}', (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 3000;
+const hasFrontend = fs.existsSync(frontendDist);
 
 httpServer.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════╗
-║         🏁 RaceHubOS Backend         ║
+║         🏁 RaceHubOS                 ║
 ╠═══════════════════════════════════════╣
 ║  HTTP: http://localhost:${PORT}       ║
 ║  WebSocket: Ready                     ║
+║  Frontend: ${hasFrontend ? 'Serving build        ' : 'Not built (dev mode) '}║
 ║  Devices: Simulator + Control Unit    ║
 ╚═══════════════════════════════════════╝
   `);

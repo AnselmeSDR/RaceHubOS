@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.0] - 2026-04-11
+## [1.8.0] - 2026-04-11
 
 ### Added
 - **Sessions d'équilibrage** : nouveau type de session `balancing` dédié à l'équilibrage des voitures
@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Script upgrade macOS** (`RaceHubOS-upgrade.command`) : installation en un clic, auto-install Homebrew/Git/Node.js, création app .app sur le Bureau avec icône
 - **Script upgrade Windows** : auto-install Git/Node.js via winget, création .env automatique
 - **Fallback DATABASE_URL** : le backend crée automatiquement la connexion SQLite si .env absent
+- **Mode production** : le backend Express sert le frontend buildé (un seul port, démarrage instantané)
+- **Scripts npm** : `npm run build` build le frontend, `npm start` lance le serveur de production
+
+### Fixed
+- **isPitLap** : champ inexistant remplacé par `deletedAt` dans stats.js (erreur Prisma au chargement dashboard)
 
 ## [1.6.0] - 2026-04-10
 
