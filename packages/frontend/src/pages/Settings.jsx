@@ -97,13 +97,20 @@ export default function Settings() {
     }
   }
 
+  const updateSocketRef = useRef(null)
+
   async function applyUpdate() {
     setUpdating(true)
     setUpdateProgress({ step: 0, message: 'Démarrage...', status: 'running' })
     try {
-      await fetch(`${API_URL}/api/update/apply`, { method: 'POST' })
+      const res = await fetch(`${API_URL}/api/update/apply`, { method: 'POST' })
+      const data = await res.json()
+      if (!data.success) {
+        setUpdateProgress({ step: 0, message: data.error || 'Erreur', status: 'error' })
+        setUpdating(false)
+      }
     } catch {
-      setUpdateProgress({ step: 0, message: 'Erreur de connexion', status: 'error' })
+      setUpdateProgress({ step: 0, message: 'Erreur de connexion au serveur', status: 'error' })
       setUpdating(false)
     }
   }
@@ -111,10 +118,11 @@ export default function Settings() {
   // Listen for update progress via WebSocket
   useEffect(() => {
     const socket = io(WS_URL, { transports: ['websocket', 'polling'] })
+    updateSocketRef.current = socket
+
     socket.on('update:progress', (data) => {
       setUpdateProgress(data)
       if (data.status === 'complete') {
-        // Server will restart, wait and reload
         setTimeout(() => {
           const tryReconnect = () => {
             fetch(`${API_URL}/api/health`).then(() => {
@@ -130,6 +138,17 @@ export default function Settings() {
         setUpdating(false)
       }
     })
+
+    // Detect disconnect during update
+    socket.on('disconnect', () => {
+      setUpdateProgress(prev => {
+        if (prev?.status === 'running') {
+          return { ...prev, message: 'Connexion perdue. Tentative de reconnexion...', status: 'running' }
+        }
+        return prev
+      })
+    })
+
     return () => socket.disconnect()
   }, [])
 
@@ -261,13 +280,18 @@ export default function Settings() {
               <p className="text-sm text-destructive">{updateInfo.error}</p>
             )}
 
-            {updating && updateProgress && (
+            {(updating || updateProgress?.status === 'error') && updateProgress && (
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${updateProgress.status === 'error' ? 'p-3 bg-destructive/10 rounded-lg border border-destructive/30' : ''}`}>
                   {updateProgress.status === 'running' && <Loader2 className="size-4 animate-spin text-blue-500" />}
                   {updateProgress.status === 'complete' && <CheckCircle className="size-4 text-green-500" />}
-                  {updateProgress.status === 'error' && <span className="size-4 text-destructive">✕</span>}
-                  <p className="text-sm">{updateProgress.message}</p>
+                  {updateProgress.status === 'error' && <span className="text-destructive font-bold">✕</span>}
+                  <p className={`text-sm flex-1 ${updateProgress.status === 'error' ? 'text-destructive' : ''}`}>{updateProgress.message}</p>
+                  {updateProgress.status === 'error' && (
+                    <Button variant="outline" size="sm" onClick={() => { setUpdateProgress(null); setUpdating(false) }}>
+                      Fermer
+                    </Button>
+                  )}
                 </div>
                 {updateProgress.status === 'running' && (
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
