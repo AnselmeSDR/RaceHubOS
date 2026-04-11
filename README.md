@@ -80,7 +80,7 @@ Built by slot racers, for slot racers. 🏎️
 
 #### One-click install
 
-1. Download `RaceHubOS-install.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+1. Download `RaceHubOS-install-mac.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-click to run (right-click > Open if macOS blocks it)
 
 The script handles everything automatically:
@@ -105,7 +105,7 @@ The frontend will be available at http://localhost:5173 and the backend API at h
 
 #### One-click install
 
-1. Download `RaceHubOS-install.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+1. Download `RaceHubOS-install-win.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-click to run
 
 The script handles everything automatically:
@@ -211,14 +211,14 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
 #### macOS / Linux — Installation en un clic
 
-1. Télécharger `RaceHubOS-install.command` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+1. Télécharger `RaceHubOS-install-mac.command` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-cliquer pour lancer (clic droit > Ouvrir si macOS le bloque)
 
 Le script gère tout : installe Homebrew/Git/Node.js si absents, clone, installe les dépendances, configure la base de données, et crée une app **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
 
 #### Windows — Installation en un clic
 
-1. Télécharger `RaceHubOS-install.bat` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+1. Télécharger `RaceHubOS-install-win.bat` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-cliquer pour lancer
 
 Le script gère tout : installe Git/Node.js via winget si absents, clone, installe les dépendances, configure la base de données, et crée un raccourci **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
