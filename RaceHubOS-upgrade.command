@@ -64,7 +64,7 @@ echo ""
 # -------------------------------------------------------
 # 1. Stop running processes
 # -------------------------------------------------------
-echo "  [1/7] Arrêt des processus en cours..."
+echo "  [1/8] Arrêt des processus en cours..."
 pkill -f "node.*racehubos" 2>/dev/null || true
 lsof -ti:3001 | xargs kill -9 2>/dev/null || true
 lsof -ti:5173 | xargs kill -9 2>/dev/null || true
@@ -85,9 +85,9 @@ for dir in $(ls -d "$INSTALL_DIR"/RaceHubOS-v* 2>/dev/null | sort -t. -k1,1n -k2
 done
 
 if [ -n "$SOURCE_DIR" ]; then
-    echo "  [2/7] Source trouvée: $SOURCE_DIR"
+    echo "  [2/8] Source trouvée: $SOURCE_DIR"
 else
-    echo "  [2/7] Aucune version précédente trouvée (installation neuve)"
+    echo "  [2/8] Aucune version précédente trouvée (installation neuve)"
 fi
 echo ""
 
@@ -97,7 +97,7 @@ echo ""
 REPO_URL="https://github.com/AnselmeSDR/RaceHubOS.git"
 TEMP_DIR="$INSTALL_DIR/RaceHubOS-temp"
 
-echo "  [3/7] Téléchargement de la dernière version..."
+echo "  [3/8] Téléchargement de la dernière version..."
 rm -rf "$TEMP_DIR"
 git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
 echo "  OK"
@@ -114,7 +114,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 TARGET_DIR="$INSTALL_DIR/RaceHubOS-v$VERSION"
-echo "  [4/7] Version détectée: v$VERSION"
+echo "  [4/8] Version détectée: v$VERSION"
 echo "         Destination: $TARGET_DIR"
 
 if [ -d "$TARGET_DIR" ]; then
@@ -147,7 +147,7 @@ echo ""
 # -------------------------------------------------------
 # 5. Install dependencies
 # -------------------------------------------------------
-echo "  [5/7] Installation des dépendances (npm install)..."
+echo "  [5/8] Installation des dépendances (npm install)..."
 cd "$TARGET_DIR"
 npm install --legacy-peer-deps
 echo "  OK"
@@ -157,7 +157,7 @@ echo ""
 # 6. Copy data from source
 # -------------------------------------------------------
 if [ -n "$SOURCE_DIR" ]; then
-    echo "  [6/7] Copie des données depuis $SOURCE_DIR..."
+    echo "  [6/8] Copie des données depuis $SOURCE_DIR..."
 
     if [ -f "$SOURCE_DIR/packages/backend/prisma/dev.db" ]; then
         cp "$SOURCE_DIR/packages/backend/prisma/dev.db" "$TARGET_DIR/packages/backend/prisma/dev.db"
@@ -172,14 +172,14 @@ if [ -n "$SOURCE_DIR" ]; then
     [ -f "$SOURCE_DIR/packages/backend/.env" ] && cp "$SOURCE_DIR/packages/backend/.env" "$TARGET_DIR/packages/backend/.env" && echo "         Backend .env copié"
     [ -f "$SOURCE_DIR/packages/frontend/.env" ] && cp "$SOURCE_DIR/packages/frontend/.env" "$TARGET_DIR/packages/frontend/.env" && echo "         Frontend .env copié"
 else
-    echo "  [6/7] Pas de données à copier (installation neuve)"
+    echo "  [6/8] Pas de données à copier (installation neuve)"
 fi
 echo ""
 
 # -------------------------------------------------------
 # 7. Create .env if missing + database migrations
 # -------------------------------------------------------
-echo "  [7/7] Configuration + Prisma..."
+echo "  [7/8] Configuration + Prisma..."
 
 # Create backend .env if not copied from previous install
 if [ ! -f "$TARGET_DIR/packages/backend/.env" ]; then
@@ -197,6 +197,15 @@ echo "  OK"
 echo ""
 
 # -------------------------------------------------------
+# 8. Build frontend
+# -------------------------------------------------------
+echo "  [8/8] Build du frontend..."
+cd "$TARGET_DIR"
+npm run build
+echo "  OK"
+echo ""
+
+# -------------------------------------------------------
 # Create launcher script
 # -------------------------------------------------------
 LAUNCHER="$TARGET_DIR/RaceHubOS.command"
@@ -204,9 +213,9 @@ cat > "$LAUNCHER" << 'LAUNCHER_EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
 echo "Démarrage de RaceHubOS..."
-npm run dev &
-sleep 5
-open "http://localhost:5173" 2>/dev/null || xdg-open "http://localhost:5173" 2>/dev/null
+npm start &
+sleep 3
+open "http://localhost:3001" 2>/dev/null || xdg-open "http://localhost:3001" 2>/dev/null
 wait
 LAUNCHER_EOF
 chmod +x "$LAUNCHER"
@@ -223,9 +232,9 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cat > "$APP_DIR/Contents/MacOS/RaceHubOS" << EXEC_EOF
 #!/bin/bash
 cd "$TARGET_DIR"
-osascript -e 'tell application "Terminal" to do script "cd \"$TARGET_DIR\" && npm run dev"'
-sleep 5
-open "http://localhost:5173"
+osascript -e 'tell application "Terminal" to do script "cd \"$TARGET_DIR\" && npm start"'
+sleep 3
+open "http://localhost:3001"
 EXEC_EOF
 chmod +x "$APP_DIR/Contents/MacOS/RaceHubOS"
 
@@ -247,6 +256,8 @@ cat > "$APP_DIR/Contents/Info.plist" << PLIST_EOF
     <string>RaceHubOS</string>
     <key>CFBundleIconFile</key>
     <string>icon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
 </dict>
 </plist>
 PLIST_EOF
@@ -270,7 +281,11 @@ if [ -f "$LOGO_PNG" ]; then
     rm -rf "$ICONSET"
 fi
 
-echo "  App bureau créée: RaceHubOS.app"
+# Force macOS to register the app and load its icon
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "$APP_DIR" 2>/dev/null
+touch "$APP_DIR"
+
+echo "  App bureau créée: RaceHubOS v$VERSION.app"
 echo ""
 
 echo "  ===================================="
