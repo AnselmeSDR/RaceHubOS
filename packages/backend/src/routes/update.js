@@ -37,7 +37,8 @@ router.get('/check', async (req, res) => {
     const currentVersion = getLocalVersion();
 
     const response = await fetch(
-      'https://raw.githubusercontent.com/AnselmeSDR/RaceHubOS/main/package.json'
+      `https://raw.githubusercontent.com/AnselmeSDR/RaceHubOS/main/package.json?t=${Date.now()}`,
+      { headers: { 'Cache-Control': 'no-cache' } }
     );
     if (!response.ok) {
       return res.json({ success: true, data: { currentVersion, latestVersion: null, updateAvailable: false, error: 'Impossible de contacter GitHub' } });
