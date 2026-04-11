@@ -216,7 +216,7 @@ chmod +x "$LAUNCHER"
 # -------------------------------------------------------
 # Create desktop .app with icon
 # -------------------------------------------------------
-APP_DIR="$HOME/Desktop/RaceHubOS v$VERSION.app"
+APP_DIR="$HOME/Desktop/RaceHubOS.app"
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
