@@ -10,6 +10,66 @@ echo  ====================================
 echo.
 
 :: -------------------------------------------------------
+:: 0. Check Node.js and Git
+:: -------------------------------------------------------
+echo  [0/7] Verification des prerequis...
+
+where git >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo  ERREUR: Git n'est pas installe.
+    echo  Tentative d'installation via winget...
+    winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements >nul 2>&1
+    if errorlevel 1 (
+        echo  Impossible d'installer Git automatiquement.
+        echo  Telechargez-le manuellement: https://git-scm.com/download/win
+        pause
+        exit /b 1
+    )
+    echo  Git installe. Redemarrez ce script.
+    pause
+    exit /b 0
+)
+
+where node >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo  Node.js n'est pas installe.
+    echo  Tentative d'installation via winget...
+    winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+    if errorlevel 1 (
+        echo  Impossible d'installer Node.js automatiquement.
+        echo  Telechargez-le manuellement: https://nodejs.org/
+        pause
+        exit /b 1
+    )
+    echo.
+    echo  Node.js installe. Redemarrez ce script pour que le PATH soit mis a jour.
+    pause
+    exit /b 0
+)
+
+:: Check minimum version (Node 20+)
+for /f "tokens=1 delims=v." %%v in ('node -v') do set "NODE_MAJOR=%%v"
+if !NODE_MAJOR! LSS 20 (
+    echo  ATTENTION: Node.js v!NODE_MAJOR! detecte, v20+ requis.
+    echo  Mise a jour via winget...
+    winget upgrade --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+    if errorlevel 1 (
+        echo  Mettez a jour manuellement: https://nodejs.org/
+        pause
+        exit /b 1
+    )
+    echo  Node.js mis a jour. Redemarrez ce script.
+    pause
+    exit /b 0
+)
+
+for /f "delims=" %%v in ('node -v') do echo  Node.js %%v OK
+for /f "delims=" %%v in ('git --version') do echo  %%v OK
+echo.
+
+:: -------------------------------------------------------
 :: 1. Stop running processes
 :: -------------------------------------------------------
 echo  [1/7] Arret des processus en cours...
@@ -39,7 +99,7 @@ echo.
 :: -------------------------------------------------------
 :: 3. Clone the repo
 :: -------------------------------------------------------
-set "REPO_URL=https://gitlab.com/AnselmeSDR/RaceHubOS.git"
+set "REPO_URL=https://github.com/AnselmeSDR/RaceHubOS.git"
 set "TEMP_DIR=%USERPROFILE%\RaceHubOS-temp"
 
 echo  [3/7] Telechargement de la derniere version...
