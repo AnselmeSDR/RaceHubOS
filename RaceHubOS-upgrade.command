@@ -130,6 +130,18 @@ fi
 
 mv "$TEMP_DIR" "$TARGET_DIR"
 echo "  OK"
+
+# Self-update: if the new version has a newer upgrade script, re-exec it
+NEW_SCRIPT="$TARGET_DIR/RaceHubOS-upgrade.command"
+if [ -f "$NEW_SCRIPT" ] && [ "$RACEHUBOS_REEXEC" != "1" ]; then
+    if ! cmp -s "$0" "$NEW_SCRIPT" 2>/dev/null; then
+        echo ""
+        echo "  Script d'upgrade mis à jour, relancement avec la nouvelle version..."
+        echo ""
+        export RACEHUBOS_REEXEC=1
+        exec "$NEW_SCRIPT" "$@"
+    fi
+fi
 echo ""
 
 # -------------------------------------------------------
