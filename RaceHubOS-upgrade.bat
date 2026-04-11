@@ -197,9 +197,17 @@ if defined SOURCE_DIR (
 echo.
 
 :: -------------------------------------------------------
-:: 7. Run database migrations
+:: 7. Create .env if missing + database migrations
 :: -------------------------------------------------------
-echo  [7/7] Generation Prisma + migration...
+echo  [7/7] Configuration + Prisma...
+
+:: Create backend .env if not copied from previous install
+if not exist "!TARGET_DIR!\packages\backend\.env" (
+    echo DATABASE_URL="file:./dev.db"> "!TARGET_DIR!\packages\backend\.env"
+    echo PORT=3001>> "!TARGET_DIR!\packages\backend\.env"
+    echo         Backend .env cree
+)
+
 cd /d "!TARGET_DIR!\packages\backend"
 call npx prisma generate
 call npx prisma db push --accept-data-loss 2>nul || call npx prisma migrate deploy 2>nul

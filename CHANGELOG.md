@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s
 - **Couleurs types de session unifiées** : essais=violet, qualif=bleu, course=vert, équilibrage=orange sur toutes les pages
 - **Dashboard classement pilotes** : courses/victoires/podiums colorés, nombre de courses affiché
+- **Script upgrade macOS** (`RaceHubOS-upgrade.command`) : installation en un clic, auto-install Homebrew/Git/Node.js, création app .app sur le Bureau avec icône
+- **Script upgrade Windows** : auto-install Git/Node.js via winget, création .env automatique
+- **Fallback DATABASE_URL** : le backend crée automatiquement la connexion SQLite si .env absent
 
 ## [1.6.0] - 2026-04-10
 

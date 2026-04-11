@@ -78,21 +78,24 @@ Built by slot racers, for slot racers. 🏎️
 
 ### 🍎 macOS / 🐧 Linux
 
+#### One-click install
+
+1. Download `RaceHubOS-upgrade.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+2. Double-click to run (right-click > Open if macOS blocks it)
+
+The script handles everything automatically:
+- Installs Homebrew, Git, and Node.js if missing
+- Clones the repo into `~/RaceHubOS-v<version>`
+- Installs dependencies and sets up the database
+- Creates a **RaceHubOS v\<version\>.app** on the Desktop with the project icon
+
+#### Manual install
+
 ```bash
-# Clone the repo
 git clone https://github.com/AnselmeSDR/RaceHubOS.git
 cd RaceHubOS
-
-# Install dependencies
 npm install
-
-# Initialize the database
-cd packages/backend
-npx prisma generate
-npx prisma db push
-cd ../..
-
-# Start the app (frontend + backend)
+cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
 npm run dev
 ```
 
@@ -100,31 +103,29 @@ The frontend will be available at http://localhost:5173 and the backend API at h
 
 ### 🪟 Windows
 
-#### First install
+#### One-click install
 
-1. Download `RaceHubOS-upgrade.bat` from the repo
-2. Place it on the Desktop
-3. Double-click to run
+1. Download `RaceHubOS-upgrade.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+2. Double-click to run
 
-The script handles everything:
+The script handles everything automatically:
+- Installs Git and Node.js via winget if missing
 - Clones the repo into `C:\Users\<user>\RaceHubOS-v<version>`
-- Installs dependencies (`npm install`)
-- Generates the Prisma client and applies migrations
-- Creates a launcher `RaceHubOS-v<version>.bat` (runs `npm run dev` + opens the browser)
-- Creates a Desktop shortcut with the icon
+- Installs dependencies and sets up the database
+- Creates a launcher and a Desktop shortcut **RaceHubOS v\<version\>** with the project icon
 
-#### Usage
+### 🖥️ Usage
 
-Double-click the **RaceHubOS** shortcut on the Desktop. The browser opens automatically after a few seconds.
+Double-click the **RaceHubOS** app/shortcut on the Desktop. The browser opens automatically after a few seconds.
 
 ### 🔄 Upgrade
 
-1. Double-click `RaceHubOS-upgrade.bat` on the Desktop
-2. The script auto-detects the latest installed version (semver sort)
-3. Clones the new version, copies the database and uploads
-4. Creates a new launcher and shortcut
-5. Displays the changelog at the end
-6. Previous versions are kept (rollback possible)
+Run the same upgrade script again (`.command` on macOS, `.bat` on Windows):
+1. Auto-detects the latest installed version
+2. Clones the new version, copies the database and uploads
+3. Creates a new Desktop app/shortcut
+4. Displays the changelog at the end
+5. Previous versions are kept (rollback possible)
 
 ## 🧑‍💻 Development
 
@@ -209,7 +210,21 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
 ### Installation
 
-#### macOS / Linux
+#### macOS / Linux — Installation en un clic
+
+1. Télécharger `RaceHubOS-upgrade.command` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+2. Double-cliquer pour lancer (clic droit > Ouvrir si macOS le bloque)
+
+Le script gère tout : installe Homebrew/Git/Node.js si absents, clone, installe les dépendances, configure la base de données, et crée une app **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
+
+#### Windows — Installation en un clic
+
+1. Télécharger `RaceHubOS-upgrade.bat` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+2. Double-cliquer pour lancer
+
+Le script gère tout : installe Git/Node.js via winget si absents, clone, installe les dépendances, configure la base de données, et crée un raccourci **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
+
+#### Installation manuelle
 
 ```bash
 git clone https://github.com/AnselmeSDR/RaceHubOS.git
@@ -221,15 +236,9 @@ npm run dev
 
 Le frontend est accessible sur http://localhost:5173 et l'API backend sur http://localhost:3001.
 
-#### Windows
+#### Mise à jour
 
-1. Télécharger `RaceHubOS-upgrade.bat` depuis le dépôt
-2. Le placer sur le Bureau
-3. Double-cliquer pour lancer
-
-Le script gère tout automatiquement : clone, installation, base de données, lanceur et raccourci Bureau.
-
-Pour mettre à jour, relancer le même `.bat` — il détecte la version installée, clone la nouvelle, copie les données et crée un nouveau raccourci. Les anciennes versions sont conservées.
+Relancer le même script d'upgrade (`.command` sur macOS, `.bat` sur Windows). Il détecte la version installée, clone la nouvelle, copie les données et crée un nouveau raccourci. Les anciennes versions sont conservées.
 
 > **Note :** L'application tourne actuellement en mode développement (`npm run dev`). Des builds packagés (`.exe`, `.app`, `.AppImage`) sont prévus à terme.
 

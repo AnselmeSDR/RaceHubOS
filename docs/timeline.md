@@ -48,6 +48,13 @@
 - Tri par défaut : `updatedAt` desc (sessions modifiées/reset remontent)
 - Colonne Date : affiche `updatedAt`
 
+### Déploiement
+- Script upgrade macOS (`RaceHubOS-upgrade.command`) : cliquable, auto-install Homebrew/Git/Node.js
+- App .app sur le Bureau avec icône custom (sips + iconutil)
+- Script upgrade Windows : auto-install Git/Node.js via winget, vérification Node 20+
+- Création .env automatique si absent (scripts + fallback runtime)
+- URL dépôt passée de GitLab à GitHub dans les scripts
+
 ### Backend
 - `balancing` ajouté à SessionService (validation, phase, tri par bestLap)
 - `lapHistory` Map en RAM pour les données de graphe (chargée depuis DB au loadSession)
