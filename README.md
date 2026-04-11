@@ -80,7 +80,7 @@ Built by slot racers, for slot racers. 🏎️
 
 #### One-click install
 
-1. Download `RaceHubOS-upgrade.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+1. Download `RaceHubOS-install.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-click to run (right-click > Open if macOS blocks it)
 
 The script handles everything automatically:
@@ -105,7 +105,7 @@ The frontend will be available at http://localhost:5173 and the backend API at h
 
 #### One-click install
 
-1. Download `RaceHubOS-upgrade.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+1. Download `RaceHubOS-install.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-click to run
 
 The script handles everything automatically:
@@ -120,12 +120,11 @@ Double-click the **RaceHubOS** app/shortcut on the Desktop. The browser opens au
 
 ### 🔄 Upgrade
 
-Run the same upgrade script again (`.command` on macOS, `.bat` on Windows):
-1. Auto-detects the latest installed version
-2. Clones the new version, copies the database and uploads
-3. Creates a new Desktop app/shortcut
-4. Displays the changelog at the end
-5. Previous versions are kept (rollback possible)
+Updates are handled from within the app:
+1. Open **Settings**
+2. Click **Vérifier** to check for updates
+3. If available, click **Mettre à jour**
+4. The app downloads, installs and restarts automatically
 
 ## 🧑‍💻 Development
 
@@ -212,14 +211,14 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
 #### macOS / Linux — Installation en un clic
 
-1. Télécharger `RaceHubOS-upgrade.command` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+1. Télécharger `RaceHubOS-install.command` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-cliquer pour lancer (clic droit > Ouvrir si macOS le bloque)
 
 Le script gère tout : installe Homebrew/Git/Node.js si absents, clone, installe les dépendances, configure la base de données, et crée une app **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
 
 #### Windows — Installation en un clic
 
-1. Télécharger `RaceHubOS-upgrade.bat` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
+1. Télécharger `RaceHubOS-install.bat` depuis le [dépôt](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-cliquer pour lancer
 
 Le script gère tout : installe Git/Node.js via winget si absents, clone, installe les dépendances, configure la base de données, et crée un raccourci **RaceHubOS v\<version\>** sur le Bureau avec l'icône.
@@ -238,7 +237,11 @@ Le frontend est accessible sur http://localhost:5173 et l'API backend sur http:/
 
 #### Mise à jour
 
-Relancer le même script d'upgrade (`.command` sur macOS, `.bat` sur Windows). Il détecte la version installée, clone la nouvelle, copie les données et crée un nouveau raccourci. Les anciennes versions sont conservées.
+Les mises à jour se font depuis l'application :
+1. Ouvrir **Paramètres**
+2. Cliquer **Vérifier** pour chercher les mises à jour
+3. Si disponible, cliquer **Mettre à jour**
+4. L'app télécharge, installe et redémarre automatiquement
 
 > **Note :** En production, `npm run build && npm start` build le frontend et lance le backend sur un seul port (3001). En développement, `npm run dev` lance Vite et Express avec hot reload.
 

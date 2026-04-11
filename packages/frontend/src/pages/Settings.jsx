@@ -17,6 +17,9 @@ import {
   List,
   Volume2,
   Play,
+  Download,
+  ArrowUpCircle,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,6 +50,12 @@ export default function Settings() {
   const [logs, setLogs] = useState([])
   const logsEndRef = useRef(null)
 
+  // Update state
+  const [updateInfo, setUpdateInfo] = useState(null)
+  const [checking, setChecking] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [updateProgress, setUpdateProgress] = useState(null)
+
   const addLogEntry = (message) => {
     const timestamp = new Date().toLocaleTimeString()
     setLogs(prev => [...prev.slice(-99), { time: timestamp, message }])
@@ -55,6 +64,10 @@ export default function Settings() {
   useEffect(() => {
     fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()).then(d => {
       if (d.success && d.data) setDefaultViewMode(d.data)
+    }).catch(() => {})
+    // Load current version
+    fetch(`${API_URL}/api/health`).then(r => r.json()).then(d => {
+      setUpdateInfo({ currentVersion: d.version })
     }).catch(() => {})
   }, [])
 
@@ -66,6 +79,55 @@ export default function Settings() {
       body: JSON.stringify({ value: mode }),
     }).catch(() => {})
   }
+
+  async function checkUpdate() {
+    setChecking(true)
+    try {
+      const res = await fetch(`${API_URL}/api/update/check`)
+      const data = await res.json()
+      if (data.success) setUpdateInfo(data.data)
+    } catch {
+      setUpdateInfo({ error: 'Impossible de vérifier' })
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function applyUpdate() {
+    setUpdating(true)
+    setUpdateProgress({ step: 0, message: 'Démarrage...', status: 'running' })
+    try {
+      await fetch(`${API_URL}/api/update/apply`, { method: 'POST' })
+    } catch {
+      setUpdateProgress({ step: 0, message: 'Erreur de connexion', status: 'error' })
+      setUpdating(false)
+    }
+  }
+
+  // Listen for update progress via WebSocket
+  useEffect(() => {
+    const socket = io(WS_URL, { transports: ['websocket', 'polling'] })
+    socket.on('update:progress', (data) => {
+      setUpdateProgress(data)
+      if (data.status === 'complete') {
+        // Server will restart, wait and reload
+        setTimeout(() => {
+          const tryReconnect = () => {
+            fetch(`${API_URL}/api/health`).then(() => {
+              window.location.reload()
+            }).catch(() => {
+              setTimeout(tryReconnect, 2000)
+            })
+          }
+          tryReconnect()
+        }, 3000)
+      }
+      if (data.status === 'error') {
+        setUpdating(false)
+      }
+    })
+    return () => socket.disconnect()
+  }, [])
 
   function handleBestLapVoiceToggle() {
     saveBestLapEnabled(!bestLapEnabled)
@@ -116,7 +178,7 @@ export default function Settings() {
   }, [])
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [logs])
 
   async function handleConnect(address) {
@@ -147,6 +209,76 @@ export default function Settings() {
 
   return (
     <div className="p-4 space-y-4">
+      {/* Update Section */}
+      <Card>
+        <CardContent>
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <Download className="size-4 text-blue-500" />
+            Mise à jour
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Version actuelle</p>
+                <p className="font-mono font-bold">{updateInfo?.currentVersion || '...'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {!updating && (
+                  <Button variant="outline" size="sm" onClick={checkUpdate} disabled={checking}>
+                    {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                    Vérifier
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {updateInfo?.updateAvailable && !updating && (
+              <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                <div>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    Nouvelle version disponible : v{updateInfo.latestVersion}
+                  </p>
+                </div>
+                <Button size="sm" onClick={applyUpdate}>
+                  <ArrowUpCircle className="size-4" />
+                  Mettre à jour
+                </Button>
+              </div>
+            )}
+
+            {updateInfo && !updateInfo.updateAvailable && !updateInfo.error && !updating && (
+              <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                <CheckCircle className="size-4" />
+                L'application est à jour
+              </p>
+            )}
+
+            {updateInfo?.error && !updating && (
+              <p className="text-sm text-destructive">{updateInfo.error}</p>
+            )}
+
+            {updating && updateProgress && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {updateProgress.status === 'running' && <Loader2 className="size-4 animate-spin text-blue-500" />}
+                  {updateProgress.status === 'complete' && <CheckCircle className="size-4 text-green-500" />}
+                  {updateProgress.status === 'error' && <span className="size-4 text-destructive">✕</span>}
+                  <p className="text-sm">{updateProgress.message}</p>
+                </div>
+                {updateProgress.status === 'running' && (
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 transition-all duration-500 rounded-full" style={{ width: `${(updateProgress.step / 6) * 100}%` }} />
+                  </div>
+                )}
+                {updateProgress.status === 'complete' && (
+                  <p className="text-xs text-muted-foreground">Redémarrage en cours...</p>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Connection Status */}
       <Card className={connected ? 'border-green-500/50' : ''}>
         <CardContent className=" flex items-center justify-between">

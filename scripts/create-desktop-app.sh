@@ -20,7 +20,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cat > "$APP_DIR/Contents/MacOS/RaceHubOS" << EXEC_EOF
 #!/bin/bash
 cd "$TARGET_DIR"
-osascript -e 'tell application "Terminal" to do script "cd \"$TARGET_DIR\" && npm start"'
+osascript -e 'tell application "Terminal" to do script "cd \"$TARGET_DIR\" && while true; do npm start; EXIT_CODE=\\\$?; if [ \\\$EXIT_CODE -ne 42 ]; then break; fi; echo Redémarrage...; sleep 2; done"'
 sleep 3
 open "http://localhost:3001"
 EXEC_EOF
