@@ -1,4 +1,5 @@
 import 'dotenv/config';
+if (!process.env.DATABASE_URL) process.env.DATABASE_URL = 'file:./dev.db';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -129,7 +130,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '1.7.4'
+    version: '1.7.5'
   });
 });
 
@@ -137,7 +138,7 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'RaceHubOS API',
-    version: '1.7.4',
+    version: '1.7.5',
     endpoints: {
       drivers: '/api/drivers',
       cars: '/api/cars',
