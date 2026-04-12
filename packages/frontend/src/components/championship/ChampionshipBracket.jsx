@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Trophy, Clock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
-import { useSession } from '../../context/SessionContext'
+import { ChevronRight, Clock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { STATUS_COLORS } from '../../lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const STATUS_STYLES = {
-  draft: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'En attente', icon: Circle },
-  active: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400', label: 'En cours', icon: Loader2 },
-  paused: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400', label: 'En pause', icon: Clock },
-  finishing: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400', label: 'Finition', icon: Clock },
-  finished: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-600 dark:text-green-400', label: 'Terminé', icon: CheckCircle2 },
-}
+const STATUS_ICONS = { draft: Circle, active: Loader2, paused: Clock, finishing: Clock, finished: CheckCircle2 }
+const STATUS_LABELS = { draft: 'En attente', active: 'En cours', paused: 'En pause', finishing: 'Finition', finished: 'Terminé' }
 
 function formatTime(ms) {
   if (!ms) return '-'
@@ -23,8 +18,8 @@ function formatTime(ms) {
 }
 
 function BracketCard({ label, name, status, drivers, type, showTimes = false }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.draft
-  const StatusIcon = s.icon
+  const s = STATUS_COLORS[status] || STATUS_COLORS.draft
+  const StatusIcon = STATUS_ICONS[status] || Circle
   const borderColor = type === 'qualif'
     ? 'border-blue-200 dark:border-blue-800'
     : 'border-green-200 dark:border-green-800'
@@ -38,7 +33,7 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
         <span className="font-semibold text-sm">{label}</span>
         <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
           <StatusIcon className={`w-3 h-3 ${status === 'active' ? 'animate-spin' : ''}`} />
-          {s.label}
+          {STATUS_LABELS[status] || status}
         </span>
       </div>
       {name && <p className="text-xs text-muted-foreground mb-2">{name}</p>}

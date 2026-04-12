@@ -94,8 +94,8 @@ sessionService.on('sessionReset', async ({ sessionId, championshipId }) => {
   await championshipService.onStandingsChanged(championshipId, sessionId, 'session_reset');
 });
 
-sessionService.on('sessionDeleted', ({ sessionId, championshipId }) => {
-  championshipService.onStandingsChanged(championshipId, sessionId, 'session_deleted');
+sessionService.on('sessionDeleted', async ({ sessionId, championshipId }) => {
+  await championshipService.onStandingsChanged(championshipId, sessionId, 'session_deleted');
 });
 
 // Pass io to settings

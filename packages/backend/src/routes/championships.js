@@ -168,6 +168,14 @@ router.post('/', async (req, res) => {
       if (!participants || participants.length < 2) {
         return res.status(400).json({ success: false, error: 'At least 2 participants required' });
       }
+      const driverIds = participants.map(p => p.driverId);
+      if (new Set(driverIds).size !== driverIds.length) {
+        return res.status(400).json({ success: false, error: 'Duplicate drivers in participants' });
+      }
+      const existingDrivers = await prisma.driver.findMany({ where: { id: { in: driverIds }, deletedAt: null }, select: { id: true } });
+      if (existingDrivers.length !== driverIds.length) {
+        return res.status(400).json({ success: false, error: 'One or more drivers not found' });
+      }
       if (!driversPerQualif || driversPerQualif < 2 || driversPerQualif > 6) {
         return res.status(400).json({ success: false, error: 'driversPerQualif must be between 2 and 6' });
       }
@@ -619,11 +627,19 @@ router.put('/:id/participants', async (req, res) => {
       return res.status(400).json({ success: false, error: 'At least 2 participants required' });
     }
 
+    const driverIds = participants.map(p => p.driverId);
+    if (new Set(driverIds).size !== driverIds.length) {
+      return res.status(400).json({ success: false, error: 'Duplicate drivers in participants' });
+    }
+    const existingDrivers = await prisma.driver.findMany({ where: { id: { in: driverIds }, deletedAt: null }, select: { id: true } });
+    if (existingDrivers.length !== driverIds.length) {
+      return res.status(400).json({ success: false, error: 'One or more drivers not found' });
+    }
+
     const hasStartedQualif = championship.sessions.some(s => s.type === 'qualif' && s.status !== 'draft');
 
     // Cannot remove participants who already raced in a non-draft session
     if (hasStartedQualif) {
-      const existingIds = new Set(championship.participants.map(p => p.driverId));
       const newIds = new Set(participants.map(p => p.driverId));
       const startedDriverIds = new Set();
       for (const session of championship.sessions) {

@@ -79,7 +79,7 @@ export class ChampionshipService {
    */
   async generateAutoSessions(championshipId) {
     const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
+      where: { id: championshipId, deletedAt: null },
       include: { participants: { orderBy: { order: 'asc' } } },
     });
 
@@ -88,11 +88,13 @@ export class ChampionshipService {
     const { participants, driversPerQualif, driversPerRace, trackId } = championship;
     if (!participants.length || !driversPerQualif || !driversPerRace || !trackId) return;
 
-    // Delete existing auto-generated sessions (qualif + race only)
+    // Delete existing draft auto-generated sessions (qualif + race only)
     await this.prisma.session.deleteMany({
       where: {
         championshipId,
         type: { in: ['qualif', 'race'] },
+        status: 'draft',
+        deletedAt: null,
       },
     });
 
@@ -151,7 +153,7 @@ export class ChampionshipService {
    */
   async assignDriversToRaces(championshipId) {
     const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
+      where: { id: championshipId, deletedAt: null },
       include: { participants: true },
     });
 
@@ -342,7 +344,7 @@ export class ChampionshipService {
 
     // Auto-progression: check if all qualifs finished
     const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
+      where: { id: championshipId, deletedAt: null },
       include: { sessions: { where: { deletedAt: null } } },
     });
 
@@ -376,7 +378,7 @@ export class ChampionshipService {
     if (reason !== 'session_reset') return;
 
     const championship = await this.prisma.championship.findUnique({
-      where: { id: championshipId },
+      where: { id: championshipId, deletedAt: null },
       include: { sessions: { where: { deletedAt: null } } },
     });
 
