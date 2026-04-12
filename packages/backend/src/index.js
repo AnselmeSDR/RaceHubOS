@@ -86,12 +86,12 @@ syncService.setSessionService(sessionService);
 sessionService.setSyncService(syncService);
 
 // SessionService -> ChampionshipService (event-based)
-sessionService.on('sessionFinished', ({ sessionId, championshipId }) => {
-  championshipService.onSessionFinished(sessionId, championshipId);
+sessionService.on('sessionFinished', async ({ sessionId, championshipId }) => {
+  await championshipService.onSessionFinished(sessionId, championshipId);
 });
 
-sessionService.on('sessionReset', ({ sessionId, championshipId }) => {
-  championshipService.onStandingsChanged(championshipId, sessionId, 'session_reset');
+sessionService.on('sessionReset', async ({ sessionId, championshipId }) => {
+  await championshipService.onStandingsChanged(championshipId, sessionId, 'session_reset');
 });
 
 sessionService.on('sessionDeleted', ({ sessionId, championshipId }) => {

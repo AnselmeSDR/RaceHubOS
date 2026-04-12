@@ -30,6 +30,27 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* Racing semantic colors */
+  --color-session-practice: oklch(0.627 0.265 303.9);   /* purple-500 */
+  --color-session-qualif: oklch(0.623 0.214 259.8);     /* blue-500 */
+  --color-session-race: oklch(0.723 0.219 149.6);       /* green-500 */
+  --color-session-balancing: oklch(0.769 0.188 70.1);   /* amber-500 */
+  --color-championship: oklch(0.795 0.184 86.0);        /* yellow-500 */
+  --color-gap-laps: oklch(0.646 0.222 41.1);            /* orange-600 */
+  --color-gap-close: oklch(0.627 0.194 149.2);          /* green-600 */
+  --color-gap-medium: oklch(0.681 0.162 75.8);          /* yellow-600 */
+  --color-gap-far: oklch(0.577 0.245 27.3);             /* red-600 */
+  --color-leader: oklch(0.558 0.288 302.3);             /* purple-600 */
+  --color-delta-gained: oklch(0.723 0.219 149.6);       /* green-500 */
+  --color-delta-lost: oklch(0.637 0.237 25.3);          /* red-500 */
+  --color-fastest-lap: oklch(0.627 0.265 303.9);        /* purple-500 */
+  --color-ctrl-1: oklch(0.637 0.237 25.3);              /* red-500 */
+  --color-ctrl-2: oklch(0.623 0.214 259.8);             /* blue-500 */
+  --color-ctrl-3: oklch(0.795 0.184 86.0);              /* yellow-500 */
+  --color-ctrl-4: oklch(0.723 0.219 149.6);             /* green-500 */
+  --color-ctrl-5: oklch(0.627 0.265 303.9);             /* purple-500 */
+  --color-ctrl-6: oklch(0.702 0.183 55.9);              /* orange-500 */
 }
 
 @layer base {

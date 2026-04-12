@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Play, Clock, Flag } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
+import { GAP_COLORS } from '../../lib/colors'
 
 /**
  * StandingsTabs - Three tabs for Practice, Qualifications and Races standings
@@ -76,6 +77,12 @@ export default function StandingsTabs({
         return { type: 'time', value: standing.bestTime - leader.bestTime }
       }
     } else if (activeTab === 'race') {
+      const leaderLaps = leader.totalLaps || leader.raceTotalLaps || 0
+      const currentLaps = standing.totalLaps || standing.raceTotalLaps || 0
+      const lapDiff = leaderLaps - currentLaps
+      if (lapDiff > 0) {
+        return { type: 'laps', value: lapDiff }
+      }
       const leaderTime = leader.totalTime || leader.raceTotalTime || 0
       const currentTime = standing.totalTime || standing.raceTotalTime || 0
       if (leaderTime && currentTime) {
@@ -173,7 +180,7 @@ export default function StandingsTabs({
                       {standing.car && (
                         <span className="truncate">{standing.car.brand} {standing.car.model}</span>
                       )}
-                      {(standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
+                      {activeTab !== 'race' && (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
                         <span>• {standing.totalLaps || standing.raceTotalLaps || standing.laps} tours</span>
                       )}
                     </div>
@@ -205,12 +212,37 @@ export default function StandingsTabs({
 
                     {activeTab === 'race' && (
                       <>
-                        <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
-                        {gap !== null && (
-                          <span className="font-mono text-xs text-muted-foreground w-16 text-right">
-                            +{(gap.value / 1000).toFixed(3)}
+                        {/* Tours */}
+                        <div className="text-center min-w-[40px]">
+                          <div className="text-[10px] text-muted-foreground/50 uppercase">Tours</div>
+                          <span className="font-mono text-sm font-bold text-foreground">
+                            {standing.totalLaps || standing.raceTotalLaps || 0}
                           </span>
-                        )}
+                        </div>
+
+                        {/* Écart + Temps total */}
+                        <div className="text-right min-w-[70px]">
+                          <div className="text-[10px] text-muted-foreground/50 uppercase">
+                            {position === 1 ? 'Total' : 'Écart'}
+                          </div>
+                          {position === 1 ? (
+                            <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
+                          ) : gap !== null ? (
+                            <>
+                              <span className={`font-mono text-sm font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-foreground'}`}>
+                                {gap.type === 'laps'
+                                  ? `+${gap.value} tour${gap.value > 1 ? 's' : ''}`
+                                  : `+${(gap.value / 1000).toFixed(3)}`
+                                }
+                              </span>
+                              <div className="font-mono text-[10px] text-muted-foreground">
+                                <LapTime time={standing.totalTime || standing.raceTotalTime} size="xs" />
+                              </div>
+                            </>
+                          ) : (
+                            <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
+                          )}
+                        </div>
                         {standing.points !== undefined && (
                           <span className="font-bold text-foreground text-sm w-12 text-right">
                             {standing.points} pts

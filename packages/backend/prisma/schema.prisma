@@ -25,8 +25,9 @@ model Driver {
   team              Team?              @relation(fields: [teamId], references: [id])
   laps              Lap[]
   sessions          SessionDriver[]
-  controllerConfigs ControllerConfig[]
-  trackRecords      TrackRecord[]
+  controllerConfigs      ControllerConfig[]
+  trackRecords           TrackRecord[]
+  championshipParticipants ChampionshipParticipant[]
 }
 
 model Car {
@@ -44,10 +45,10 @@ model Car {
   deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  laps              Lap[]
-  sessions          SessionDriver[]
-  controllerConfigs ControllerConfig[]
-  trackRecords      TrackRecord[]
+  laps                     Lap[]
+  sessions                 SessionDriver[]
+  controllerConfigs        ControllerConfig[]
+  trackRecords             TrackRecord[]
 }
 
 model Track {
@@ -82,16 +83,24 @@ model Team {
 }
 
 model Championship {
-  id        String    @id @default(cuid())
-  name      String
-  season    String
-  status    String    @default("planned")
-  trackId   String?
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
-  track     Track?    @relation(fields: [trackId], references: [id])
+  id                String                   @id @default(cuid())
+  name              String
+  season            String
+  status            String                   @default("planned")
+  trackId           String?
+  mode              String                   @default("manual") // "manual" | "auto"
+  driversPerQualif  Int?                     // 2-6, only for auto mode
+  driversPerRace    Int?                     // 2-6, only for auto mode
+  qualifMaxDuration Int?                     // ms, shared config for all qualif sessions
+  qualifMaxLaps     Int?
+  raceMaxDuration   Int?                     // ms, shared config for all race sessions
+  raceMaxLaps       Int?
+  deletedAt         DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  sessions          Session[]
+  participants      ChampionshipParticipant[]
+  track             Track?                   @relation(fields: [trackId], references: [id])
 }
 
 model Session {
@@ -118,6 +127,7 @@ model Session {
   cuLapCounter   Boolean?
   cuNumCars      Int?
   order          Int             @default(0)       // Display order within championship
+  autoGroup      Int?                              // Group index for auto championships
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   laps           Lap[]
@@ -211,6 +221,19 @@ model TrackRecord {
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@unique([trackId, driverId, carId])
+}
+
+model ChampionshipParticipant {
+  id             String       @id @default(cuid())
+  championshipId String
+  driverId       String
+  order          Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  driver       Driver       @relation(fields: [driverId], references: [id])
+
+  @@unique([championshipId, driverId])
 }
 
 model Device {

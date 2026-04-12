@@ -4,6 +4,7 @@ import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
+import { GAP_COLORS } from '../../lib/colors'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -16,6 +17,7 @@ export default function SessionLeaderboard({
   entries = [],
   sortBy = 'laps',
   sessionType = 'race',
+  sessionStatus,
   expanded = false,
 }) {
   const { isDark } = useApp()
@@ -237,10 +239,14 @@ export default function SessionLeaderboard({
                 {/* Gap / Total */}
                 <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
-                    {sortBy === 'race' ? (position === 1 ? 'Total' : 'Écart') : 'Écart'}
+                    {sortBy === 'race' ? (position === 1 ? (sessionStatus === 'finished' ? 'Total' : 'Écart') : 'Écart') : 'Écart'}
                   </div>
                   {sortBy === 'race' && position === 1 ? (
-                    <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
+                    sessionStatus === 'finished' ? (
+                      <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
+                    ) : (
+                      <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>Leader</span>
+                    )
                   ) : (
                     <GapDisplay
                       gap={entry.displayGap || stats.gap}

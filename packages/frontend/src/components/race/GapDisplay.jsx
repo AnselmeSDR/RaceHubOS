@@ -1,3 +1,5 @@
+import { GAP_COLORS } from '../../lib/colors'
+
 /**
  * GapDisplay - Gap to leader display
  * Shows time difference with color coding
@@ -10,7 +12,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
       return <FormattedTime time={leaderBestLap} />
     }
     return (
-      <span className="text-sm font-bold text-purple-600 uppercase tracking-wide">
+      <span className={`text-sm font-bold ${GAP_COLORS.leader} uppercase tracking-wide`}>
         Leader
       </span>
     )
@@ -25,7 +27,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
   if (typeof gap === 'object' && gap.type) {
     if (gap.type === 'laps') {
       return (
-        <span className="font-mono tabular-nums text-sm font-medium text-orange-600">
+        <span className={`font-mono tabular-nums text-sm font-medium ${GAP_COLORS.laps}`}>
           +{gap.value} tour{gap.value > 1 ? 's' : ''}
         </span>
       )
@@ -38,7 +40,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
   // Handle string gaps (e.g., "+2 tours")
   if (typeof gap === 'string') {
     return (
-      <span className="font-mono tabular-nums text-sm font-medium text-orange-600">
+      <span className={`font-mono tabular-nums text-sm font-medium ${GAP_COLORS.laps}`}>
         {gap}
       </span>
     )
@@ -57,7 +59,7 @@ function FormattedTime({ time }) {
   const seconds = totalSeconds % 60
 
   return (
-    <span className="font-mono tabular-nums text-sm font-bold text-purple-600">
+    <span className={`font-mono tabular-nums text-sm font-bold ${GAP_COLORS.leader}`}>
       {minutes}:{seconds.toFixed(3).padStart(6, '0')}
     </span>
   )
@@ -67,11 +69,10 @@ function FormattedTime({ time }) {
 function FormattedGap({ gapMs }) {
   const gapSeconds = Math.abs(gapMs / 1000)
 
-  // Color based on gap size
   const getGapColor = () => {
-    if (gapSeconds < 1) return 'text-green-600'
-    if (gapSeconds < 5) return 'text-yellow-600'
-    return 'text-red-600'
+    if (gapSeconds < 1) return GAP_COLORS.timeClose
+    if (gapSeconds < 5) return GAP_COLORS.timeMedium
+    return GAP_COLORS.timeFar
   }
 
   return (

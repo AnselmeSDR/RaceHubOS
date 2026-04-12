@@ -1,11 +1,12 @@
-import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy } from 'lucide-react'
+import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy, GitBranch, Zap, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
 
 const SESSION_TYPES = {
-  practice: { label: 'EL', color: 'bg-purple-500/15 text-purple-600', icon: FlaskConical },
-  qualif: { label: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
-  race: { label: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
+  practice: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
+  qualif: { label: 'Q', color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
+  race: { label: 'R', color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
 }
 
 export default function ChampionshipHeader({
@@ -17,6 +18,10 @@ export default function ChampionshipHeader({
   onFinish,
   showStandings,
   onToggleStandings,
+  showBracket,
+  onToggleBracket,
+  showResults,
+  onToggleResults,
 }) {
   const getSessionLabel = (session) => {
     if (session.type === 'practice') return 'EL'
@@ -26,12 +31,7 @@ export default function ChampionshipHeader({
     return `${session.type === 'qualif' ? 'Q' : 'R'}${index}`
   }
 
-  const getStatusDot = (session) => {
-    if (session.status === 'active') return 'bg-green-500 animate-pulse'
-    if (session.status === 'finishing') return 'bg-orange-500 animate-pulse'
-    if (session.status === 'finished') return 'bg-muted-foreground/50'
-    return null
-  }
+  const getStatusDot = (session) => STATUS_DOTS[session.status] || null
 
   const isFinished = championship?.status === 'finished'
   const qrSessions = sessions.filter(s => s.type === 'qualif' || s.type === 'race')
@@ -49,7 +49,15 @@ export default function ChampionshipHeader({
     <div className="border-b px-4 py-2.5 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-sm font-semibold">{championship?.name || 'Championnat'}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-semibold">{championship?.name || 'Championnat'}</h1>
+            {championship?.mode === 'auto' && (
+              <Badge className="bg-primary/10 text-primary text-[10px] py-0 px-1.5">
+                <Zap className="size-2.5 mr-0.5" />
+                Auto
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">{championship?.track?.name || 'Circuit non défini'}</p>
         </div>
 
@@ -76,6 +84,19 @@ export default function ChampionshipHeader({
               </button>
             )
           })}
+
+          {/* Results tab */}
+          <button
+            onClick={onToggleResults}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              showResults
+                ? 'bg-championship/15 text-championship ring-2 ring-championship/30'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            <Award className="size-3.5" />
+            Résultats
+          </button>
         </div>
       </div>
 
@@ -88,6 +109,11 @@ export default function ChampionshipHeader({
             <Trophy className="size-3.5" />
             Terminer le championnat
           </Button>
+        )}
+        {championship?.mode === 'auto' && (
+          <button onClick={onToggleBracket} className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showBracket ? 'Masquer le bracket' : 'Afficher le bracket'}>
+            <GitBranch className="size-4" />
+          </button>
         )}
         <button onClick={onToggleStandings} className="p-1.5 hover:bg-muted rounded transition-colors" title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
           {showStandings ? <PanelRightClose className="size-4 text-muted-foreground" /> : <PanelRightOpen className="size-4 text-muted-foreground" />}

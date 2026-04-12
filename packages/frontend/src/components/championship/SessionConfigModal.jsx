@@ -14,15 +14,7 @@ const SESSION_TYPE_ICONS = {
   race: Flag
 }
 
-// Controllers are 0-indexed in DB (0-5), displayed as 1-6
-const CONTROLLER_COLORS = [
-  'bg-red-500',    // 0 -> displayed as 1
-  'bg-blue-500',   // 1 -> displayed as 2
-  'bg-yellow-500', // 2 -> displayed as 3
-  'bg-green-500',  // 3 -> displayed as 4
-  'bg-purple-500', // 4 -> displayed as 5
-  'bg-orange-500'  // 5 -> displayed as 6
-]
+import { CONTROLLER_COLORS } from '../../lib/colors'
 
 /**
  * SessionConfigModal - Modal to configure a session

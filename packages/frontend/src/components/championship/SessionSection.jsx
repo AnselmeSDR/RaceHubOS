@@ -22,9 +22,7 @@ const SESSION_TYPE_ICONS = {
   balancing: Scale
 }
 
-const CONTROLLER_COLORS = [
-  'bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'
-]
+import { CONTROLLER_COLORS } from '../../lib/colors'
 
 export default function SessionSection({
   session,
@@ -41,6 +39,7 @@ export default function SessionSection({
   onReset,
   maxLapTime,
   onMaxLapTimeChange,
+  autoMode = false,
 }) {
   const { cuStatus, socketConnected, connected: deviceConnected } = useDevice()
   const {
@@ -261,6 +260,7 @@ export default function SessionSection({
   const canResumeCu = isCuStopped && socketConnected
   const canStop = (isRacing || isPaused) && socketConnected
   const canEdit = session.status === 'draft'
+  const isAutoSession = autoMode && session.type !== 'practice'
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -445,6 +445,30 @@ export default function SessionSection({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Auto mode: read-only driver display */}
+      {isAutoSession && !canEdit && sessionDrivers.length > 0 && (
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2 flex-wrap">
+            {sessionDrivers.map(sd => (
+              <div key={sd.id} className="flex items-center gap-1.5 text-xs bg-muted/50 rounded-full px-2.5 py-1">
+                <span className={`inline-flex items-center justify-center size-4 rounded-full text-white text-[10px] font-bold ${CONTROLLER_COLORS[sd.controller]}`}>{sd.controller + 1}</span>
+                {sd.driver?.img && <img src={`${import.meta.env.VITE_API_URL || ''}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />}
+                <span className="font-medium">{sd.driver?.name || '?'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Auto mode: waiting for qualif results */}
+      {isAutoSession && session.type === 'race' && sessionDrivers.length === 0 && (
+        <div className="px-4 py-4 border-b border-border text-center">
+          <p className="text-sm text-muted-foreground italic">
+            Pilotes assignés automatiquement après les qualifications
+          </p>
         </div>
       )}
 

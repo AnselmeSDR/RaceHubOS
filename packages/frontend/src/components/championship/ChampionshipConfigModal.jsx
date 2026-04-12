@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
-import { Trophy, Plus, Trash2, Pencil, ChevronUp, ChevronDown, Clock, Flag, RefreshCw, Check, X } from 'lucide-react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { Trophy, Plus, Trash2, Pencil, ChevronUp, ChevronDown, Clock, Flag, RefreshCw, Check, X, Users, Zap, UserPlus } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -23,6 +23,7 @@ export default function ChampionshipConfigModal({
   championship,
   sessions = [],
   tracks = [],
+  drivers: allDrivers = [],
   open,
   onClose,
   onSave,
@@ -45,6 +46,43 @@ export default function ChampionshipConfigModal({
   const [sessionForm, setSessionForm] = useState({})
   const [showNewSession, setShowNewSession] = useState(null)
   const [newSessionForm, setNewSessionForm] = useState({ name: '', duration: 5, maxLaps: 10, useTime: true, useLaps: false })
+
+  const isAuto = championship?.mode === 'auto'
+  const [addingDriver, setAddingDriver] = useState('')
+
+  // For auto mode: check what's editable
+  const hasStartedQualif = sessions.some(s => s.type === 'qualif' && s.status !== 'draft')
+  const participantIds = useMemo(() => new Set((championship?.participants || []).map(p => p.driverId)), [championship?.participants])
+  const availableDrivers = useMemo(() => allDrivers.filter(d => !participantIds.has(d.id)), [allDrivers, participantIds])
+
+  const handleAddParticipant = async (driverId) => {
+    if (!driverId) return
+    try {
+      const currentParticipants = (championship?.participants || []).map(p => ({ driverId: p.driverId }))
+      currentParticipants.push({ driverId })
+      await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participants: currentParticipants }),
+      })
+      setAddingDriver('')
+      onSessionsChange?.()
+    } catch (err) { setError(err.message) }
+  }
+
+  const handleRemoveParticipant = async (driverId) => {
+    try {
+      const currentParticipants = (championship?.participants || [])
+        .filter(p => p.driverId !== driverId)
+        .map(p => ({ driverId: p.driverId }))
+      await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participants: currentParticipants }),
+      })
+      onSessionsChange?.()
+    } catch (err) { setError(err.message) }
+  }
 
   const qrSessions = sessions
     .filter(s => s.type === 'qualif' || s.type === 'race')
@@ -192,6 +230,42 @@ export default function ChampionshipConfigModal({
             </div>
           </div>
 
+          {/* Auto mode: participants */}
+          {isAuto && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="size-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Participants ({championship.participants?.length || 0})</span>
+              </div>
+              <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
+                {(championship.participants || []).map((p, i) => (
+                  <div key={p.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
+                    <span className="text-muted-foreground w-4 text-right">{i + 1}</span>
+                    {p.driver?.img && <img src={`${API_URL}${p.driver.img}`} className="w-5 h-5 rounded-full object-cover" alt="" />}
+                    <span className="font-medium flex-1 truncate">{p.driver?.name}</span>
+                    {!hasStartedQualif && (
+                      <button onClick={() => handleRemoveParticipant(p.driverId)} className="p-0.5 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10">
+                        <X className="size-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {/* Add participant row */}
+                <div className="flex items-center gap-2 px-3 py-1.5">
+                  <UserPlus className="size-3.5 text-muted-foreground" />
+                  <select
+                    value={addingDriver}
+                    onChange={e => { handleAddParticipant(e.target.value); }}
+                    className="flex-1 h-6 text-xs bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-ring rounded"
+                  >
+                    <option value="">Ajouter un pilote...</option>
+                    {availableDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Sessions */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -236,14 +310,16 @@ export default function ChampionshipConfigModal({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <div className="flex flex-col">
-                          <button onClick={() => handleMoveSession(session.id, 'up')} disabled={index === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
-                            <ChevronUp className="size-3.5" />
-                          </button>
-                          <button onClick={() => handleMoveSession(session.id, 'down')} disabled={index === qrSessions.length - 1} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
-                            <ChevronDown className="size-3.5" />
-                          </button>
-                        </div>
+                        {session.status === 'draft' && (
+                          <div className="flex flex-col">
+                            <button onClick={() => handleMoveSession(session.id, 'up')} disabled={index === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
+                              <ChevronUp className="size-3.5" />
+                            </button>
+                            <button onClick={() => handleMoveSession(session.id, 'down')} disabled={index === qrSessions.length - 1} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
+                              <ChevronDown className="size-3.5" />
+                            </button>
+                          </div>
+                        )}
 
                         <Badge className={config.color}>{getSessionLabel(session)}</Badge>
                         <Icon className="size-3.5 text-muted-foreground" />
@@ -254,14 +330,18 @@ export default function ChampionshipConfigModal({
                           {session.maxLaps ? `${session.maxLaps}t` : ''}
                         </span>
                         {session.status !== 'draft' && (
-                          <Badge variant="outline" className="text-[10px]">{session.status}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{{ active: 'En cours', paused: 'En pause', finishing: 'Finition', finished: 'Terminé' }[session.status] || session.status}</Badge>
                         )}
-                        <button onClick={() => startEditing(session)} className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted">
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button onClick={() => handleDeleteSession(session.id)} className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10">
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        {session.status === 'draft' && (
+                          <>
+                            <button onClick={() => startEditing(session)} className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted">
+                              <Pencil className="size-3.5" />
+                            </button>
+                            <button onClick={() => handleDeleteSession(session.id)} className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10">
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

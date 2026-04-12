@@ -325,6 +325,7 @@ export default function FreeSessionPage() {
                       sortBy={session.type === 'practice' ? practiceSortBy : session.type === 'qualif' ? 'bestLap' : 'race'}
                       onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
                       sessionType={session.type}
+                      sessionStatus={session.status}
                     />
                   )
                 )}

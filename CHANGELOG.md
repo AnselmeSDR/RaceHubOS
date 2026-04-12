@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-04-12
+
+### Added
+- **Championnats automatiques** : nouveau mode "Auto" pour les championnats avec génération automatique de l'arbre qualifications/courses
+- **Wizard de création** : assistant multi-étapes (infos, pilotes, configuration qualif/course, aperçu) avec switch Manuel/Auto
+- **Sélection des participants** : liste de pilotes avec ajout dynamique (nouvelle ligne automatique), modifiable à tout moment
+- **Génération automatique des sessions** : répartition équilibrée des pilotes en groupes de qualif (round-robin) et courses (séquentiel)
+- **Auto-progression** : après toutes les qualifications, les pilotes sont automatiquement assignés aux courses selon le classement fusionné (meilleur tour)
+- **Bracket/Arbre** : visualisation 3 colonnes (qualifs → classement global → courses) avec mise à jour temps réel
+- **Édition flexible** : ajout de pilotes, qualifs ou courses supplémentaires même après le début du championnat (sessions terminées immutables)
+- **Couleurs sémantiques** : tokens CSS dans `@theme` (`session-practice`, `gap-laps`, `leader`, `ctrl-1`...) pour cohérence des couleurs
+
+### Changed
+- **Classement général courses** : colonnes Tours + Écart/Total, gap en tours (orange) quand le nombre de tours diffère du leader
+- **Leaderboard course** : le leader affiche "Leader" en violet pendant la course, le temps total uniquement à la fin
+- **Config championnat** : sessions éditables/supprimables si en draft (même en mode auto), sessions terminées verrouillées
+- **Traduction statuts** : `finished` → `Terminé`, `active` → `En cours`, etc. dans le panneau de configuration
+
 ## [1.8.0] - 2026-04-11
 
 ### Added

@@ -37,7 +37,8 @@ Built by slot racers, for slot racers. 🏎️
 
 - 📊 Real-time race leaderboard with animated positions
 - 👤 Driver, car, track and team management
-- 🏆 Championship system with multi-session support (Practice, Qualifying, Race)
+- 🏆 Championship system: manual or automatic mode (auto bracket, qualif groups, race progression)
+
 - 📈 Standings and statistics per championship and session type
 - ⚙️ Inline session configuration (controllers, duration, laps, grace period)
 - 🥇 Podium display at end of session with gaps and best lap
@@ -181,7 +182,8 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
 - 📊 Classement en temps réel avec animations de positions
 - 👤 Gestion des pilotes, voitures, circuits et équipes
-- 🏆 Système de championnat multi-sessions (Essais libres, Qualifications, Course)
+- 🏆 Système de championnat : mode manuel ou automatique (arbre qualifs/courses, progression auto)
+
 - 📈 Classements et statistiques par championnat et type de session
 - ⚙️ Configuration de session inline (contrôleurs, durée, tours, période de grâce)
 - 🥇 Podium en fin de session avec écarts et meilleur tour
