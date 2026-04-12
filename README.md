@@ -76,43 +76,21 @@ Built by slot racers, for slot racers. 🏎️
 
 > **Note:** In production, `npm run build && npm start` builds the frontend and starts the backend on a single port (3001). In development, `npm run dev` runs both Vite and Express with hot reload.
 
-### 🍎 macOS / 🐧 Linux
-
-#### One-click install
-
-1. Download `RaceHubOS-install-mac.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
-2. Double-click to run (right-click > Open if macOS blocks it)
-
 The script handles everything automatically:
 - Installs Homebrew, Git, and Node.js if missing
 - Clones the repo into `~/RaceHubOS-v<version>`
 - Installs dependencies and sets up the database
 - Creates a **RaceHubOS v\<version\>.app** on the Desktop with the project icon
 
-#### Manual install
+### 🍎 macOS / 🐧 Linux
 
-```bash
-git clone https://github.com/AnselmeSDR/RaceHubOS.git
-cd RaceHubOS
-npm install
-cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
-npm run dev
-```
-
-The frontend will be available at http://localhost:5173 and the backend API at http://localhost:3001.
+1. Download `RaceHubOS-install-mac.command` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
+2. Double-click to run (right-click > Open if macOS blocks it)
 
 ### 🪟 Windows
 
-#### One-click install
-
 1. Download `RaceHubOS-install-win.bat` from the [repo](https://github.com/AnselmeSDR/RaceHubOS)
 2. Double-click to run
-
-The script handles everything automatically:
-- Installs Git and Node.js via winget if missing
-- Clones the repo into `C:\Users\<user>\RaceHubOS-v<version>`
-- Installs dependencies and sets up the database
-- Creates a launcher and a Desktop shortcut **RaceHubOS v\<version\>** with the project icon
 
 ### 🖥️ Usage
 
@@ -127,6 +105,26 @@ Updates are handled from within the app:
 4. The app downloads, installs and restarts automatically
 
 ## 🧑‍💻 Development
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+- Git
+
+> **Note:** In production, `npm run build && npm start` builds the frontend and starts the backend on a single port (3001). In development, `npm run dev` runs both Vite and Express with hot reload.
+
+### 📦 Setup
+
+```bash
+git clone https://github.com/AnselmeSDR/RaceHubOS.git
+cd RaceHubOS
+npm install
+cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+npm run dev
+```
+
+The frontend will be available at http://localhost:5173 and the backend API at http://localhost:3001.
 
 ### 🎮 Simulator
 
@@ -252,6 +250,26 @@ Les mises à jour se font depuis l'application :
 **Backend :** Node.js 20+, Express + Socket.io, Prisma + SQLite (WAL), Simulateur intégré
 
 ### Développement
+
+#### Prérequis
+
+- Node.js 20+
+- npm 10+
+- Git
+
+> **Note :** En production, `npm run build && npm start` build le frontend et lance le backend sur un seul port (3001). En développement, `npm run dev` lance Vite et Express avec hot reload.
+
+#### Installation
+
+```bash
+git clone https://github.com/AnselmeSDR/RaceHubOS.git
+cd RaceHubOS
+npm install
+cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+npm run dev
+```
+
+Le frontend est accessible sur http://localhost:5173 et l'API backend sur http://localhost:3001.
 
 #### Simulateur
 
