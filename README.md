@@ -68,14 +68,6 @@ Built by slot racers, for slot racers. 🏎️
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Node.js 20+
-- npm 10+
-- Git
-
-> **Note:** In production, `npm run build && npm start` builds the frontend and starts the backend on a single port (3001). In development, `npm run dev` runs both Vite and Express with hot reload.
-
 The script handles everything automatically:
 - Installs Homebrew, Git, and Node.js if missing
 - Clones the repo into `~/RaceHubOS-v<version>`
