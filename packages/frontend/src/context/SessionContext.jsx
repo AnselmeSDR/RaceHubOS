@@ -214,6 +214,10 @@ export function SessionProvider({ children }) {
       window.dispatchEvent(new CustomEvent('championship:standings_changed', { detail: data }))
     })
 
+    socket.on('championship:races_assigned', (data) => {
+      window.dispatchEvent(new CustomEvent('championship:races_assigned', { detail: data }))
+    })
+
     return () => {
       socket.disconnect()
     }

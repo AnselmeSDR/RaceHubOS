@@ -82,6 +82,10 @@ router.get('/:id', async (req, res) => {
       where: { id, deletedAt: null },
       include: {
         track: true,
+        participants: {
+          include: { driver: true },
+          orderBy: { order: 'asc' },
+        },
         sessions: {
           where: { deletedAt: null },
           include: {
@@ -130,7 +134,12 @@ router.get('/:id', async (req, res) => {
 // POST /api/championships - Crée un nouveau championnat
 router.post('/', async (req, res) => {
   try {
-    const { name, season, pointsSystem, status, trackId } = req.body;
+    const {
+      name, season, pointsSystem, status, trackId,
+      mode, driversPerQualif, driversPerRace,
+      qualifMaxDuration, qualifMaxLaps, raceMaxDuration, raceMaxLaps,
+      participants,
+    } = req.body;
 
     // Validation
     if (!name || !season) {
@@ -151,32 +160,82 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Auto mode validation
+    if (mode === 'auto') {
+      if (!trackId) {
+        return res.status(400).json({ success: false, error: 'Track is required for auto championships' });
+      }
+      if (!participants || participants.length < 2) {
+        return res.status(400).json({ success: false, error: 'At least 2 participants required' });
+      }
+      if (!driversPerQualif || driversPerQualif < 2 || driversPerQualif > 6) {
+        return res.status(400).json({ success: false, error: 'driversPerQualif must be between 2 and 6' });
+      }
+      if (!driversPerRace || driversPerRace < 2 || driversPerRace > 6) {
+        return res.status(400).json({ success: false, error: 'driversPerRace must be between 2 and 6' });
+      }
+    }
+
     const championship = await prisma.championship.create({
       data: {
         name: name.trim(),
         season: season.trim(),
         status: status || 'planned',
         trackId: trackId || null,
+        mode: mode || 'manual',
+        driversPerQualif: mode === 'auto' ? driversPerQualif : null,
+        driversPerRace: mode === 'auto' ? driversPerRace : null,
+        qualifMaxDuration: qualifMaxDuration || null,
+        qualifMaxLaps: qualifMaxLaps || null,
+        raceMaxDuration: raceMaxDuration || null,
+        raceMaxLaps: raceMaxLaps || null,
       },
     });
+
+    // Create participants for auto mode
+    if (mode === 'auto' && participants?.length) {
+      for (let i = 0; i < participants.length; i++) {
+        await prisma.championshipParticipant.create({
+          data: {
+            championshipId: championship.id,
+            driverId: participants[i].driverId,
+            order: i,
+          },
+        });
+      }
+    }
 
     // Create permanent free practice session for this championship
-    await prisma.session.create({
-      data: {
-        name: 'Essais Libres',
-        type: 'practice',
-        status: 'draft',
-        championshipId: championship.id,
-        trackId: trackId || null,
-      },
-    });
+    if (trackId) {
+      await prisma.session.create({
+        data: {
+          name: 'Essais Libres',
+          type: 'practice',
+          status: 'draft',
+          championshipId: championship.id,
+          trackId,
+        },
+      });
+    }
 
-    // Refetch with the new session
+    // Generate auto sessions (qualifs + races)
+    if (mode === 'auto') {
+      await championshipService.generateAutoSessions(championship.id);
+    }
+
+    // Refetch with all relations
     const result = await prisma.championship.findUnique({
       where: { id: championship.id },
       include: {
         track: true,
-        sessions: true,
+        participants: { include: { driver: true }, orderBy: { order: 'asc' } },
+        sessions: {
+          where: { deletedAt: null },
+          include: {
+            drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
+          },
+          orderBy: { order: 'asc' },
+        },
       },
     });
 
@@ -370,6 +429,250 @@ router.post('/:id/sessions', async (req, res) => {
   } catch (error) {
     console.error('Error creating session:', error);
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/championships/:id/results - Championship results with podium, standings and awards
+router.get('/:id/results', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const championship = await prisma.championship.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        sessions: {
+          where: { deletedAt: null },
+          include: {
+            drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
+            laps: { where: { deletedAt: null }, include: { driver: true, car: true } },
+          },
+        },
+      },
+    });
+
+    if (!championship) {
+      return res.status(404).json({ success: false, error: 'Championship not found' });
+    }
+
+    const qualifSessions = championship.sessions.filter(s => s.type === 'qualif' && s.status === 'finished');
+    const raceSessions = championship.sessions.filter(s => s.type === 'race' && s.status === 'finished');
+
+    // --- Final standings (race-based) ---
+    const raceStats = {};
+    for (const session of raceSessions) {
+      for (const sd of session.drivers) {
+        if (!sd.driverId) continue;
+        const key = sd.driverId;
+        if (!raceStats[key]) {
+          raceStats[key] = { driverId: sd.driverId, driver: withImageUrl(sd.driver), car: withImageUrl(sd.car), totalLaps: 0, totalTime: 0, finishedRaces: 0 };
+        }
+        raceStats[key].totalLaps += sd.totalLaps || 0;
+        raceStats[key].totalTime += sd.totalTime || 0;
+        if (!sd.isDNF && sd.totalLaps > 0) raceStats[key].finishedRaces++;
+      }
+    }
+    const standings = Object.values(raceStats)
+      .sort((a, b) => (b.totalLaps !== a.totalLaps) ? b.totalLaps - a.totalLaps : a.totalTime - b.totalTime)
+      .map((entry, i) => ({ position: i + 1, ...entry }));
+
+    const podium = standings.slice(0, 3);
+
+    // --- Awards ---
+    const awards = [];
+
+    // Best lap overall
+    let bestLapOverall = null;
+    for (const session of championship.sessions) {
+      if (session.status !== 'finished') continue;
+      for (const lap of session.laps) {
+        if (!bestLapOverall || lap.lapTime < bestLapOverall.lapTime) {
+          bestLapOverall = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name, sessionType: session.type };
+        }
+      }
+    }
+    if (bestLapOverall) awards.push({ id: 'best-lap', title: 'Meilleur tour', icon: 'timer', ...bestLapOverall });
+
+    // Best qualifier
+    let bestQualif = null;
+    for (const session of qualifSessions) {
+      for (const lap of session.laps) {
+        if (!bestQualif || lap.lapTime < bestQualif.lapTime) {
+          bestQualif = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name };
+        }
+      }
+    }
+    if (bestQualif) awards.push({ id: 'best-qualif', title: 'Meilleur qualifié', icon: 'clock', ...bestQualif });
+
+    // Best race lap (fastest in race sessions only)
+    let bestRaceLap = null;
+    for (const session of raceSessions) {
+      for (const lap of session.laps) {
+        if (!bestRaceLap || lap.lapTime < bestRaceLap.lapTime) {
+          bestRaceLap = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name };
+        }
+      }
+    }
+    if (bestRaceLap) awards.push({ id: 'best-race-lap', title: 'Plus rapide en course', icon: 'zap', ...bestRaceLap });
+
+    // Biggest comeback: best qualif position vs race final position improvement
+    if (qualifSessions.length > 0 && raceSessions.length > 0) {
+      // Build qualif ranking
+      const qualifBests = {};
+      for (const session of qualifSessions) {
+        for (const lap of session.laps) {
+          if (!qualifBests[lap.driverId] || lap.lapTime < qualifBests[lap.driverId].time) {
+            qualifBests[lap.driverId] = { time: lap.lapTime, driver: withImageUrl(lap.driver) };
+          }
+        }
+      }
+      const qualifRanking = Object.entries(qualifBests)
+        .sort((a, b) => a[1].time - b[1].time)
+        .map(([id], i) => ({ driverId: id, qualifPos: i + 1 }));
+
+      let bestComeback = null;
+      for (const s of standings) {
+        const qp = qualifRanking.find(q => q.driverId === s.driverId);
+        if (!qp) continue;
+        const gain = qp.qualifPos - s.position;
+        if (!bestComeback || gain > bestComeback.gain) {
+          bestComeback = { gain, driver: s.driver, qualifPos: qp.qualifPos, racePos: s.position };
+        }
+      }
+      if (bestComeback && bestComeback.gain > 0) {
+        awards.push({ id: 'comeback', title: 'Plus gros comeback', icon: 'trending-up', driver: bestComeback.driver, gain: bestComeback.gain, qualifPos: bestComeback.qualifPos, racePos: bestComeback.racePos });
+      }
+    }
+
+
+    // Most consistent: smallest std deviation of lap times in race (min 5 laps)
+    let mostConsistent = null;
+    for (const session of raceSessions) {
+      const lapsByDriver = {};
+      for (const lap of session.laps) {
+        if (!lapsByDriver[lap.driverId]) lapsByDriver[lap.driverId] = { laps: [], driver: withImageUrl(lap.driver) };
+        lapsByDriver[lap.driverId].laps.push(lap.lapTime);
+      }
+      for (const [driverId, data] of Object.entries(lapsByDriver)) {
+        if (data.laps.length < 5) continue;
+        // Remove outliers (top/bottom 10%)
+        const sorted = [...data.laps].sort((a, b) => a - b);
+        const trim = Math.max(1, Math.floor(sorted.length * 0.1));
+        const trimmed = sorted.slice(trim, sorted.length - trim);
+        const mean = trimmed.reduce((s, v) => s + v, 0) / trimmed.length;
+        const variance = trimmed.reduce((s, v) => s + (v - mean) ** 2, 0) / trimmed.length;
+        const stdDev = Math.sqrt(variance);
+        if (!mostConsistent || stdDev < mostConsistent.stdDev) {
+          mostConsistent = { stdDev: Math.round(stdDev), driver: data.driver, sessionName: session.name };
+        }
+      }
+    }
+    if (mostConsistent) awards.push({ id: 'consistent', title: 'Le plus régulier', icon: 'activity', driver: mostConsistent.driver, stdDev: mostConsistent.stdDev, sessionName: mostConsistent.sessionName });
+
+    // Iron man: most total laps across all race sessions
+    if (standings.length > 0) {
+      const ironMan = standings.reduce((best, entry) => (!best || entry.totalLaps > best.totalLaps) ? entry : best, null);
+      if (ironMan) awards.push({ id: 'iron-man', title: 'Le plus endurant', icon: 'heart', driver: ironMan.driver, totalLaps: ironMan.totalLaps, finishedRaces: ironMan.finishedRaces });
+    }
+
+    res.json({ success: true, data: { podium, standings, awards } });
+  } catch (error) {
+    console.error('Error fetching results:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch results' });
+  }
+});
+
+// GET /api/championships/:id/bracket - Get bracket data for auto championship
+router.get('/:id/bracket', async (req, res) => {
+  try {
+    const bracket = await championshipService.getBracket(req.params.id);
+    if (!bracket) {
+      return res.status(404).json({ success: false, error: 'Championship not found or not in auto mode' });
+    }
+    res.json({ success: true, data: bracket });
+  } catch (error) {
+    console.error('Error fetching bracket:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch bracket' });
+  }
+});
+
+// PUT /api/championships/:id/participants - Update participants
+router.put('/:id/participants', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { participants } = req.body;
+
+    const championship = await prisma.championship.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        sessions: { where: { deletedAt: null } },
+        participants: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    if (!championship) {
+      return res.status(404).json({ success: false, error: 'Championship not found' });
+    }
+    if (championship.mode !== 'auto') {
+      return res.status(400).json({ success: false, error: 'Only auto championships support participants' });
+    }
+    if (!participants || participants.length < 2) {
+      return res.status(400).json({ success: false, error: 'At least 2 participants required' });
+    }
+
+    const hasStartedQualif = championship.sessions.some(s => s.type === 'qualif' && s.status !== 'draft');
+
+    // Cannot remove participants who already raced in a non-draft session
+    if (hasStartedQualif) {
+      const existingIds = new Set(championship.participants.map(p => p.driverId));
+      const newIds = new Set(participants.map(p => p.driverId));
+      const startedDriverIds = new Set();
+      for (const session of championship.sessions) {
+        if (session.type === 'qualif' && session.status !== 'draft') {
+          const drivers = await prisma.sessionDriver.findMany({ where: { sessionId: session.id, deletedAt: null } });
+          drivers.forEach(d => { if (d.driverId) startedDriverIds.add(d.driverId); });
+        }
+      }
+      for (const dId of startedDriverIds) {
+        if (!newIds.has(dId)) {
+          return res.status(400).json({ success: false, error: `Cannot remove driver who already participated in a qualif` });
+        }
+      }
+    }
+
+    // Replace participants
+    await prisma.championshipParticipant.deleteMany({ where: { championshipId: id } });
+    for (let i = 0; i < participants.length; i++) {
+      await prisma.championshipParticipant.create({
+        data: {
+          championshipId: id,
+          driverId: participants[i].driverId,
+          order: i,
+        },
+      });
+    }
+
+    if (!hasStartedQualif) {
+      // No qualif started: regenerate all sessions
+      await championshipService.generateAutoSessions(id);
+    }
+    // If qualifs already started, new participants need a manual qualif session (user adds via UI)
+
+    const result = await prisma.championship.findUnique({
+      where: { id },
+      include: {
+        participants: { include: { driver: true }, orderBy: { order: 'asc' } },
+        sessions: {
+          where: { deletedAt: null },
+          include: { drivers: { where: { deletedAt: null }, include: { driver: true, car: true } } },
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating participants:', error);
+    res.status(500).json({ success: false, error: 'Failed to update participants' });
   }
 });
 

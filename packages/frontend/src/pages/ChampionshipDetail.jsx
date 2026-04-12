@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Flag } from 'lucide-react'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
+import ChampionshipBracket from '../components/championship/ChampionshipBracket'
+import ChampionshipResults from '../components/championship/ChampionshipResults'
 import SessionSection from '../components/championship/SessionSection'
 import StandingsTabs from '../components/championship/StandingsTabs'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
@@ -40,6 +42,8 @@ export default function ChampionshipDetail() {
   const [standingsTab, setStandingsTab] = useState('practice')
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [showChampionshipConfig, setShowChampionshipConfig] = useState(false)
+  const [showBracket, setShowBracket] = useState(false)
+  const [showResults, setShowResults] = useState(false)
   const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
 
   useEffect(() => {
@@ -117,9 +121,11 @@ export default function ChampionshipDetail() {
     const refresh = () => { fetchSessionsRef.current(); fetchStandingsRef.current() }
     window.addEventListener('session:finished', refresh)
     window.addEventListener('session:status_changed', refresh)
+    window.addEventListener('championship:races_assigned', refresh)
     return () => {
       window.removeEventListener('session:finished', refresh)
       window.removeEventListener('session:status_changed', refresh)
+      window.removeEventListener('championship:races_assigned', refresh)
     }
   }, [])
 
@@ -225,10 +231,28 @@ export default function ChampionshipDetail() {
         onFinish={handleFinishChampionship}
         showStandings={showStandings}
         onToggleStandings={toggleStandings}
+        showBracket={showBracket}
+        onToggleBracket={() => setShowBracket(v => !v)}
+        showResults={showResults}
+        onToggleResults={() => { setShowResults(v => !v); if (!showResults) setShowBracket(false) }}
       />
 
       {/* Main content */}
       <div className="flex-1 overflow-auto p-4">
+        {/* Bracket view for auto championships */}
+        {showBracket && championship?.mode === 'auto' && (
+          <div className="mb-4 bg-card border border-border rounded-xl p-4">
+            <ChampionshipBracket
+              championshipId={id}
+              onSessionSelect={(sessionId) => { setSelectedSessionId(sessionId); setShowBracket(false) }}
+            />
+          </div>
+        )}
+
+        {/* Results view */}
+        {showResults ? (
+          <ChampionshipResults championshipId={id} />
+        ) : (
         <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
           {/* Left: Session + Leaderboard */}
           <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>
@@ -237,6 +261,7 @@ export default function ChampionshipDetail() {
               sessions={sessions}
               drivers={drivers}
               cars={cars}
+              autoMode={championship?.mode === 'auto'}
               onStart={handleStartSession}
               onPause={handlePauseSession}
               onResume={handleResumeSession}
@@ -257,6 +282,7 @@ export default function ChampionshipDetail() {
                   sortBy={selectedSession.type === 'practice' ? practiceSortBy : selectedSession.type === 'qualif' ? 'bestLap' : 'race'}
                   onSortChange={selectedSession.type === 'practice' ? setPracticeSortBy : undefined}
                   sessionType={selectedSession.type}
+                  sessionStatus={selectedSession.status}
                 />
               )
             )}
@@ -275,6 +301,7 @@ export default function ChampionshipDetail() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {showChampionshipConfig && (
@@ -282,11 +309,12 @@ export default function ChampionshipDetail() {
           championship={championship}
           sessions={sessions}
           tracks={tracks}
+          drivers={drivers}
           open={showChampionshipConfig}
           onClose={() => setShowChampionshipConfig(false)}
           onSave={(updated) => setChampionship(updated)}
           onFinish={handleFinishChampionship}
-          onSessionsChange={() => { fetchSessions(); fetchStandings() }}
+          onSessionsChange={() => { fetchChampionship(); fetchSessions(); fetchStandings() }}
         />
       )}
     </div>

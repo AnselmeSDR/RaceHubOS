@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trophy, MapPin, Flag, Clock } from 'lucide-react'
 import { FormModal, TextField, SelectField } from '../components/crud'
+import AutoChampionshipWizard from '../components/championship/AutoChampionshipWizard'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,8 @@ export default function Championships() {
   const [hasMore, setHasMore] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [showForm, setShowForm] = useState(false)
+  const [showAutoWizard, setShowAutoWizard] = useState(false)
+  const [sharedForm, setSharedForm] = useState({ name: '', trackId: '' })
 
   const [filters, setFilters] = useState({
     trackId: [],
@@ -175,7 +178,7 @@ export default function Championships() {
       loading={loading}
       searchPlaceholder="Rechercher un championnat..."
       addLabel="Nouveau championnat"
-      onAdd={() => setShowForm(true)}
+      onAdd={() => setShowAutoWizard(true)}
       onRowClick={(row) => !filters.deleted && navigate(`/championships/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
       deleteEndpoint="/api/championships"
@@ -197,15 +200,29 @@ export default function Championships() {
       {showForm && (
         <ChampionshipFormModal
           tracks={tracks}
-          onClose={() => { setShowForm(false); loadData(0) }}
+          initialData={sharedForm}
+          onFormChange={setSharedForm}
+          onClose={() => { setShowForm(false); setSharedForm({ name: '', trackId: '' }); loadData(0) }}
+          onSwitchAuto={() => { setShowForm(false); setShowAutoWizard(true) }}
+        />
+      )}
+      {showAutoWizard && (
+        <AutoChampionshipWizard
+          tracks={tracks}
+          initialName={sharedForm.name}
+          initialTrackId={sharedForm.trackId}
+          onFormChange={setSharedForm}
+          onClose={() => { setShowAutoWizard(false); setSharedForm({ name: '', trackId: '' }); loadData(0) }}
+          onCreated={() => loadData(0)}
+          onSwitchManual={() => { setShowAutoWizard(false); setShowForm(true) }}
         />
       )}
     </ListPage>
   )
 }
 
-function ChampionshipFormModal({ tracks, onClose }) {
-  const [formData, setFormData] = useState({ name: '', trackId: '' })
+function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onSwitchAuto }) {
+  const [formData, setFormData] = useState(initialData || { name: '', trackId: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -249,17 +266,27 @@ function ChampionshipFormModal({ tracks, onClose }) {
       success={success}
       saveLabel="Créer"
     >
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">Mode automatique</span>
+        <button
+          type="button"
+          onClick={() => onSwitchAuto?.()}
+          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors bg-muted"
+        >
+          <span className="inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform translate-x-1" />
+        </button>
+      </div>
       <TextField
         label="Nom du championnat"
         value={formData.name}
-        onChange={(v) => setFormData(f => ({ ...f, name: v }))}
+        onChange={(v) => { const next = { ...formData, name: v }; setFormData(next); onFormChange?.(next) }}
         placeholder="Championnat 2024"
         required
       />
       <SelectField
         label="Circuit"
         value={formData.trackId}
-        onChange={(v) => setFormData(f => ({ ...f, trackId: v }))}
+        onChange={(v) => { const next = { ...formData, trackId: v }; setFormData(next); onFormChange?.(next) }}
         options={tracks.map(t => ({ value: t.id, label: t.name }))}
         placeholder="Sélectionner un circuit..."
         required

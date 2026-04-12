@@ -293,6 +293,7 @@ export default function SessionDetail() {
               entries={entries}
               sortBy={session.type === 'race' ? 'race' : 'bestLap'}
               sessionType={session.type}
+              sessionStatus={session.status}
               expanded
             />
           ) : (
