@@ -36,20 +36,18 @@ Built by slot racers, for slot racers. 🏎️
 ## ✨ Features
 
 - 📊 Real-time race leaderboard with animated positions
-- 👤 Driver, car, track and team management with photos
+- 👤 Driver, car, track and team management
 - 🏆 Championship system with multi-session support (Practice, Qualifying, Race)
 - 📈 Standings and statistics per championship and session type
 - ⚙️ Inline session configuration (controllers, duration, laps, grace period)
 - 🥇 Podium display at end of session with gaps and best lap
-- 🗣️ Voice announcements (best lap, podium results) via Web Speech API
+- 🗣️ Voice announcements (best lap, podium results)
 - 🎙️ Configurable voice settings (voice selection, min laps threshold)
 - 🚦 Start lights sequence with audio cues
-- 🌙 Dark mode (Zinc palette)
+- 🌙 Dark/light mode
 - 🔌 Bluetooth LE connectivity to Carrera Control Unit via AppConnect
 - 🎮 Built-in simulator for development (no hardware required)
-- 🏎️ Free session mode with persistent track/type selection
 - ⚖️ Car balancing mode with lap time chart, median tracking and outlier filtering
-- 📺 Driver displays for external screens
 
 ## 🛠️ Tech Stack
 
@@ -182,20 +180,18 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 ### Fonctionnalités
 
 - 📊 Classement en temps réel avec animations de positions
-- 👤 Gestion des pilotes, voitures, circuits et équipes avec photos
+- 👤 Gestion des pilotes, voitures, circuits et équipes
 - 🏆 Système de championnat multi-sessions (Essais libres, Qualifications, Course)
 - 📈 Classements et statistiques par championnat et type de session
 - ⚙️ Configuration de session inline (contrôleurs, durée, tours, période de grâce)
 - 🥇 Podium en fin de session avec écarts et meilleur tour
-- 🗣️ Annonces vocales (meilleur tour, résultats podium) via Web Speech API
+- 🗣️ Annonces vocales (meilleur tour, résultats podium)
 - 🎙️ Réglages voix configurables (choix de la voix, seuil de tours minimum)
 - 🚦 Séquence de feux de départ avec sons
-- 🌙 Mode sombre (palette Zinc)
+- 🌙 Mode sombre/clair
 - 🔌 Connexion Bluetooth LE à la Control Unit Carrera via AppConnect
 - 🎮 Simulateur intégré pour le développement (pas de matériel requis)
-- 🏎️ Mode session libre avec mémorisation du circuit et du type
 - ⚖️ Mode équilibrage voitures avec graphe temps au tour, suivi médiane et filtre outliers
-- 📺 Affichages pilotes pour écrans externes
 
 ### Installation
 
