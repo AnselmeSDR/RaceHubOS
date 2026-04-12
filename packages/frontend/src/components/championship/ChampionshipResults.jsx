@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Trophy, Timer, Clock, Zap, TrendingUp, Activity, Heart, Loader2 } from 'lucide-react'
 import { getImgUrl } from '../../utils/image'
-import LapTime from '../race/LapTime'
 import { GAP_COLORS } from '../../lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''

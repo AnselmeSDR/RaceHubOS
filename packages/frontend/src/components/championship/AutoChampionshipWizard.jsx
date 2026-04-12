@@ -128,10 +128,10 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
         mode: 'auto',
         driversPerQualif,
         driversPerRace,
-        qualifMaxDuration: useQualifTime ? qualifDuration * 60000 : null,
-        qualifMaxLaps: useQualifLaps ? qualifLaps : null,
-        raceMaxDuration: useRaceTime ? raceDuration * 60000 : null,
-        raceMaxLaps: useRaceLaps ? raceLaps : null,
+        qualifMaxDuration: useQualifTime && qualifDuration > 0 ? qualifDuration * 60000 : null,
+        qualifMaxLaps: useQualifLaps && qualifLaps > 0 ? qualifLaps : null,
+        raceMaxDuration: useRaceTime && raceDuration > 0 ? raceDuration * 60000 : null,
+        raceMaxLaps: useRaceLaps && raceLaps > 0 ? raceLaps : null,
         participants: completeParticipants.map(p => ({ driverId: p.driverId })),
       }
       const res = await fetch(`${API_URL}/api/championships`, {

@@ -60,11 +60,12 @@ export default function ChampionshipConfigModal({
     try {
       const currentParticipants = (championship?.participants || []).map(p => ({ driverId: p.driverId }))
       currentParticipants.push({ driverId })
-      await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
+      const res = await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: currentParticipants }),
       })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
       setAddingDriver('')
       onSessionsChange?.()
     } catch (err) { setError(err.message) }
@@ -75,11 +76,12 @@ export default function ChampionshipConfigModal({
       const currentParticipants = (championship?.participants || [])
         .filter(p => p.driverId !== driverId)
         .map(p => ({ driverId: p.driverId }))
-      await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
+      const res = await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: currentParticipants }),
       })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
       onSessionsChange?.()
     } catch (err) { setError(err.message) }
   }
