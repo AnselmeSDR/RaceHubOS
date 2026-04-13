@@ -375,7 +375,20 @@ export default function ChampionshipConfigModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
-          {championship?.status !== 'finished' && onFinish ? (
+          {championship?.status === 'finished' ? (
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                const res = await fetch(`${API_URL}/api/championships/${championship.id}`, {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ status: 'planned' }),
+                })
+                if (res.ok) { const d = await res.json(); onSave(d.data); onClose() }
+              } catch (err) { setError(err.message) }
+            }}>
+              <RefreshCw className="size-3.5" />
+              Réouvrir le championnat
+            </Button>
+          ) : onFinish ? (
             <Button variant="destructive" size="sm" onClick={() => { onFinish(); onClose() }}>
               <Flag className="size-3.5" />
               Terminer le championnat

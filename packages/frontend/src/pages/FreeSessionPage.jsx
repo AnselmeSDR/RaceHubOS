@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { Plus, PanelRightClose, PanelRightOpen, FlaskConical, Clock, Flag } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -259,11 +259,21 @@ export default function FreeSessionPage() {
 
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
-              {SESSION_TYPES.map(type => (
-                <TabsTrigger key={type.value} value={type.value}>
-                  {type.label}
-                </TabsTrigger>
-              ))}
+              {SESSION_TYPES.map(type => {
+                const Icon = { practice: FlaskConical, qualif: Clock, race: Flag }[type.value]
+                const isActive = selectedType === type.value
+                const activeColor = {
+                  practice: 'data-active:!text-session-practice hover:!text-session-practice',
+                  qualif: 'data-active:!text-session-qualif hover:!text-session-qualif',
+                  race: 'data-active:!text-session-race hover:!text-session-race',
+                }[type.value]
+                return (
+                  <TabsTrigger key={type.value} value={type.value} className={activeColor}>
+                    <Icon className="size-3.5" />
+                    {type.label}
+                  </TabsTrigger>
+                )
+              })}
             </TabsList>
           </Tabs>
         </div>
@@ -283,6 +293,7 @@ export default function FreeSessionPage() {
             size="sm"
             onClick={toggleStandings}
             title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}
+            className={showStandings ? 'bg-primary/10 text-primary' : ''}
           >
             {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
           </Button>

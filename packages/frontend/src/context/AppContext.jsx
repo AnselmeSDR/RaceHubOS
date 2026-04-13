@@ -86,11 +86,12 @@ export function AppProvider({ children }) {
   const wasActiveRef = useRef(false)
 
   const sidebarOpen = sessionActive ? false : sidebarPref
-  const showStandings = sessionActive ? false : standingsPref
+  const showStandings = standingsPref
 
   useEffect(() => {
     if (sessionActive) {
       wasActiveRef.current = true
+      setStandingsPref(false)
     } else if (wasActiveRef.current) {
       wasActiveRef.current = false
       setStandingsPref(true)

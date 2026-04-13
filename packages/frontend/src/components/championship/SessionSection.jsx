@@ -568,7 +568,7 @@ export default function SessionSection({
           {isCuStopped && <span className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded font-medium"><AlertTriangle className="w-4 h-4" /> CU arrêté</span>}
           {isPaused && <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium">Pause {pauseDuration !== null && formatTime(pauseDuration)}</span>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {canStart && (
             <>
               {!deviceConnected && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Connecter un CU</span>}
@@ -581,7 +581,7 @@ export default function SessionSection({
           {canPause && <Button onClick={onPause} variant="outline" className="border-yellow-500 text-yellow-600"><Pause className="size-4" /> Pause</Button>}
           {canResumeFromPause && <Button onClick={onResume} className="bg-green-500 hover:bg-green-600"><Play className="size-4" /> Reprendre</Button>}
           {canStop && <Button onClick={onStop} variant="destructive"><Flag className="size-4" /> Terminer</Button>}
-          {isFinishing && <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg"><Flag className="w-4 h-4" /> Attente fin...</span>}
+          {isFinishing && <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg whitespace-nowrap flex-shrink-0"><Flag className="w-4 h-4" /> Attente fin de session</span>}
           {isFinished && onReset && (
             <Button variant="ghost" size="sm" onClick={() => onReset(session.id)} className="text-orange-500"><RefreshCw className="size-3.5" /> Reset</Button>
           )}
