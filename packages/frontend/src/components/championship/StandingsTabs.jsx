@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Play, Clock, Flag } from 'lucide-react'
+import { FlaskConical, Clock, Flag } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
@@ -17,7 +17,7 @@ export default function StandingsTabs({
   onTabChange
 }) {
   const tabs = [
-    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: Play, color: 'purple' },
+    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: FlaskConical, color: 'purple' },
     { id: 'qualif', label: 'Qualifications', shortLabel: 'Qualif', icon: Clock, color: 'blue' },
     { id: 'race', label: 'Courses', shortLabel: 'Course', icon: Flag, color: 'green' }
   ]

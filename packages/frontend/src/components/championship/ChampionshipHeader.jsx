@@ -15,6 +15,7 @@ export default function ChampionshipHeader({
   selectedSession,
   onSelectSession,
   onConfig,
+  showConfig,
   onFinish,
   showStandings,
   onToggleStandings,
@@ -115,11 +116,11 @@ export default function ChampionshipHeader({
             <GitBranch className="size-4" />
           </button>
         )}
-        <button onClick={onToggleStandings} className="p-1.5 hover:bg-muted rounded transition-colors" title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
-          {showStandings ? <PanelRightClose className="size-4 text-muted-foreground" /> : <PanelRightOpen className="size-4 text-muted-foreground" />}
+        <button onClick={onToggleStandings} className={`p-1.5 rounded transition-colors ${showStandings ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
+          {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
         </button>
-        <button onClick={onConfig} className="p-1.5 hover:bg-muted rounded transition-colors" title="Configuration">
-          <Settings className="size-4 text-muted-foreground" />
+        <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title="Configuration">
+          <Settings className="size-4" />
         </button>
       </div>
     </div>

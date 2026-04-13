@@ -280,6 +280,7 @@ export default function ChampionshipDetail() {
         selectedSession={selectedSession}
         onSelectSession={(s) => { setSelectedSessionId(s.id); setShowResults(false) }}
         onConfig={() => setShowChampionshipConfig(true)}
+        showConfig={showChampionshipConfig}
         onFinish={handleFinishChampionship}
         showStandings={showStandings}
         onToggleStandings={toggleStandings}
