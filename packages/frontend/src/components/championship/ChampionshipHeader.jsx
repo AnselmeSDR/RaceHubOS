@@ -21,7 +21,7 @@ export default function ChampionshipHeader({
   showBracket,
   onToggleBracket,
   showResults,
-  onToggleResults,
+  onSelectResults,
 }) {
   const getSessionLabel = (session) => {
     if (session.type === 'practice') return 'EL'
@@ -73,7 +73,7 @@ export default function ChampionshipHeader({
                 key={session.id}
                 onClick={() => onSelectSession(session)}
                 className={`relative flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  isSelected
+                  isSelected && !showResults
                     ? `${config.color} ring-2 ring-current/30`
                     : 'text-muted-foreground hover:bg-muted'
                 }`}
@@ -87,7 +87,7 @@ export default function ChampionshipHeader({
 
           {/* Results tab */}
           <button
-            onClick={onToggleResults}
+            onClick={onSelectResults}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
               showResults
                 ? 'bg-championship/15 text-championship ring-2 ring-championship/30'

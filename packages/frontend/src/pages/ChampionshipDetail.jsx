@@ -45,6 +45,7 @@ export default function ChampionshipDetail() {
   const [showBracket, setShowBracket] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
+  const [viewedLeaderboard, setViewedLeaderboard] = useState(null) // leaderboard for non-active sessions
 
   useEffect(() => {
     if (selectedSessionId) localStorage.setItem(`championship_${id}_session`, selectedSessionId)
@@ -106,9 +107,21 @@ export default function ChampionshipDetail() {
   }, [id])
 
   useEffect(() => {
-    if (selectedSessionId && sessions.length > 0) {
-      if (sessions.some(s => s.id === selectedSessionId)) loadSession(selectedSessionId)
-      else setSelectedSessionId(sessions[0]?.id || null)
+    if (!selectedSessionId || sessions.length === 0) return
+    const session = sessions.find(s => s.id === selectedSessionId)
+    if (!session) { setSelectedSessionId(sessions[0]?.id || null); return }
+
+    const isLive = ['active', 'paused', 'finishing'].includes(session.status)
+    if (isLive) {
+      // Active session: load into context for live updates
+      loadSession(selectedSessionId)
+      setViewedLeaderboard(null)
+    } else {
+      // Draft/finished: fetch leaderboard statically, don't touch live context
+      fetch(`${API_URL}/api/sessions/${selectedSessionId}/leaderboard`)
+        .then(r => r.json())
+        .then(d => setViewedLeaderboard(d.success ? d.data : []))
+        .catch(() => setViewedLeaderboard([]))
     }
   }, [selectedSessionId, sessions, loadSession])
 
@@ -129,7 +142,46 @@ export default function ChampionshipDetail() {
     }
   }, [])
 
+  // For auto championships, only show participant drivers in session config
+  const sessionDrivers = useMemo(() => {
+    if (championship?.mode !== 'auto' || !championship.participants?.length) return drivers
+    const participantIds = new Set(championship.participants.map(p => p.driverId))
+    return drivers.filter(d => participantIds.has(d.id))
+  }, [drivers, championship])
+
   const selectedSession = useMemo(() => sessions.find(s => s.id === selectedSessionId) || null, [sessions, selectedSessionId])
+
+  // Use live entries for active sessions, static leaderboard for others
+  const isLiveSession = ['active', 'paused', 'finishing'].includes(selectedSession?.status)
+
+  // Transform raw leaderboard data to the same format as SessionContext entries
+  const viewedEntries = useMemo(() => {
+    if (!viewedLeaderboard?.length) return []
+    const allBestLaps = viewedLeaderboard.map(p => p.bestLapTime).filter(t => t && t > 0)
+    const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
+    return viewedLeaderboard.map(p => ({
+      id: p.id,
+      controller: p.controller,
+      driver: p.driver,
+      car: p.car,
+      gridPos: p.gridPos ?? null,
+      stats: {
+        laps: p.totalLaps || 0,
+        bestLap: p.bestLapTime || null,
+        lastLap: p.lastLapTime || null,
+        totalTime: p.totalTime || 0,
+        gap: p.gap ?? null,
+      },
+      position: p.position || 0,
+      positionDelta: 0,
+      hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
+      isDNF: p.isDNF || false,
+      laps: p.laps || [],
+    })).sort((a, b) => (a.position || 99) - (b.position || 99))
+  }, [viewedLeaderboard])
+
+  const displayEntries = isLiveSession ? sessionEntries : viewedEntries
+  const displayMaxLaps = isLiveSession ? maxLapsCompleted : Math.max(0, ...viewedEntries.map(e => e.stats.laps))
 
   useEffect(() => {
     if (selectedSession?.type) setStandingsTab(selectedSession.type)
@@ -226,7 +278,7 @@ export default function ChampionshipDetail() {
         championship={championship}
         sessions={sessions}
         selectedSession={selectedSession}
-        onSelectSession={(s) => setSelectedSessionId(s.id)}
+        onSelectSession={(s) => { setSelectedSessionId(s.id); setShowResults(false) }}
         onConfig={() => setShowChampionshipConfig(true)}
         onFinish={handleFinishChampionship}
         showStandings={showStandings}
@@ -234,7 +286,7 @@ export default function ChampionshipDetail() {
         showBracket={showBracket}
         onToggleBracket={() => setShowBracket(v => !v)}
         showResults={showResults}
-        onToggleResults={() => { setShowResults(v => !v); if (!showResults) setShowBracket(false) }}
+        onSelectResults={() => { setShowResults(true); setShowBracket(false) }}
       />
 
       {/* Main content */}
@@ -259,7 +311,7 @@ export default function ChampionshipDetail() {
             <SessionSection
               session={selectedSession}
               sessions={sessions}
-              drivers={drivers}
+              drivers={sessionDrivers}
               cars={cars}
               autoMode={championship?.mode === 'auto'}
               onStart={handleStartSession}
@@ -273,11 +325,11 @@ export default function ChampionshipDetail() {
             />
 
             {selectedSession && (
-              maxLapsCompleted === 0 && selectedSession.status !== 'finished' ? (
-                <StartingGrid entries={sessionEntries} />
+              displayMaxLaps === 0 && selectedSession.status !== 'finished' ? (
+                <StartingGrid entries={displayEntries} />
               ) : (
                 <SessionLeaderboard
-                  entries={sessionEntries}
+                  entries={displayEntries}
                   expanded={!showStandings}
                   sortBy={selectedSession.type === 'practice' ? practiceSortBy : selectedSession.type === 'qualif' ? 'bestLap' : 'race'}
                   onSortChange={selectedSession.type === 'practice' ? setPracticeSortBy : undefined}
