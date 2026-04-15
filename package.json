@@ -1,6 +1,6 @@
 {
   "name": "racehubos",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Open Source Race Management System for Carrera Digital 132/124",
   "private": true,
   "workspaces": [
@@ -12,7 +12,8 @@
     "dev:frontend": "npm run dev -w @racehubos/frontend",
     "build": "npm run build -w @racehubos/frontend",
     "start": "npm run start -w @racehubos/backend",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "postinstall": "npx prisma generate --schema=packages/backend/prisma/schema.prisma"
   },
   "devDependencies": {
     "baseline-browser-mapping": "^2.9.17",
