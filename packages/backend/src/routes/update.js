@@ -87,13 +87,17 @@ router.post('/apply', async (req, res) => {
     await execAsync('git checkout -- .', { cwd: rootDir, timeout: 10000 }).catch(() => {});
     await execAsync('git pull origin main --ff-only', { cwd: rootDir, timeout: 60000 });
 
-    // npm install
+    // npm install (skip prisma postinstall to avoid EPERM on Windows — DLL locked by running process)
     emitProgress(3, 'Installation des dépendances...');
-    await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
+    await execAsync('npm install --legacy-peer-deps', {
+      cwd: rootDir,
+      timeout: 300000,
+      env: { ...process.env, PRISMA_SKIP_POSTINSTALL_GENERATE: 'true' },
+    });
 
-    // Prisma
+    // Prisma (may fail on Windows due to locked DLL — will retry on restart)
     emitProgress(4, 'Migration de la base de données...');
-    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 });
+    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
     await execAsync('npx prisma db push --accept-data-loss', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
 
     // Build frontend
