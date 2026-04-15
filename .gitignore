@@ -34,6 +34,7 @@ npm-debug.log*
 
 # Prisma
 prisma/migrations/
+prisma/.version
 
 packages/backend/prisma/dev.db-shm
 packages/backend/prisma/dev.db-wal
