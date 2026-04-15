@@ -104,9 +104,22 @@ router.post('/apply', async (req, res) => {
     emitProgress(5, 'Build du frontend...');
     await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
 
-    // Read new version
     const newVersion = getLocalVersion();
-    emitProgress(6, `Mise à jour v${newVersion} terminée. Redémarrage...`, 'complete');
+
+    // Regenerate launcher .bat from template (Windows only)
+    const templatePath = path.join(rootDir, 'RaceHubOS.bat.template');
+    if (fs.existsSync(templatePath)) {
+      emitProgress(6, 'Mise à jour du lanceur...');
+      const batContent = fs.readFileSync(templatePath, 'utf-8')
+        .replace(/__VERSION__/g, `v${newVersion}`)
+        .replace(/__TARGET_DIR__/g, rootDir.replace(/\//g, '\\'));
+      const batFiles = fs.readdirSync(rootDir).filter(f => /^RaceHubOS-v.*\.bat$/.test(f));
+      for (const batFile of batFiles) {
+        fs.writeFileSync(path.join(rootDir, batFile), batContent);
+      }
+    }
+
+    emitProgress(7, `Mise à jour v${newVersion} terminée. Redémarrage...`, 'complete');
 
     isUpdating = false;
 
