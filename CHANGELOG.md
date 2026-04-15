@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.8] - 2026-04-15
+
+### Changed
+- **Équilibrage : médianes par fenêtre de 5** : la bestMedian est maintenant calculée par fenêtres glissantes de 5 tours (0-4, 5-9, 10-14...) au lieu de paliers cumulatifs
+- **Équilibrage : médiane 60%** : ajout d'une 3e métrique "60%" (médiane des 60% meilleurs tours) dans le classement, pour mesurer le race pace
+
+### Fixed
+- **Prisma warning** : suppression du bloc `prisma.seed` déprécié dans package.json
+
 ## [1.9.7] - 2026-04-15
 
 ### Fixed

@@ -100,6 +100,13 @@ export default function BalancingStandings({ standings = [] }) {
                       <span className="w-16" />
                     </div>
                   )}
+                  {standing.median60 && (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-xs text-muted-foreground/60 w-7 text-left">60%</span>
+                      <LapTime time={standing.median60} size="sm" />
+                      <span className="w-16" />
+                    </div>
+                  )}
                 </div>
               </div>
 
