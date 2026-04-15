@@ -136,27 +136,21 @@ router.get('/track/:trackId', async (req, res) => {
       });
       const sessionOrder = new Map(sessions.map((s, i) => [s.id, i]));
 
-      // Helper: compute best median from sorted times using sliding windows of 5
-      const computeBestMedian = (times) => {
+      // Helper: median of all laps
+      const computeMedian = (times) => {
+        if (times.length === 0) return null;
         const sorted = [...times].sort((a, b) => a - b);
-        if (sorted.length < 5) return null;
-        let bestMed = null;
-        for (let i = 0; i + 5 <= sorted.length; i += 5) {
-          const slice = sorted.slice(i, i + 5);
-          const med = slice[2]; // median of 5 = middle element
-          if (bestMed === null || med < bestMed) bestMed = med;
-        }
-        return bestMed;
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
       };
 
-      // Helper: median of the best 60% of laps
-      const computeMedian60 = (times) => {
+      // Helper: average of the best 60% of laps
+      const computeAvg60 = (times) => {
         const sorted = [...times].sort((a, b) => a - b);
         const count = Math.ceil(sorted.length * 0.6);
         if (count < 3) return null;
         const best60 = sorted.slice(0, count);
-        const mid = Math.floor(best60.length / 2);
-        return best60.length % 2 !== 0 ? best60[mid] : (best60[mid - 1] + best60[mid]) / 2;
+        return best60.reduce((sum, t) => sum + t, 0) / best60.length;
       };
 
       // Group by car -> all times (for global best median)
@@ -173,25 +167,25 @@ router.get('/track/:trackId', async (req, res) => {
         sessionMap.get(l.sessionId).push(l.lapTime);
       }
 
-      // Compute global best median + median60 per car
-      const bestMedianMap = new Map();
-      const median60Map = new Map();
+      // Compute global median + avg60 per car
+      const medianMap = new Map();
+      const avg60Map = new Map();
       for (const [carId, times] of carTimesMap) {
-        bestMedianMap.set(carId, computeBestMedian(times));
-        median60Map.set(carId, computeMedian60(times));
+        medianMap.set(carId, computeMedian(times));
+        avg60Map.set(carId, computeAvg60(times));
       }
 
-      // Compute per-session best median history per car (ordered chronologically)
+      // Compute per-session median history per car (ordered chronologically)
       const historyMap = new Map();
       for (const [carId, sessionMap] of carSessionTimesMap) {
         const history = [...sessionMap.entries()]
           .sort((a, b) => (sessionOrder.get(a[0]) ?? 0) - (sessionOrder.get(b[0]) ?? 0))
           .map(([sessionId, times]) => ({
-            bestMedian: computeBestMedian(times),
-            median60: computeMedian60(times),
+            median: computeMedian(times),
+            avg60: computeAvg60(times),
             laps: times.length,
           }))
-          .filter(h => h.bestMedian !== null || h.median60 !== null);
+          .filter(h => h.median !== null);
         historyMap.set(carId, history);
       }
 
@@ -200,8 +194,8 @@ router.get('/track/:trackId', async (req, res) => {
         car: withImageUrl(lap.car),
         driver: withImageUrl(lap.driver),
         laps: countMap.get(lap.carId) || 0,
-        bestMedian: bestMedianMap.get(lap.carId) || null,
-        median60: median60Map.get(lap.carId) || null,
+        median: medianMap.get(lap.carId) || null,
+        avg60: avg60Map.get(lap.carId) || null,
         history: historyMap.get(lap.carId) || [],
       }));
     };

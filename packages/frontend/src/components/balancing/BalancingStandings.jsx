@@ -34,7 +34,7 @@ export default function BalancingStandings({ standings = [] }) {
           const gap = index > 0 && leaderTime ? standing.lapTime - leaderTime : null
           const history = standing.history || []
           const lastTwo = history.length >= 2 ? history.slice(-2) : null
-          const trend = lastTwo ? lastTwo[1].bestMedian - lastTwo[0].bestMedian : null
+          const trend = lastTwo ? lastTwo[1].median - lastTwo[0].median : null
 
           return (
             <div
@@ -93,17 +93,17 @@ export default function BalancingStandings({ standings = [] }) {
                       {gap !== null ? `+${(gap / 1000).toFixed(3)}` : ''}
                     </span>
                   </div>
-                  {standing.bestMedian && (
+                  {standing.median && (
                     <div className="flex items-center justify-end gap-2">
                       <span className="text-xs text-muted-foreground/60 w-7 text-left">Méd.</span>
-                      <LapTime time={standing.bestMedian} size="sm" />
+                      <LapTime time={standing.median} size="sm" />
                       <span className="w-16" />
                     </div>
                   )}
-                  {standing.median60 && (
+                  {standing.avg60 && (
                     <div className="flex items-center justify-end gap-2">
                       <span className="text-xs text-muted-foreground/60 w-7 text-left">60%</span>
-                      <LapTime time={standing.median60} size="sm" />
+                      <LapTime time={standing.avg60} size="sm" />
                       <span className="w-16" />
                     </div>
                   )}
@@ -114,8 +114,8 @@ export default function BalancingStandings({ standings = [] }) {
               {history.length > 1 && (
                 <div className="mt-2 ml-10 flex items-center gap-1.5 flex-wrap">
                   {history.map((h, i) => {
-                    const prev = i > 0 ? history[i - 1].bestMedian : null
-                    const delta = prev ? h.bestMedian - prev : null
+                    const prev = i > 0 ? history[i - 1].median : null
+                    const delta = prev ? h.median - prev : null
                     const improved = delta !== null && delta < -50
                     const degraded = delta !== null && delta > 50
                     return (
@@ -132,7 +132,7 @@ export default function BalancingStandings({ standings = [] }) {
                           degraded ? <TrendingUp className="size-2.5" /> :
                           <Minus className="size-2.5" />
                         )}
-                        <span>{(h.bestMedian / 1000).toFixed(3)}</span>
+                        <span>{(h.median / 1000).toFixed(3)}</span>
                       </div>
                     )
                   })}

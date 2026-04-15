@@ -2,7 +2,7 @@
  * LapTime - Formatted lap time display
  * Displays times in mm:ss.SSS or ss.SSS format
  */
-export default function LapTime({ time, size = 'md', highlight = false, format = 'lap' }) {
+export default function LapTime({ time, size = 'md', highlight = false, format = 'lap', className }) {
   const sizes = {
     sm: 'text-sm',
     md: 'text-base',
@@ -50,7 +50,7 @@ export default function LapTime({ time, size = 'md', highlight = false, format =
         ${sizes[size]} font-mono tabular-nums
         ${highlight
           ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded font-bold'
-          : 'text-foreground'
+          : className || 'text-foreground'
         }
       `}
     >
