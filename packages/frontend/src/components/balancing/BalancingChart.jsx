@@ -87,12 +87,21 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
         if (times.length === 0) return null
         const best = Math.min(...times)
 
-        // Compute median every 5 laps
-        const medians = []
-        for (let i = 5; i <= times.length; i += 5) {
-          medians.push({ lap: i, value: computeMedian(times.slice(0, i)) })
+        // Median of all laps
+        const sorted = [...times].sort((a, b) => a - b)
+        const median = computeMedian(times)
+
+        // Average of best 60% laps
+        const count60 = Math.ceil(sorted.length * 0.6)
+        const avg60 = count60 >= 3 ? sorted.slice(0, count60).reduce((s, t) => s + t, 0) / count60 : null
+
+        // Compute median per window of 5 laps (for detail section)
+        const medianWindows = []
+        for (let i = 0; i + 5 <= sorted.length; i += 5) {
+          const slice = sorted.slice(i, i + 5)
+          medianWindows.push({ from: i + 1, to: i + 5, value: slice[2] })
         }
-        const bestMedian = medians.length > 0 ? Math.min(...medians.map(m => m.value)) : null
+        const bestMedianWindow = medianWindows.length > 0 ? Math.min(...medianWindows.map(m => m.value)) : null
 
         // Compute trend
         const trend = computeTrend(times)
@@ -103,20 +112,24 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
           color: fixColor(entry.car.color),
           car: entry.car,
           best,
-          bestMedian,
-          medians,
+          median,
+          avg60,
+          medianWindows,
+          bestMedianWindow,
           trend,
           totalLaps: times.length,
         }
       })
       .filter(Boolean)
 
-    // Compute delta to fastest best median
-    const fastestMedian = stats.reduce((min, s) => s.bestMedian && (!min || s.bestMedian < min) ? s.bestMedian : min, null)
-    return stats.map(s => ({
-      ...s,
-      deltaToFastest: s.bestMedian && fastestMedian ? s.bestMedian - fastestMedian : null,
-    }))
+    // Compute delta to fastest best median window
+    const fastestBestMed = stats.reduce((min, s) => s.bestMedianWindow && (!min || s.bestMedianWindow < min) ? s.bestMedianWindow : min, null)
+    return stats
+      .map(s => ({
+        ...s,
+        deltaToFastest: s.bestMedianWindow && fastestBestMed ? s.bestMedianWindow - fastestBestMed : null,
+      }))
+      .sort((a, b) => (a.bestMedianWindow ?? Infinity) - (b.bestMedianWindow ?? Infinity))
   }, [entries, maxLapTime])
 
   if (cars.length === 0) {
@@ -195,7 +208,7 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
       {/* Stats summary per car */}
       {carStats.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {carStats.map(({ key, name, color, car, best, bestMedian, medians, trend, totalLaps, deltaToFastest }) => (
+          {carStats.map(({ key, name, color, car, best, median, avg60, medianWindows, bestMedianWindow, trend, totalLaps, deltaToFastest }) => (
             <Card key={key}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -218,35 +231,37 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
                     <span className="text-xs text-muted-foreground">{totalLaps} tours</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-2">
+                <div className="grid grid-cols-3 gap-3 mb-2 text-center">
                   <div>
                     <div className="text-xs text-muted-foreground/60 uppercase">Meilleur</div>
-                    <LapTime time={best} size="md" highlight />
+                    <LapTime time={best} size="md" className="text-fastest-lap" />
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground/60 uppercase">Meilleure méd.</div>
-                    <div className="flex items-center gap-2">
-                      <LapTime time={bestMedian} size="md" />
-                      {deltaToFastest > 0 && (
-                        <span className="text-xs font-mono text-red-400">
-                          +{(deltaToFastest / 1000).toFixed(3)}
-                        </span>
-                      )}
-                    </div>
+                    <div className="text-xs text-muted-foreground/60 uppercase">Best méd. 5</div>
+                    <LapTime time={bestMedianWindow} size="md" highlight />
+                    {deltaToFastest > 0 && (
+                      <div className="text-xs font-mono text-red-400 mt-0.5">
+                        +{(deltaToFastest / 1000).toFixed(3)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground/60 uppercase">Moy. 60%</div>
+                    <LapTime time={avg60} size="md" />
                   </div>
                 </div>
-                {medians.length > 0 && (
+                {medianWindows.length > 0 && (
                   <div className="border-t border-border pt-2">
                     <div className="text-xs text-muted-foreground/60 uppercase mb-1.5">Médiane / 5 tours</div>
                     <div className="flex gap-4">
                       {[0, 1].map(col => {
-                        const half = Math.ceil(medians.length / 2)
-                        const items = col === 0 ? medians.slice(0, half) : medians.slice(half)
+                        const half = Math.ceil(medianWindows.length / 2)
+                        const items = col === 0 ? medianWindows.slice(0, half) : medianWindows.slice(half)
                         return (
                           <div key={col} className="flex-1 space-y-1.5">
-                            {items.map(({ lap, value }) => (
-                              <div key={lap} className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">{lap} tours</span>
+                            {items.map(({ from, to, value }) => (
+                              <div key={from} className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">{from}-{to}</span>
                                 <LapTime time={value} size="sm" />
                               </div>
                             ))}
