@@ -139,13 +139,19 @@ export default function Settings() {
       }
     })
 
-    // Detect disconnect during update
+    // Detect disconnect during update — poll /health until server is back
     socket.on('disconnect', () => {
       setUpdateProgress(prev => {
-        if (prev?.status === 'running') {
-          return { ...prev, message: 'Connexion perdue. Tentative de reconnexion...', status: 'running' }
+        if (!prev || prev.status !== 'running') return prev
+        const tryReconnect = () => {
+          fetch(`${API_URL}/api/health`).then(() => {
+            window.location.reload()
+          }).catch(() => {
+            setTimeout(tryReconnect, 2000)
+          })
         }
-        return prev
+        setTimeout(tryReconnect, 3000)
+        return { ...prev, message: 'Redémarrage du serveur...' }
       })
     })
 
@@ -295,7 +301,7 @@ export default function Settings() {
                 </div>
                 {updateProgress.status === 'running' && (
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-500 rounded-full" style={{ width: `${(updateProgress.step / 6) * 100}%` }} />
+                    <div className="h-full bg-blue-500 transition-all duration-500 rounded-full" style={{ width: `${(updateProgress.step / 7) * 100}%` }} />
                   </div>
                 )}
                 {updateProgress.status === 'complete' && (
