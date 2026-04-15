@@ -6,7 +6,7 @@
   "type": "module",
   "main": "./src/index.js",
   "scripts": {
-    "dev": "node --watch src/index.js",
+    "dev": "npx prisma generate && node --watch src/index.js",
     "start": "node scripts/startup.js && node src/index.js",
     "cli": "node src/cli/sim.js",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --runInBand --passWithNoTests",
