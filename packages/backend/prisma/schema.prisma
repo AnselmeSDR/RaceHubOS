@@ -164,7 +164,7 @@ model Lap {
   id            String    @id @default(cuid())
   sessionId     String
   trackId       String
-  driverId      String
+  driverId      String?
   carId         String
   controller    Int       // 0-5 (CU address)
   phase         String
@@ -176,7 +176,7 @@ model Lap {
   deletedAt     DateTime?
   timestamp     DateTime  @default(now())
   car           Car       @relation(fields: [carId], references: [id])
-  driver        Driver    @relation(fields: [driverId], references: [id])
+  driver        Driver?   @relation(fields: [driverId], references: [id])
   session       Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   track         Track     @relation(fields: [trackId], references: [id])
 
