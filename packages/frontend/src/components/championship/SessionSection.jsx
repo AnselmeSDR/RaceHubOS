@@ -126,9 +126,12 @@ export default function SessionSection({
 
   const incompleteControllers = useMemo(() => {
     return Object.entries(controllerConfigs)
-      .filter(([, c]) => (c.driverId && !c.carId) || (!c.driverId && c.carId))
+      .filter(([, c]) => {
+        if (session?.type === 'balancing') return c.driverId && !c.carId
+        return (c.driverId && !c.carId) || (!c.driverId && c.carId)
+      })
       .map(([ctrl, c]) => ({ controller: Number(ctrl), hasDriver: !!c.driverId, hasCar: !!c.carId }))
-  }, [controllerConfigs])
+  }, [controllerConfigs, session?.type])
   const hasIncompleteConfig = incompleteControllers.length > 0
 
   const practiceSession = useMemo(() => {
