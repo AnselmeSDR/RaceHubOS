@@ -48,7 +48,7 @@ export default function Settings() {
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [logs, setLogs] = useState([])
-  const logsEndRef = useRef(null)
+  const logsContainerRef = useRef(null)
 
   // Update state
   const [updateInfo, setUpdateInfo] = useState(null)
@@ -193,13 +193,11 @@ export default function Settings() {
   useEffect(() => {
     const socket = io(WS_URL)
 
-    socket.on('race:lap', (data) => {
-      addLogEntry(`Voiture ${data.carId} - Tour ${data.lapNumber}: ${(data.lapTime / 1000).toFixed(3)}s`)
-    })
-
     socket.on('cu:timer', (data) => {
-      if (data.lapTime > 0) {
-        addLogEntry(`Controller ${data.controller + 1}: ${(data.lapTime / 1000).toFixed(3)}s`)
+      if (data.isFinishLine && data.lapTime > 0) {
+        addLogEntry(`Ctrl ${data.controller + 1}: ${(data.lapTime / 1000).toFixed(3)}s`)
+      } else if (!data.isFinishLine) {
+        addLogEntry(`Ctrl ${data.controller + 1}: secteur ${data.sector}`)
       }
     })
 
@@ -207,7 +205,8 @@ export default function Settings() {
   }, [])
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    const el = logsContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [logs])
 
   async function handleConnect(address) {
@@ -564,7 +563,7 @@ export default function Settings() {
             Effacer
           </Button>
         </div>
-        <div className="h-48 overflow-y-auto p-4 font-mono text-xs space-y-1 bg-muted/30">
+        <div ref={logsContainerRef} className="h-48 overflow-y-auto p-4 font-mono text-xs space-y-1 bg-muted/30">
           {logs.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">Aucun log</p>
           ) : (
@@ -575,7 +574,6 @@ export default function Settings() {
               </div>
             ))
           )}
-          <div ref={logsEndRef} />
         </div>
       </Card>
     </div>

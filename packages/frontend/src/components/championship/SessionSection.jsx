@@ -127,7 +127,7 @@ export default function SessionSection({
   const incompleteControllers = useMemo(() => {
     return Object.entries(controllerConfigs)
       .filter(([, c]) => {
-        if (session?.type === 'balancing') return c.driverId && !c.carId
+        if (session?.type === 'balancing') return false
         return (c.driverId && !c.carId) || (!c.driverId && c.carId)
       })
       .map(([ctrl, c]) => ({ controller: Number(ctrl), hasDriver: !!c.driverId, hasCar: !!c.carId }))

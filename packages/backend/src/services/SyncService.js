@@ -86,17 +86,24 @@ export class SyncService {
    */
   async handleTimerEvent(event) {
     const { controller, timestamp, sector } = event;
+    const isFinishLine = sector === 1;
 
-    // Calculate lap time from timestamps
-    const lastTimestamp = this.lastTimestamps.get(controller) || 0;
-    const lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
-    this.lastTimestamps.set(controller, timestamp);
+    let lapTime = 0;
+    if (isFinishLine && timestamp > 0) {
+      const lastTimestamp = this.lastTimestamps.get(controller) || 0;
+      lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
+      if (lapTime >= 0) {
+        this.lastTimestamps.set(controller, timestamp);
+      } else {
+        lapTime = 0; // CU glitch, treat as first pass
+      }
+    }
 
     // Emit raw timer (for frontend logs/footer)
-    this.io?.emit('cu:timer', { controller, timestamp, lapTime, sector });
+    this.io?.emit('cu:timer', { controller, timestamp, lapTime, sector, isFinishLine });
 
-    // Forward formatted data to SessionService
-    if (this.sessionService?.isActive()) {
+    // Only forward finish line crossings to SessionService
+    if (isFinishLine && this.sessionService?.isActive()) {
       await this.sessionService.handleLap({ controller, timestamp, lapTime, sector });
     }
   }
