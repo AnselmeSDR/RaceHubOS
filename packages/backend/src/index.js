@@ -350,7 +350,7 @@ if (fs.existsSync(frontendDist)) {
 const PORT = process.env.PORT || 3000;
 const hasFrontend = fs.existsSync(frontendDist);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`
 ╔═══════════════════════════════════════╗
 ║         🏁 RaceHubOS                 ║
@@ -361,6 +361,30 @@ httpServer.listen(PORT, () => {
 ║  Devices: Simulator + Control Unit    ║
 ╚═══════════════════════════════════════╝
   `);
+
+  // Auto-connect to last device if enabled
+  try {
+    const autoConnectPref = await prisma.preference.findUnique({ where: { key: 'autoConnect' } });
+    if (autoConnectPref && JSON.parse(autoConnectPref.value) === true) {
+      const lastDevice = await prisma.device.findFirst({
+        where: { type: 'cu' },
+        orderBy: { lastConnected: 'desc' },
+      });
+      if (lastDevice) {
+        console.log(`🔄 Auto-connecting to ${lastDevice.name} (${lastDevice.address})...`);
+        try {
+          syncService.setDevice(controlUnit);
+          await controlUnit.connect(lastDevice.address);
+          syncService.startPolling();
+          console.log('✅ Auto-connected to Control Unit');
+        } catch (err) {
+          console.warn('⚠️  Auto-connect failed:', err.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️  Auto-connect check failed:', err.message);
+  }
 });
 
 // Graceful shutdown

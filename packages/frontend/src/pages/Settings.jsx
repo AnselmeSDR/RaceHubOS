@@ -47,6 +47,7 @@ export default function Settings() {
   const [voices, setVoices] = useState([])
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
+  const [autoConnect, setAutoConnect] = useState(false)
   const [logs, setLogs] = useState([])
   const logsContainerRef = useRef(null)
 
@@ -65,6 +66,9 @@ export default function Settings() {
     fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()).then(d => {
       if (d.success && d.data) setDefaultViewMode(d.data)
     }).catch(() => {})
+    fetch(`${API_URL}/api/preferences/autoConnect`).then(r => r.json()).then(d => {
+      if (d.success && d.data !== null) setAutoConnect(d.data)
+    }).catch(() => {})
     // Check for updates on mount
     fetch(`${API_URL}/api/update/check`).then(r => r.json()).then(d => {
       if (d.success) setUpdateInfo(d.data)
@@ -74,6 +78,15 @@ export default function Settings() {
       }).catch(() => {})
     })
   }, [])
+
+  function handleAutoConnectChange(value) {
+    setAutoConnect(value)
+    fetch(`${API_URL}/api/preferences/autoConnect`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    }).catch(() => {})
+  }
 
   function handleDefaultViewChange(mode) {
     setDefaultViewMode(mode)
@@ -332,10 +345,21 @@ export default function Settings() {
       {/* Device Selection */}
       <Card>
         <CardContent className="">
-          <h2 className="font-semibold mb-3 flex items-center gap-2">
-            <Wifi className="size-4 text-blue-500" />
-            Sélectionner un appareil
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Wifi className="size-4 text-blue-500" />
+              Sélectionner un appareil
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{autoConnect ? 'Auto' : 'Manuel'}</span>
+              <button
+                onClick={() => handleAutoConnectChange(!autoConnect)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoConnect ? 'bg-blue-600' : 'bg-muted'}`}
+              >
+                <span className={`inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform ${autoConnect ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          </div>
 
           <div className="space-y-2">
             {allDevices.map((device) => (
