@@ -36,14 +36,47 @@ export default function Test() {
   const [controllerConfig, setControllerConfig] = useState({})
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
+  const [testSession, setTestSession] = useState(null)
   const socketRef = useRef(null)
   const logsEndRef = useRef(null)
+
+  // Create or load a test session and load it into SyncService
+  const ensureTestSession = async () => {
+    try {
+      // Look for existing draft practice session without championship
+      const searchRes = await fetch(`${API_URL}/sessions?type=practice&championshipId=null`)
+      const searchData = await searchRes.json()
+      let session = null
+
+      if (searchData.success && searchData.data?.length > 0) {
+        session = searchData.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+      } else {
+        // Create one
+        const createRes = await fetch(`${API_URL}/sessions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'practice', name: 'Test Session' })
+        })
+        const createData = await createRes.json()
+        if (createData.success) session = createData.data
+      }
+
+      if (session) {
+        // Load into SyncService (resets CU if draft)
+        await fetch(`${API_URL}/sync/load-session/${session.id}`, { method: 'POST' })
+        setTestSession(session)
+        addLog('success', 'SESSION', `Test session loaded: ${session.id.substring(0, 8)}...`)
+      }
+    } catch (err) {
+      addLog('error', 'SESSION', `Failed to load test session: ${err.message}`)
+    }
+  }
 
   // Load drivers and cars from API
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/api/drivers`).then(res => res.json()),
-      fetch(`${API_URL}/api/cars`).then(res => res.json())
+      fetch(`${API_URL}/drivers`).then(res => res.json()),
+      fetch(`${API_URL}/cars`).then(res => res.json())
     ]).then(([driversData, carsData]) => {
       const loadedDrivers = driversData.data || []
       const loadedCars = carsData.data || []
@@ -125,11 +158,13 @@ export default function Test() {
     })
   }
 
+  // Load test session on mount
+  useEffect(() => { ensureTestSession() }, [])
+
   useEffect(() => {
     addLog('info', 'APP', 'Page Test initialized')
-    addLog('info', 'APP', `Connecting to ${API_URL}...`)
 
-    const socket = io(API_URL)
+    const socket = io()
     socketRef.current = socket
 
     socket.on('connect', () => {
@@ -157,11 +192,6 @@ export default function Test() {
       updateLeaderboard(data)
     })
 
-    socket.on('race:lap', (data) => {
-      addLog('lap', 'RACE', `Race lap - Car ${data.carId}`, data)
-      updateLeaderboard({ controller: data.carId, lapTime: data.lapTime, lapNumber: data.lapNumber })
-    })
-
     // Race events
     socket.on('race:status', (data) => {
       addLog('status', 'RACE', `Status: ${data.active ? 'RUNNING' : 'STOPPED'}`, data)
@@ -184,10 +214,14 @@ export default function Test() {
     })
 
     socket.on('cu:timer', (data) => {
-      const lapTimeStr = data.lapTime > 0 ? ` - Lap: ${(data.lapTime / 1000).toFixed(3)}s` : ' (first pass)'
-      addLog('lap', 'BLE', `Timer Car ${data.controller}${lapTimeStr}`, data)
-      if (data.lapTime > 0) {
-        updateLeaderboard({ controller: data.controller, lapTime: data.lapTime })
+      if (data.isFinishLine) {
+        const lapTimeStr = data.lapTime > 0 ? ` - Lap: ${(data.lapTime / 1000).toFixed(3)}s` : ' (first pass)'
+        addLog('lap', 'BLE', `Car ${data.controller} Finish${lapTimeStr}`, data)
+        if (data.lapTime > 0) {
+          updateLeaderboard({ controller: data.controller, lapTime: data.lapTime })
+        }
+      } else {
+        addLog('info', 'BLE', `Car ${data.controller} Sector ${data.sector}`, data)
       }
     })
 
@@ -220,7 +254,7 @@ export default function Test() {
       const eventName = packet.data[0]
       const knownEvents = [
         'connect', 'disconnect', 'connect_error',
-        'lap:completed', 'lap_completed', 'race:lap',
+        'lap:completed', 'lap_completed',
         'race:status', 'cu:connected', 'cu:disconnected', 'cu:status', 'cu:timer', 'cu:reconnect-failed',
         'session:started', 'session:stopped', 'phase:started', 'positions:updated'
       ]
@@ -252,7 +286,7 @@ export default function Test() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/bluetooth/status`)
+      const res = await fetch(`${API_URL}/bluetooth/status`)
       const data = await res.json()
       setCuConnected(data.connected)
       if (data.lastStatus) setCuStatus(data.lastStatus)
@@ -265,7 +299,7 @@ export default function Test() {
     try {
       const options = { method, headers: { 'Content-Type': 'application/json' } }
       if (body) options.body = JSON.stringify(body)
-      const res = await fetch(`${API_URL}/api/bluetooth${endpoint}`, options)
+      const res = await fetch(`${API_URL}/bluetooth${endpoint}`, options)
       const data = await res.json()
       if (data.success) {
         addLog('success', 'APP', data.message || `${endpoint} OK`)
@@ -399,6 +433,12 @@ export default function Test() {
               {raceState.text}
             </div>
           )}
+          {/* Session */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+            testSession ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+          }`}>
+            {testSession ? `Session: ${testSession.id.substring(0, 8)}` : 'No Session'}
+          </div>
           {/* Modes */}
           {modes.length > 0 && (
             <div className="flex gap-1">
@@ -469,6 +509,28 @@ export default function Test() {
                   className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
                   Clear Pos
+                </button>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(`${API_URL}/bluetooth/info`)
+                    const data = await res.json()
+                    if (data.success) {
+                      const { version, ble } = data.data
+                      addLog('info', 'APP', `CU Version: ${version}`, data.data)
+                      if (ble) {
+                        addLog('info', 'APP', `BLE Name: ${ble.name} | Addr: ${ble.address} | UUID: ${ble.uuid}`)
+                        if (ble.rssi) addLog('info', 'APP', `RSSI: ${ble.rssi}dBm`)
+                        if (ble.manufacturerData) addLog('info', 'APP', `Manufacturer: ${ble.manufacturerData}`)
+                        if (ble.services?.length) addLog('info', 'APP', `Services: ${ble.services.join(', ')}`)
+                      }
+                    } else {
+                      addLog('error', 'APP', `Info failed: ${data.error}`)
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className="flex items-center gap-1 px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                >
+                  Info
                 </button>
 
                 {/* CU Buttons */}

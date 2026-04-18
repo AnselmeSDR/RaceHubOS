@@ -77,6 +77,12 @@ export class SessionService extends EventEmitter {
       // this.emitLeaderboard();
     // }
 
+    // Balancing: ignore laps beyond maxLaps per controller
+    const maxLaps = this.sessionConfig?.maxLaps;
+    if (this.currentPhase === 'balancing' && maxLaps && driver.totalLaps >= maxLaps) {
+      return;
+    }
+
     // 1. Update RAM
     driver.totalLaps++;
     driver.lastLapTime = Math.round(lapTime);
@@ -114,7 +120,6 @@ export class SessionService extends EventEmitter {
 
     // Only accumulate time up to maxLaps (for race classification)
     // Extra laps during grace period don't count toward total time
-    const maxLaps = this.sessionConfig?.maxLaps;
     if (!maxLaps || driver.totalLaps <= maxLaps) {
       driver.totalTime += Math.round(lapTime);
     }
@@ -223,6 +228,8 @@ export class SessionService extends EventEmitter {
     this.raceFinishTime = null;
     this.recalculatePositions();
     this.emitLeaderboard();
+
+
 
     // If session is in finishing state, recreate grace period timer
     if (session.status === 'finishing' && session.finishingAt) {
@@ -609,9 +616,15 @@ export class SessionService extends EventEmitter {
       if (this.sessionConfig?.maxDuration) {
         remainingTime = Math.max(0, this.sessionConfig.maxDuration - elapsedTime);
 
-        // Checkered flag: start finishing phase when time is up
+        // Time is up
         if (remainingTime === 0 && this.sessionStatus === 'active') {
-          await this.startFinishingPhase('time_elapsed');
+          if (this.currentPhase === 'balancing') {
+            // Balancing: stop immediately, no grace period
+            await this.finishSession('time_elapsed');
+          } else {
+            // Race: checkered flag + grace period
+            await this.startFinishingPhase('time_elapsed');
+          }
         }
       }
 
@@ -665,12 +678,22 @@ export class SessionService extends EventEmitter {
 
     // Note: time-based finishing is now handled in heartbeat
 
-    // Check lap limit (checkered flag when leader reaches maxLaps)
+    // Check lap limit
     if (maxLaps && this.sessionStatus === 'active') {
-      const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
-      if (maxLapsReached) {
-        shouldStartFinishing = true;
-        reason = 'leader_finished';
+      if (this.currentPhase === 'balancing') {
+        // Balancing: finish when all active controllers reached maxLaps
+        const activeDrivers = this.sessionDrivers.filter(d => d.totalLaps > 0);
+        if (activeDrivers.length > 0 && activeDrivers.every(d => d.totalLaps >= maxLaps)) {
+          shouldStop = true;
+          reason = 'all_finished';
+        }
+      } else {
+        // Race: checkered flag when leader reaches maxLaps
+        const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
+        if (maxLapsReached) {
+          shouldStartFinishing = true;
+          reason = 'leader_finished';
+        }
       }
     }
 

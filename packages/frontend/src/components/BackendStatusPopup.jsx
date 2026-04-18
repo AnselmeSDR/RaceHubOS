@@ -83,12 +83,10 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
       const names = { 0: 'Racing', 1: 'Lights 1/5', 2: 'Lights 2/5', 3: 'Lights 3/5', 4: 'Lights 4/5', 5: 'Lights 5/5', 6: 'False Start', 7: 'Go!', 9: 'Stopped' }
       addLog('debug', `CU Status: ${names[status.start] || `State ${status.start}`}, Mode: ${status.mode}`)
     })
-    socket.on('cu:timer', (data) => addLog('debug', `Timer: Ctrl ${data.controller} - ${data.lapTime}ms`))
+    socket.on('cu:timer', (data) => addLog('debug', `${data.isFinishLine ? 'Finish' : `Sector ${data.sector}`}: Ctrl ${data.controller} - ${data.lapTime}ms`))
     socket.on('lap:completed', (lap) => addLog('info', `Tour: ${lap.driver?.name || `Ctrl ${lap.controller}`} - ${(lap.lapTime / 1000).toFixed(3)}s`))
     socket.on('session:started', ({ sessionId }) => addLog('info', `Session démarrée: ${sessionId.substring(0, 8)}...`))
     socket.on('session:stopped', ({ sessionId }) => addLog('info', `Session arrêtée: ${sessionId.substring(0, 8)}...`))
-    socket.on('race:lap', (data) => addLog('debug', `Sim Lap: Car ${data.carId} - ${(data.lapTime / 1000).toFixed(3)}s`))
-
     return () => socket.disconnect()
   }, [isOpen])
 

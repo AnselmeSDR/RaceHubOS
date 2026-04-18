@@ -164,7 +164,8 @@ export class BLEService extends EventEmitter {
         });
       });
 
-      console.log('📋 Found services:', services.map(s => s.uuid));
+      this._discoveredServices = services.map(s => s.uuid);
+      console.log('📋 Found services:', this._discoveredServices);
       console.log('📋 Found characteristics:', characteristics.map(c => c.uuid));
 
       // Trouver les caractéristiques (comparer sans tirets, en minuscules)
@@ -245,6 +246,24 @@ export class BLEService extends EventEmitter {
     } catch (error) {
       this.emit('error', error);
     }
+  }
+
+  /**
+   * Get peripheral info (BLE metadata)
+   */
+  getPeripheralInfo() {
+    if (!this.peripheral) return null;
+    const p = this.peripheral;
+    const ad = p.advertisement || {};
+    return {
+      name: ad.localName || null,
+      address: p.address || null,
+      uuid: p.uuid || p.id || null,
+      rssi: p.rssi || null,
+      serviceUuids: ad.serviceUuids || [],
+      manufacturerData: ad.manufacturerData ? ad.manufacturerData.toString('hex') : null,
+      services: this._discoveredServices || [],
+    };
   }
 
   /**

@@ -271,13 +271,6 @@ export class CarreraSimulator extends EventEmitter {
       sector: 1,
     });
 
-    this.io.emit('race:lap', {
-      carId: car.id,
-      lapNumber: 0,
-      lapTime: crossingTime,
-      bestLap: null,
-      timestamp: Date.now(),
-    });
   }
 
   /**
@@ -302,15 +295,6 @@ export class CarreraSimulator extends EventEmitter {
       controller: car.id - 1, // 0-indexed (car.id is 1-indexed)
       timestamp: car.totalTime, // Accumulated time as timestamp
       sector: 1, // Finish line = sector 1
-    });
-
-    // Also emit to WebSocket for frontend
-    this.io.emit('race:lap', {
-      carId: car.id,
-      lapNumber: car.totalLaps,
-      lapTime: lapTime,
-      bestLap: car.bestLapTime,
-      timestamp: Date.now(),
     });
 
     // Reset sector times

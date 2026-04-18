@@ -205,6 +205,32 @@ router.get('/version', async (req, res) => {
 });
 
 /**
+ * GET /api/bluetooth/info
+ */
+router.get('/info', async (req, res) => {
+  const currentDevice = syncService?.getDevice();
+
+  if (!currentDevice) {
+    return res.status(400).json({ success: false, error: 'No device connected' });
+  }
+
+  try {
+    const bleInfo = currentDevice.ble?.getPeripheralInfo?.() || null;
+    const version = currentDevice.isConnected?.() ? await currentDevice.version().catch(() => null) : null;
+    res.json({
+      success: true,
+      data: {
+        version,
+        ble: bleInfo,
+        connected: currentDevice.isConnected?.() || false,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/bluetooth/start-race
  */
 router.post('/start-race', async (req, res) => {
@@ -223,6 +249,33 @@ router.post('/esc', async (req, res) => {
   try {
     await syncService?.stopRace();
     res.json({ success: true, message: 'ESC pressed' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/bluetooth/reset-timer
+ */
+router.post('/reset-timer', async (req, res) => {
+  try {
+    await syncService?.reset();
+    res.json({ success: true, message: 'Timer reset' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/bluetooth/clear-position
+ */
+router.post('/clear-position', async (req, res) => {
+  try {
+    const device = syncService?.getDevice();
+    if (device?.clearPosition) {
+      await device.clearPosition();
+    }
+    res.json({ success: true, message: 'Position cleared' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

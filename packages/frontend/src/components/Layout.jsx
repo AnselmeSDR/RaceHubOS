@@ -148,7 +148,11 @@ export default function Layout() {
             <>
               <span className="text-muted-foreground/40 mx-1">|</span>
               <span className="text-blue-400">C{lastTimer.controller + 1}</span>
-              <span className="text-green-500 ml-1">{(lastTimer.lapTime / 1000).toFixed(3)}s</span>
+              {lastTimer.isFinishLine ? (
+                <span className="text-green-500 ml-1">{lastTimer.lapTime > 0 ? `${(lastTimer.lapTime / 1000).toFixed(3)}s` : 'start'}</span>
+              ) : (
+                <span className="text-yellow-500 ml-1">S{lastTimer.sector}</span>
+              )}
             </>
           )}
         </footer>
