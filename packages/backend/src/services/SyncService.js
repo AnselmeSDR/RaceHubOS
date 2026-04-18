@@ -117,8 +117,16 @@ export class SyncService {
     const isNowRacing = status?.start === 0;
     const wasNotRacing = this.cuStatus?.start !== 0;
 
+    const wasNotInLights = !wasInLights;
+    const isFirstLight = status?.start === 1;
+
     this.cuStatus = status;
     this.io?.emit('cu:status', status);
+
+    // Reset CU when entering 1/5 lights (clean slate before race)
+    if (isFirstLight && wasNotInLights) {
+      this.reset();
+    }
 
     // Detect transition to racing (GO!) - start the timer
     if (isNowRacing && wasNotRacing && wasInLights) {
@@ -213,6 +221,7 @@ export class SyncService {
 
   async reset() {
     this.lastTimestamps.clear();
+    this.io?.emit('cu:reset');
     if (this.source?.reset) {
       await this.source.reset();
     }
