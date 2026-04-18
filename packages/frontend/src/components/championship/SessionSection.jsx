@@ -53,6 +53,7 @@ export default function SessionSection({
     finishingSession,
   } = useSession()
 
+  const [starting, setStarting] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [inlineName, setInlineName] = useState('')
   const nameInputRef = useRef(null)
@@ -576,7 +577,9 @@ export default function SessionSection({
             <>
               {!deviceConnected && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Connecter un CU</span>}
               {hasIncompleteConfig && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Config incomplète</span>}
-              <Button onClick={onStart} disabled={!deviceConnected || hasIncompleteConfig}><Play className="size-4" /> Démarrer</Button>
+              <Button onClick={async () => { setStarting(true); try { await onStart() } finally { setStarting(false) } }} disabled={!deviceConnected || hasIncompleteConfig || starting}>
+                {starting ? <><RefreshCw className="size-4 animate-spin" /> Démarrage...</> : <><Play className="size-4" /> Démarrer</>}
+              </Button>
             </>
           )}
           {isLights && <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse"><Play className="size-4" /> START</Button>}

@@ -189,9 +189,19 @@ export class SyncService {
    */
   async prepareRace() {
     if (!this.source) return;
-    if (this.source.start) {
-      await this.source.start();
-    }
+    if (!this.source.start) return;
+
+    // Stop polling and wait for any in-flight poll to settle
+    this.stopPolling();
+    await new Promise(r => setTimeout(r, 1000));
+
+    // Send START — CU will respond with 'T' ack
+    await this.source.start();
+    // Wait for CU to process and discard stale BLE responses
+    await new Promise(r => setTimeout(r, 1000));
+
+    // Resume polling — next poll should see L1
+    this.startPolling();
   }
 
   /**
