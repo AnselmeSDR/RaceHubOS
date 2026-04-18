@@ -69,6 +69,8 @@ export class ControlUnit extends EventEmitter {
    */
   async connect(address = null) {
     await this.ble.connect(address);
+    const p = this.ble.peripheral;
+    this.address = address || p?.address || p?.uuid || p?.id || null;
   }
 
   /**

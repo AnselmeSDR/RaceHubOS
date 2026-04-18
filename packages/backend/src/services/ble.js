@@ -296,8 +296,11 @@ export class BLEService extends EventEmitter {
   handleDisconnect() {
     console.log('⚠️  Disconnected from Control Unit');
     this.connected = false;
+    this.connecting = false;
     this.outputCharacteristic = null;
     this.notifyCharacteristic = null;
+    // Keep lastFoundPeripheral but clear peripheral for fresh reconnect
+    this.peripheral = null;
     this.emit('disconnect');
 
     // Tentative de reconnexion automatique
@@ -309,11 +312,14 @@ export class BLEService extends EventEmitter {
 
       this.reconnectTimer = setTimeout(() => {
         this.connect().catch((error) => {
-          console.error('Reconnection failed:', error.message);
+          console.error(`❌ Reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} failed:`, error.message);
+          // Trigger next attempt
+          this.handleDisconnect();
         });
       }, this.reconnectDelay);
     } else {
       console.error('❌ Max reconnection attempts reached');
+      this.reconnectAttempts = 0;
       this.emit('reconnect-failed');
     }
   }
