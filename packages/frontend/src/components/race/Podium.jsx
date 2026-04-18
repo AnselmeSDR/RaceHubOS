@@ -24,7 +24,6 @@ function formatTime(seconds) {
  */
 export default function Podium({ drivers = [], sessionType = 'race', stats }) {
   const sorted = [...drivers]
-    .filter(sd => sd.driver && (sd.totalLaps > 0 || sd.bestLapTime))
     .sort((a, b) => {
       if (sessionType === 'practice') {
         const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
@@ -37,7 +36,6 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
       return (a.totalTime || Infinity) - (b.totalTime || Infinity)
     })
 
-  if (sorted.length < 2) return null
 
   const podium = sorted.slice(0, 3)
   const fastest = sorted.reduce((best, sd) => (!best || (sd.bestLapTime && sd.bestLapTime < best.bestLapTime)) ? sd : best, null)
