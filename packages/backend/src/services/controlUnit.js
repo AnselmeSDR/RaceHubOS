@@ -27,6 +27,7 @@ export class ControlUnit extends EventEmitter {
     this.responseQueue = [];
     this.waitingForResponse = null;
     this.connected = false;
+    this._requestBusy = false;
 
     // Écouter les événements BLE
     this.ble.on('ready', () => {
@@ -190,7 +191,7 @@ export class ControlUnit extends EventEmitter {
   }
 
   /**
-   * Envoyer une requête et attendre une réponse
+   * Envoyer une requête et attendre une réponse (sérialisé via queue)
    * @param {Buffer} buffer - Données à envoyer
    * @param {number} timeout - Timeout en ms
    * @returns {Promise<Buffer>} Réponse reçue
@@ -200,22 +201,36 @@ export class ControlUnit extends EventEmitter {
       throw new Error('Not connected to Control Unit');
     }
 
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        this.waitingForResponse = null;
-        reject(new Error('Request timeout'));
-      }, timeout);
+    // Wait for any pending request to finish
+    while (this._requestBusy) {
+      await new Promise(r => setTimeout(r, 10));
+    }
 
-      this.waitingForResponse = {
-        expectedPrefix: buffer[0],
-        resolve: (data) => {
+    this._requestBusy = true;
+
+    try {
+      return await new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          this.waitingForResponse = null;
+          reject(new Error('Request timeout'));
+        }, timeout);
+
+        this.waitingForResponse = {
+          expectedPrefix: buffer[0],
+          resolve: (data) => {
+            clearTimeout(timeoutId);
+            resolve(data);
+          },
+        };
+
+        this.ble.send(buffer).catch((err) => {
           clearTimeout(timeoutId);
-          resolve(data);
-        },
-      };
-
-      this.ble.send(buffer).catch(reject);
-    });
+          reject(err);
+        });
+      });
+    } finally {
+      this._requestBusy = false;
+    }
   }
 
   /**
@@ -223,8 +238,7 @@ export class ControlUnit extends EventEmitter {
    * @returns {Promise<Object>} Status ou Timer
    */
   async poll() {
-    // Le protocole Carrera exige que les messages se terminent par '$'
-    const response = await this.request(Buffer.from('?$'));
+    const response = await this.request(Buffer.from('?'));
     return this.processMessage(response);
   }
 
@@ -233,8 +247,7 @@ export class ControlUnit extends EventEmitter {
    * @returns {Promise<string>} Version
    */
   async version() {
-    // Le protocole Carrera exige que les messages se terminent par '$'
-    const response = await this.request(Buffer.from('0$'));
+    const response = await this.request(Buffer.from('0'));
     const [version] = protocol.unpack('x4sC', response);
     return version.toString('ascii');
   }
@@ -284,13 +297,10 @@ export class ControlUnit extends EventEmitter {
   /**
    * Simuler l'appui sur un bouton du Control Unit
    * @param {number} buttonId - ID du bouton
-   * Fire-and-forget: n'attend pas de réponse pour éviter les conflits avec le polling
    */
   async press(buttonId) {
     const buffer = protocol.pack('cYC', Buffer.from('T'), buttonId);
-    // Ajouter le terminateur '$'
-    const message = Buffer.concat([buffer, Buffer.from('$')]);
-    await this.ble.send(message);
+    await this.request(buffer);
     return { success: true, buttonId };
   }
 
@@ -303,18 +313,15 @@ export class ControlUnit extends EventEmitter {
 
   /**
    * Réinitialiser le timer
-   * Fire-and-forget pour éviter les conflits avec le polling
    */
   async reset() {
     const buffer = protocol.pack('cYYC', Buffer.from('='), 1, 0);
-    const message = Buffer.concat([buffer, Buffer.from('$')]);
-    await this.ble.send(message);
+    await this.request(buffer);
     return { success: true };
   }
 
   /**
    * Définir un mot de commande
-   * Fire-and-forget pour éviter les conflits avec le polling
    * @param {number} word - Mot de commande (0-31)
    * @param {number} address - Adresse du contrôleur (0-7)
    * @param {number} value - Valeur (0-15)
@@ -341,9 +348,8 @@ export class ControlUnit extends EventEmitter {
       value,
       repeat
     );
-    const message = Buffer.concat([buffer, Buffer.from('$')]);
-    console.log(`🎮 setword: word=${word}, addr=${address}, val=${value}, repeat=${repeat}, msg=${message.toString('hex')}`);
-    await this.ble.send(message);
+    console.log(`🎮 setword: word=${word}, addr=${address}, val=${value}, repeat=${repeat}, msg=${buffer.toString('hex')}`);
+    await this.request(buffer);
     return { success: true };
   }
 
@@ -394,14 +400,37 @@ export class ControlUnit extends EventEmitter {
   }
 
   /**
+   * Generic button press (used by SyncService.pressButton)
+   */
+  async pressButton(buttonId) {
+    return this.press(buttonId);
+  }
+
+  /**
+   * Press ESC/Pace Car button
+   */
+  async pressEsc() {
+    return this.press(ControlUnit.PACE_CAR_ESC_BUTTON_ID);
+  }
+
+  /**
+   * Stop race: cut power to all 6 car slots
+   */
+  async stopCars() {
+    for (let addr = 0; addr < 6; addr++) {
+      await this.setSpeed(addr, 0);
+    }
+    return { success: true };
+  }
+
+  /**
    * Ignorer certains contrôleurs
    * Fire-and-forget pour éviter les conflits avec le polling
    * @param {number} mask - Masque de bits des contrôleurs à ignorer
    */
   async ignore(mask) {
     const buffer = protocol.pack('cBC', Buffer.from(':'), mask);
-    const message = Buffer.concat([buffer, Buffer.from('$')]);
-    await this.ble.send(message);
+    await this.request(buffer);
     return { success: true };
   }
 

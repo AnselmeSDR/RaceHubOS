@@ -130,7 +130,8 @@ export class BLEService extends EventEmitter {
 
             const onDiscover = (peripheral) => {
               const pAddr = peripheral.address || peripheral.uuid || peripheral.id;
-              console.log(`   Checking: ${pAddr} vs ${address}`);
+              const pName = peripheral.advertisement?.localName || 'unknown';
+              console.log(`   Checking: ${pName} (${pAddr}) vs ${address}`);
               if (pAddr === address || peripheral.advertisement.localName === DEVICE_NAME) {
                 clearTimeout(timeout);
                 noble.stopScanning();

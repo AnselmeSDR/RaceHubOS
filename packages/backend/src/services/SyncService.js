@@ -216,6 +216,9 @@ export class SyncService {
 
   async stopRace() {
     if (!this.source) return;
+    if (this.source.stopCars) {
+      await this.source.stopCars();
+    }
     if (this.source.pressEsc) {
       await this.source.pressEsc();
     } else if (this.source.stop) {

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-05-12
+
+### Added
+- **Auto-throttle de fin de course** : la vitesse d'un pilote ayant rempli sa condition de fin (laps ou temps) est automatiquement baissée à 1, les autres pilotes continuent à pleine vitesse. Restauration à 15 en fin de session
+- **`pressButton` / `pressEsc` / `stopCars`** : nouvelles méthodes sur `ControlUnit` (manquaient — les commandes n'arrivaient pas à la CU)
+- **Log scan BLE amélioré** : affichage du nom des peripherals découverts en plus de l'adresse
+
+### Fixed
+- **Commandes CU bloquées par le polling** : refonte du `request()` avec mutex async pour sérialiser proprement les commandes BLE. Avant, le polling continu (`?`) monopolisait le canal et les commandes (`T`, `J`, `=`) ne partaient jamais
+- **Protocole BLE : retrait du `$` terminal** : le `$` est uniquement pour le protocole série, pas BLE (alignement avec `carreralib`)
+- **Footer déconnecté alors que CU active** : le backend n'émettait pas `cu:connected` à la connexion socket initiale, et le frontend ne déduisait pas `connected` depuis l'event `cu:status`
+- **Graceful shutdown** : `httpServer.close()` est maintenant attendu avant `process.exit`, évitant les `EADDRINUSE` au restart en mode `--watch`
+
 ## [1.9.10] - 2026-04-18
 
 ### Added

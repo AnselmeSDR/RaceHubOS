@@ -267,6 +267,7 @@ io.on('connection', (socket) => {
   // Send current device state on connection
   const currentDevice = syncService.getDevice();
   if (currentDevice === simulator && simulator.isConnected()) {
+    socket.emit('cu:connected');
     socket.emit('race:status', {
       running: simulator.isRunning,
       active: simulator.raceActive,
@@ -275,6 +276,7 @@ io.on('connection', (socket) => {
       deviceType: 'simulator'
     });
   } else if (currentDevice === controlUnit && controlUnit.isConnected()) {
+    socket.emit('cu:connected');
     socket.emit('cu:status', {
       connected: true,
       deviceType: 'controlUnit'
@@ -400,17 +402,21 @@ function gracefulShutdown(signal) {
   console.log(`\n⚠️  ${signal} received, closing server...`);
 
   try {
-    io.close();
     syncService.close();
     simulator.disconnect();
     controlUnit.disconnect();
-    httpServer.close();
+    io.close();
   } catch (error) {
     // Ignore errors
   }
 
-  console.log('✅ Server closed');
-  process.exit(0);
+  httpServer.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+
+  // Force exit after 3s if close hangs
+  setTimeout(() => process.exit(1), 3000);
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

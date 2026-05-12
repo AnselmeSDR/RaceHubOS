@@ -134,8 +134,40 @@ export class SessionService extends EventEmitter {
     // 4. Emit leaderboard
     this.emitLeaderboard();
 
-    // 5. Check session completion
+    // 5. Throttle car if this driver has met the finish condition
+    await this.throttleIfFinished(driver);
+
+    // 6. Check session completion
     await this.checkSessionComplete();
+  }
+
+  /**
+   * Reduce speed to 1 for a driver who has completed their finish condition.
+   * Other drivers keep their normal speed.
+   */
+  async throttleIfFinished(driver) {
+    if (driver._throttled) return;
+
+    const maxLaps = this.sessionConfig?.maxLaps;
+    let finished = false;
+
+    if (maxLaps) {
+      finished = driver.totalLaps >= maxLaps;
+    } else if (this.sessionStatus === 'finishing' && driver.lapsAtFinishing != null) {
+      finished = driver.totalLaps > driver.lapsAtFinishing;
+    }
+
+    if (!finished) return;
+
+    const device = this.syncService?.getDevice();
+    if (!device?.setSpeed) return;
+
+    try {
+      await device.setSpeed(driver.controller, 1);
+      driver._throttled = true;
+    } catch (err) {
+      console.warn('[SessionService] throttle failed:', err.message);
+    }
   }
 
   // ==================== Session Lifecycle ====================
@@ -826,11 +858,29 @@ export class SessionService extends EventEmitter {
     // Emit internal event for other services (ChampionshipManager)
     super.emit('sessionFinished', { sessionId, championshipId });
 
+    // Restore normal speed for throttled cars
+    await this.restoreSpeeds();
+
     // Stop CU/Simulator
     await this.syncService?.stopRace();
 
     // Reset state
     await this.resetForNewSession();
+  }
+
+  async restoreSpeeds() {
+    const device = this.syncService?.getDevice();
+    if (!device?.setSpeed) return;
+
+    for (const driver of this.sessionDrivers) {
+      if (!driver._throttled) continue;
+      try {
+        await device.setSpeed(driver.controller, 15);
+        driver._throttled = false;
+      } catch (err) {
+        console.warn('[SessionService] restoreSpeed failed:', err.message);
+      }
+    }
   }
 
   async calculateDNF() {
