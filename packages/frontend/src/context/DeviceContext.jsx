@@ -61,6 +61,9 @@ export function DeviceProvider({ children }) {
     })
 
     socket.on('cu:status', (status) => {
+      if (status.connected !== undefined) {
+        setConnected(status.connected)
+      }
       setCuStatus(status)
     })
 
