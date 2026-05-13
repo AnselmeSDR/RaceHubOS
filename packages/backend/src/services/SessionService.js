@@ -319,6 +319,10 @@ export class SessionService extends EventEmitter {
     // Put CU in L1 state (waiting for START)
     await this.syncService?.prepareRace();
 
+    // Apply each car's profile (speed/brake/fuel) to the CU
+    // Done AFTER prepareRace so the START press isn't blocked by 18 setword commands
+    await this.applyCarConfigs();
+
     // Start heartbeat
     this.startHeartbeat();
 
@@ -813,6 +817,10 @@ export class SessionService extends EventEmitter {
   }
 
   async finishSession(reason) {
+    // Guard against multiple concurrent/repeated calls (grace timer + heartbeat + lap event)
+    if (this.sessionStatus === 'finished' || this._finishing) return;
+    this._finishing = true;
+
     if (this.gracePeriodTimer) {
       clearTimeout(this.gracePeriodTimer);
       this.gracePeriodTimer = null;
@@ -858,27 +866,42 @@ export class SessionService extends EventEmitter {
     // Emit internal event for other services (ChampionshipManager)
     super.emit('sessionFinished', { sessionId, championshipId });
 
-    // Restore normal speed for throttled cars
-    await this.restoreSpeeds();
-
     // Stop CU/Simulator
     await this.syncService?.stopRace();
 
     // Reset state
     await this.resetForNewSession();
+    this._finishing = false;
   }
 
-  async restoreSpeeds() {
+  /**
+   * Apply car profile to CU for all 6 controller slots.
+   * Used at session start (initial config) and at session end (restore after throttle/stop).
+   * Car values are 0-100. CU usable range is 1-10 for speed/brake (factory default = 10),
+   * 1-15 for fuel (factory default = 7). Slots without a driver get factory defaults.
+   */
+  async applyCarConfigs() {
     const device = this.syncService?.getDevice();
     if (!device?.setSpeed) return;
 
-    for (const driver of this.sessionDrivers) {
-      if (!driver._throttled) continue;
+    const toSpeedBrake = (v) => Math.max(1, Math.min(10, Math.round((v ?? 100) * 10 / 100)));
+    const toFuel = (v) => Math.max(1, Math.min(15, Math.round((v ?? 100) * 15 / 100)));
+
+    const driverByController = new Map(this.sessionDrivers.map(d => [d.controller, d]));
+
+    for (let addr = 0; addr < 6; addr++) {
+      const driver = driverByController.get(addr);
+      const car = driver?.car;
+      const speed = car ? toSpeedBrake(car.maxSpeed) : 10;
+      const brake = car ? toSpeedBrake(car.brakeForce) : 10;
+      const fuel = car ? toFuel(car.fuelCapacity) : 7;
       try {
-        await device.setSpeed(driver.controller, 15);
-        driver._throttled = false;
+        await device.setSpeed(addr, speed);
+        if (device.setBrake) await device.setBrake(addr, brake);
+        if (device.setFuel) await device.setFuel(addr, fuel);
+        if (driver) driver._throttled = false;
       } catch (err) {
-        console.warn('[SessionService] restoreSpeed failed:', err.message);
+        console.warn('[SessionService] applyCarConfigs failed for addr', addr, ':', err.message);
       }
     }
   }
