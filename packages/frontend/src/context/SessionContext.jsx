@@ -141,24 +141,22 @@ export function SessionProvider({ children }) {
               if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
               return (a.totalTime || Infinity) - (b.totalTime || Infinity)
             })
-          const podium = sorted.slice(0, 3)
-          const labels = ['premier', 'deuxième', 'troisième']
+          const allLabels = ['premier', 'deuxième', 'troisième']
+          const podium = sorted.slice(0, 3).map((driver, i) => ({ driver, label: allLabels[i] }))
 
           // Announce 3rd, 2nd, 1st
           const announceOrder = [...podium].reverse()
-          const labelsReversed = [...labels].reverse()
 
           const delay = 3000
           setTimeout(() => {
             const queue = []
-            announceOrder.forEach((driver, i) => {
+            announceOrder.forEach(({ driver, label }) => {
               if (!driver.driver) return
-              const pos = labelsReversed[i]
               const name = driver.driver.name
               const time = isQualif
                 ? v.formatTimeVoice(driver.bestLapTime)
                 : v.formatTimeVoice(driver.totalTime)
-              queue.push(`${pos}, ${name}, ${time}`)
+              queue.push(`${label}, ${name}, ${time}`)
             })
 
             const speakNext = (index) => {

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-05-13
+
+### Added
+- **Auto-application des profils voiture** : au démarrage de chaque session, les valeurs `maxSpeed`/`brakeForce`/`fuelCapacity` du profil de chaque voiture sont appliquées sur la CU (mapping 0-100 → CU 1-10 pour speed/brake, 1-15 pour fuel)
+- **Slots sans pilote** : les 6 slots de la CU reçoivent les défauts usine (speed=10, brake=10, fuel=7) si aucun pilote n'est assigné
+- **Auto-throttle de fin** : un pilote ayant terminé sa condition (laps atteints OU lap complété pendant grace period) voit sa vitesse passée à 1, les autres pilotes continuent
+- **Doc technique CU** : `docs/CU-CARRERA-PROTOCOL.md` — référence complète du protocole BLE, états, boutons, modes, fuel system
+- **Notice CU** : `docs/Carrera-30352-Control-Unit-Manual.pdf` ajoutée au repo
+
+### Fixed
+- **Podium voix : annonce de positions inexistantes** : avec 1 ou 2 pilotes, la voix annonçait "troisième" / "deuxième" pour des pilotes qui n'existaient pas. Les labels et drivers sont maintenant couplés avant le reverse
+- **finishSession appelée plusieurs fois** : guard `_finishing` ajouté pour éviter que la grace period timer + heartbeat + check déclenchent simultanément finishSession (causait des oscillations de vitesse)
+- **applyCarConfigs ordre** : déplacée APRÈS `prepareRace()` au start de session pour ne pas perturber la séquence de mise en L1
+
 ## [1.10.0] - 2026-05-12
 
 ### Added
