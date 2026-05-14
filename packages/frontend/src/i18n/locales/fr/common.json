@@ -25,6 +25,8 @@
   "selectedCount_other": "{{count}} sélectionnés",
   "colorLabel": "Couleur",
   "record": "Record",
+  "time": "Temps",
+  "date": "Date",
   "by": "par",
   "back": "Retour",
   "reset": "Réinitialiser",

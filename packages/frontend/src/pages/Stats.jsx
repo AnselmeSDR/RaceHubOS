@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { BarChart3, Trophy } from 'lucide-react'
 import { getImgUrl } from '../utils/image'
 import { ListPage } from '@/components/ui/list-page'
@@ -8,14 +9,15 @@ import { Badge } from '@/components/ui/badge'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const sessionTypeLabels = {
-  race: { label: 'Course', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  qualif: { label: 'Qualif', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  practice: { label: 'Essais', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-  balancing: { label: 'Équilibrage', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+const sessionTypeColors = {
+  race: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  qualif: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
 }
 
 export default function Stats() {
+  const { t, i18n } = useTranslation('stats')
   const navigate = useNavigate()
   const [laptimes, setLaptimes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -120,7 +122,7 @@ export default function Stats() {
     {
       id: 'lapTime',
       accessorKey: 'lapTime',
-      header: 'Temps',
+      header: t('common:time'),
       cell: ({ row }) => {
         const isTop3 = row.index < 3
         return (
@@ -133,11 +135,11 @@ export default function Stats() {
     {
       id: 'driver',
       accessorFn: (row) => row.driver?.name || '',
-      meta: { label: 'Pilote' },
+      meta: { label: t('glossary:driver', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Pilote"
+          label={t('glossary:driver', { count: 1 })}
           active={filtersRef.current.driverId.length > 0}
           value={filtersRef.current.driverId}
           options={[
@@ -171,11 +173,11 @@ export default function Stats() {
     {
       id: 'car',
       accessorFn: (row) => `${row.car?.brand} ${row.car?.model}`,
-      meta: { label: 'Voiture' },
+      meta: { label: t('glossary:car', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Voiture"
+          label={t('glossary:car', { count: 1 })}
           active={filtersRef.current.carId.length > 0}
           value={filtersRef.current.carId}
           options={[
@@ -209,11 +211,11 @@ export default function Stats() {
     {
       id: 'track',
       accessorFn: (row) => row.track?.name || '',
-      meta: { label: 'Circuit' },
+      meta: { label: t('glossary:track', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Circuit"
+          label={t('glossary:track', { count: 1 })}
           active={filtersRef.current.trackId.length > 0}
           value={filtersRef.current.trackId}
           options={[
@@ -238,47 +240,44 @@ export default function Stats() {
     {
       id: 'sessionType',
       accessorFn: (row) => row.sessionType,
-      meta: { label: 'Session' },
+      meta: { label: t('glossary:session', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Session"
+          label={t('glossary:session', { count: 1 })}
           active={filtersRef.current.sessionType.length > 0}
           value={filtersRef.current.sessionType}
           options={[
-            { value: 'practice', label: 'Essais' },
-            { value: 'qualif', label: 'Qualifications' },
-            { value: 'race', label: 'Course' },
+            { value: 'practice', label: t('glossary:sessionTypeFull.practice') },
+            { value: 'qualif', label: t('glossary:sessionTypeFull.qualif') },
+            { value: 'race', label: t('glossary:sessionTypeFull.race') },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, sessionType: v }))}
         />
       ),
-      cell: ({ row }) => {
-        const info = sessionTypeLabels[row.original.sessionType] || sessionTypeLabels.practice
-        return (
-          <Badge className={info.color}>
-            {info.label}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <Badge className={sessionTypeColors[row.original.sessionType] || sessionTypeColors.practice}>
+          {t(`glossary:sessionType.${row.original.sessionType}`, { defaultValue: row.original.sessionType })}
+        </Badge>
+      ),
     },
     {
       id: 'date',
       accessorFn: (row) => row.sessionDate,
-      header: 'Date',
+      header: t('common:date'),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.sessionDate ? new Date(row.original.sessionDate).toLocaleDateString('fr-FR') : '-'}
+          {row.original.sessionDate ? new Date(row.original.sessionDate).toLocaleDateString(i18n.language) : '-'}
         </span>
       ),
     },
-  ], [drivers, cars, tracks])
+  ], [drivers, cars, tracks, t, i18n.language])
 
   const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0 || filters.deleted
 
   return (
     <ListPage
-      title="Statistiques & Records"
+      title={t('title')}
       icon={<BarChart3 />}
       color="indigo"
       preferenceKey="stats"
@@ -286,27 +285,27 @@ export default function Stats() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher..."
+      searchPlaceholder={t('common:search')}
       hasMore={hasMore}
       loadingMore={loadingMore}
       onLoadMore={() => loadData(laptimes.length)}
       onSortChange={setSort}
       hasActiveFilters={hasActiveFilters}
-      emptyTitle="Aucun record"
-      emptyMessage="Aucun temps enregistré"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       deleteEndpoint="/api/stats/laps"
       onDeleted={() => loadData(0)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
       options={[
         {
           key: 'unique',
-          label: 'Meilleur par pilote/voiture',
+          label: t('options.bestPerDriverCar'),
           checked: filters.unique,
           onChange: (v) => setFilters(f => ({ ...f, unique: !!v })),
         },
         {
           key: 'deleted',
-          label: 'Afficher les supprimés',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
