@@ -9,6 +9,7 @@ import { RecordsList } from '../components/RecordDisplays'
 import { DriverFormModal } from './Drivers'
 import LapTime from '../components/race/LapTime'
 import { getImgUrl } from '../utils/image'
+import { sessionBadgeClass } from '@/lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -17,13 +18,6 @@ const TYPE_LABELS = {
   qualif: 'Qualif',
   race: 'Course',
   balancing: 'Équilibrage',
-}
-
-const TYPE_COLORS = {
-  practice: 'bg-session-practice/10 text-session-practice',
-  qualif: 'bg-session-qualif/10 text-session-qualif',
-  race: 'bg-session-race/10 text-session-race',
-  balancing: 'bg-session-balancing/10 text-session-balancing',
 }
 
 export default function DriverProfile() {
@@ -186,7 +180,7 @@ export default function DriverProfile() {
                       className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${TYPE_COLORS[sd.session?.type] || ''}`}>
+                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}>
                           {TYPE_LABELS[sd.session?.type] || sd.session?.type}
                         </Badge>
                         <span className="text-sm text-foreground truncate">

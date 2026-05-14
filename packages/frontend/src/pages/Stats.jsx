@@ -6,15 +6,9 @@ import { getImgUrl } from '../utils/image'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
+import { sessionBadgeClass } from '@/lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-
-const sessionTypeColors = {
-  race: 'bg-session-race/10 text-session-race',
-  qualif: 'bg-session-qualif/10 text-session-qualif',
-  practice: 'bg-session-practice/10 text-session-practice',
-  balancing: 'bg-session-balancing/10 text-session-balancing',
-}
 
 export default function Stats() {
   const { t, i18n } = useTranslation('stats')
@@ -256,7 +250,7 @@ export default function Stats() {
         />
       ),
       cell: ({ row }) => (
-        <Badge className={sessionTypeColors[row.original.sessionType] || sessionTypeColors.practice}>
+        <Badge className={sessionBadgeClass(row.original.sessionType)}>
           {t(`glossary:sessionType.${row.original.sessionType}`, { defaultValue: row.original.sessionType })}
         </Badge>
       ),
