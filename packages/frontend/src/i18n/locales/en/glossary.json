@@ -39,5 +39,18 @@
     "qualif": "Qualifying",
     "race": "Race",
     "balancing": "Balancing"
+  },
+  "sessionTypeFull": {
+    "practice": "Free practice",
+    "qualif": "Qualifying",
+    "race": "Race",
+    "balancing": "Balancing"
+  },
+  "sessionStatus": {
+    "draft": "Draft",
+    "ready": "Ready",
+    "active": "In progress",
+    "finishing": "Finishing",
+    "finished": "Finished"
   }
 }

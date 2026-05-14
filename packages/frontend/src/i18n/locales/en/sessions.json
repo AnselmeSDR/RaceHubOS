@@ -1,0 +1,45 @@
+{
+  "searchPlaceholder": "Search for a session...",
+  "addLabel": "New session",
+  "emptyTitle": "No sessions",
+  "emptyMessage": "Create your first session",
+  "unnamedSession": "Session #{{id}}",
+  "columns": {
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "duration": "Duration",
+    "date": "Date"
+  },
+  "filters": {
+    "noChampionship": "No championship"
+  },
+  "form": {
+    "createTitle": "New session",
+    "editTitle": "Edit session",
+    "generalInfo": "General information",
+    "name": "Name",
+    "namePlaceholder": "e.g. Free practice Nürburgring",
+    "type": "Type",
+    "selectTrack": "Select a track",
+    "championshipOptional": "Championship (optional)",
+    "none": "None",
+    "fuel": "Fuel",
+    "fuelOff": "Off",
+    "fuelOn": "On",
+    "duration": "Duration (minutes)",
+    "durationPlaceholder": "30",
+    "maxLaps": "Max laps",
+    "maxLapsPlaceholder": "100",
+    "slots": "{{count}}/{{total}} slots",
+    "controllerShort": "Ctrl",
+    "controllerUsed": "(used)",
+    "gridPlaceholder": "Grid",
+    "noDriversAdded": "No drivers added",
+    "submit": "Create session",
+    "update": "Update",
+    "loadError": "Error loading data",
+    "trackRequired": "Track is required",
+    "driverRequired": "At least one complete driver is required (driver, car, controller)"
+  }
+}

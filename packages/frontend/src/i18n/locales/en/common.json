@@ -10,6 +10,8 @@
   "add": "Add",
   "change": "Change",
   "error": "Error",
+  "loading": "Loading...",
+  "notDefined": "Not defined",
   "grid": "Grid",
   "list": "List",
   "columns": "Columns",

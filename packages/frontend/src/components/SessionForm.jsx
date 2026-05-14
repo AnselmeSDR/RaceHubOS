@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Plus, Trash2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 export default function SessionForm({ session, onClose, onSaved }) {
+  const { t } = useTranslation('sessions')
   const [formData, setFormData] = useState({
     name: '',
     type: 'practice',
@@ -82,7 +84,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
       }
     } catch (err) {
       console.error('Error loading data:', err)
-      setError('Erreur lors du chargement des données')
+      setError(t('form.loadError'))
     } finally {
       setLoading(false)
     }
@@ -93,7 +95,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
     try {
       // Validation
       if (!formData.trackId) {
-        setError('Le circuit est requis')
+        setError(t('form.trackRequired'))
         return
       }
 
@@ -103,7 +105,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
       )
 
       if (formData.drivers.length > 0 && validDrivers.length === 0) {
-        setError('Au moins un pilote complet est requis (pilote, voiture, contrôleur)')
+        setError(t('form.driverRequired'))
         return
       }
 
@@ -123,7 +125,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Erreur lors de la sauvegarde')
+        throw new Error(data.error || t('common:saveError'))
       }
 
       const result = await response.json()
@@ -131,7 +133,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
       onClose()
     } catch (err) {
       console.error('Error saving session:', err)
-      setError(err.message || 'Erreur lors de la sauvegarde')
+      setError(err.message || t('common:saveError'))
     }
   }
 
@@ -169,7 +171,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-2xl w-full mx-4">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common:loading')}</p>
           </div>
         </div>
       </div>
@@ -182,7 +184,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b dark:border-gray-700 flex-shrink-0">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {session ? 'Modifier la session' : 'Nouvelle session'}
+            {session ? t('form.editTitle') : t('form.createTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -202,42 +204,42 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Informations générales</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('form.generalInfo')}</h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.name')}</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Ex: Essais libres Nürburgring"
+                placeholder={t('form.namePlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.type')}</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="practice">Essais libres</option>
-                  <option value="qualif">Qualifications</option>
-                  <option value="race">Course</option>
+                  <option value="practice">{t('glossary:sessionTypeFull.practice')}</option>
+                  <option value="qualif">{t('glossary:sessionTypeFull.qualif')}</option>
+                  <option value="race">{t('glossary:sessionTypeFull.race')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Circuit</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('glossary:track', { count: 1 })}</label>
                 <select
                   required
                   value={formData.trackId}
                   onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="">Sélectionner un circuit</option>
+                  <option value="">{t('form.selectTrack')}</option>
                   {tracks.map((track) => (
                     <option key={track.id} value={track.id}>
                       {track.name}
@@ -249,13 +251,13 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Championnat (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.championshipOptional')}</label>
                 <select
                   value={formData.championshipId}
                   onChange={(e) => setFormData({ ...formData, championshipId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="">Aucun</option>
+                  <option value="">{t('form.none')}</option>
                   {championships.map((champ) => (
                     <option key={champ.id} value={champ.id}>
                       {champ.name}
@@ -265,38 +267,38 @@ export default function SessionForm({ session, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Carburant</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.fuel')}</label>
                 <select
                   value={formData.fuelMode}
                   onChange={(e) => setFormData({ ...formData, fuelMode: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="OFF">Désactivé</option>
-                  <option value="ON">Activé</option>
+                  <option value="OFF">{t('form.fuelOff')}</option>
+                  <option value="ON">{t('form.fuelOn')}</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Durée (minutes)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.duration')}</label>
                 <input
                   type="number"
                   value={formData.duration || ''}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : null })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="30"
+                  placeholder={t('form.durationPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tours max</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.maxLaps')}</label>
                 <input
                   type="number"
                   value={formData.maxLaps || ''}
                   onChange={(e) => setFormData({ ...formData, maxLaps: e.target.value ? parseInt(e.target.value) : null })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder="100"
+                  placeholder={t('form.maxLapsPlaceholder')}
                 />
               </div>
             </div>
@@ -306,9 +308,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Pilotes</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('glossary:driver', { count: 2 })}</h3>
                 <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full font-medium">
-                  {formData.drivers.length}/{availableSlots} slots
+                  {t('form.slots', { count: formData.drivers.length, total: availableSlots })}
                 </span>
               </div>
               <button
@@ -318,7 +320,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                 className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
-                Ajouter
+                {t('common:add')}
               </button>
             </div>
 
@@ -330,7 +332,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     onChange={(e) => updateDriver(index, 'driverId', e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
-                    <option value="">Pilote</option>
+                    <option value="">{t('glossary:driver', { count: 1 })}</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -343,7 +345,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     onChange={(e) => updateDriver(index, 'carId', e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
-                    <option value="">Voiture</option>
+                    <option value="">{t('glossary:car', { count: 1 })}</option>
                     {cars.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.brand} {c.model}
@@ -356,7 +358,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     onChange={(e) => updateDriver(index, 'controller', e.target.value)}
                     className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
-                    <option value="">Ctrl</option>
+                    <option value="">{t('form.controllerShort')}</option>
                     {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
                       const isUsed = formData.drivers.some((d, idx) => idx !== index && d.controller === String(slot))
                       return (
@@ -365,7 +367,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                           value={slot}
                           disabled={isUsed}
                         >
-                          {slot} {isUsed ? '(utilisé)' : ''}
+                          {slot} {isUsed ? t('form.controllerUsed') : ''}
                         </option>
                       )
                     })}
@@ -375,7 +377,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     type="number"
                     value={driver.gridPos || ''}
                     onChange={(e) => updateDriver(index, 'gridPos', e.target.value ? parseInt(e.target.value) : null)}
-                    placeholder="Grille"
+                    placeholder={t('form.gridPlaceholder')}
                     className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   />
 
@@ -390,7 +392,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
               ))}
 
               {formData.drivers.length === 0 && (
-                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">Aucun pilote ajouté</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">{t('form.noDriversAdded')}</p>
               )}
             </div>
           </div>
@@ -404,14 +406,14 @@ export default function SessionForm({ session, onClose, onSaved }) {
             type="submit"
             className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
-            {session ? 'Mettre à jour' : 'Créer la session'}
+            {session ? t('form.update') : t('form.submit')}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
           >
-            Annuler
+            {t('common:cancel')}
           </button>
         </div>
       </div>
