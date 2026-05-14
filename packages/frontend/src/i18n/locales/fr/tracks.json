@@ -1,0 +1,21 @@
+{
+  "searchPlaceholder": "Rechercher un circuit...",
+  "addLabel": "Nouveau circuit",
+  "emptyTitle": "Aucun circuit",
+  "emptyMessage": "Ajoutez votre premier circuit",
+  "fields": {
+    "name": "Nom",
+    "length": "Longueur",
+    "corners": "Virages"
+  },
+  "form": {
+    "createTitle": "Nouveau circuit",
+    "editTitle": "Modifier le circuit",
+    "namePlaceholder": "Monaco Grand Prix",
+    "photoLabel": "Photo du circuit",
+    "lengthLabel": "Longueur (m)",
+    "lengthPlaceholder": "12.5",
+    "cornersPlaceholder": "18",
+    "saved": "Circuit sauvegardé"
+  }
+}

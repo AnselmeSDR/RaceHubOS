@@ -23,6 +23,7 @@
   "selectedCount_other": "{{count}} selected",
   "colorLabel": "Color",
   "record": "Record",
+  "by": "by",
   "back": "Back",
   "reset": "Reset",
   "resetStatsTitle": "Reset statistics",
