@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
+import { LANGUAGES } from '../i18n'
 import {
   Wifi,
   Cpu,
@@ -20,6 +22,7 @@ import {
   Download,
   ArrowUpCircle,
   Loader2,
+  Languages,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +32,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export default function Settings() {
+  const { t, i18n } = useTranslation('settings')
   const {
     connected,
     deviceAddress,
@@ -104,7 +108,7 @@ export default function Settings() {
       const data = await res.json()
       if (data.success) setUpdateInfo(data.data)
     } catch {
-      setUpdateInfo({ error: 'Impossible de vérifier' })
+      setUpdateInfo({ error: t('update.cantCheck') })
     } finally {
       setChecking(false)
     }
@@ -114,16 +118,16 @@ export default function Settings() {
 
   async function applyUpdate() {
     setUpdating(true)
-    setUpdateProgress({ step: 0, message: 'Démarrage...', status: 'running' })
+    setUpdateProgress({ step: 0, message: t('update.starting'), status: 'running' })
     try {
       const res = await fetch(`${API_URL}/api/update/apply`, { method: 'POST' })
       const data = await res.json()
       if (!data.success) {
-        setUpdateProgress({ step: 0, message: data.error || 'Erreur', status: 'error' })
+        setUpdateProgress({ step: 0, message: data.error || t('update.genericError'), status: 'error' })
         setUpdating(false)
       }
     } catch {
-      setUpdateProgress({ step: 0, message: 'Erreur de connexion au serveur', status: 'error' })
+      setUpdateProgress({ step: 0, message: t('update.connectionError'), status: 'error' })
       setUpdating(false)
     }
   }
@@ -164,12 +168,12 @@ export default function Settings() {
           })
         }
         setTimeout(tryReconnect, 3000)
-        return { ...prev, message: 'Redémarrage du serveur...' }
+        return { ...prev, message: t('update.serverRestart') }
       })
     })
 
     return () => socket.disconnect()
-  }, [])
+  }, [t])
 
   function handleBestLapVoiceToggle() {
     saveBestLapEnabled(!bestLapEnabled)
@@ -196,7 +200,7 @@ export default function Settings() {
   }
 
   function testVoice() {
-    speak('Meilleur tour, Anselme, 6,142 secondes')
+    speak(t('appearance.testVoicePhrase'))
   }
 
   function handleBestLapVoiceMinLaps(value) {
@@ -208,14 +212,14 @@ export default function Settings() {
 
     socket.on('cu:timer', (data) => {
       if (data.isFinishLine && data.lapTime > 0) {
-        addLogEntry(`Ctrl ${data.controller + 1}: ${(data.lapTime / 1000).toFixed(3)}s`)
+        addLogEntry(t('logs.controllerLap', { n: data.controller + 1, time: (data.lapTime / 1000).toFixed(3) }))
       } else if (!data.isFinishLine) {
-        addLogEntry(`Ctrl ${data.controller + 1}: secteur ${data.sector}`)
+        addLogEntry(t('logs.controllerSector', { n: data.controller + 1, sector: data.sector }))
       }
     })
 
     return () => socket.disconnect()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const el = logsContainerRef.current
@@ -225,19 +229,21 @@ export default function Settings() {
   async function handleConnect(address) {
     const result = await connect(address)
     addLogEntry(result.success
-      ? `Connecté à ${address === SIMULATOR_ADDRESS ? 'Simulateur' : address}`
-      : `Erreur: ${result.error}`)
+      ? t('logs.connectedTo', { device: address === SIMULATOR_ADDRESS ? t('glossary:simulator') : address })
+      : t('logs.errorWith', { error: result.error }))
   }
 
   async function handleScan() {
-    addLogEntry('Scan en cours...')
+    addLogEntry(t('logs.scanning'))
     const foundDevices = await scan(15000)
-    addLogEntry(`${foundDevices.length} appareil(s) trouvé(s)`)
+    addLogEntry(t('logs.devicesFound', { count: foundDevices.length }))
   }
 
   async function handleDelete(device) {
     const result = await removeDevice(device.id)
-    addLogEntry(result.success ? `Device ${device.name} supprimé` : `Erreur: ${result.error}`)
+    addLogEntry(result.success
+      ? t('logs.deviceDeleted', { name: device.name })
+      : t('logs.errorWith', { error: result.error }))
   }
 
   const allDevices = [...devices].filter(d => isAdmin || d.type !== 'simulator')
@@ -255,19 +261,19 @@ export default function Settings() {
         <CardContent>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
             <Download className="size-4 text-blue-500" />
-            Mise à jour
+            {t('update.title')}
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Version actuelle</p>
+                <p className="text-sm text-muted-foreground">{t('update.currentVersion')}</p>
                 <p className="font-mono font-bold">{updateInfo?.currentVersion || '...'}</p>
               </div>
               <div className="flex items-center gap-2">
                 {!updating && (
                   <Button variant="outline" size="sm" onClick={checkUpdate} disabled={checking}>
                     {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-                    Vérifier
+                    {t('update.check')}
                   </Button>
                 )}
               </div>
@@ -277,12 +283,12 @@ export default function Settings() {
               <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
                 <div>
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    Nouvelle version disponible : v{updateInfo.latestVersion}
+                    {t('update.newVersionAvailable', { version: updateInfo.latestVersion })}
                   </p>
                 </div>
                 <Button size="sm" onClick={applyUpdate}>
                   <ArrowUpCircle className="size-4" />
-                  Mettre à jour
+                  {t('update.updateButton')}
                 </Button>
               </div>
             )}
@@ -290,7 +296,7 @@ export default function Settings() {
             {updateInfo && !updateInfo.updateAvailable && !updateInfo.error && !updating && (
               <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
                 <CheckCircle className="size-4" />
-                L'application est à jour
+                {t('update.upToDate')}
               </p>
             )}
 
@@ -307,7 +313,7 @@ export default function Settings() {
                   <p className={`text-sm flex-1 ${updateProgress.status === 'error' ? 'text-destructive' : ''}`}>{updateProgress.message}</p>
                   {updateProgress.status === 'error' && (
                     <Button variant="outline" size="sm" onClick={() => { setUpdateProgress(null); setUpdating(false) }}>
-                      Fermer
+                      {t('common:close')}
                     </Button>
                   )}
                 </div>
@@ -317,7 +323,7 @@ export default function Settings() {
                   </div>
                 )}
                 {updateProgress.status === 'complete' && (
-                  <p className="text-xs text-muted-foreground">Redémarrage en cours...</p>
+                  <p className="text-xs text-muted-foreground">{t('update.restarting')}</p>
                 )}
               </div>
             )}
@@ -332,12 +338,12 @@ export default function Settings() {
             <div className={`size-2.5 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30'}`} />
             <p className="font-medium text-sm">
               {connected
-                ? `Connecté: ${deviceAddress === SIMULATOR_ADDRESS ? 'Simulateur' : deviceAddress}`
-                : 'Aucun appareil connecté'}
+                ? t('connection.connected', { device: deviceAddress === SIMULATOR_ADDRESS ? t('glossary:simulator') : deviceAddress })
+                : t('connection.noDevice')}
             </p>
           </div>
           {connected && (
-            <Button variant="destructive" size="sm" onClick={disconnect}>Déconnecter</Button>
+            <Button variant="destructive" size="sm" onClick={disconnect}>{t('connection.disconnect')}</Button>
           )}
         </CardContent>
       </Card>
@@ -348,10 +354,10 @@ export default function Settings() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold flex items-center gap-2">
               <Wifi className="size-4 text-blue-500" />
-              Sélectionner un appareil
+              {t('devices.title')}
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{autoConnect ? 'Auto' : 'Manuel'}</span>
+              <span className="text-xs text-muted-foreground">{autoConnect ? t('devices.auto') : t('devices.manual')}</span>
               <button
                 onClick={() => handleAutoConnectChange(!autoConnect)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoConnect ? 'bg-blue-600' : 'bg-muted'}`}
@@ -378,7 +384,7 @@ export default function Settings() {
                   <div>
                     <p className="font-medium text-sm">
                       {device.name}
-                      {device.isNew && <span className="ml-2 text-xs text-blue-500">(nouveau)</span>}
+                      {device.isNew && <span className="ml-2 text-xs text-blue-500">{t('devices.new')}</span>}
                     </p>
                     <p className="text-xs text-muted-foreground">{device.address}</p>
                   </div>
@@ -388,11 +394,11 @@ export default function Settings() {
                     <CheckCircle className="size-5 text-green-500" />
                   ) : (
                     <Button size="sm" onClick={() => handleConnect(device.address)} disabled={connecting || connected}>
-                      {connecting ? 'Connexion...' : 'Connecter'}
+                      {connecting ? t('devices.connecting') : t('devices.connect')}
                     </Button>
                   )}
                   {device.type !== 'simulator' && (
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(device)} title="Supprimer">
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(device)} title={t('common:delete')}>
                       <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
                     </Button>
                   )}
@@ -403,7 +409,7 @@ export default function Settings() {
 
           <Button variant="outline" className="w-full mt-3" onClick={handleScan} disabled={scanning || connected}>
             {scanning && <RefreshCw className="size-4 animate-spin" />}
-            {scanning ? 'Recherche en cours...' : 'Rechercher un nouveau circuit'}
+            {scanning ? t('devices.scanning') : t('devices.scan')}
           </Button>
         </CardContent>
       </Card>
@@ -414,14 +420,14 @@ export default function Settings() {
           <CardContent className="">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <Cpu className="size-4 text-muted-foreground" />
-              État du Device
+              {t('cuStatus.title')}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               {[
-                { label: 'Start', value: cuStatus.start },
-                { label: 'Mode', value: cuStatus.mode || '-' },
-                { label: 'Display', value: cuStatus.display || '-' },
-                { label: 'Fuel', value: cuStatus.fuel?.join(', ') || '-' },
+                { label: t('cuStatus.start'), value: cuStatus.start },
+                { label: t('cuStatus.mode'), value: cuStatus.mode || '-' },
+                { label: t('cuStatus.display'), value: cuStatus.display || '-' },
+                { label: t('cuStatus.fuel'), value: cuStatus.fuel?.join(', ') || '-' },
               ].map((s) => (
                 <div key={s.label}>
                   <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -440,9 +446,9 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               {isDark ? <Moon className="size-4 text-blue-500" /> : <Sun className="size-4 text-yellow-500" />}
               <div>
-                <p className="font-medium text-sm">Mode {isDark ? 'nuit' : 'jour'}</p>
+                <p className="font-medium text-sm">{isDark ? t('appearance.themeNight') : t('appearance.themeDay')}</p>
                 <p className="text-xs text-muted-foreground">
-                  {isDark ? 'Interface sombre' : 'Interface claire'}
+                  {isDark ? t('appearance.darkInterface') : t('appearance.lightInterface')}
                 </p>
               </div>
             </div>
@@ -460,9 +466,9 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               {defaultViewMode === 'grid' ? <LayoutGrid className="size-4 text-green-500" /> : <List className="size-4 text-green-500" />}
               <div>
-                <p className="font-medium text-sm">Vue par défaut</p>
+                <p className="font-medium text-sm">{t('appearance.defaultView')}</p>
                 <p className="text-xs text-muted-foreground">
-                  {defaultViewMode === 'grid' ? 'Grille' : 'Liste'}
+                  {defaultViewMode === 'grid' ? t('common:grid') : t('common:list')}
                 </p>
               </div>
             </div>
@@ -480,9 +486,9 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               <Volume2 className={`size-4 ${bestLapEnabled ? 'text-orange-500' : 'text-muted-foreground'}`} />
               <div>
-                <p className="font-medium text-sm">Annonce meilleur tour</p>
+                <p className="font-medium text-sm">{t('appearance.bestLapVoice')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Voix quand un nouveau record est établi
+                  {t('appearance.bestLapVoiceDesc')}
                 </p>
               </div>
             </div>
@@ -496,7 +502,7 @@ export default function Settings() {
 
           {bestLapEnabled && (
             <div className="flex items-center justify-between pl-7">
-              <p className="text-sm text-muted-foreground">Tours minimum avant annonce</p>
+              <p className="text-sm text-muted-foreground">{t('appearance.minLapsBeforeAnnounce')}</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleBestLapVoiceMinLaps(bestLapVoiceMinLaps - 1)}
@@ -519,9 +525,9 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               <Volume2 className={`size-4 ${podiumEnabled ? 'text-yellow-500' : 'text-muted-foreground'}`} />
               <div>
-                <p className="font-medium text-sm">Annonce podium</p>
+                <p className="font-medium text-sm">{t('appearance.podiumVoice')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Résultats vocaux en fin de session
+                  {t('appearance.podiumVoiceDesc')}
                 </p>
               </div>
             </div>
@@ -537,10 +543,10 @@ export default function Settings() {
             <div className="flex items-center gap-2 pl-7">
               <Select value={bestLapVoiceId || '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Voix par défaut" />
+                  <SelectValue placeholder={t('appearance.defaultVoice')} />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
-                  <SelectItem value="_default">Voix par défaut</SelectItem>
+                  <SelectItem value="_default">{t('appearance.defaultVoice')}</SelectItem>
                   {voices.map(v => (
                     <SelectItem key={v.voiceURI} value={v.voiceURI}>
                       {v.name}
@@ -551,7 +557,7 @@ export default function Settings() {
               <button
                 onClick={testVoice}
                 className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
-                title="Tester la voix"
+                title={t('appearance.testVoice')}
               >
                 <Play className="size-3.5" />
               </button>
@@ -562,10 +568,32 @@ export default function Settings() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Languages className="size-4 text-blue-500" />
+              <div>
+                <p className="font-medium text-sm">{t('appearance.language')}</p>
+                <p className="text-xs text-muted-foreground">{t('appearance.languageDesc')}</p>
+              </div>
+            </div>
+            <Select value={i18n.language} onValueChange={(lng) => i18n.changeLanguage(lng)}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" sideOffset={4}>
+                {LANGUAGES.map(l => (
+                  <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="border-t border-border" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Shield className="size-4 text-purple-500" />
               <div>
-                <p className="font-medium text-sm">Mode administrateur</p>
-                <p className="text-xs text-muted-foreground">Displays, Test, Simulateur</p>
+                <p className="font-medium text-sm">{t('appearance.adminMode')}</p>
+                <p className="text-xs text-muted-foreground">{t('appearance.adminModeDesc')}</p>
               </div>
             </div>
             <button
@@ -581,15 +609,15 @@ export default function Settings() {
       {/* Logs */}
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-          <h3 className="text-sm font-semibold">Logs</h3>
+          <h3 className="text-sm font-semibold">{t('logs.title')}</h3>
           <Button variant="ghost" size="sm" onClick={() => setLogs([])}>
             <Trash2 className="size-3" />
-            Effacer
+            {t('common:clear')}
           </Button>
         </div>
         <div ref={logsContainerRef} className="h-48 overflow-y-auto p-4 font-mono text-xs space-y-1 bg-muted/30">
           {logs.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Aucun log</p>
+            <p className="text-muted-foreground text-center py-8">{t('logs.empty')}</p>
           ) : (
             logs.map((log, idx) => (
               <div key={idx} className="flex gap-3">

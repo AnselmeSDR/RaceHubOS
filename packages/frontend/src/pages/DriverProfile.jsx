@@ -4,6 +4,7 @@ import { ArrowLeft, RefreshCw, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmModal } from '../components/ui/Modal'
 import { RecordsList } from '../components/RecordDisplays'
 import { DriverFormModal } from './Drivers'
 import LapTime from '../components/race/LapTime'
@@ -32,6 +33,7 @@ export default function DriverProfile() {
   const [loading, setLoading] = useState(true)
   const [resetting, setResetting] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [teams, setTeams] = useState([])
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function DriverProfile() {
   }
 
   async function handleResetStats() {
-    if (!confirm('Remettre à zéro toutes les statistiques de ce pilote ?')) return
+    setShowResetConfirm(false)
     setResetting(true)
     try {
       const res = await fetch(`${API_URL}/api/drivers/${id}/reset-stats`, { method: 'POST' })
@@ -133,7 +135,7 @@ export default function DriverProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleResetStats} disabled={resetting} className="text-orange-600 dark:text-orange-400">
+          <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -142,6 +144,15 @@ export default function DriverProfile() {
       {showEdit && (
         <DriverFormModal driver={driver} teams={teams} onClose={() => { setShowEdit(false); loadDriver() }} />
       )}
+
+      <ConfirmModal
+        open={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleResetStats}
+        title="Réinitialiser les statistiques"
+        message="Remettre à zéro toutes les statistiques de ce pilote ?"
+        confirmLabel="Réinitialiser"
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">

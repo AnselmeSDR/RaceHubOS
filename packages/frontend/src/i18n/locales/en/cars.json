@@ -1,0 +1,29 @@
+{
+  "searchPlaceholder": "Search for a car...",
+  "addLabel": "New car",
+  "emptyTitle": "No cars",
+  "emptyMessage": "Add your first car",
+  "fields": {
+    "brand": "Brand",
+    "model": "Model",
+    "year": "Year",
+    "speed": "Speed",
+    "braking": "Braking",
+    "fuel": "Fuel",
+    "tank": "Tank",
+    "maxSpeed": "Max speed",
+    "brakeForce": "Brake force",
+    "fuelCapacity": "Fuel capacity"
+  },
+  "form": {
+    "createTitle": "New car",
+    "editTitle": "Edit car",
+    "brandPlaceholder": "Ferrari",
+    "modelPlaceholder": "SF-23",
+    "saved": "Car saved"
+  },
+  "profile": {
+    "notFound": "Car not found",
+    "resetStatsMessage": "Reset all statistics for this car?"
+  }
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   flexRender,
   getCoreRowModel,
@@ -43,10 +44,10 @@ export function DataTable({
   columns,
   data,
   preferenceKey,
-  searchPlaceholder = 'Rechercher...',
+  searchPlaceholder,
   onRowClick,
   options = [],
-  emptyMessage = 'Aucun résultat.',
+  emptyMessage,
   rowClassName,
   onSelectionChange,
   renderActions,
@@ -57,6 +58,7 @@ export function DataTable({
   onSortChange,
   clearSelectionRef,
 }) {
+  const { t } = useTranslation('common')
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState(initialPrefs?.columnVisibility || {})
@@ -184,7 +186,7 @@ export function DataTable({
             <Input
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder || t('search')}
               className="pl-9"
             />
           </div>
@@ -193,7 +195,7 @@ export function DataTable({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Columns3 className="w-4 h-4" />
-                  Colonnes
+                  {t('columns')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -232,7 +234,7 @@ export function DataTable({
       {selectedRows.length > 0 && (
         <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border sticky top-[57px] z-10">
           <span className="text-sm text-muted-foreground">
-            {selectedRows.length} sélectionné{selectedRows.length > 1 ? 's' : ''}
+            {t('selectedCount', { count: selectedRows.length })}
           </span>
           <div className="flex gap-2">
             {renderActions?.(selectedRows)}
@@ -338,7 +340,7 @@ export function DataTable({
               <TableCell colSpan={columns.length} className="py-12">
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
                   <Search className="size-10 mb-3 opacity-20" />
-                  <p className="font-medium">{emptyMessage}</p>
+                  <p className="font-medium">{emptyMessage || t('noResults')}</p>
                 </div>
               </TableCell>
             </TableRow>
@@ -362,8 +364,8 @@ export function DataTable({
   )
 }
 
-// Selection column helper
-export function createSelectColumn() {
+// Selection column helper. `t` must be a translation function (common namespace).
+export function createSelectColumn(t) {
   return {
     id: 'select',
     header: ({ table }) => (
@@ -373,7 +375,7 @@ export function createSelectColumn() {
           (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Tout sélectionner"
+        aria-label={t('selectAll')}
         className="h-4 w-4"
       />
     ),
@@ -382,7 +384,7 @@ export function createSelectColumn() {
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Sélectionner la ligne"
+          aria-label={t('selectRow')}
           className="h-4 w-4"
         />
       </div>

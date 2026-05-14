@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Car, Flag, Zap, Flame, FlaskConical, Pencil } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
@@ -23,6 +24,7 @@ function RangeField({ label, value, onChange, min = 0, max = 100, color }) {
 }
 
 export default function Cars() {
+  const { t } = useTranslation('cars')
   const navigate = useNavigate()
   const [cars, setCars] = useState([])
   const [loading, setLoading] = useState(true)
@@ -71,12 +73,12 @@ export default function Cars() {
   const columns = useMemo(() => [
     {
       accessorKey: 'brand',
-      header: 'Marque',
+      header: t('fields.brand'),
       cell: ({ row }) => <span className="font-semibold">{row.original.brand}</span>,
     },
     {
       accessorKey: 'model',
-      header: 'Modèle',
+      header: t('fields.model'),
       cell: ({ row }) => {
         const car = row.original
         return (
@@ -99,13 +101,13 @@ export default function Cars() {
     {
       id: 'year',
       accessorKey: 'year',
-      header: 'Année',
+      header: t('fields.year'),
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
     },
     {
       id: 'maxSpeed',
       accessorKey: 'maxSpeed',
-      header: 'Vitesse',
+      header: t('fields.speed'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted rounded-full h-2 w-20">
@@ -118,7 +120,7 @@ export default function Cars() {
     {
       id: 'brakeForce',
       accessorKey: 'brakeForce',
-      header: 'Freinage',
+      header: t('fields.braking'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted rounded-full h-2 w-20">
@@ -131,13 +133,13 @@ export default function Cars() {
     {
       id: 'fuelCapacity',
       accessorKey: 'fuelCapacity',
-      header: 'Carburant',
+      header: t('fields.fuel'),
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.fuelCapacity}</span>,
     },
     {
       id: 'bestLap',
       accessorFn: (row) => row.bestLap || Infinity,
-      header: 'Record',
+      header: t('common:record'),
       cell: ({ row }) => (
         <span className="font-mono font-bold">
           {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
@@ -147,7 +149,7 @@ export default function Cars() {
     {
       id: 'sessions',
       accessorFn: (row) => row._count?.sessions || 0,
-      header: 'Sessions',
+      header: t('glossary:session', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Flag className="w-4 h-4" />
@@ -169,11 +171,11 @@ export default function Cars() {
         </button>
       ),
     },
-  ], [])
+  ], [t])
 
   return (
     <ListPage
-      title="Voitures"
+      title={t('glossary:car', { count: 2 })}
       icon={<Car />}
       color="green"
       preferenceKey="cars"
@@ -181,8 +183,8 @@ export default function Cars() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher une voiture..."
-      addLabel="Nouvelle voiture"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => { setEditingCar(null); setShowForm(true) }}
       onRowClick={(row) => !filters.deleted && navigate(`/cars/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -200,12 +202,12 @@ export default function Cars() {
       onLoadMore={() => loadData(cars.length)}
       onSortChange={setSort}
       hasActiveFilters={filters.deleted}
-      emptyTitle="Aucune voiture"
-      emptyMessage="Ajoutez votre première voiture"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimées',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
@@ -222,6 +224,7 @@ export default function Cars() {
 }
 
 function CarCard({ car, onClick, onEdit }) {
+  const { t } = useTranslation('cars')
   const carColor = car.color || '#22C55E'
 
   return (
@@ -264,9 +267,9 @@ function CarCard({ car, onClick, onEdit }) {
 
       <div className="relative px-6 pb-6 space-y-3">
         {[
-          { icon: <Zap className="w-4 h-4" />, label: 'Vitesse', value: car.maxSpeed, color: '#22C55E' },
-          { icon: <Flame className="w-4 h-4" />, label: 'Freinage', value: car.brakeForce, color: '#EF4444' },
-          { icon: <FlaskConical className="w-4 h-4" />, label: 'Réservoir', value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
+          { icon: <Zap className="w-4 h-4" />, label: t('fields.speed'), value: car.maxSpeed, color: '#22C55E' },
+          { icon: <Flame className="w-4 h-4" />, label: t('fields.braking'), value: car.brakeForce, color: '#EF4444' },
+          { icon: <FlaskConical className="w-4 h-4" />, label: t('fields.tank'), value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
         ].map((spec) => (
           <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
@@ -283,7 +286,7 @@ function CarCard({ car, onClick, onEdit }) {
         ))}
         <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase">Courses</span>
+            <span className="text-xs text-muted-foreground uppercase">{t('glossary:race', { count: 2 })}</span>
             <span className="text-lg font-black" style={{ color: carColor }}>{car._count?.sessions || 0}</span>
           </div>
         </div>
@@ -293,6 +296,7 @@ function CarCard({ car, onClick, onEdit }) {
 }
 
 export function CarFormModal({ car, onClose }) {
+  const { t } = useTranslation('cars')
   const [formData, setFormData] = useState({
     brand: car?.brand || '',
     model: car?.model || '',
@@ -318,14 +322,14 @@ export function CarFormModal({ car, onClose }) {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        setSuccess('Voiture sauvegardée')
+        setSuccess(t('form.saved'))
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
-        setError(data.error || 'Erreur lors de la sauvegarde')
+        setError(data.error || t('common:saveError'))
       }
     } catch {
-      setError('Erreur de connexion au serveur')
+      setError(t('common:connectionError'))
     } finally {
       setSaving(false)
     }
@@ -335,7 +339,7 @@ export function CarFormModal({ car, onClose }) {
     <FormModal
       open
       onClose={onClose}
-      title={car ? 'Modifier la voiture' : 'Nouvelle voiture'}
+      title={car ? t('form.editTitle') : t('form.createTitle')}
       icon={<Car className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!car}
@@ -344,15 +348,15 @@ export function CarFormModal({ car, onClose }) {
       success={success}
     >
       <div className="grid grid-cols-2 gap-4">
-        <TextField label="Marque" value={formData.brand} onChange={(v) => setFormData(f => ({ ...f, brand: v }))} placeholder="Ferrari" required />
-        <TextField label="Modèle" value={formData.model} onChange={(v) => setFormData(f => ({ ...f, model: v }))} placeholder="SF-23" required />
+        <TextField label={t('fields.brand')} value={formData.brand} onChange={(v) => setFormData(f => ({ ...f, brand: v }))} placeholder={t('form.brandPlaceholder')} required />
+        <TextField label={t('fields.model')} value={formData.model} onChange={(v) => setFormData(f => ({ ...f, model: v }))} placeholder={t('form.modelPlaceholder')} required />
       </div>
-      <TextField label="Année" type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
-      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="cars" />
-      <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <RangeField label="Vitesse max" value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} />
-      <RangeField label="Force de freinage" value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} />
-      <RangeField label="Capacité carburant" value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} />
+      <TextField label={t('fields.year')} type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
+      <PhotoUploadField value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="cars" />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
+      <RangeField label={t('fields.maxSpeed')} value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} />
+      <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} />
+      <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} />
     </FormModal>
   )
 }

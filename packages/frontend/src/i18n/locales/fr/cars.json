@@ -1,0 +1,29 @@
+{
+  "searchPlaceholder": "Rechercher une voiture...",
+  "addLabel": "Nouvelle voiture",
+  "emptyTitle": "Aucune voiture",
+  "emptyMessage": "Ajoutez votre première voiture",
+  "fields": {
+    "brand": "Marque",
+    "model": "Modèle",
+    "year": "Année",
+    "speed": "Vitesse",
+    "braking": "Freinage",
+    "fuel": "Carburant",
+    "tank": "Réservoir",
+    "maxSpeed": "Vitesse max",
+    "brakeForce": "Force de freinage",
+    "fuelCapacity": "Capacité carburant"
+  },
+  "form": {
+    "createTitle": "Nouvelle voiture",
+    "editTitle": "Modifier la voiture",
+    "brandPlaceholder": "Ferrari",
+    "modelPlaceholder": "SF-23",
+    "saved": "Voiture sauvegardée"
+  },
+  "profile": {
+    "notFound": "Voiture non trouvée",
+    "resetStatsMessage": "Remettre à zéro toutes les statistiques de cette voiture ?"
+  }
+}

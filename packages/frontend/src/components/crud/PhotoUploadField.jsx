@@ -1,4 +1,5 @@
 import { useState, useRef, useId } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ImageIcon, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ImageCropper from '../ImageCropper'
@@ -7,7 +8,7 @@ import { getImgUrl } from '../../utils/image'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function PhotoUploadField({
-  label = 'Photo',
+  label,
   value,
   onChange,
   shape = 'round',
@@ -15,6 +16,7 @@ export default function PhotoUploadField({
   onError,
   uploadType = 'drivers'
 }) {
+  const { t } = useTranslation('common')
   const [showCropper, setShowCropper] = useState(false)
   const [imageToCrop, setImageToCrop] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -25,7 +27,7 @@ export default function PhotoUploadField({
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      onError?.('Veuillez sélectionner une image.')
+      onError?.(t('photo.selectImage'))
       return
     }
     const reader = new FileReader()
@@ -33,7 +35,7 @@ export default function PhotoUploadField({
       setImageToCrop(reader.result)
       setShowCropper(true)
     }
-    reader.onerror = () => onError?.('Erreur lors de la lecture du fichier')
+    reader.onerror = () => onError?.(t('photo.readError'))
     reader.readAsDataURL(file)
   }
 
@@ -54,11 +56,11 @@ export default function PhotoUploadField({
       if (data.success) {
         onChange(data.data.url)
       } else {
-        onError?.(data.error || "Erreur lors de l'upload")
+        onError?.(data.error || t('photo.uploadError'))
       }
     } catch (err) {
       console.error('Upload error:', err)
-      onError?.("Erreur lors de l'upload de l'image")
+      onError?.(t('photo.uploadError'))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -74,7 +76,7 @@ export default function PhotoUploadField({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-2">{label}</label>
+      <label className="block text-sm font-medium text-foreground mb-2">{label || t('photo.label')}</label>
 
       <div className="flex items-center gap-4">
         <div
@@ -116,10 +118,10 @@ export default function PhotoUploadField({
             disabled={uploading}
           >
             <label htmlFor={inputId} className={uploading ? 'cursor-wait' : 'cursor-pointer'}>
-              {uploading ? 'Upload...' : (value ? 'Changer' : 'Choisir une image')}
+              {uploading ? t('photo.uploading') : (value ? t('change') : t('photo.choose'))}
             </label>
           </Button>
-          <p className="text-xs text-muted-foreground mt-1">JPG, PNG ou GIF. Max 5MB.</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('photo.hint')}</p>
         </div>
       </div>
 

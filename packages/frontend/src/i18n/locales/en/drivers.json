@@ -1,0 +1,24 @@
+{
+  "searchPlaceholder": "Search for a driver...",
+  "addLabel": "New driver",
+  "emptyTitle": "No drivers",
+  "emptyMessage": "Add your first driver",
+  "columns": {
+    "number": "No."
+  },
+  "card": {
+    "bestLap": "Best Lap"
+  },
+  "form": {
+    "createTitle": "New driver",
+    "editTitle": "Edit driver",
+    "name": "Name",
+    "namePlaceholder": "Lewis Hamilton",
+    "number": "Number",
+    "numberPlaceholder": "44",
+    "email": "Email",
+    "emailPlaceholder": "lewis@example.com",
+    "noTeam": "No team",
+    "saved": "Driver saved"
+  }
+}

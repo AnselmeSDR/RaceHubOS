@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "groupLabel": "Navigation",
+    "dashboard": "Dashboard",
+    "freeMode": "Free Mode",
+    "history": "History",
+    "stats": "Statistics",
+    "balancing": "Balancing",
+    "displays": "Displays",
+    "test": "Test",
+    "settings": "Settings"
+  },
+  "theme": {
+    "dayMode": "Day mode",
+    "nightMode": "Night mode"
+  },
+  "backend": {
+    "connectedTooltip": "Backend connected",
+    "disconnectedTooltip": "Backend disconnected",
+    "connected": "Connected — v{{version}}",
+    "disconnected": "Backend disconnected"
+  },
+  "header": {
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results"
+  },
+  "footer": {
+    "mode": "Mode {{mode}}",
+    "lapStart": "start",
+    "unknown": "Unknown"
+  },
+  "cuState": {
+    "racing": "Racing",
+    "lights": "Lights {{n}}/5",
+    "falseStart": "False Start",
+    "go": "Go!",
+    "stopped": "Stopped"
+  },
+  "statusPopup": {
+    "title": "Backend Status",
+    "cuBluetooth": "CU Bluetooth",
+    "loading": "Loading...",
+    "noLogs": "No logs",
+    "logsCount": "Logs ({{count}})",
+    "filterAll": "All",
+    "logsCleared": "Logs cleared",
+    "status": {
+      "backend": "Backend"
+    },
+    "logs": {
+      "backendStatus": "Backend: {{status}} (v{{version}})",
+      "simulatorMode": "Simulator mode: {{state}}",
+      "cuConnected": "CU connected",
+      "cuNotConnected": "CU not connected",
+      "cuDisconnected": "CU disconnected",
+      "backendError": "Backend connection error: {{message}}",
+      "wsConnected": "WebSocket connected",
+      "wsDisconnected": "WebSocket disconnected",
+      "cuStatus": "CU Status: {{state}}, Mode: {{mode}}",
+      "timer": "{{kind}}: Ctrl {{controller}} - {{lapTime}}ms",
+      "timerFinish": "Finish",
+      "timerSector": "Sector {{sector}}",
+      "lap": "Lap: {{label}} - {{time}}s",
+      "sessionStarted": "Session started: {{id}}...",
+      "sessionStopped": "Session stopped: {{id}}..."
+    }
+  }
+}

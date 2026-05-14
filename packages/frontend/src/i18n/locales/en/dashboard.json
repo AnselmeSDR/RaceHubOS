@@ -1,0 +1,34 @@
+{
+  "activeSession": {
+    "title": "Active session",
+    "fallbackName": "Active race",
+    "join": "Join"
+  },
+  "records": {
+    "title": "All-time records",
+    "fastestLap": "Fastest lap",
+    "mostWins": "Most wins",
+    "mostPodiums": "Most podiums"
+  },
+  "driverLeaderboard": {
+    "title": "Driver standings",
+    "seeAll": "See all →",
+    "racesShort": "R",
+    "winsShort": "W",
+    "podiumsShort": "P"
+  },
+  "topLaps": {
+    "title": "Fastest laps"
+  },
+  "quickActions": {
+    "title": "Quick actions",
+    "startRace": "Start a race"
+  },
+  "system": {
+    "title": "System",
+    "backendApi": "Backend API",
+    "database": "Database",
+    "ok": "OK",
+    "off": "Off"
+  }
+}

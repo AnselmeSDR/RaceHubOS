@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trash2, RotateCcw } from 'lucide-react'
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { DataTable, createSelectColumn } from '@/components/ui/data-table'
@@ -36,6 +37,7 @@ export function ListPage({
   renderGrid,
   children,
 }) {
+  const { t } = useTranslation('common')
   const [selectedIds, setSelectedIds] = useState([])
   const clearSelectionRef = useRef(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -43,7 +45,7 @@ export function ListPage({
   const [prefsLoaded, setPrefsLoaded] = useState(!preferenceKey)
   const [viewMode, setViewMode] = useState(renderGrid ? 'grid' : 'list')
 
-  const columns = [createSelectColumn(), ...userColumns]
+  const columns = [createSelectColumn(t), ...userColumns]
 
   // Load prefs in parallel with data
   useEffect(() => {
@@ -151,7 +153,7 @@ export function ListPage({
       ) : data.length === 0 && !hasActiveFilters ? (
         <div className="text-center py-16 bg-card rounded-xl border border-border">
           <div className="text-muted-foreground mb-3 [&_svg]:w-12 [&_svg]:h-12 [&_svg]:mx-auto">{icon}</div>
-          <p className="text-lg font-medium text-foreground">{emptyTitle || `Aucun ${title.toLowerCase()}`}</p>
+          <p className="text-lg font-medium text-foreground">{emptyTitle || t('emptyState.title')}</p>
           <p className="text-sm text-muted-foreground mt-1">{emptyMessage}</p>
           {onAdd && (
             <Button
@@ -174,7 +176,7 @@ export function ListPage({
           searchPlaceholder={searchPlaceholder}
           onRowClick={onRowClick}
           rowClassName={rowClassName}
-          emptyMessage="Aucun résultat trouvé."
+          emptyMessage={t('noResultsFound')}
           options={options}
           onSelectionChange={(rows) => setSelectedIds(rows.map(r => r.original.id))}
           hasMore={hasMore}
@@ -186,12 +188,12 @@ export function ListPage({
               {isShowingDeleted && (
                 <Button variant="outline" size="sm" onClick={handleRestore}>
                   <RotateCcw className="w-4 h-4" />
-                  Restaurer
+                  {t('restore')}
                 </Button>
               )}
               <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
                 <Trash2 className="w-4 h-4" />
-                {isShowingDeleted ? 'Supprimer définitivement' : 'Supprimer'}
+                {isShowingDeleted ? t('deletePermanently') : t('delete')}
               </Button>
             </>
           ) : undefined}
@@ -203,18 +205,18 @@ export function ListPage({
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative z-50 bg-popover rounded-xl p-4 shadow-lg w-full max-w-sm mx-4 space-y-4 ring-1 ring-foreground/10">
             <div>
-              <h3 className="font-medium">{isShowingDeleted ? 'Suppression définitive' : 'Confirmer la suppression'}</h3>
+              <h3 className="font-medium">{isShowingDeleted ? t('deleteConfirm.titlePermanent') : t('deleteConfirm.title')}</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {isShowingDeleted
-                  ? `${selectedIds.length} élément${selectedIds.length > 1 ? 's' : ''} sera${selectedIds.length > 1 ? 'ont' : ''} supprimé${selectedIds.length > 1 ? 's' : ''} définitivement. Cette action est irréversible.`
-                  : `${selectedIds.length} élément${selectedIds.length > 1 ? 's' : ''} sera${selectedIds.length > 1 ? 'ont' : ''} supprimé${selectedIds.length > 1 ? 's' : ''}.`
+                  ? t('deleteConfirm.messagePermanent', { count: selectedIds.length })
+                  : t('deleteConfirm.message', { count: selectedIds.length })
                 }
               </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>Annuler</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>{t('cancel')}</Button>
               <Button variant="destructive" size="sm" onClick={confirmDelete}>
-                {isShowingDeleted ? 'Supprimer définitivement' : 'Supprimer'}
+                {isShowingDeleted ? t('deletePermanently') : t('delete')}
               </Button>
             </div>
           </div>

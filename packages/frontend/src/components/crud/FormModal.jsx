@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Trash2 } from 'lucide-react'
 import Modal, { ModalFooter } from '../ui/Modal'
 import { Button } from '@/components/ui/button'
@@ -18,10 +19,11 @@ export default function FormModal({
   saving = false,
   error,
   success,
-  saveLabel = 'Enregistrer',
-  deleteLabel = 'Supprimer',
+  saveLabel,
+  deleteLabel,
   children
 }) {
+  const { t } = useTranslation('common')
   const handleSubmit = (e) => {
     e.preventDefault()
     onSubmit?.(e)
@@ -49,15 +51,15 @@ export default function FormModal({
               className="text-destructive hover:text-destructive mr-auto"
             >
               <Trash2 className="size-4" />
-              {deleteLabel}
+              {deleteLabel || t('delete')}
             </Button>
           )}
 
           <Button type="button" variant="outline" onClick={onClose}>
-            Annuler
+            {t('cancel')}
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? 'Enregistrement...' : saveLabel}
+            {saving ? t('saving') : (saveLabel || t('save'))}
           </Button>
         </ModalFooter>
       </form>
@@ -116,10 +118,11 @@ export function SelectField({
   value,
   onChange,
   options,
-  placeholder = 'Sélectionner...',
+  placeholder,
   required,
   error
 }) {
+  const { t } = useTranslation('common')
   return (
     <FormField label={label} required={required} error={error}>
       <select
@@ -128,7 +131,7 @@ export function SelectField({
         required={required}
         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       >
-        <option value="">{placeholder}</option>
+        <option value="">{placeholder || t('selectPlaceholder')}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
