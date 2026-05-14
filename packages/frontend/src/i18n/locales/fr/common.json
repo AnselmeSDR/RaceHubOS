@@ -23,6 +23,7 @@
   "selectedCount_other": "{{count}} sélectionnés",
   "colorLabel": "Couleur",
   "record": "Record",
+  "by": "par",
   "back": "Retour",
   "reset": "Réinitialiser",
   "resetStatsTitle": "Réinitialiser les statistiques",

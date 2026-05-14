@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { MapPin, RefreshCw, Rocket, Clock, Trophy, Pencil } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
@@ -10,6 +11,7 @@ import { getImgUrl } from '../utils/image'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function Tracks() {
+  const { t } = useTranslation('tracks')
   const navigate = useNavigate()
   const [tracks, setTracks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,7 +64,7 @@ export default function Tracks() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Nom',
+      header: t('fields.name'),
       cell: ({ row }) => {
         const track = row.original
         return (
@@ -85,7 +87,7 @@ export default function Tracks() {
     {
       id: 'length',
       accessorFn: (row) => row.length || 0,
-      header: 'Longueur',
+      header: t('fields.length'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Rocket className="w-4 h-4 text-purple-500" />
@@ -96,7 +98,7 @@ export default function Tracks() {
     {
       id: 'corners',
       accessorFn: (row) => row.corners || 0,
-      header: 'Virages',
+      header: t('fields.corners'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <RefreshCw className="w-4 h-4 text-purple-500" />
@@ -107,7 +109,7 @@ export default function Tracks() {
     {
       id: 'bestLap',
       accessorFn: (row) => row.bestLap || Infinity,
-      header: 'Record',
+      header: t('common:record'),
       cell: ({ row }) => (
         <div>
           <span className="font-mono font-bold">
@@ -115,7 +117,7 @@ export default function Tracks() {
           </span>
           {row.original.bestLapBy && (
             <span className="text-xs text-muted-foreground ml-1.5">
-              par {row.original.bestLapBy}
+              {t('common:by')} {row.original.bestLapBy}
             </span>
           )}
         </div>
@@ -124,7 +126,7 @@ export default function Tracks() {
     {
       id: 'sessions',
       accessorFn: (row) => row._count?.sessions || 0,
-      header: 'Sessions',
+      header: t('glossary:session', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="w-4 h-4" />
@@ -146,11 +148,11 @@ export default function Tracks() {
         </button>
       ),
     },
-  ], [])
+  ], [t])
 
   return (
     <ListPage
-      title="Circuits"
+      title={t('glossary:track', { count: 2 })}
       icon={<MapPin />}
       color="purple"
       preferenceKey="tracks"
@@ -158,8 +160,8 @@ export default function Tracks() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher un circuit..."
-      addLabel="Nouveau circuit"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => { setEditingTrack(null); setShowForm(true) }}
       onRowClick={(row) => !filters.deleted && navigate(`/tracks/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -170,8 +172,8 @@ export default function Tracks() {
       onLoadMore={() => loadData(tracks.length)}
       onSortChange={setSort}
       hasActiveFilters={filters.deleted}
-      emptyTitle="Aucun circuit"
-      emptyMessage="Ajoutez votre premier circuit"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((track) => (
@@ -182,7 +184,7 @@ export default function Tracks() {
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimés',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
@@ -199,6 +201,7 @@ export default function Tracks() {
 }
 
 function TrackCard({ track, onClick, onEdit }) {
+  const { t } = useTranslation('tracks')
   const trackColor = track.color || '#9333EA'
 
   return (
@@ -233,7 +236,7 @@ function TrackCard({ track, onClick, onEdit }) {
           {track.bestLap && (
             <Badge className="bg-yellow-500 text-white shadow-md">
               <Trophy className="w-3 h-3" />
-              Record
+              {t('common:record')}
             </Badge>
           )}
         </div>
@@ -246,7 +249,7 @@ function TrackCard({ track, onClick, onEdit }) {
           <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
               <Rocket className="w-4 h-4" style={{ color: trackColor }} />
-              <span className="text-xs font-medium text-muted-foreground uppercase">Longueur</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">{t('fields.length')}</span>
             </div>
             <span className="text-sm font-black" style={{ color: trackColor }}>{track.length}m</span>
           </div>
@@ -255,7 +258,7 @@ function TrackCard({ track, onClick, onEdit }) {
           <div className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4" style={{ color: trackColor }} />
-              <span className="text-xs font-medium text-muted-foreground uppercase">Virages</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">{t('fields.corners')}</span>
             </div>
             <span className="text-sm font-black" style={{ color: trackColor }}>{track.corners}</span>
           </div>
@@ -265,18 +268,18 @@ function TrackCard({ track, onClick, onEdit }) {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                <span className="text-xs font-bold text-yellow-900 dark:text-yellow-300 uppercase">Record</span>
+                <span className="text-xs font-bold text-yellow-900 dark:text-yellow-300 uppercase">{t('common:record')}</span>
               </div>
               <span className="text-lg font-black text-yellow-600 dark:text-yellow-400">{(track.bestLap / 1000).toFixed(3)}s</span>
             </div>
             {track.bestLapBy && (
-              <div className="text-xs text-yellow-700 dark:text-yellow-400 text-right">par {track.bestLapBy}</div>
+              <div className="text-xs text-yellow-700 dark:text-yellow-400 text-right">{t('common:by')} {track.bestLapBy}</div>
             )}
           </div>
         )}
         <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase">Courses</span>
+            <span className="text-xs text-muted-foreground uppercase">{t('glossary:race', { count: 2 })}</span>
             <span className="text-lg font-black" style={{ color: trackColor }}>{track._count?.sessions || 0}</span>
           </div>
         </div>
@@ -286,6 +289,7 @@ function TrackCard({ track, onClick, onEdit }) {
 }
 
 export function TrackFormModal({ track, onClose }) {
+  const { t } = useTranslation('tracks')
   const [formData, setFormData] = useState({
     name: track?.name || '',
     length: track?.length || '',
@@ -314,14 +318,14 @@ export function TrackFormModal({ track, onClose }) {
         })
       })
       if (res.ok) {
-        setSuccess('Circuit sauvegardé')
+        setSuccess(t('form.saved'))
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
-        setError(data.error || 'Erreur lors de la sauvegarde')
+        setError(data.error || t('common:saveError'))
       }
     } catch {
-      setError('Erreur de connexion au serveur')
+      setError(t('common:connectionError'))
     } finally {
       setSaving(false)
     }
@@ -331,7 +335,7 @@ export function TrackFormModal({ track, onClose }) {
     <FormModal
       open
       onClose={onClose}
-      title={track ? 'Modifier le circuit' : 'Nouveau circuit'}
+      title={track ? t('form.editTitle') : t('form.createTitle')}
       icon={<MapPin className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!track}
@@ -340,14 +344,14 @@ export function TrackFormModal({ track, onClose }) {
       success={success}
     >
       <TextField
-        label="Nom"
+        label={t('fields.name')}
         value={formData.name}
         onChange={(v) => setFormData(f => ({ ...f, name: v }))}
-        placeholder="Monaco Grand Prix"
+        placeholder={t('form.namePlaceholder')}
         required
       />
       <PhotoUploadField
-        label="Photo du circuit"
+        label={t('form.photoLabel')}
         value={formData.img}
         onChange={(img) => setFormData(f => ({ ...f, img }))}
         shape="rect"
@@ -355,24 +359,23 @@ export function TrackFormModal({ track, onClose }) {
         uploadType="tracks"
       />
       <ColorPickerField
-        label="Couleur"
         value={formData.color}
         onChange={(color) => setFormData(f => ({ ...f, color }))}
       />
       <div className="grid grid-cols-2 gap-4">
         <TextField
-          label="Longueur (m)"
+          label={t('form.lengthLabel')}
           type="number"
           value={formData.length}
           onChange={(v) => setFormData(f => ({ ...f, length: v }))}
-          placeholder="12.5"
+          placeholder={t('form.lengthPlaceholder')}
         />
         <TextField
-          label="Virages"
+          label={t('fields.corners')}
           type="number"
           value={formData.corners}
           onChange={(v) => setFormData(f => ({ ...f, corners: v }))}
-          placeholder="18"
+          placeholder={t('form.cornersPlaceholder')}
         />
       </div>
     </FormModal>

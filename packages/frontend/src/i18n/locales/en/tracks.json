@@ -1,0 +1,21 @@
+{
+  "searchPlaceholder": "Search for a track...",
+  "addLabel": "New track",
+  "emptyTitle": "No tracks",
+  "emptyMessage": "Add your first track",
+  "fields": {
+    "name": "Name",
+    "length": "Length",
+    "corners": "Corners"
+  },
+  "form": {
+    "createTitle": "New track",
+    "editTitle": "Edit track",
+    "namePlaceholder": "Monaco Grand Prix",
+    "photoLabel": "Track photo",
+    "lengthLabel": "Length (m)",
+    "lengthPlaceholder": "12.5",
+    "cornersPlaceholder": "18",
+    "saved": "Track saved"
+  }
+}
