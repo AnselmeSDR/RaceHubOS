@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Flag, Users2, Trophy, Clock, Play, MapPin, CheckCircle } from 'lucide-react'
 import SessionForm from '../components/SessionForm'
 import { ListPage } from '@/components/ui/list-page'
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function SessionsList() {
+  const { t, i18n } = useTranslation('sessions')
   const navigate = useNavigate()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -91,7 +93,7 @@ export default function SessionsList() {
 
   function formatDate(date) {
     if (!date) return '-'
-    return new Date(date).toLocaleDateString('fr-FR', {
+    return new Date(date).toLocaleDateString(i18n.language, {
       day: 'numeric', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
     })
@@ -106,11 +108,11 @@ export default function SessionsList() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Nom',
+      header: t('columns.name'),
       cell: ({ row }) => (
         <div>
           <span className="font-semibold">
-            {row.original.name || `Session #${row.original.id.slice(0, 8)}`}
+            {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
           </span>
           {row.original.championship && (
             <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
@@ -124,18 +126,18 @@ export default function SessionsList() {
     {
       id: 'type',
       accessorFn: (row) => row.type,
-      meta: { label: 'Type' },
+      meta: { label: t('columns.type') },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Type"
+          label={t('columns.type')}
           active={filtersRef.current.type.length > 0}
           value={filtersRef.current.type}
           options={[
-            { value: 'practice', label: 'Essais libres' },
-            { value: 'qualif', label: 'Qualifications' },
-            { value: 'race', label: 'Course' },
-            { value: 'balancing', label: 'Équilibrage' },
+            { value: 'practice', label: t('glossary:sessionTypeFull.practice') },
+            { value: 'qualif', label: t('glossary:sessionTypeFull.qualif') },
+            { value: 'race', label: t('glossary:sessionTypeFull.race') },
+            { value: 'balancing', label: t('glossary:sessionTypeFull.balancing') },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, type: v }))}
         />
@@ -147,10 +149,9 @@ export default function SessionsList() {
           race: 'bg-green-500/10 text-green-600 dark:text-green-400',
           balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
         }
-        const labels = { practice: 'Essais', qualif: 'Qualif', race: 'Course', balancing: 'Équilibrage' }
         return (
           <Badge className={colors[row.original.type] || ''}>
-            {labels[row.original.type] || row.original.type}
+            {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
           </Badge>
         )
       },
@@ -158,38 +159,38 @@ export default function SessionsList() {
     {
       id: 'track',
       accessorFn: (row) => row.track?.name || '',
-      meta: { label: 'Circuit' },
+      meta: { label: t('glossary:track', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Circuit"
+          label={t('glossary:track', { count: 1 })}
           active={filtersRef.current.trackId.length > 0}
           value={filtersRef.current.trackId}
-          options={tracks.map(t => ({ value: t.id, label: t.name }))}
+          options={tracks.map(track => ({ value: track.id, label: track.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
       ),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <MapPin className="w-4 h-4" />
-          {row.original.track?.name || 'Non défini'}
+          {row.original.track?.name || t('common:notDefined')}
         </span>
       ),
     },
     {
       id: 'status',
       accessorFn: (row) => row.status,
-      meta: { label: 'Statut' },
+      meta: { label: t('columns.status') },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Statut"
+          label={t('columns.status')}
           active={filtersRef.current.status.length > 0}
           value={filtersRef.current.status}
           options={[
-            { value: 'draft', label: 'Brouillon' },
-            { value: 'active', label: 'En cours' },
-            { value: 'finished', label: 'Terminée' },
+            { value: 'draft', label: t('glossary:sessionStatus.draft') },
+            { value: 'active', label: t('glossary:sessionStatus.active') },
+            { value: 'finished', label: t('glossary:sessionStatus.finished') },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, status: v }))}
         />
@@ -198,7 +199,7 @@ export default function SessionsList() {
         <span className="flex items-center gap-1.5">
           {getStatusIcon(row.original.status)}
           <span className="text-muted-foreground">
-            {{ draft: 'Brouillon', active: 'En cours', finished: 'Terminée' }[row.original.status] || row.original.status}
+            {t(`glossary:sessionStatus.${row.original.status}`, { defaultValue: row.original.status })}
           </span>
         </span>
       ),
@@ -206,15 +207,15 @@ export default function SessionsList() {
     {
       id: 'championship',
       accessorFn: (row) => row.championship?.name || '',
-      meta: { label: 'Championnat' },
+      meta: { label: t('glossary:championship', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Championnat"
+          label={t('glossary:championship', { count: 1 })}
           active={filtersRef.current.championshipId.length > 0}
           value={filtersRef.current.championshipId}
           options={[
-            { value: 'null', label: 'Hors championnat' },
+            { value: 'null', label: t('filters.noChampionship') },
             ...championships.map(c => ({ value: c.id, label: c.name })),
           ]}
           onChange={(v) => setFilters(f => ({ ...f, championshipId: v }))}
@@ -229,7 +230,7 @@ export default function SessionsList() {
     {
       id: 'drivers',
       accessorFn: (row) => row.drivers?.length || 0,
-      header: 'Pilotes',
+      header: t('glossary:driver', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Users2 className="w-4 h-4" />
@@ -240,7 +241,7 @@ export default function SessionsList() {
     {
       id: 'laps',
       accessorFn: (row) => row._count?.laps || 0,
-      header: 'Tours',
+      header: t('glossary:lap', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Flag className="w-4 h-4" />
@@ -251,7 +252,7 @@ export default function SessionsList() {
     {
       id: 'duration',
       accessorFn: (row) => row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0,
-      header: 'Durée',
+      header: t('columns.duration'),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {formatDuration(row.original.startedAt, row.original.finishedAt)}
@@ -261,20 +262,20 @@ export default function SessionsList() {
     {
       id: 'date',
       accessorFn: (row) => row.updatedAt,
-      header: 'Date',
+      header: t('columns.date'),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {formatDate(row.original.updatedAt)}
         </span>
       ),
     },
-  ], [tracks, championships])
+  ], [tracks, championships, t])
 
   const hasActiveFilters = filters.status.length > 0 || filters.trackId.length > 0 || filters.type.length > 0 || filters.championshipId.length > 0 || filters.deleted
 
   return (
     <ListPage
-      title="Sessions"
+      title={t('glossary:session', { count: 2 })}
       icon={<Flag />}
       color="indigo"
       preferenceKey="sessions"
@@ -282,8 +283,8 @@ export default function SessionsList() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher une session..."
-      addLabel="Nouvelle session"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => setShowForm(true)}
       onRowClick={(row) => !filters.deleted && navigate(`/sessions/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -294,12 +295,12 @@ export default function SessionsList() {
       onLoadMore={() => loadData(sessions.length)}
       onSortChange={setSort}
       hasActiveFilters={hasActiveFilters}
-      emptyTitle="Aucune session"
-      emptyMessage="Créez votre première session"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimées',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },

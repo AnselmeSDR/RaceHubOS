@@ -39,5 +39,18 @@
     "qualif": "Qualif",
     "race": "Course",
     "balancing": "Équilibrage"
+  },
+  "sessionTypeFull": {
+    "practice": "Essais libres",
+    "qualif": "Qualifications",
+    "race": "Course",
+    "balancing": "Équilibrage"
+  },
+  "sessionStatus": {
+    "draft": "Brouillon",
+    "ready": "Prêt",
+    "active": "En cours",
+    "finishing": "Fin de course",
+    "finished": "Terminée"
   }
 }

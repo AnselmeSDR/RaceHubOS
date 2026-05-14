@@ -1,0 +1,45 @@
+{
+  "searchPlaceholder": "Rechercher une session...",
+  "addLabel": "Nouvelle session",
+  "emptyTitle": "Aucune session",
+  "emptyMessage": "Créez votre première session",
+  "unnamedSession": "Session #{{id}}",
+  "columns": {
+    "name": "Nom",
+    "type": "Type",
+    "status": "Statut",
+    "duration": "Durée",
+    "date": "Date"
+  },
+  "filters": {
+    "noChampionship": "Hors championnat"
+  },
+  "form": {
+    "createTitle": "Nouvelle session",
+    "editTitle": "Modifier la session",
+    "generalInfo": "Informations générales",
+    "name": "Nom",
+    "namePlaceholder": "Ex: Essais libres Nürburgring",
+    "type": "Type",
+    "selectTrack": "Sélectionner un circuit",
+    "championshipOptional": "Championnat (optionnel)",
+    "none": "Aucun",
+    "fuel": "Carburant",
+    "fuelOff": "Désactivé",
+    "fuelOn": "Activé",
+    "duration": "Durée (minutes)",
+    "durationPlaceholder": "30",
+    "maxLaps": "Tours max",
+    "maxLapsPlaceholder": "100",
+    "slots": "{{count}}/{{total}} slots",
+    "controllerShort": "Ctrl",
+    "controllerUsed": "(utilisé)",
+    "gridPlaceholder": "Grille",
+    "noDriversAdded": "Aucun pilote ajouté",
+    "submit": "Créer la session",
+    "update": "Mettre à jour",
+    "loadError": "Erreur lors du chargement des données",
+    "trackRequired": "Le circuit est requis",
+    "driverRequired": "Au moins un pilote complet est requis (pilote, voiture, contrôleur)"
+  }
+}
