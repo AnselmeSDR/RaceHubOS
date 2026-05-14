@@ -48,3 +48,7 @@ packages/backend/public/uploads/
 
 # Claude notes (contains credentials)
 CLAUDE.md
+
+packages/backend/public/uploads-remote-backup/
+
+packages/backend/prisma/dev.db.local-backup-20260512-201007
