@@ -50,6 +50,7 @@
     "draft": "Draft",
     "ready": "Ready",
     "active": "In progress",
+    "paused": "Paused",
     "finishing": "Finishing",
     "finished": "Finished"
   }

@@ -41,5 +41,13 @@
     "loadError": "Erreur lors du chargement des données",
     "trackRequired": "Le circuit est requis",
     "driverRequired": "Au moins un pilote complet est requis (pilote, voiture, contrôleur)"
+  },
+  "profile": {
+    "notFound": "Session introuvable",
+    "noLapData": "Aucune donnée de tour",
+    "noParticipants": "Aucun participant",
+    "lapHistory": "Historique des tours ({{count}})",
+    "time": "Temps",
+    "deleteMessage": "Supprimer cette session ?"
   }
 }

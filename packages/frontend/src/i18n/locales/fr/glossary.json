@@ -50,6 +50,7 @@
     "draft": "Brouillon",
     "ready": "Prêt",
     "active": "En cours",
+    "paused": "En pause",
     "finishing": "Fin de course",
     "finished": "Terminée"
   }
