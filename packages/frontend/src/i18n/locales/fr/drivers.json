@@ -20,5 +20,9 @@
     "emailPlaceholder": "lewis@example.com",
     "noTeam": "Aucune équipe",
     "saved": "Pilote sauvegardé"
+  },
+  "profile": {
+    "notFound": "Pilote non trouvé",
+    "resetStatsMessage": "Remettre à zéro toutes les statistiques de ce pilote ?"
   }
 }

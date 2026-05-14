@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,14 +14,8 @@ import { sessionBadgeClass } from '@/lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const TYPE_LABELS = {
-  practice: 'Essais',
-  qualif: 'Qualif',
-  race: 'Course',
-  balancing: 'Équilibrage',
-}
-
 export default function DriverProfile() {
+  const { t } = useTranslation('drivers')
   const { id } = useParams()
   const navigate = useNavigate()
   const [driver, setDriver] = useState(null)
@@ -75,9 +70,9 @@ export default function DriverProfile() {
     return (
       <div className="p-8">
         <Button variant="ghost" onClick={() => navigate('/drivers')}>
-          <ArrowLeft className="size-4" /> Retour
+          <ArrowLeft className="size-4" /> {t('common:back')}
         </Button>
-        <p className="text-center text-muted-foreground mt-8">Pilote non trouvé</p>
+        <p className="text-center text-muted-foreground mt-8">{t('profile.notFound')}</p>
       </div>
     )
   }
@@ -115,12 +110,12 @@ export default function DriverProfile() {
               )}
             </div>
             <div className="text-xs flex items-center gap-3">
-              <span className="text-blue-500 font-medium">{driver._count?.sessions || 0} courses</span>
-              <span className="text-yellow-500 font-medium">{driver.wins || 0} victoires</span>
-              <span className="text-orange-400 font-medium">{driver.podiums || 0} podiums</span>
-              <span className="text-muted-foreground font-medium">{driver._count?.laps || 0} tours</span>
+              <span className="text-blue-500 font-medium">{driver._count?.sessions || 0} {t('glossary:race', { count: driver._count?.sessions || 0 })}</span>
+              <span className="text-yellow-500 font-medium">{driver.wins || 0} {t('glossary:win', { count: driver.wins || 0 })}</span>
+              <span className="text-orange-400 font-medium">{driver.podiums || 0} {t('glossary:podium', { count: driver.podiums || 0 })}</span>
+              <span className="text-muted-foreground font-medium">{driver._count?.laps || 0} {t('glossary:lap', { count: driver._count?.laps || 0 })}</span>
               {driver.bestLap && (
-                <span className="flex items-center gap-1">Record <LapTime time={driver.bestLap} size="sm" /></span>
+                <span className="flex items-center gap-1">{t('common:record')} <LapTime time={driver.bestLap} size="sm" /></span>
               )}
             </div>
           </div>
@@ -143,9 +138,9 @@ export default function DriverProfile() {
         open={showResetConfirm}
         onClose={() => setShowResetConfirm(false)}
         onConfirm={handleResetStats}
-        title="Réinitialiser les statistiques"
-        message="Remettre à zéro toutes les statistiques de ce pilote ?"
-        confirmLabel="Réinitialiser"
+        title={t('common:resetStatsTitle')}
+        message={t('profile.resetStatsMessage')}
+        confirmLabel={t('common:reset')}
       />
 
       {/* Content */}
@@ -154,7 +149,7 @@ export default function DriverProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
           <RecordsList
-            title="Top 10 Records"
+            title={t('common:topRecords')}
             records={driver.records?.map(r => ({
               ...r,
               driver: { name: driver.name, color: driver.color, img: driver.img }
@@ -169,7 +164,7 @@ export default function DriverProfile() {
           <Card>
             <CardContent className="p-0">
               <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-semibold">Sessions récentes</h3>
+                <h3 className="text-sm font-semibold">{t('common:recentSessions')}</h3>
               </div>
               {driver.sessions?.length > 0 ? (
                 <div className="divide-y divide-border">
@@ -181,10 +176,12 @@ export default function DriverProfile() {
                     >
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}>
-                          {TYPE_LABELS[sd.session?.type] || sd.session?.type}
+                          {sd.session?.type
+                            ? t(`glossary:sessionType.${sd.session.type}`, { defaultValue: sd.session.type })
+                            : ''}
                         </Badge>
                         <span className="text-sm text-foreground truncate">
-                          {sd.session?.track?.name || 'Circuit inconnu'}
+                          {sd.session?.track?.name || t('common:unknownTrack')}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -198,7 +195,7 @@ export default function DriverProfile() {
                 </div>
               ) : (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  Aucune session
+                  {t('common:noSessions')}
                 </div>
               )}
             </CardContent>

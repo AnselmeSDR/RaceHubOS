@@ -20,5 +20,9 @@
     "emailPlaceholder": "lewis@example.com",
     "noTeam": "No team",
     "saved": "Driver saved"
+  },
+  "profile": {
+    "notFound": "Driver not found",
+    "resetStatsMessage": "Reset all statistics for this driver?"
   }
 }
