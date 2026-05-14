@@ -1,0 +1,8 @@
+{
+  "title": "Statistiques & Records",
+  "emptyTitle": "Aucun record",
+  "emptyMessage": "Aucun temps enregistré",
+  "options": {
+    "bestPerDriverCar": "Meilleur par pilote/voiture"
+  }
+}
