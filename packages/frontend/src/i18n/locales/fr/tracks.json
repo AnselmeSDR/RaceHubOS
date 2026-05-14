@@ -17,5 +17,12 @@
     "lengthPlaceholder": "12.5",
     "cornersPlaceholder": "18",
     "saved": "Circuit sauvegardé"
+  },
+  "profile": {
+    "notFound": "Circuit non trouvé",
+    "resetStatsMessage": "Remettre à zéro toutes les statistiques de ce circuit ?",
+    "trackRecord": "Record du circuit",
+    "cornersCount_one": "{{count}} virage",
+    "cornersCount_other": "{{count}} virages"
   }
 }

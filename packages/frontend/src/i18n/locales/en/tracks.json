@@ -17,5 +17,12 @@
     "lengthPlaceholder": "12.5",
     "cornersPlaceholder": "18",
     "saved": "Track saved"
+  },
+  "profile": {
+    "notFound": "Track not found",
+    "resetStatsMessage": "Reset all statistics for this track?",
+    "trackRecord": "Track record",
+    "cornersCount_one": "{{count}} corner",
+    "cornersCount_other": "{{count}} corners"
   }
 }
