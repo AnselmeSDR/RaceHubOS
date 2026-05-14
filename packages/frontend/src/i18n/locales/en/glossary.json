@@ -53,5 +53,10 @@
     "paused": "Paused",
     "finishing": "Finishing",
     "finished": "Finished"
+  },
+  "championshipStatus": {
+    "planned": "Planned",
+    "active": "In progress",
+    "finished": "Finished"
   }
 }

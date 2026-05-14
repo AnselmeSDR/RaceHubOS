@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Trophy, MapPin, Flag, Clock } from 'lucide-react'
 import { FormModal, TextField, SelectField } from '../components/crud'
 import AutoChampionshipWizard from '../components/championship/AutoChampionshipWizard'
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function Championships() {
+  const { t } = useTranslation('championships')
   const navigate = useNavigate()
   const [championships, setChampionships] = useState([])
   const [tracks, setTracks] = useState([])
@@ -75,7 +77,7 @@ export default function Championships() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Nom',
+      header: t('columns.name'),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -87,24 +89,24 @@ export default function Championships() {
     },
     {
       id: 'track',
-      accessorFn: (row) => tracks.find(t => t.id === row.trackId)?.name || '',
-      meta: { label: 'Circuit' },
+      accessorFn: (row) => tracks.find(tr => tr.id === row.trackId)?.name || '',
+      meta: { label: t('glossary:track', { count: 1 }) },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Circuit"
+          label={t('glossary:track', { count: 1 })}
           active={filtersRef.current.trackId.length > 0}
           value={filtersRef.current.trackId}
-          options={tracks.map(t => ({ value: t.id, label: t.name }))}
+          options={tracks.map(tr => ({ value: tr.id, label: tr.name }))}
           onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
         />
       ),
       cell: ({ row }) => {
-        const track = tracks.find(t => t.id === row.original.trackId)
+        const track = tracks.find(tr => tr.id === row.original.trackId)
         return (
           <span className="flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            {track?.name || 'Non défini'}
+            {track?.name || t('common:notDefined')}
           </span>
         )
       },
@@ -112,7 +114,7 @@ export default function Championships() {
     {
       id: 'qualifs',
       accessorFn: (row) => row.sessions?.filter(s => s.type === 'qualif').length || 0,
-      header: 'Qualifs',
+      header: t('columns.qualifs'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="w-4 h-4 text-blue-500" />
@@ -123,7 +125,7 @@ export default function Championships() {
     {
       id: 'races',
       accessorFn: (row) => row.sessions?.filter(s => s.type === 'race').length || 0,
-      header: 'Courses',
+      header: t('columns.races'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Flag className="w-4 h-4 text-green-500" />
@@ -134,17 +136,17 @@ export default function Championships() {
     {
       id: 'status',
       accessorFn: (row) => row.status || 'planned',
-      meta: { label: 'Statut' },
+      meta: { label: t('common:status') },
       header: ({ column }) => (
         <FilterHeader
           column={column}
-          label="Statut"
+          label={t('common:status')}
           active={filtersRef.current.status.length > 0}
           value={filtersRef.current.status}
           options={[
-            { value: 'planned', label: 'Planifié' },
-            { value: 'active', label: 'En cours' },
-            { value: 'finished', label: 'Terminé' },
+            { value: 'planned', label: t('glossary:championshipStatus.planned') },
+            { value: 'active', label: t('glossary:championshipStatus.active') },
+            { value: 'finished', label: t('glossary:championshipStatus.finished') },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, status: v }))}
         />
@@ -155,20 +157,19 @@ export default function Championships() {
           finished: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
           planned: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
         }
-        const labels = { active: 'En cours', finished: 'Terminé', planned: 'Planifié' }
         const key = row.original.status || 'planned'
         return (
           <Badge className={styles[key] || styles.planned}>
-            {labels[key] || labels.planned}
+            {t(`glossary:championshipStatus.${key}`)}
           </Badge>
         )
       },
     },
-  ], [tracks])
+  ], [tracks, t])
 
   return (
     <ListPage
-      title="Championnats"
+      title={t('glossary:championship', { count: 2 })}
       icon={<Trophy />}
       color="yellow"
       preferenceKey="championships"
@@ -176,8 +177,8 @@ export default function Championships() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher un championnat..."
-      addLabel="Nouveau championnat"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => setShowAutoWizard(true)}
       onRowClick={(row) => !filters.deleted && navigate(`/championships/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -191,7 +192,7 @@ export default function Championships() {
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimés',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
@@ -222,6 +223,7 @@ export default function Championships() {
 }
 
 function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onSwitchAuto }) {
+  const { t } = useTranslation('championships')
   const [formData, setFormData] = useState(initialData || { name: '', trackId: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -242,13 +244,13 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
         })
       })
       if (res.ok) {
-        setSuccess('Championnat créé avec succès')
+        setSuccess(t('form.saved'))
         setTimeout(() => onClose(), 1500)
       } else {
-        setError('Erreur lors de la création')
+        setError(t('form.createError'))
       }
     } catch {
-      setError('Erreur de connexion au serveur')
+      setError(t('common:connectionError'))
     } finally {
       setSaving(false)
     }
@@ -258,16 +260,16 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
     <FormModal
       open
       onClose={onClose}
-      title="Nouveau championnat"
+      title={t('form.createTitle')}
       icon={<Trophy className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       saving={saving}
       error={error}
       success={success}
-      saveLabel="Créer"
+      saveLabel={t('common:create')}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Mode automatique</span>
+        <span className="text-sm font-medium">{t('form.autoMode')}</span>
         <button
           type="button"
           onClick={() => onSwitchAuto?.()}
@@ -277,18 +279,18 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
         </button>
       </div>
       <TextField
-        label="Nom du championnat"
+        label={t('form.name')}
         value={formData.name}
         onChange={(v) => { const next = { ...formData, name: v }; setFormData(next); onFormChange?.(next) }}
-        placeholder="Championnat 2024"
+        placeholder={t('form.namePlaceholder')}
         required
       />
       <SelectField
-        label="Circuit"
+        label={t('glossary:track', { count: 1 })}
         value={formData.trackId}
         onChange={(v) => { const next = { ...formData, trackId: v }; setFormData(next); onFormChange?.(next) }}
-        options={tracks.map(t => ({ value: t.id, label: t.name }))}
-        placeholder="Sélectionner un circuit..."
+        options={tracks.map(tr => ({ value: tr.id, label: tr.name }))}
+        placeholder={t('form.selectTrack')}
         required
       />
     </FormModal>

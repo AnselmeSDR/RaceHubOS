@@ -1,0 +1,18 @@
+{
+  "searchPlaceholder": "Search for a championship...",
+  "addLabel": "New championship",
+  "columns": {
+    "name": "Name",
+    "qualifs": "Qualifs",
+    "races": "Races"
+  },
+  "form": {
+    "createTitle": "New championship",
+    "autoMode": "Automatic mode",
+    "name": "Championship name",
+    "namePlaceholder": "Championship 2024",
+    "selectTrack": "Select a track...",
+    "saved": "Championship created successfully",
+    "createError": "Error during creation"
+  }
+}
