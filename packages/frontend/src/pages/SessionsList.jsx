@@ -6,6 +6,7 @@ import SessionForm from '../components/SessionForm'
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
+import { sessionBadgeClass } from '@/lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -142,19 +143,11 @@ export default function SessionsList() {
           onChange={(v) => setFilters(f => ({ ...f, type: v }))}
         />
       ),
-      cell: ({ row }) => {
-        const colors = {
-          practice: 'bg-session-practice/10 text-session-practice',
-          qualif: 'bg-session-qualif/10 text-session-qualif',
-          race: 'bg-session-race/10 text-session-race',
-          balancing: 'bg-session-balancing/10 text-session-balancing',
-        }
-        return (
-          <Badge className={colors[row.original.type] || ''}>
-            {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
-          </Badge>
-        )
-      },
+      cell: ({ row }) => (
+        <Badge className={sessionBadgeClass(row.original.type)}>
+          {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
+        </Badge>
+      ),
     },
     {
       id: 'track',

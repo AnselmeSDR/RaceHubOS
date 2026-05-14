@@ -2,15 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { Trophy, Clock, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { sessionBadgeClass } from '@/lib/colors'
 import LapTime from './race/LapTime'
 import { getImgUrl } from '../utils/image'
-
-const sessionTypeColors = {
-  race: 'bg-session-race/10 text-session-race',
-  qualif: 'bg-session-qualif/10 text-session-qualif',
-  practice: 'bg-session-practice/10 text-session-practice',
-  balancing: 'bg-session-balancing/10 text-session-balancing',
-}
 
 export function RecordItem({
   position,
@@ -26,7 +20,7 @@ export function RecordItem({
 }) {
   const { t } = useTranslation('common')
   const isTopThree = position <= 3
-  const sessionColor = sessionTypeColors[sessionType] || sessionTypeColors.practice
+  const sessionColor = sessionBadgeClass(sessionType)
   const sessionLabel = t(`glossary:sessionType.${sessionType || 'practice'}`)
 
   return (

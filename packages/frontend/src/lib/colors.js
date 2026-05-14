@@ -12,6 +12,13 @@ export const SESSION_COLORS = {
   balancing:{ bg: 'bg-session-balancing/15', text: 'text-session-balancing', solid: 'bg-session-balancing' },
 }
 
+// Combined badge classes (bg tint + text color) for a session type.
+// Falls back to the "practice" colors for unknown types.
+export function sessionBadgeClass(type) {
+  const c = SESSION_COLORS[type] || SESSION_COLORS.practice
+  return `${c.bg} ${c.text}`
+}
+
 // Championship
 export const CHAMPIONSHIP_COLOR = {
   solid: 'bg-championship',
