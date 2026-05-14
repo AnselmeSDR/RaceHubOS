@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
@@ -8,6 +9,7 @@ import { getImgUrl } from '../utils/image'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function Teams() {
+  const { t } = useTranslation('teams')
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -55,7 +57,7 @@ export default function Teams() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Équipe',
+      header: t('glossary:team', { count: 1 }),
       cell: ({ row }) => {
         const team = row.original
         return (
@@ -78,7 +80,7 @@ export default function Teams() {
     {
       id: 'color',
       accessorKey: 'color',
-      header: 'Couleur',
+      header: t('common:colorLabel'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md border border-border" style={{ backgroundColor: row.original.color || '#F97316' }} />
@@ -89,7 +91,7 @@ export default function Teams() {
     {
       id: 'drivers',
       accessorFn: (row) => row._count?.drivers || 0,
-      header: 'Pilotes',
+      header: t('glossary:driver', { count: 2 }),
       cell: ({ row }) => {
         const team = row.original
         return (
@@ -104,11 +106,11 @@ export default function Teams() {
         )
       },
     },
-  ], [])
+  ], [t])
 
   return (
     <ListPage
-      title="Équipes"
+      title={t('glossary:team', { count: 2 })}
       icon={<Users />}
       color="orange"
       preferenceKey="teams"
@@ -116,8 +118,8 @@ export default function Teams() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher une équipe..."
-      addLabel="Nouvelle équipe"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => { setEditingTeam(null); setShowForm(true) }}
       onRowClick={(row) => { setEditingTeam(row); setShowForm(true) }}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -128,8 +130,8 @@ export default function Teams() {
       onLoadMore={() => loadData(teams.length)}
       onSortChange={setSort}
       hasActiveFilters={filters.deleted}
-      emptyTitle="Aucune équipe"
-      emptyMessage="Ajoutez votre première équipe"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((team) => (
@@ -140,7 +142,7 @@ export default function Teams() {
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimées',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
@@ -157,6 +159,7 @@ export default function Teams() {
 }
 
 function TeamCard({ team, onClick }) {
+  const { t } = useTranslation('teams')
   const teamColor = team.color || '#F97316'
 
   return (
@@ -196,7 +199,7 @@ function TeamCard({ team, onClick }) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5" style={{ color: teamColor }} />
-              <span className="text-sm font-bold text-muted-foreground uppercase">Pilotes</span>
+              <span className="text-sm font-bold text-muted-foreground uppercase">{t('glossary:driver', { count: 2 })}</span>
             </div>
             <span className="text-2xl font-black" style={{ color: teamColor }}>{team._count?.drivers || 0}</span>
           </div>
@@ -211,12 +214,12 @@ function TeamCard({ team, onClick }) {
               ))}
               {team.drivers.length > 3 && (
                 <div className="text-xs text-muted-foreground italic mt-2">
-                  +{team.drivers.length - 3} autre{team.drivers.length - 3 > 1 ? 's' : ''}
+                  {t('card.moreDrivers', { count: team.drivers.length - 3 })}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground italic">Aucun pilote</div>
+            <div className="text-sm text-muted-foreground italic">{t('common:noDrivers')}</div>
           )}
         </div>
       </div>
@@ -225,6 +228,7 @@ function TeamCard({ team, onClick }) {
 }
 
 function TeamFormModal({ team, onClose }) {
+  const { t } = useTranslation('teams')
   const [formData, setFormData] = useState({
     name: team?.name || '',
     color: team?.color || '#F97316',
@@ -245,14 +249,14 @@ function TeamFormModal({ team, onClose }) {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        setSuccess('Équipe sauvegardée')
+        setSuccess(t('form.saved'))
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
-        setError(data.error || 'Erreur lors de la sauvegarde')
+        setError(data.error || t('common:saveError'))
       }
     } catch {
-      setError('Erreur de connexion au serveur')
+      setError(t('common:connectionError'))
     } finally {
       setSaving(false)
     }
@@ -262,7 +266,7 @@ function TeamFormModal({ team, onClose }) {
     <FormModal
       open
       onClose={onClose}
-      title={team ? "Modifier l'équipe" : 'Nouvelle équipe'}
+      title={team ? t('form.editTitle') : t('form.createTitle')}
       icon={<Users className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!team}
@@ -270,9 +274,9 @@ function TeamFormModal({ team, onClose }) {
       error={error}
       success={success}
     >
-      <TextField label="Nom" value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder="Red Bull Racing" required />
-      <PhotoUploadField label="Logo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="teams" />
-      <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
+      <TextField label={t('fields.name')} value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} required />
+      <PhotoUploadField label={t('form.logoLabel')} value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="teams" />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
     </FormModal>
   )
 }

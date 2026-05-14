@@ -1,0 +1,20 @@
+{
+  "searchPlaceholder": "Search for a team...",
+  "addLabel": "New team",
+  "emptyTitle": "No teams",
+  "emptyMessage": "Add your first team",
+  "fields": {
+    "name": "Name"
+  },
+  "card": {
+    "moreDrivers_one": "+{{count}} more",
+    "moreDrivers_other": "+{{count}} more"
+  },
+  "form": {
+    "createTitle": "New team",
+    "editTitle": "Edit team",
+    "namePlaceholder": "Red Bull Racing",
+    "logoLabel": "Logo",
+    "saved": "Team saved"
+  }
+}
