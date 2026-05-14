@@ -144,10 +144,10 @@ export default function SessionsList() {
       ),
       cell: ({ row }) => {
         const colors = {
-          practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-          qualif: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-          race: 'bg-green-500/10 text-green-600 dark:text-green-400',
-          balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+          practice: 'bg-session-practice/10 text-session-practice',
+          qualif: 'bg-session-qualif/10 text-session-qualif',
+          race: 'bg-session-race/10 text-session-race',
+          balancing: 'bg-session-balancing/10 text-session-balancing',
         }
         return (
           <Badge className={colors[row.original.type] || ''}>
