@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Users,
   Car,
@@ -24,11 +25,6 @@ function formatLap(ms) {
   return `${(ms / 1000).toFixed(3)}s`
 }
 
-function formatDate(date) {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-}
-
 function DriverAvatar({ driver, size = 'size-8' }) {
   return (
     <div
@@ -45,6 +41,7 @@ function DriverAvatar({ driver, size = 'size-8' }) {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation('dashboard')
   const navigate = useNavigate()
   const { connected: cuConnected, socketConnected } = useDevice()
   const { session, isActive: isSessionActive } = useSession()
@@ -78,10 +75,10 @@ export default function Dashboard() {
   }, [])
 
   const statCards = [
-    { to: '/drivers', icon: Users, label: 'Pilotes', value: stats.drivers, color: 'text-blue-500' },
-    { to: '/cars', icon: Car, label: 'Voitures', value: stats.cars, color: 'text-green-500' },
-    { to: '/tracks', icon: Map, label: 'Circuits', value: stats.tracks, color: 'text-purple-500' },
-    { to: '/history', icon: Flag, label: 'Sessions', value: stats.sessions, color: 'text-red-500' },
+    { to: '/drivers', icon: Users, label: t('glossary:driver', { count: 2 }), value: stats.drivers, color: 'text-blue-500' },
+    { to: '/cars', icon: Car, label: t('glossary:car', { count: 2 }), value: stats.cars, color: 'text-green-500' },
+    { to: '/tracks', icon: Map, label: t('glossary:track', { count: 2 }), value: stats.tracks, color: 'text-purple-500' },
+    { to: '/history', icon: Flag, label: t('glossary:session', { count: 2 }), value: stats.sessions, color: 'text-red-500' },
   ]
 
   const podiumColors = ['text-yellow-500', 'text-zinc-400', 'text-amber-700']
@@ -102,12 +99,12 @@ export default function Dashboard() {
                 <Flag className="size-6 animate-pulse" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">Session en cours</h2>
-                <span className="text-sm text-white/80">{session?.name || 'Course active'}</span>
+                <h2 className="text-lg font-bold">{t('activeSession.title')}</h2>
+                <span className="text-sm text-white/80">{session?.name || t('activeSession.fallbackName')}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 text-white/70 group-hover:text-white transition-colors">
-              <span className="text-sm">Rejoindre</span>
+              <span className="text-sm">{t('activeSession.join')}</span>
               <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -119,12 +116,12 @@ export default function Dashboard() {
         {statCards.map((s) => (
           <Link key={s.to} to={s.to}>
             <Card className="hover:ring-2 hover:ring-primary/20 transition-all">
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className="flex items-center justify-between">
+                <div className="flex flex-col gap-1">
                   <s.icon className={`size-5 ${s.color}`} />
-                  <span className="text-2xl font-black tabular-nums">{stats.loading ? '-' : s.value}</span>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                <span className="text-2xl font-black tabular-nums leading-none">{stats.loading ? '-' : s.value}</span>
               </CardContent>
             </Card>
           </Link>
@@ -137,43 +134,43 @@ export default function Dashboard() {
           <CardContent>
             <div className="flex items-center gap-2 mb-4">
               <Zap className="size-4 text-yellow-500" />
-              <h2 className="font-semibold text-sm">Records absolus</h2>
+              <h2 className="font-semibold text-sm">{t('records.title')}</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {records.fastestLap && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Timer className="size-4 text-green-500" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Meilleur tour</p>
-                      <p className="text-sm font-medium">{records.fastestLap.driver?.name || '?'}</p>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Timer className="size-4 text-green-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{t('records.fastestLap')}</p>
+                      <p className="text-sm font-medium truncate">{records.fastestLap.driver?.name || '?'}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-green-500">{formatLap(records.fastestLap.time)}</span>
+                  <span className="font-mono font-bold text-green-500 shrink-0">{formatLap(records.fastestLap.time)}</span>
                 </div>
               )}
               {records.mostWins && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="size-4 text-yellow-500" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Plus de victoires</p>
-                      <p className="text-sm font-medium">{records.mostWins.driver?.name || '?'}</p>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Trophy className="size-4 text-yellow-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{t('records.mostWins')}</p>
+                      <p className="text-sm font-medium truncate">{records.mostWins.driver?.name || '?'}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-yellow-500">{records.mostWins.count}</span>
+                  <span className="font-mono font-bold text-yellow-500 shrink-0">{records.mostWins.count}</span>
                 </div>
               )}
               {records.mostPodiums && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Medal className="size-4 text-orange-500" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Plus de podiums</p>
-                      <p className="text-sm font-medium">{records.mostPodiums.driver?.name || '?'}</p>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Medal className="size-4 text-orange-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{t('records.mostPodiums')}</p>
+                      <p className="text-sm font-medium truncate">{records.mostPodiums.driver?.name || '?'}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-orange-500">{records.mostPodiums.count}</span>
+                  <span className="font-mono font-bold text-orange-500 shrink-0">{records.mostPodiums.count}</span>
                 </div>
               )}
             </div>
@@ -190,9 +187,9 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Crown className="size-4 text-yellow-500" />
-                  <h2 className="font-semibold text-sm">Classement pilotes</h2>
+                  <h2 className="font-semibold text-sm">{t('driverLeaderboard.title')}</h2>
                 </div>
-                <Link to="/stats" className="text-xs text-muted-foreground hover:text-foreground">Voir tout →</Link>
+                <Link to="/stats" className="text-xs text-muted-foreground hover:text-foreground">{t('driverLeaderboard.seeAll')}</Link>
               </div>
               <div className="space-y-2">
                 {topDrivers.map((d, i) => {
@@ -205,7 +202,7 @@ export default function Dashboard() {
                       <DriverAvatar driver={d} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{d.name}</p>
-                        <p className="text-xs"><span className="text-blue-500 font-medium">{d.statistics?.totalRaces || 0}C</span> · <span className="text-yellow-500 font-medium">{d.statistics?.wins || 0}V</span> · <span className="text-orange-400 font-medium">{d.statistics?.podiums || 0}P</span></p>
+                        <p className="text-xs"><span className="text-blue-500 font-medium">{d.statistics?.totalRaces || 0}{t('driverLeaderboard.racesShort')}</span> · <span className="text-yellow-500 font-medium">{d.statistics?.wins || 0}{t('driverLeaderboard.winsShort')}</span> · <span className="text-orange-400 font-medium">{d.statistics?.podiums || 0}{t('driverLeaderboard.podiumsShort')}</span></p>
                       </div>
                       {d.statistics?.bestLap && (
                         <span className="text-xs font-mono text-purple-500 font-bold">{formatLap(d.statistics.bestLap)}</span>
@@ -224,7 +221,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
                 <Timer className="size-4 text-green-500" />
-                <h2 className="font-semibold text-sm">Meilleurs tours</h2>
+                <h2 className="font-semibold text-sm">{t('topLaps.title')}</h2>
               </div>
               <div className="space-y-2">
                 {topLaps.map((lap, i) => (
@@ -248,12 +245,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent>
-            <h2 className="font-semibold text-sm mb-3">Actions rapides</h2>
+            <h2 className="font-semibold text-sm mb-3">{t('quickActions.title')}</h2>
             <div className="space-y-1.5">
               {[
-                { to: '/race', icon: Flag, label: 'Lancer une course', color: 'text-green-500' },
-                { to: '/championships', icon: Trophy, label: 'Championnats', color: 'text-yellow-500' },
-                { to: '/stats', icon: Timer, label: 'Statistiques', color: 'text-blue-500' },
+                { to: '/race', icon: Flag, label: t('quickActions.startRace'), color: 'text-green-500' },
+                { to: '/championships', icon: Trophy, label: t('glossary:championship', { count: 2 }), color: 'text-yellow-500' },
+                { to: '/stats', icon: Timer, label: t('layout:nav.stats'), color: 'text-blue-500' },
               ].map((a) => (
                 <Link key={a.to} to={a.to} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted transition-colors">
                   <div className="flex items-center gap-3">
@@ -269,20 +266,20 @@ export default function Dashboard() {
 
         <Card>
           <CardContent>
-            <h2 className="font-semibold text-sm mb-3">Système</h2>
+            <h2 className="font-semibold text-sm mb-3">{t('system.title')}</h2>
             <div className="space-y-2.5">
               {[
-                { label: 'Backend API', ok: true },
-                { label: 'WebSocket', ok: socketConnected },
-                { label: 'Control Unit', ok: cuConnected },
-                { label: 'Base de données', ok: true, text: 'SQLite' },
+                { label: t('system.backendApi'), ok: true },
+                { label: t('glossary:system.websocket'), ok: socketConnected },
+                { label: t('glossary:system.controlUnit'), ok: cuConnected },
+                { label: t('system.database'), ok: true, text: 'SQLite' },
               ].map((s) => (
                 <div key={s.label} className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{s.label}</span>
                   <div className="flex items-center gap-1.5">
                     <div className={`size-1.5 rounded-full ${s.ok ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className={`text-xs ${s.ok ? 'text-green-500' : 'text-red-500'}`}>
-                      {s.text || (s.ok ? 'OK' : 'Off')}
+                      {s.text || (s.ok ? t('system.ok') : t('system.off'))}
                     </span>
                   </div>
                 </div>

@@ -1,0 +1,34 @@
+{
+  "activeSession": {
+    "title": "Session en cours",
+    "fallbackName": "Course active",
+    "join": "Rejoindre"
+  },
+  "records": {
+    "title": "Records absolus",
+    "fastestLap": "Meilleur tour",
+    "mostWins": "Plus de victoires",
+    "mostPodiums": "Plus de podiums"
+  },
+  "driverLeaderboard": {
+    "title": "Classement pilotes",
+    "seeAll": "Voir tout →",
+    "racesShort": "C",
+    "winsShort": "V",
+    "podiumsShort": "P"
+  },
+  "topLaps": {
+    "title": "Meilleurs tours"
+  },
+  "quickActions": {
+    "title": "Actions rapides",
+    "startRace": "Lancer une course"
+  },
+  "system": {
+    "title": "Système",
+    "backendApi": "Backend API",
+    "database": "Base de données",
+    "ok": "OK",
+    "off": "Off"
+  }
+}

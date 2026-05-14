@@ -1,14 +1,15 @@
+import { useTranslation } from 'react-i18next'
 import { Trophy, Clock, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import LapTime from './race/LapTime'
 import { getImgUrl } from '../utils/image'
 
-const sessionTypeLabels = {
-  race: { label: 'Course', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  qualif: { label: 'Qualif', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  practice: { label: 'Essais', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-  balancing: { label: 'Équilibrage', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+const sessionTypeColors = {
+  race: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  qualif: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  balancing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
 }
 
 export function RecordItem({
@@ -23,8 +24,10 @@ export function RecordItem({
   showCar = true,
   onClick,
 }) {
+  const { t } = useTranslation('common')
   const isTopThree = position <= 3
-  const sessionInfo = sessionTypeLabels[sessionType] || sessionTypeLabels.practice
+  const sessionColor = sessionTypeColors[sessionType] || sessionTypeColors.practice
+  const sessionLabel = t(`glossary:sessionType.${sessionType || 'practice'}`)
 
   return (
     <div
@@ -79,10 +82,10 @@ export function RecordItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-foreground truncate">
-            {driver?.name || 'Inconnu'}
+            {driver?.name || t('unknown')}
           </span>
-          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionInfo.color}`}>
-            {sessionInfo.label}
+          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionColor}`}>
+            {sessionLabel}
           </Badge>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
@@ -110,19 +113,20 @@ export function RecordItem({
 }
 
 export function RecordsList({
-  title = 'Top 10 Records',
+  title,
   records,
-  emptyMessage = 'Aucun record enregistré',
+  emptyMessage,
   showDriverAvatar = true,
   showCarAvatar = true,
   showCar = true,
   showTrack = true,
 }) {
+  const { t } = useTranslation('common')
   return (
     <Card>
       <CardContent className="p-0">
         <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">{title}</h3>
+          <h3 className="text-sm font-semibold">{title || t('topRecords')}</h3>
         </div>
         {records && records.length > 0 ? (
           <div className="p-2 space-y-0.5">
@@ -144,7 +148,7 @@ export function RecordsList({
         ) : (
           <div className="text-center py-12">
             <Clock className="size-10 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+            <p className="text-sm text-muted-foreground">{emptyMessage || t('noRecords')}</p>
           </div>
         )}
       </CardContent>

@@ -1,7 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 
 export default function ColorPickerField({
-  label = 'Couleur',
+  label,
   value = '#3B82F6',
   onChange,
   presets = [
@@ -10,9 +11,10 @@ export default function ColorPickerField({
     '#6366F1', '#8B5CF6', '#A855F7', '#EC4899'
   ]
 }) {
+  const { t } = useTranslation('common')
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-2">{label}</label>
+      <label className="block text-sm font-medium text-foreground mb-2">{label || t('colorLabel')}</label>
 
       <div className="flex items-center gap-3">
         <input

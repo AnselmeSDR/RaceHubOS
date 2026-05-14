@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "groupLabel": "Navigation",
+    "dashboard": "Dashboard",
+    "freeMode": "Mode Libre",
+    "history": "Historique",
+    "stats": "Statistiques",
+    "balancing": "Équilibrage",
+    "displays": "Displays",
+    "test": "Test",
+    "settings": "Paramètres"
+  },
+  "theme": {
+    "dayMode": "Mode jour",
+    "nightMode": "Mode nuit"
+  },
+  "backend": {
+    "connectedTooltip": "Backend connecté",
+    "disconnectedTooltip": "Backend déconnecté",
+    "connected": "Connecté — v{{version}}",
+    "disconnected": "Backend déconnecté"
+  },
+  "header": {
+    "results_one": "{{count}} résultat",
+    "results_other": "{{count}} résultats"
+  },
+  "footer": {
+    "mode": "Mode {{mode}}",
+    "lapStart": "start",
+    "unknown": "Inconnu"
+  },
+  "cuState": {
+    "racing": "En course",
+    "lights": "Feux {{n}}/5",
+    "falseStart": "Faux départ",
+    "go": "Partez !",
+    "stopped": "Arrêté"
+  },
+  "statusPopup": {
+    "title": "Status Backend",
+    "cuBluetooth": "CU Bluetooth",
+    "loading": "Chargement...",
+    "noLogs": "Aucun log",
+    "logsCount": "Logs ({{count}})",
+    "filterAll": "Tout",
+    "logsCleared": "Logs effacés",
+    "status": {
+      "backend": "Backend"
+    },
+    "logs": {
+      "backendStatus": "Backend : {{status}} (v{{version}})",
+      "simulatorMode": "Mode simulateur : {{state}}",
+      "cuConnected": "CU connecté",
+      "cuNotConnected": "CU non connecté",
+      "cuDisconnected": "CU déconnecté",
+      "backendError": "Erreur connexion backend : {{message}}",
+      "wsConnected": "WebSocket connecté",
+      "wsDisconnected": "WebSocket déconnecté",
+      "cuStatus": "CU Status : {{state}}, Mode : {{mode}}",
+      "timer": "{{kind}} : Ctrl {{controller}} - {{lapTime}}ms",
+      "timerFinish": "Finish",
+      "timerSector": "Secteur {{sector}}",
+      "lap": "Tour : {{label}} - {{time}}s",
+      "sessionStarted": "Session démarrée : {{id}}...",
+      "sessionStopped": "Session arrêtée : {{id}}..."
+    }
+  }
+}

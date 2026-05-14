@@ -1,0 +1,68 @@
+{
+  "update": {
+    "title": "Update",
+    "currentVersion": "Current version",
+    "check": "Check",
+    "newVersionAvailable": "New version available: v{{version}}",
+    "updateButton": "Update",
+    "upToDate": "The application is up to date",
+    "cantCheck": "Unable to check",
+    "starting": "Starting...",
+    "serverRestart": "Restarting server...",
+    "restarting": "Restarting...",
+    "connectionError": "Server connection error",
+    "genericError": "Error"
+  },
+  "connection": {
+    "connected": "Connected: {{device}}",
+    "noDevice": "No device connected",
+    "disconnect": "Disconnect"
+  },
+  "devices": {
+    "title": "Select a device",
+    "auto": "Auto",
+    "manual": "Manual",
+    "new": "(new)",
+    "connecting": "Connecting...",
+    "connect": "Connect",
+    "scanning": "Scanning...",
+    "scan": "Search for a new track"
+  },
+  "cuStatus": {
+    "title": "Device status",
+    "start": "Start",
+    "mode": "Mode",
+    "display": "Display",
+    "fuel": "Fuel"
+  },
+  "appearance": {
+    "themeNight": "Night mode",
+    "themeDay": "Day mode",
+    "darkInterface": "Dark interface",
+    "lightInterface": "Light interface",
+    "defaultView": "Default view",
+    "bestLapVoice": "Best lap announcement",
+    "bestLapVoiceDesc": "Voice when a new record is set",
+    "minLapsBeforeAnnounce": "Minimum laps before announcement",
+    "podiumVoice": "Podium announcement",
+    "podiumVoiceDesc": "Voice results at the end of the session",
+    "defaultVoice": "Default voice",
+    "testVoice": "Test voice",
+    "testVoicePhrase": "Best lap, Anselme, 6.142 seconds",
+    "adminMode": "Administrator mode",
+    "adminModeDesc": "Displays, Test, Simulator",
+    "language": "Language",
+    "languageDesc": "Interface language"
+  },
+  "logs": {
+    "title": "Logs",
+    "empty": "No logs",
+    "controllerLap": "Ctrl {{n}}: {{time}}s",
+    "controllerSector": "Ctrl {{n}}: sector {{sector}}",
+    "connectedTo": "Connected to {{device}}",
+    "errorWith": "Error: {{error}}",
+    "scanning": "Scanning...",
+    "devicesFound": "{{count}} device(s) found",
+    "deviceDeleted": "Device {{name}} deleted"
+  }
+}

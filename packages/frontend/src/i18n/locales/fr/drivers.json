@@ -1,0 +1,24 @@
+{
+  "searchPlaceholder": "Rechercher un pilote...",
+  "addLabel": "Nouveau pilote",
+  "emptyTitle": "Aucun pilote",
+  "emptyMessage": "Ajoutez votre premier pilote",
+  "columns": {
+    "number": "N°"
+  },
+  "card": {
+    "bestLap": "Meilleur Tour"
+  },
+  "form": {
+    "createTitle": "Nouveau pilote",
+    "editTitle": "Modifier le pilote",
+    "name": "Nom",
+    "namePlaceholder": "Lewis Hamilton",
+    "number": "Numéro",
+    "numberPlaceholder": "44",
+    "email": "Email",
+    "emailPlaceholder": "lewis@example.com",
+    "noTeam": "Aucune équipe",
+    "saved": "Pilote sauvegardé"
+  }
+}

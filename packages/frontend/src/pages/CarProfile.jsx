@@ -1,22 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmModal } from '../components/ui/Modal'
 import { RecordsList } from '../components/RecordDisplays'
 import { CarFormModal } from './Cars'
 import LapTime from '../components/race/LapTime'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-
-const TYPE_LABELS = {
-  practice: 'Essais',
-  qualif: 'Qualif',
-  race: 'Course',
-  balancing: 'Équilibrage',
-}
 
 const TYPE_COLORS = {
   practice: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
@@ -26,12 +21,14 @@ const TYPE_COLORS = {
 }
 
 export default function CarProfile() {
+  const { t } = useTranslation('cars')
   const { id } = useParams()
   const navigate = useNavigate()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [resetting, setResetting] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   useEffect(() => { loadCar() }, [id])
 
@@ -49,7 +46,7 @@ export default function CarProfile() {
   }
 
   async function handleResetStats() {
-    if (!confirm('Remettre à zéro toutes les statistiques de cette voiture ?')) return
+    setShowResetConfirm(false)
     setResetting(true)
     try {
       const res = await fetch(`${API_URL}/api/cars/${id}/reset-stats`, { method: 'POST' })
@@ -73,9 +70,9 @@ export default function CarProfile() {
     return (
       <div className="p-8">
         <Button variant="ghost" onClick={() => navigate('/cars')}>
-          <ArrowLeft className="size-4" /> Retour
+          <ArrowLeft className="size-4" /> {t('common:back')}
         </Button>
-        <p className="text-center text-muted-foreground mt-8">Voiture non trouvée</p>
+        <p className="text-center text-muted-foreground mt-8">{t('profile.notFound')}</p>
       </div>
     )
   }
@@ -108,9 +105,9 @@ export default function CarProfile() {
               <span className="flex items-center gap-1"><Zap className="size-3 text-green-500" />{car.maxSpeed}%</span>
               <span className="flex items-center gap-1"><Flame className="size-3 text-red-500" />{car.brakeForce}%</span>
               <span className="flex items-center gap-1"><FlaskConical className="size-3 text-blue-500" />{car.fuelCapacity}</span>
-              <span>{car._count?.sessions || 0} sessions</span>
+              <span>{car._count?.sessions || 0} {t('glossary:session', { count: car._count?.sessions || 0 })}</span>
               {car.bestLap && (
-                <span className="flex items-center gap-1">Record <LapTime time={car.bestLap} size="sm" /></span>
+                <span className="flex items-center gap-1">{t('common:record')} <LapTime time={car.bestLap} size="sm" /></span>
               )}
             </div>
           </div>
@@ -119,7 +116,7 @@ export default function CarProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleResetStats} disabled={resetting} className="text-orange-600 dark:text-orange-400">
+          <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -129,12 +126,21 @@ export default function CarProfile() {
         <CarFormModal car={car} onClose={() => { setShowEdit(false); loadCar() }} />
       )}
 
+      <ConfirmModal
+        open={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleResetStats}
+        title={t('common:resetStatsTitle')}
+        message={t('profile.resetStatsMessage')}
+        confirmLabel={t('common:reset')}
+      />
+
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
           <RecordsList
-            title="Top 10 Records"
+            title={t('common:topRecords')}
             records={car.records}
             showDriverAvatar={true}
             showCarAvatar={false}
@@ -146,7 +152,7 @@ export default function CarProfile() {
           <Card>
             <CardContent className="p-0">
               <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-semibold">Sessions récentes</h3>
+                <h3 className="text-sm font-semibold">{t('common:recentSessions')}</h3>
               </div>
               {car.sessions?.length > 0 ? (
                 <div className="divide-y divide-border">
@@ -158,10 +164,12 @@ export default function CarProfile() {
                     >
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${TYPE_COLORS[sd.session?.type] || ''}`}>
-                          {TYPE_LABELS[sd.session?.type] || sd.session?.type}
+                          {sd.session?.type
+                            ? t(`glossary:sessionType.${sd.session.type}`, { defaultValue: sd.session.type })
+                            : ''}
                         </Badge>
                         <span className="text-sm text-foreground truncate">
-                          {sd.session?.track?.name || 'Circuit inconnu'}
+                          {sd.session?.track?.name || t('common:unknownTrack')}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -175,7 +183,7 @@ export default function CarProfile() {
                 </div>
               ) : (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  Aucune session
+                  {t('common:noSessions')}
                 </div>
               )}
             </CardContent>

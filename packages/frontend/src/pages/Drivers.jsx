@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { User, Trophy, Flag, BarChart3, Pencil } from 'lucide-react'
 import { FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
@@ -10,6 +11,7 @@ import { getImgUrl } from '../utils/image'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function Drivers() {
+  const { t } = useTranslation('drivers')
   const navigate = useNavigate()
   const [drivers, setDrivers] = useState([])
   const [teams, setTeams] = useState([])
@@ -65,7 +67,7 @@ export default function Drivers() {
   const columns = useMemo(() => [
     {
       accessorKey: 'name',
-      header: 'Pilote',
+      header: t('glossary:driver', { count: 1 }),
       cell: ({ row }) => {
         const driver = row.original
         return (
@@ -88,7 +90,7 @@ export default function Drivers() {
     {
       id: 'number',
       accessorKey: 'number',
-      header: 'N°',
+      header: t('columns.number'),
       meta: { className: 'text-center' },
       cell: ({ row }) => (
         row.original.number
@@ -99,7 +101,7 @@ export default function Drivers() {
     {
       id: 'team',
       accessorFn: (row) => row.team?.name || '',
-      header: 'Équipe',
+      header: t('glossary:team', { count: 1 }),
       cell: ({ row }) => (
         row.original.team
           ? <Badge className="text-white shadow-sm" style={{ backgroundColor: row.original.team.color || row.original.color }}>{row.original.team.name}</Badge>
@@ -109,7 +111,7 @@ export default function Drivers() {
     {
       id: 'sessions',
       accessorFn: (row) => row._count?.sessions || 0,
-      header: 'Courses',
+      header: t('glossary:race', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Flag className="w-4 h-4" />
@@ -120,7 +122,7 @@ export default function Drivers() {
     {
       id: 'wins',
       accessorKey: 'wins',
-      header: 'Victoires',
+      header: t('glossary:win', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Trophy className="w-4 h-4 text-yellow-500" />
@@ -131,7 +133,7 @@ export default function Drivers() {
     {
       id: 'podiums',
       accessorKey: 'podiums',
-      header: 'Podiums',
+      header: t('glossary:podium', { count: 2 }),
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.original.podiums || 0}</span>
       ),
@@ -139,7 +141,7 @@ export default function Drivers() {
     {
       id: 'laps',
       accessorFn: (row) => row._count?.laps || 0,
-      header: 'Tours',
+      header: t('glossary:lap', { count: 2 }),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <BarChart3 className="w-4 h-4" />
@@ -150,7 +152,7 @@ export default function Drivers() {
     {
       id: 'bestLap',
       accessorFn: (row) => row.bestLap || Infinity,
-      header: 'Record',
+      header: t('common:record'),
       cell: ({ row }) => (
         <span className="font-mono font-bold">
           {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
@@ -171,11 +173,11 @@ export default function Drivers() {
         </button>
       ),
     },
-  ], [])
+  ], [t])
 
   return (
     <ListPage
-      title="Pilotes"
+      title={t('glossary:driver', { count: 2 })}
       icon={<User />}
       color="blue"
       preferenceKey="drivers"
@@ -183,8 +185,8 @@ export default function Drivers() {
       totalCount={totalCount}
       columns={columns}
       loading={loading}
-      searchPlaceholder="Rechercher un pilote..."
-      addLabel="Nouveau pilote"
+      searchPlaceholder={t('searchPlaceholder')}
+      addLabel={t('addLabel')}
       onAdd={() => { setEditingDriver(null); setShowForm(true) }}
       onRowClick={(row) => !filters.deleted && navigate(`/drivers/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
@@ -202,12 +204,12 @@ export default function Drivers() {
       onLoadMore={() => loadData(drivers.length)}
       onSortChange={setSort}
       hasActiveFilters={filters.deleted}
-      emptyTitle="Aucun pilote"
-      emptyMessage="Ajoutez votre premier pilote"
+      emptyTitle={t('emptyTitle')}
+      emptyMessage={t('emptyMessage')}
       options={[
         {
           key: 'deleted',
-          label: 'Afficher les supprimés',
+          label: t('common:showDeleted'),
           checked: filters.deleted,
           onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
         },
@@ -225,6 +227,7 @@ export default function Drivers() {
 }
 
 function DriverCard({ driver, onClick, onEdit }) {
+  const { t } = useTranslation('drivers')
   const wins = driver.wins || 0
   const podiums = driver.podiums || 0
 
@@ -286,9 +289,9 @@ function DriverCard({ driver, onClick, onEdit }) {
       <div className="relative px-6 pb-4">
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: <Flag className="w-4 h-4" />, label: 'Courses', value: driver._count?.sessions || 0 },
-            { icon: <Trophy className="w-4 h-4" />, label: 'Podiums', value: podiums, highlight: podiums > 0 },
-            { icon: <BarChart3 className="w-4 h-4" />, label: 'Tours', value: driver._count?.laps || 0 },
+            { icon: <Flag className="w-4 h-4" />, label: t('glossary:race', { count: 2 }), value: driver._count?.sessions || 0 },
+            { icon: <Trophy className="w-4 h-4" />, label: t('glossary:podium', { count: 2 }), value: podiums, highlight: podiums > 0 },
+            { icon: <BarChart3 className="w-4 h-4" />, label: t('glossary:lap', { count: 2 }), value: driver._count?.laps || 0 },
           ].map((stat) => (
             <div key={stat.label} className={`p-2 rounded-lg text-center ${stat.highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-card/60'}`}>
               <div className="flex items-center justify-center mb-1" style={{ color: stat.highlight ? '#EAB308' : driver.color }}>{stat.icon}</div>
@@ -300,7 +303,7 @@ function DriverCard({ driver, onClick, onEdit }) {
         {driver.bestLap && (
           <div className="mt-3 p-3 rounded-lg bg-card/80 border-2" style={{ borderColor: `${driver.color}40` }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground uppercase">Meilleur Tour</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">{t('card.bestLap')}</span>
               <span className="text-lg font-black tabular-nums" style={{ color: driver.color }}>{(driver.bestLap / 1000).toFixed(3)}s</span>
             </div>
           </div>
@@ -311,6 +314,7 @@ function DriverCard({ driver, onClick, onEdit }) {
 }
 
 export function DriverFormModal({ driver, teams, onClose }) {
+  const { t } = useTranslation('drivers')
   const [formData, setFormData] = useState({
     name: driver?.name || '',
     number: driver?.number || '',
@@ -334,14 +338,14 @@ export function DriverFormModal({ driver, teams, onClose }) {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        setSuccess('Pilote sauvegardé')
+        setSuccess(t('form.saved'))
         setTimeout(() => onClose(), 1500)
       } else {
         const data = await res.json()
-        setError(data.error || 'Erreur lors de la sauvegarde')
+        setError(data.error || t('common:saveError'))
       }
     } catch {
-      setError('Erreur de connexion au serveur')
+      setError(t('common:connectionError'))
     } finally {
       setSaving(false)
     }
@@ -351,7 +355,7 @@ export function DriverFormModal({ driver, teams, onClose }) {
     <FormModal
       open
       onClose={onClose}
-      title={driver ? 'Modifier le pilote' : 'Nouveau pilote'}
+      title={driver ? t('form.editTitle') : t('form.createTitle')}
       icon={<User className="w-5 h-5 text-primary" />}
       onSubmit={handleSubmit}
       isEditing={!!driver}
@@ -359,14 +363,14 @@ export function DriverFormModal({ driver, teams, onClose }) {
       error={error}
       success={success}
     >
-      <TextField label="Nom" value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder="Lewis Hamilton" required />
+      <TextField label={t('form.name')} value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} required />
       <div className="grid grid-cols-2 gap-4">
-        <TextField label="Numéro" type="number" value={formData.number} onChange={(v) => setFormData(f => ({ ...f, number: v ? parseInt(v) : '' }))} placeholder="44" />
-        <TextField label="Email" type="email" value={formData.email} onChange={(v) => setFormData(f => ({ ...f, email: v }))} placeholder="lewis@example.com" />
+        <TextField label={t('form.number')} type="number" value={formData.number} onChange={(v) => setFormData(f => ({ ...f, number: v ? parseInt(v) : '' }))} placeholder={t('form.numberPlaceholder')} />
+        <TextField label={t('form.email')} type="email" value={formData.email} onChange={(v) => setFormData(f => ({ ...f, email: v }))} placeholder={t('form.emailPlaceholder')} />
       </div>
-      <PhotoUploadField label="Photo" value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="round" onError={setError} uploadType="drivers" />
-      <ColorPickerField label="Couleur" value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <SelectField label="Équipe" value={formData.teamId} onChange={(v) => setFormData(f => ({ ...f, teamId: v }))} options={teams.map(t => ({ value: t.id, label: t.name }))} placeholder="Aucune équipe" />
+      <PhotoUploadField value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="round" onError={setError} uploadType="drivers" />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
+      <SelectField label={t('glossary:team', { count: 1 })} value={formData.teamId} onChange={(v) => setFormData(f => ({ ...f, teamId: v }))} options={teams.map(team => ({ value: team.id, label: team.name }))} placeholder={t('form.noTeam')} />
     </FormModal>
   )
 }

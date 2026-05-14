@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
 import { Server, Zap, Wifi, WifiOff, Trash2 } from 'lucide-react'
 import {
@@ -23,7 +24,17 @@ const LOG_COLORS = {
   debug: 'text-muted-foreground',
 }
 
+function cuStateLabel(t, start) {
+  if (start === 0) return t('cuState.racing')
+  if (start >= 1 && start <= 5) return t('cuState.lights', { n: start })
+  if (start === 6) return t('cuState.falseStart')
+  if (start === 7) return t('cuState.go')
+  if (start === 8 || start === 9) return t('cuState.stopped')
+  return t('footer.unknown')
+}
+
 export default function BackendStatusPopup({ isOpen, onClose }) {
+  const { t } = useTranslation('layout')
   const [backendStatus, setBackendStatus] = useState(null)
   const [cuStatus, setCuStatus] = useState(null)
   const [simulatorStatus, setSimulatorStatus] = useState(null)
@@ -52,43 +63,49 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
         setBackendStatus(health)
         setCuStatus(bt)
         setSimulatorStatus(sim)
-        addLog('info', `Backend: ${health.status} (v${health.version})`)
+        addLog('info', t('statusPopup.logs.backendStatus', { status: health.status, version: health.version }))
         if (sim.isMockDevice) {
-          addLog('info', `Mode simulateur: ${sim.running ? 'En cours' : 'Arrêté'}`)
+          addLog('info', t('statusPopup.logs.simulatorMode', { state: sim.running ? t('glossary:status.running') : t('glossary:status.stopped') }))
         } else if (bt.connected) {
-          addLog('info', 'CU connecté')
+          addLog('info', t('statusPopup.logs.cuConnected'))
         } else {
-          addLog('warn', 'CU non connecté')
+          addLog('warn', t('statusPopup.logs.cuNotConnected'))
         }
       } catch (error) {
-        addLog('error', `Erreur connexion backend: ${error.message}`)
+        addLog('error', t('statusPopup.logs.backendError', { message: error.message }))
         setBackendStatus(null)
       } finally {
         setLoading(false)
       }
     }
     fetchStatus()
-  }, [isOpen])
+  }, [isOpen, t])
 
   useEffect(() => {
     if (!isOpen) return
     const socket = io(WS_URL, { transports: ['websocket', 'polling'], reconnection: true })
     socketRef.current = socket
 
-    socket.on('connect', () => addLog('info', 'WebSocket connecté'))
-    socket.on('disconnect', () => addLog('warn', 'WebSocket déconnecté'))
-    socket.on('cu:connected', () => addLog('info', 'CU connecté'))
-    socket.on('cu:disconnected', () => addLog('warn', 'CU déconnecté'))
+    socket.on('connect', () => addLog('info', t('statusPopup.logs.wsConnected')))
+    socket.on('disconnect', () => addLog('warn', t('statusPopup.logs.wsDisconnected')))
+    socket.on('cu:connected', () => addLog('info', t('statusPopup.logs.cuConnected')))
+    socket.on('cu:disconnected', () => addLog('warn', t('statusPopup.logs.cuDisconnected')))
     socket.on('cu:status', (status) => {
-      const names = { 0: 'Racing', 1: 'Lights 1/5', 2: 'Lights 2/5', 3: 'Lights 3/5', 4: 'Lights 4/5', 5: 'Lights 5/5', 6: 'False Start', 7: 'Go!', 9: 'Stopped' }
-      addLog('debug', `CU Status: ${names[status.start] || `State ${status.start}`}, Mode: ${status.mode}`)
+      addLog('debug', t('statusPopup.logs.cuStatus', { state: cuStateLabel(t, status.start), mode: status.mode }))
     })
-    socket.on('cu:timer', (data) => addLog('debug', `${data.isFinishLine ? 'Finish' : `Sector ${data.sector}`}: Ctrl ${data.controller} - ${data.lapTime}ms`))
-    socket.on('lap:completed', (lap) => addLog('info', `Tour: ${lap.driver?.name || `Ctrl ${lap.controller}`} - ${(lap.lapTime / 1000).toFixed(3)}s`))
-    socket.on('session:started', ({ sessionId }) => addLog('info', `Session démarrée: ${sessionId.substring(0, 8)}...`))
-    socket.on('session:stopped', ({ sessionId }) => addLog('info', `Session arrêtée: ${sessionId.substring(0, 8)}...`))
+    socket.on('cu:timer', (data) => addLog('debug', t('statusPopup.logs.timer', {
+      kind: data.isFinishLine ? t('statusPopup.logs.timerFinish') : t('statusPopup.logs.timerSector', { sector: data.sector }),
+      controller: data.controller,
+      lapTime: data.lapTime,
+    })))
+    socket.on('lap:completed', (lap) => addLog('info', t('statusPopup.logs.lap', {
+      label: lap.driver?.name || `Ctrl ${lap.controller}`,
+      time: (lap.lapTime / 1000).toFixed(3),
+    })))
+    socket.on('session:started', ({ sessionId }) => addLog('info', t('statusPopup.logs.sessionStarted', { id: sessionId.substring(0, 8) })))
+    socket.on('session:stopped', ({ sessionId }) => addLog('info', t('statusPopup.logs.sessionStopped', { id: sessionId.substring(0, 8) })))
     return () => socket.disconnect()
-  }, [isOpen])
+  }, [isOpen, t])
 
   const handleScroll = () => {
     if (!logsContainerRef.current) return
@@ -109,24 +126,24 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
   const statusItems = [
     {
-      label: 'Backend',
+      label: t('statusPopup.status.backend'),
       icon: Server,
       ok: !!backendStatus,
-      detail: backendStatus ? `v${backendStatus.version}` : 'Déconnecté',
+      detail: backendStatus ? `v${backendStatus.version}` : t('glossary:status.disconnected'),
     },
     {
-      label: simulatorStatus?.isMockDevice ? 'Simulateur' : 'Control Unit',
+      label: simulatorStatus?.isMockDevice ? t('glossary:simulator') : t('glossary:system.controlUnit'),
       icon: Zap,
       ok: simulatorStatus?.isMockDevice ? simulatorStatus.running : cuStatus?.connected,
       detail: simulatorStatus?.isMockDevice
-        ? (simulatorStatus.running ? 'En cours' : 'Arrêté')
-        : (cuStatus?.connected ? 'Connecté' : 'Déconnecté'),
+        ? (simulatorStatus.running ? t('glossary:status.running') : t('glossary:status.stopped'))
+        : (cuStatus?.connected ? t('glossary:status.connected') : t('glossary:status.disconnected')),
     },
     {
-      label: 'WebSocket',
+      label: t('glossary:system.websocket'),
       icon: socketRef.current?.connected ? Wifi : WifiOff,
       ok: socketRef.current?.connected,
-      detail: socketRef.current?.connected ? 'Connecté' : 'Déconnecté',
+      detail: socketRef.current?.connected ? t('glossary:status.connected') : t('glossary:status.disconnected'),
     },
   ]
 
@@ -136,10 +153,10 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
         <SheetHeader className="px-4 pt-4 pb-2">
           <SheetTitle className="flex items-center gap-2">
             <Server className="size-4 text-blue-500" />
-            Status Backend
+            {t('statusPopup.title')}
           </SheetTitle>
           <SheetDescription>
-            {backendStatus ? `v${backendStatus.version}` : '...'} · {simulatorStatus?.isMockDevice ? 'Simulateur' : 'CU Bluetooth'}
+            {backendStatus ? `v${backendStatus.version}` : '...'} · {simulatorStatus?.isMockDevice ? t('glossary:simulator') : t('statusPopup.cuBluetooth')}
           </SheetDescription>
         </SheetHeader>
 
@@ -158,7 +175,7 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
         {/* Log toolbar */}
         <div className="flex items-center justify-between px-4 py-2 border-y border-border">
-          <span className="text-xs text-muted-foreground">Logs ({filteredLogs.length})</span>
+          <span className="text-xs text-muted-foreground">{t('statusPopup.logsCount', { count: filteredLogs.length })}</span>
           <div className="flex items-center gap-1.5">
             {['all', ...LOG_TYPES].map((f) => (
               <button
@@ -166,10 +183,10 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
                 onClick={() => setFilter(f)}
                 className={`px-1.5 py-0.5 text-[10px] rounded transition-colors ${filter === f ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                {f === 'all' ? 'Tout' : f}
+                {f === 'all' ? t('statusPopup.filterAll') : f}
               </button>
             ))}
-            <Button variant="ghost" size="icon-sm" onClick={() => { setLogs([]); addLog('info', 'Logs effacés') }} title="Effacer">
+            <Button variant="ghost" size="icon-sm" onClick={() => { setLogs([]); addLog('info', t('statusPopup.logsCleared')) }} title={t('common:clear')}>
               <Trash2 className="size-3" />
             </Button>
           </div>
@@ -182,9 +199,9 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
           className="flex-1 overflow-auto px-4 py-2 font-mono text-[11px] bg-muted/30"
         >
           {loading ? (
-            <p className="text-muted-foreground text-center py-8">Chargement...</p>
+            <p className="text-muted-foreground text-center py-8">{t('statusPopup.loading')}</p>
           ) : filteredLogs.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Aucun log</p>
+            <p className="text-muted-foreground text-center py-8">{t('statusPopup.noLogs')}</p>
           ) : (
             filteredLogs.map((log, i) => (
               <div key={i} className="flex gap-2 py-0.5">

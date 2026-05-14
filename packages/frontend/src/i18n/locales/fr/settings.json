@@ -1,0 +1,68 @@
+{
+  "update": {
+    "title": "Mise à jour",
+    "currentVersion": "Version actuelle",
+    "check": "Vérifier",
+    "newVersionAvailable": "Nouvelle version disponible : v{{version}}",
+    "updateButton": "Mettre à jour",
+    "upToDate": "L'application est à jour",
+    "cantCheck": "Impossible de vérifier",
+    "starting": "Démarrage...",
+    "serverRestart": "Redémarrage du serveur...",
+    "restarting": "Redémarrage en cours...",
+    "connectionError": "Erreur de connexion au serveur",
+    "genericError": "Erreur"
+  },
+  "connection": {
+    "connected": "Connecté: {{device}}",
+    "noDevice": "Aucun appareil connecté",
+    "disconnect": "Déconnecter"
+  },
+  "devices": {
+    "title": "Sélectionner un appareil",
+    "auto": "Auto",
+    "manual": "Manuel",
+    "new": "(nouveau)",
+    "connecting": "Connexion...",
+    "connect": "Connecter",
+    "scanning": "Recherche en cours...",
+    "scan": "Rechercher un nouveau circuit"
+  },
+  "cuStatus": {
+    "title": "État du Device",
+    "start": "Start",
+    "mode": "Mode",
+    "display": "Display",
+    "fuel": "Fuel"
+  },
+  "appearance": {
+    "themeNight": "Mode nuit",
+    "themeDay": "Mode jour",
+    "darkInterface": "Interface sombre",
+    "lightInterface": "Interface claire",
+    "defaultView": "Vue par défaut",
+    "bestLapVoice": "Annonce meilleur tour",
+    "bestLapVoiceDesc": "Voix quand un nouveau record est établi",
+    "minLapsBeforeAnnounce": "Tours minimum avant annonce",
+    "podiumVoice": "Annonce podium",
+    "podiumVoiceDesc": "Résultats vocaux en fin de session",
+    "defaultVoice": "Voix par défaut",
+    "testVoice": "Tester la voix",
+    "testVoicePhrase": "Meilleur tour, Anselme, 6,142 secondes",
+    "adminMode": "Mode administrateur",
+    "adminModeDesc": "Displays, Test, Simulateur",
+    "language": "Langue",
+    "languageDesc": "Langue de l'interface"
+  },
+  "logs": {
+    "title": "Logs",
+    "empty": "Aucun log",
+    "controllerLap": "Ctrl {{n}}: {{time}}s",
+    "controllerSector": "Ctrl {{n}}: secteur {{sector}}",
+    "connectedTo": "Connecté à {{device}}",
+    "errorWith": "Erreur: {{error}}",
+    "scanning": "Scan en cours...",
+    "devicesFound": "{{count}} appareil(s) trouvé(s)",
+    "deviceDeleted": "Device {{name}} supprimé"
+  }
+}

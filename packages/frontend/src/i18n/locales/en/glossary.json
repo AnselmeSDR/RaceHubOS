@@ -1,0 +1,43 @@
+{
+  "driver_one": "Driver",
+  "driver_other": "Drivers",
+  "car_one": "Car",
+  "car_other": "Cars",
+  "track_one": "Track",
+  "track_other": "Tracks",
+  "team_one": "Team",
+  "team_other": "Teams",
+  "championship_one": "Championship",
+  "championship_other": "Championships",
+  "session_one": "Session",
+  "session_other": "Sessions",
+  "lap_one": "Lap",
+  "lap_other": "Laps",
+  "win_one": "Win",
+  "win_other": "Wins",
+  "podium_one": "Podium",
+  "podium_other": "Podiums",
+  "race_one": "Race",
+  "race_other": "Races",
+  "qualifying_one": "Qualifying",
+  "qualifying_other": "Qualifying",
+  "practice_one": "Practice",
+  "practice_other": "Practice",
+  "simulator": "Simulator",
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "running": "Running",
+    "stopped": "Stopped"
+  },
+  "system": {
+    "websocket": "WebSocket",
+    "controlUnit": "Control Unit"
+  },
+  "sessionType": {
+    "practice": "Practice",
+    "qualif": "Qualifying",
+    "race": "Race",
+    "balancing": "Balancing"
+  }
+}

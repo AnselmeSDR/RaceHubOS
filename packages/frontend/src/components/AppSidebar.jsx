@@ -1,21 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  BarChart3,
-  Flag,
-  Trophy,
-  Clock,
-  Users,
-  Car,
-  Map,
-  Users2,
-  LayoutGrid,
-  FlaskConical,
-  Scale,
-  Terminal,
-  Settings,
-  Sun,
-  Moon,
-} from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Sun, Moon } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -29,24 +14,10 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar'
 import { useApp } from '../context/AppContext'
-
-export const allNavItems = [
-  { to: '/', label: 'Dashboard', Icon: BarChart3 },
-  { to: '/race', label: 'Mode Libre', Icon: Flag },
-  { to: '/championships', label: 'Championnats', Icon: Trophy },
-  { to: '/history', label: 'Historique', Icon: Clock },
-  { to: '/tracks', label: 'Circuits', Icon: Map },
-  { to: '/teams', label: 'Équipes', Icon: Users2 },
-  { to: '/drivers', label: 'Pilotes', Icon: Users },
-  { to: '/cars', label: 'Voitures', Icon: Car },
-  { to: '/stats', label: 'Statistiques', Icon: BarChart3 },
-  { to: '/balancing', label: 'Équilibrage', Icon: Scale },
-  { to: '/displays', label: 'Displays', Icon: LayoutGrid, adminOnly: true },
-  { to: '/test', label: 'Test', Icon: Terminal, adminOnly: true },
-  { to: '/settings', label: 'Paramètres', Icon: Settings },
-]
+import { allNavItems, navLabel } from '../lib/navItems'
 
 export default function AppSidebar({ backendConnected, backendVersion, onStatusClick, ...props }) {
+  const { t } = useTranslation('layout')
   const { isDark, toggleTheme, isAdmin } = useApp()
   const location = useLocation()
 
@@ -77,19 +48,22 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('nav.groupLabel')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.to}>
-                  <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
-                    <Link to={item.to}>
-                      <item.Icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navItems.map((item) => {
+                const label = navLabel(t, item)
+                return (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={label}>
+                      <Link to={item.to}>
+                        <item.Icon />
+                        <span>{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -98,16 +72,16 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleTheme} tooltip={isDark ? 'Mode jour' : 'Mode nuit'}>
+            <SidebarMenuButton onClick={toggleTheme} tooltip={isDark ? t('theme.dayMode') : t('theme.nightMode')}>
               {isDark ? <Sun /> : <Moon />}
-              <span>{isDark ? 'Mode jour' : 'Mode nuit'}</span>
+              <span>{isDark ? t('theme.dayMode') : t('theme.nightMode')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onStatusClick} tooltip={backendConnected ? 'Backend connecté' : 'Backend déconnecté'}>
+            <SidebarMenuButton onClick={onStatusClick} tooltip={backendConnected ? t('backend.connectedTooltip') : t('backend.disconnectedTooltip')}>
               <div className={`size-2 rounded-full shrink-0 ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <span className="text-xs truncate">
-                {backendConnected ? `Connecté — v${backendVersion}` : 'Backend déconnecté'}
+                {backendConnected ? t('backend.connected', { version: backendVersion }) : t('backend.disconnected')}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

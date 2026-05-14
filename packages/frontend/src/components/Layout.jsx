@@ -1,41 +1,41 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import AppSidebar, { allNavItems } from './AppSidebar'
+import AppSidebar from './AppSidebar'
 import BackendStatusPopup from './BackendStatusPopup'
+import { allNavItems, navLabel } from '../lib/navItems'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { PageHeaderProvider, usePageHeader } from '../context/PageHeaderContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const CU_STATE_NAMES = {
-  0: 'Racing',
-  1: 'Lights 1/5',
-  2: 'Lights 2/5',
-  3: 'Lights 3/5',
-  4: 'Lights 4/5',
-  5: 'Lights 5/5',
-  6: 'False Start',
-  7: 'Go!',
-  8: 'Stopped',
-  9: 'Stopped'
+function cuStateLabel(t, start) {
+  if (start === 0) return t('cuState.racing')
+  if (start >= 1 && start <= 5) return t('cuState.lights', { n: start })
+  if (start === 6) return t('cuState.falseStart')
+  if (start === 7) return t('cuState.go')
+  if (start === 8 || start === 9) return t('cuState.stopped')
+  return t('footer.unknown')
 }
 
 function useDefaultPageTitle() {
+  const { t } = useTranslation('layout')
   const { pathname } = useLocation()
   const basePath = '/' + (pathname.split('/')[1] || '')
   const item = allNavItems.find(n =>
     n.to === '/' ? pathname === '/' : basePath === n.to
   )
-  return item?.label ?? 'RaceHubOS'
+  return item ? navLabel(t, item) : 'RaceHubOS'
 }
 
 function PageHeader() {
+  const { t } = useTranslation('layout')
   const { header } = usePageHeader()
   const defaultTitle = useDefaultPageTitle()
 
@@ -54,7 +54,7 @@ function PageHeader() {
         <div className="min-w-0">
           <h1 className="text-sm font-medium truncate leading-tight">{header.title}</h1>
           <p className="text-xs text-muted-foreground leading-tight">
-            {header.loading ? '...' : header.totalCount != null ? `${header.totalCount} résultat${header.totalCount > 1 ? 's' : ''}` : ''}
+            {header.loading ? '...' : header.totalCount != null ? t('header.results', { count: header.totalCount }) : ''}
           </p>
         </div>
       </div>
@@ -64,11 +64,11 @@ function PageHeader() {
             <TabsList>
               <TabsTrigger value="grid">
                 <LayoutGridIcon className="w-4 h-4" />
-                Grille
+                {t('common:grid')}
               </TabsTrigger>
               <TabsTrigger value="list">
                 <ListIcon className="w-4 h-4" />
-                Liste
+                {t('common:list')}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -89,6 +89,7 @@ function PageHeader() {
 }
 
 export default function Layout() {
+  const { t } = useTranslation('layout')
   const { sidebarOpen, setSidebarOpen } = useApp()
   const { cuStatus, connected: cuConnected, deviceAddress, lastTimer } = useDevice()
   const isSimulator = deviceAddress === SIMULATOR_ADDRESS
@@ -140,16 +141,16 @@ export default function Layout() {
           </span>
           <span className="text-muted-foreground/40 mx-1">|</span>
           <span className={cuStatus?.start === 0 ? 'text-green-500' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-500' : 'text-muted-foreground'}>
-            {CU_STATE_NAMES[cuStatus?.start] || 'Unknown'}
+            {cuStateLabel(t, cuStatus?.start)}
           </span>
           <span className="text-muted-foreground/40 mx-1">|</span>
-          <span>Mode {cuStatus?.mode ?? '-'}</span>
+          <span>{t('footer.mode', { mode: cuStatus?.mode ?? '-' })}</span>
           {lastTimer && (
             <>
               <span className="text-muted-foreground/40 mx-1">|</span>
               <span className="text-blue-400">C{lastTimer.controller + 1}</span>
               {lastTimer.isFinishLine ? (
-                <span className="text-green-500 ml-1">{lastTimer.lapTime > 0 ? `${(lastTimer.lapTime / 1000).toFixed(3)}s` : 'start'}</span>
+                <span className="text-green-500 ml-1">{lastTimer.lapTime > 0 ? `${(lastTimer.lapTime / 1000).toFixed(3)}s` : t('footer.lapStart')}</span>
               ) : (
                 <span className="text-yellow-500 ml-1">S{lastTimer.sector}</span>
               )}
