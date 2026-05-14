@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Flag, MapPin, Trash2, Trophy, Users2, Clock, Timer, Pause, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmModal } from '../components/ui/Modal'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import BalancingChart from '../components/balancing/BalancingChart'
 import Podium from '../components/race/Podium'
@@ -11,21 +13,6 @@ import LapTime from '../components/race/LapTime'
 import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-
-const TYPE_LABELS = {
-  practice: 'Essais Libres',
-  qualif: 'Qualifications',
-  race: 'Course',
-  balancing: 'Équilibrage',
-}
-
-const STATUS_LABELS = {
-  draft: 'Brouillon',
-  active: 'Active',
-  paused: 'En pause',
-  finishing: 'Drapeau',
-  finished: 'Terminée',
-}
 
 function formatDuration(ms) {
   if (!ms || ms <= 0) return '--'
@@ -36,8 +23,8 @@ function formatDuration(ms) {
   return `${min}m${sec > 0 ? ` ${sec}s` : ''}`
 }
 
-function formatDate(date) {
-  return new Date(date).toLocaleDateString('fr-FR', {
+function formatDate(date, locale) {
+  return new Date(date).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -47,10 +34,12 @@ function formatDate(date) {
 }
 
 export default function SessionDetail() {
+  const { t, i18n } = useTranslation('sessions')
   const { id } = useParams()
   const navigate = useNavigate()
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -177,7 +166,7 @@ export default function SessionDetail() {
   }, [fastestLap, session])
 
   async function handleDelete() {
-    if (!confirm('Supprimer cette session ?')) return
+    setShowDeleteConfirm(false)
     try {
       const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: 'DELETE' })
       if (res.ok) navigate('/history')
@@ -198,9 +187,9 @@ export default function SessionDetail() {
     return (
       <div className="p-8">
         <Button variant="ghost" onClick={() => navigate('/history')}>
-          <ArrowLeft className="size-4" /> Retour
+          <ArrowLeft className="size-4" /> {t('common:back')}
         </Button>
-        <p className="text-center text-muted-foreground mt-8">Session introuvable</p>
+        <p className="text-center text-muted-foreground mt-8">{t('profile.notFound')}</p>
       </div>
     )
   }
@@ -219,10 +208,10 @@ export default function SessionDetail() {
           <TypeIcon className="size-5 text-muted-foreground" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-lg">{session.name || `Session #${session.id.slice(0, 8)}`}</h1>
-              <Badge variant="outline">{TYPE_LABELS[session.type] || session.type}</Badge>
+              <h1 className="font-bold text-lg">{session.name || t('unnamedSession', { id: session.id.slice(0, 8) })}</h1>
+              <Badge variant="outline">{t(`glossary:sessionTypeFull.${session.type}`, { defaultValue: session.type })}</Badge>
               <Badge variant={session.status === 'finished' ? 'default' : 'secondary'}>
-                {STATUS_LABELS[session.status] || session.status}
+                {t(`glossary:sessionStatus.${session.status}`, { defaultValue: session.status })}
               </Badge>
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -238,14 +227,23 @@ export default function SessionDetail() {
                   {session.championship.name}
                 </Link>
               )}
-              <span>· {formatDate(session.createdAt)}</span>
+              <span>· {formatDate(session.createdAt, i18n.language)}</span>
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive hover:text-destructive">
+        <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:text-destructive">
           <Trash2 className="size-4" />
         </Button>
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={t('common:deleteConfirm.title')}
+        message={t('profile.deleteMessage')}
+        confirmLabel={t('common:delete')}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
@@ -283,7 +281,7 @@ export default function SessionDetail() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Aucune donnée de tour
+                {t('profile.noLapData')}
               </CardContent>
             </Card>
           )
@@ -299,7 +297,7 @@ export default function SessionDetail() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Aucun participant
+                {t('profile.noParticipants')}
               </CardContent>
             </Card>
           )
@@ -310,16 +308,16 @@ export default function SessionDetail() {
           <Card>
             <CardContent className="p-0">
               <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-semibold">Historique des tours ({session.laps.length})</h3>
+                <h3 className="text-sm font-semibold">{t('profile.lapHistory', { count: session.laps.length })}</h3>
               </div>
               <div className="max-h-96 overflow-auto">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-card border-b border-border">
                     <tr className="text-left text-xs text-muted-foreground uppercase">
-                      <th className="px-4 py-2 font-medium">Tour</th>
-                      <th className="px-4 py-2 font-medium">Pilote</th>
-                      <th className="px-4 py-2 font-medium">Voiture</th>
-                      <th className="px-4 py-2 font-medium text-right">Temps</th>
+                      <th className="px-4 py-2 font-medium">{t('glossary:lap', { count: 1 })}</th>
+                      <th className="px-4 py-2 font-medium">{t('glossary:driver', { count: 1 })}</th>
+                      <th className="px-4 py-2 font-medium">{t('glossary:car', { count: 1 })}</th>
+                      <th className="px-4 py-2 font-medium text-right">{t('profile.time')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">

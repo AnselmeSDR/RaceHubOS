@@ -41,5 +41,13 @@
     "loadError": "Error loading data",
     "trackRequired": "Track is required",
     "driverRequired": "At least one complete driver is required (driver, car, controller)"
+  },
+  "profile": {
+    "notFound": "Session not found",
+    "noLapData": "No lap data",
+    "noParticipants": "No participants",
+    "lapHistory": "Lap history ({{count}})",
+    "time": "Time",
+    "deleteMessage": "Delete this session?"
   }
 }
