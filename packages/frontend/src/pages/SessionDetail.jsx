@@ -10,18 +10,8 @@ import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import BalancingChart from '../components/balancing/BalancingChart'
 import Podium from '../components/race/Podium'
 import LapTime from '../components/race/LapTime'
-import { getImgUrl } from '../utils/image'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-
-function formatDuration(ms) {
-  if (!ms || ms <= 0) return '--'
-  const totalSec = Math.floor(ms / 1000)
-  const min = Math.floor(totalSec / 60)
-  const sec = totalSec % 60
-  if (min === 0) return `${sec}s`
-  return `${min}m${sec > 0 ? ` ${sec}s` : ''}`
-}
 
 function formatDate(date, locale) {
   return new Date(date).toLocaleDateString(locale, {
@@ -141,29 +131,11 @@ export default function SessionDetail() {
     return end - start
   }, [session])
 
-  // Total pause duration
-  const totalPauseDuration = useMemo(() => {
-    if (!session?.pauses) return 0
-    const pauses = typeof session.pauses === 'string' ? JSON.parse(session.pauses) : session.pauses
-    return pauses.reduce((sum, p) => sum + (p.end ? p.end - p.start : 0), 0)
-  }, [session])
-
-  // Total laps
-  const totalLaps = useMemo(() => {
-    return (session?.drivers || []).reduce((sum, d) => sum + (d.totalLaps || 0), 0)
-  }, [session])
-
   // Fastest lap
   const fastestLap = useMemo(() => {
     const times = (session?.drivers || []).map(d => d.bestLapTime).filter(t => t && t > 0)
     return times.length > 0 ? Math.min(...times) : null
   }, [session])
-
-  const fastestDriver = useMemo(() => {
-    if (!fastestLap || !session?.drivers) return null
-    const sd = session.drivers.find(d => d.bestLapTime === fastestLap)
-    return sd?.driver
-  }, [fastestLap, session])
 
   async function handleDelete() {
     setShowDeleteConfirm(false)
