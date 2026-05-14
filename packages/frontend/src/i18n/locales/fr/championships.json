@@ -1,0 +1,18 @@
+{
+  "searchPlaceholder": "Rechercher un championnat...",
+  "addLabel": "Nouveau championnat",
+  "columns": {
+    "name": "Nom",
+    "qualifs": "Qualifs",
+    "races": "Courses"
+  },
+  "form": {
+    "createTitle": "Nouveau championnat",
+    "autoMode": "Mode automatique",
+    "name": "Nom du championnat",
+    "namePlaceholder": "Championnat 2024",
+    "selectTrack": "Sélectionner un circuit...",
+    "saved": "Championnat créé avec succès",
+    "createError": "Erreur lors de la création"
+  }
+}
