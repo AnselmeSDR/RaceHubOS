@@ -1,0 +1,37 @@
+{
+  "page": {
+    "trackPlaceholder": "Select track...",
+    "title": "Balancing",
+    "newSession": "New session",
+    "showStandings": "Show standings",
+    "hideStandings": "Hide standings",
+    "standingsTitle": "Overall Standings"
+  },
+  "session": {
+    "defaultName": "Balancing"
+  },
+  "chart": {
+    "carFallback": "Car {{number}}",
+    "noLapData": "No lap data available",
+    "title": "Lap time evolution",
+    "axisLap": "Lap(s)",
+    "axisTime": "Time (s)",
+    "tooltipLapLabel": "Lap {{lap}}",
+    "tooltipValue": "{{value}}s",
+    "lapsCount_one": "{{count}} lap",
+    "lapsCount_other": "{{count}} laps",
+    "best": "Best",
+    "bestMedian5": "Best med. 5",
+    "avg60": "Avg. 60%",
+    "medianPer5": "Median / 5 laps"
+  },
+  "standings": {
+    "empty": "No standings available",
+    "bestPerCar": "Best time per car",
+    "lapsAndSessions_one": "{{laps}} laps · {{count}} session",
+    "lapsAndSessions_other": "{{laps}} laps · {{count}} sessions",
+    "best": "Best",
+    "median": "Med.",
+    "avg60": "60%"
+  }
+}

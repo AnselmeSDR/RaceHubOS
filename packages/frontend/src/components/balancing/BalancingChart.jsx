@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ReferenceLine, ResponsiveContainer,
@@ -34,13 +35,14 @@ function computeTrend(laps) {
 }
 
 export default function BalancingChart({ entries = [], maxLapTime = null }) {
+  const { t } = useTranslation('balancing')
   const { chartData, cars, medians } = useMemo(() => {
     const cars = []
     const carLapsMap = {}
 
     for (const entry of entries) {
       if (!entry.car || !entry.laps?.length) continue
-      const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || `Voiture ${entry.controller + 1}`
+      const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || t('chart.carFallback', { number: entry.controller + 1 })
       const color = fixColor(entry.car.color)
 
       const key = `${name}-${entry.controller}`
@@ -71,14 +73,14 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
     }
 
     return { chartData, cars, medians }
-  }, [entries, maxLapTime])
+  }, [entries, maxLapTime, t])
 
   // Stats per car for the summary below the chart
   const carStats = useMemo(() => {
     const stats = entries
       .filter(e => e.car && e.laps?.length > 1)
       .map(entry => {
-        const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || `Voiture ${entry.controller + 1}`
+        const name = [entry.car.brand, entry.car.model].filter(Boolean).join(' ') || t('chart.carFallback', { number: entry.controller + 1 })
         const key = `${name}-${entry.controller}`
         // Exclude first lap and outliers from calculations
         let filteredLaps = entry.laps.slice(1)
@@ -130,13 +132,13 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
         deltaToFastest: s.bestMedianWindow && fastestBestMed ? s.bestMedianWindow - fastestBestMed : null,
       }))
       .sort((a, b) => (a.bestMedianWindow ?? Infinity) - (b.bestMedianWindow ?? Infinity))
-  }, [entries, maxLapTime])
+  }, [entries, maxLapTime, t])
 
   if (cars.length === 0) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
-          Aucune donnée de tour disponible
+          {t('chart.noLapData')}
         </CardContent>
       </Card>
     )
@@ -146,7 +148,7 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Évolution des temps au tour</CardTitle>
+          <CardTitle className="text-lg">{t('chart.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
@@ -154,21 +156,21 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis
                 dataKey="lap"
-                label={{ value: 'Tour(s)', position: 'insideBottomRight', offset: -5 }}
+                label={{ value: t('chart.axisLap'), position: 'insideBottomRight', offset: -5 }}
                 tick={{ fontSize: 12 }}
               />
               <YAxis
                 domain={['auto', 'auto']}
-                label={{ value: 'Temps (s)', angle: -90, position: 'insideLeft', offset: 5 }}
+                label={{ value: t('chart.axisTime'), angle: -90, position: 'insideLeft', offset: 5 }}
                 tick={{ fontSize: 12 }}
                 tickFormatter={v => v.toFixed(1)}
               />
               <Tooltip
                 formatter={(value, name) => {
                   const car = cars.find(c => c.key === name)
-                  return [`${value.toFixed(3)}s`, car?.name || name]
+                  return [t('chart.tooltipValue', { value: value.toFixed(3) }), car?.name || name]
                 }}
-                labelFormatter={label => `Tour ${label}`}
+                labelFormatter={label => t('chart.tooltipLapLabel', { lap: label })}
               />
               <Legend formatter={(value) => {
                 const car = cars.find(c => c.key === value)
@@ -228,16 +230,16 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
                         {trend.direction === 'stable' && <Minus className="size-3" />}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{totalLaps} tours</span>
+                    <span className="text-xs text-muted-foreground">{t('chart.lapsCount', { count: totalLaps })}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-2 text-center">
                   <div>
-                    <div className="text-xs text-muted-foreground/60 uppercase">Meilleur</div>
+                    <div className="text-xs text-muted-foreground/60 uppercase">{t('chart.best')}</div>
                     <LapTime time={best} size="md" className="text-fastest-lap" />
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground/60 uppercase">Best méd. 5</div>
+                    <div className="text-xs text-muted-foreground/60 uppercase">{t('chart.bestMedian5')}</div>
                     <LapTime time={bestMedianWindow} size="md" highlight />
                     {deltaToFastest > 0 && (
                       <div className="text-xs font-mono text-red-400 mt-0.5">
@@ -246,13 +248,13 @@ export default function BalancingChart({ entries = [], maxLapTime = null }) {
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground/60 uppercase">Moy. 60%</div>
+                    <div className="text-xs text-muted-foreground/60 uppercase">{t('chart.avg60')}</div>
                     <LapTime time={avg60} size="md" />
                   </div>
                 </div>
                 {medianWindows.length > 0 && (
                   <div className="border-t border-border pt-2">
-                    <div className="text-xs text-muted-foreground/60 uppercase mb-1.5">Médiane / 5 tours</div>
+                    <div className="text-xs text-muted-foreground/60 uppercase mb-1.5">{t('chart.medianPer5')}</div>
                     <div className="flex gap-4">
                       {[0, 1].map(col => {
                         const half = Math.ceil(medianWindows.length / 2)

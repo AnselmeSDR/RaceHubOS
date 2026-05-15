@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
@@ -18,6 +19,7 @@ import BalancingStandings from '../components/balancing/BalancingStandings'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function BalancingPage() {
+  const { t } = useTranslation('balancing')
   const { startRace: triggerCuStart } = useDevice()
   const {
     session,
@@ -136,7 +138,7 @@ export default function BalancingPage() {
       const result = await createSession({
         trackId: selectedTrackId,
         type: 'balancing',
-        name: 'Équilibrage',
+        name: t('session.defaultName'),
         status: 'draft',
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
@@ -225,7 +227,7 @@ export default function BalancingPage() {
         <div className="flex items-center gap-3">
           <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Sélectionner circuit..." />
+              <SelectValue placeholder={t('page.trackPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {tracks.map(track => (
@@ -234,7 +236,7 @@ export default function BalancingPage() {
             </SelectContent>
           </Select>
 
-          <span className="text-sm font-medium text-muted-foreground">Équilibrage</span>
+          <span className="text-sm font-medium text-muted-foreground">{t('page.title')}</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -245,13 +247,13 @@ export default function BalancingPage() {
             disabled={!selectedTrackId || isSessionActive || loading}
           >
             <Plus className="size-4" />
-            Nouvelle session
+            {t('page.newSession')}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleStandings}
-            title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}
+            title={showStandings ? t('page.hideStandings') : t('page.showStandings')}
           >
             {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
           </Button>
@@ -296,7 +298,7 @@ export default function BalancingPage() {
           {/* Right: Standings */}
           {showStandings && (
             <div>
-              <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
+              <h2 className="text-sm font-semibold mb-3">{t('page.standingsTitle')}</h2>
               <BalancingStandings standings={standings} />
             </div>
           )}
