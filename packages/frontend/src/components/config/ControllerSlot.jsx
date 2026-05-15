@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { getImgUrl } from '../../utils/image'
 
 const CONTROLLER_COLORS = {
@@ -20,6 +21,7 @@ export default function ControllerSlot({
   usedDriverIds = [],
   usedCarIds = []
 }) {
+  const { t } = useTranslation('race')
   const isConfigured = config?.driverId && config?.carId
   const selectedDriver = drivers?.find(d => d.id === config?.driverId)
   const selectedCar = cars?.find(c => c.id === config?.carId)
@@ -64,7 +66,7 @@ export default function ControllerSlot({
           >
             {controller}
           </div>
-          <span className="font-medium text-gray-700">Manette {controller}</span>
+          <span className="font-medium text-gray-700">{t('controllerSlot.controller', { number: controller })}</span>
         </div>
         {!isConfigured && (
           <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -94,7 +96,7 @@ export default function ControllerSlot({
       {/* Driver select */}
       <div className="mb-2">
         <label className="block text-xs font-medium text-gray-500 mb-1">
-          Pilote
+          {t('controllerSlot.driverLabel')}
         </label>
         <select
           value={config?.driverId || ''}
@@ -102,7 +104,7 @@ export default function ControllerSlot({
           disabled={disabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <option value="">Sélectionner...</option>
+          <option value="">{t('controllerSlot.select')}</option>
           {availableDrivers.map((driver) => (
             <option key={driver.id} value={driver.id}>
               {driver.name}
@@ -114,7 +116,7 @@ export default function ControllerSlot({
       {/* Car select */}
       <div>
         <label className="block text-xs font-medium text-gray-500 mb-1">
-          Voiture
+          {t('controllerSlot.carLabel')}
         </label>
         <select
           value={config?.carId || ''}
@@ -122,7 +124,7 @@ export default function ControllerSlot({
           disabled={disabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <option value="">Sélectionner...</option>
+          <option value="">{t('controllerSlot.select')}</option>
           {availableCars.map((car) => (
             <option key={car.id} value={car.id}>
               {car.brand} {car.model}

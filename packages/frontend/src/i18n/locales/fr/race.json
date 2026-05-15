@@ -1,0 +1,138 @@
+{
+  "gapDisplay": {
+    "leader": "Leader",
+    "lapsGap_one": "+{{count}} tour",
+    "lapsGap_other": "+{{count}} tours"
+  },
+  "stateChip": {
+    "idle": "Essais libres",
+    "pending": "Démarrage...",
+    "running": "En course",
+    "paused": "En pause",
+    "results": "Résultats"
+  },
+  "startingGrid": {
+    "title": "Grille de départ",
+    "emptyTitle": "Aucun pilote sur la grille",
+    "emptyHint": "Configurez les pilotes pour démarrer",
+    "row": "Rang {{number}}"
+  },
+  "podium": {
+    "first": "1er",
+    "second": "2ème",
+    "third": "3ème",
+    "winner": "Vainqueur",
+    "lapsGap_one": "+{{count}} tour",
+    "lapsGap_other": "+{{count}} tours",
+    "laps": "Tours",
+    "duration": "Durée",
+    "grace": "Grace"
+  },
+  "leaderboard": {
+    "empty": "Aucune entrée dans le classement",
+    "laps": "Tours",
+    "best": "Meilleur",
+    "last": "Dernier",
+    "gap": "Écart",
+    "total": "Total"
+  },
+  "resultsModal": {
+    "title": "Résultats",
+    "colPos": "Pos",
+    "colDriver": "Pilote",
+    "colLaps": "Tours",
+    "colBest": "Meilleur",
+    "backToFreePractice": "Retour au mode libre"
+  },
+  "sessionHeader": {
+    "elapsed": "Temps",
+    "remaining": "Restant",
+    "cuOk": "CU OK",
+    "cuOff": "CU Off"
+  },
+  "cancelConfirmModal": {
+    "title": "Annuler la session ?",
+    "message": "Cette action va annuler la session en cours.",
+    "back": "Retour",
+    "confirm": "Annuler la session"
+  },
+  "sessionModal": {
+    "nameLabel": "Nom de la session",
+    "durationLabel": "Durée (min)",
+    "maxLapsLabel": "Max tours",
+    "unlimitedHint": "0 = illimité",
+    "useQualifyingGrid": "Utiliser la grille des qualifications",
+    "startQualifying": "Démarrer les qualifs",
+    "startRace": "Lancer la course"
+  },
+  "trackRecords": {
+    "title": "Records",
+    "noRecord": "Aucun record",
+    "selectTrack": "Sélectionnez un circuit",
+    "practice": "Libre",
+    "qualif": "Qualifications",
+    "race": "Course"
+  },
+  "freePracticeEntry": {
+    "laps": "Tours",
+    "best": "Meilleur",
+    "last": "Dernier",
+    "controller": "Ctrl {{number}}"
+  },
+  "freePracticeLeaderboard": {
+    "title": "Classement",
+    "sortLaps": "Tours",
+    "sortTime": "Temps",
+    "reset": "Réinitialiser",
+    "waitingTitle": "En attente des tours...",
+    "waitingHint": "Roulez sur le circuit"
+  },
+  "freePracticeHeader": {
+    "title": "Mode Libre",
+    "selectTrack": "Sélectionner circuit...",
+    "qualifying": "Qualifications",
+    "race": "Course",
+    "cuConnected": "CU Connecté",
+    "cuDisconnected": "CU Déconnecté"
+  },
+  "controllerConfig": {
+    "title": "Configuration Pilotes",
+    "session": "Session"
+  },
+  "startLights": {
+    "cancelTitle": "Annuler (Échap)",
+    "falseStart": "FAUX DÉPART",
+    "go": "GO!",
+    "start": "START"
+  },
+  "session": {
+    "noSession": "Aucune session sélectionnée",
+    "typePractice": "Essais libres",
+    "typeQualif": "Qualifications",
+    "typeRace": "Course",
+    "elapsed": "Temps",
+    "remaining": "Restant",
+    "cuOk": "CU OK",
+    "cuOff": "CU Off",
+    "connectCu": "Connecter un CU",
+    "start": "Démarrer",
+    "pause": "Pause",
+    "finish": "Terminer",
+    "resume": "Reprendre",
+    "lastLapInProgress": "Dernier tour en cours...",
+    "viewResults": "Voir Résultats"
+  },
+  "controllerSlot": {
+    "controller": "Manette {{number}}",
+    "driverLabel": "Pilote",
+    "carLabel": "Voiture",
+    "select": "Sélectionner..."
+  },
+  "configStatus": {
+    "ready": "Prêt",
+    "toConfigure_one": "{{count}} manette à configurer",
+    "toConfigure_other": "{{count}} manettes à configurer",
+    "toConfigureWithSlots_one": "{{count}} manette à configurer ({{slots}})",
+    "toConfigureWithSlots_other": "{{count}} manettes à configurer ({{slots}})"
+  }
+}

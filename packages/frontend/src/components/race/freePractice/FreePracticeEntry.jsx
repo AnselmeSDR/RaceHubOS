@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LapTime from '../LapTime'
 import { getImgUrl } from '../../../utils/image'
 
 export default function FreePracticeEntry({ entry, index }) {
+    const { t } = useTranslation('race')
     const driverColor = entry.driver?.color || 'grey'
 
     return (
@@ -85,7 +87,7 @@ export default function FreePracticeEntry({ entry, index }) {
             {/* Name & Car */}
             <div className="flex-1 min-w-0">
                 <div className="font-black text-xl text-gray-900 uppercase italic truncate">
-                    {entry.driver?.name ? entry.driver.name.split(' ').pop() : `Ctrl ${entry.controller}`}
+                    {entry.driver?.name ? entry.driver.name.split(' ').pop() : t('freePracticeEntry.controller', { number: entry.controller })}
                 </div>
                 {entry.car && (
                     <div className="text-sm text-gray-500 truncate">
@@ -97,15 +99,15 @@ export default function FreePracticeEntry({ entry, index }) {
             {/* Stats */}
             <div className="flex items-center gap-6 flex-shrink-0">
                 <div className="text-center">
-                    <div className="text-xs text-gray-400 uppercase">Tours</div>
+                    <div className="text-xs text-gray-400 uppercase">{t('freePracticeEntry.laps')}</div>
                     <div className="font-mono font-bold text-lg text-gray-900">{entry.laps}</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-xs text-gray-400 uppercase">Meilleur</div>
+                    <div className="text-xs text-gray-400 uppercase">{t('freePracticeEntry.best')}</div>
                     <LapTime time={entry.bestLap} size="md" />
                 </div>
                 <div className="text-center">
-                    <div className="text-xs text-gray-400 uppercase">Dernier</div>
+                    <div className="text-xs text-gray-400 uppercase">{t('freePracticeEntry.last')}</div>
                     <LapTime time={entry.lastLap} size="md" />
                 </div>
             </div>

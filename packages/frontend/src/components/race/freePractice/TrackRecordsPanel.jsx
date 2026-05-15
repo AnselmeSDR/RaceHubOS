@@ -1,12 +1,15 @@
 import { Trophy } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LapTime from '../LapTime'
 
 function RecordSection({ title, colorClass, records = [] }) {
+    const { t } = useTranslation('race')
+
     return (
         <div>
             <h3 className={`text-xs font-semibold uppercase mb-2 ${colorClass}`}>{title}</h3>
             {records.length === 0 ? (
-                <p className="text-xs text-gray-400">Aucun record</p>
+                <p className="text-xs text-gray-400">{t('trackRecords.noRecord')}</p>
             ) : (
                 <div className="space-y-2">
                     {records.map((record, idx) => (
@@ -29,31 +32,33 @@ function RecordSection({ title, colorClass, records = [] }) {
 }
 
 export default function TrackRecordsPanel({ selectedTrack, trackRecords = {} }) {
+    const { t } = useTranslation('race')
+
     return (
         <div className="w-80 border-l bg-white overflow-y-auto p-4">
             <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-5 h-5 text-yellow-500" />
-                <h2 className="font-semibold text-gray-800">Records</h2>
+                <h2 className="font-semibold text-gray-800">{t('trackRecords.title')}</h2>
             </div>
 
             {!selectedTrack ? (
                 <div className="text-center text-gray-400 py-8">
-                    <p>Sélectionnez un circuit</p>
+                    <p>{t('trackRecords.selectTrack')}</p>
                 </div>
             ) : (
                 <div className="space-y-4">
                     <RecordSection
-                        title="Libre"
+                        title={t('trackRecords.practice')}
                         colorClass="text-gray-500"
                         records={trackRecords.practice}
                     />
                     <RecordSection
-                        title="Qualifications"
+                        title={t('trackRecords.qualif')}
                         colorClass="text-blue-600"
                         records={trackRecords.qualif}
                     />
                     <RecordSection
-                        title="Course"
+                        title={t('trackRecords.race')}
                         colorClass="text-green-600"
                         records={trackRecords.race}
                     />

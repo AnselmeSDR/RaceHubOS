@@ -1,4 +1,5 @@
 import { Wifi, WifiOff, ChevronDown, Clock, Flag } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StateChip from '../StateChip'
 
 export default function FreePracticeHeader({
@@ -11,11 +12,13 @@ export default function FreePracticeHeader({
     onStartQualifying,
     onStartRace
 }) {
+    const { t } = useTranslation('race')
+
     return (
         <div className="bg-white border-b px-6 py-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold text-gray-800">Mode Libre</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">{t('freePracticeHeader.title')}</h1>
                     <StateChip status={status} />
                 </div>
 
@@ -30,7 +33,7 @@ export default function FreePracticeHeader({
                             }}
                             className="appearance-none bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 pr-10 font-medium text-gray-700"
                         >
-                            <option value="">Sélectionner circuit...</option>
+                            <option value="">{t('freePracticeHeader.selectTrack')}</option>
                             {tracks.map(track => (
                                 <option key={track.id} value={track.id}>{track.name}</option>
                             ))}
@@ -46,7 +49,7 @@ export default function FreePracticeHeader({
                             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             <Clock className="w-4 h-4" />
-                            Qualifications
+                            {t('freePracticeHeader.qualifying')}
                         </button>
 
                         <button
@@ -55,7 +58,7 @@ export default function FreePracticeHeader({
                             className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             <Flag className="w-4 h-4" />
-                            Course
+                            {t('freePracticeHeader.race')}
                         </button>
                     </div>
 
@@ -64,7 +67,7 @@ export default function FreePracticeHeader({
                         cuConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
                         {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-                        <span className="font-medium text-sm">{cuConnected ? 'CU Connecté' : 'CU Déconnecté'}</span>
+                        <span className="font-medium text-sm">{cuConnected ? t('freePracticeHeader.cuConnected') : t('freePracticeHeader.cuDisconnected')}</span>
                     </div>
                 </div>
             </div>

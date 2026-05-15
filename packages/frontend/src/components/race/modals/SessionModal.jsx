@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, Flag, Clock, RefreshCw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Modal, { ModalFooter, ModalButton } from '../../ui/Modal'
 
 /**
@@ -20,6 +21,7 @@ export default function SessionModal({
   type = 'qualif',
   initialValues = {}
 }) {
+  const { t } = useTranslation('race')
   const isQualifying = type === 'qualif'
 
   const [form, setForm] = useState({
@@ -39,7 +41,7 @@ export default function SessionModal({
     })
   }
 
-  const title = isQualifying ? 'Qualifications' : 'Course'
+  const title = isQualifying ? t('glossary:qualifying_other') : t('glossary:race_one')
   const Icon = isQualifying ? Play : Flag
   const buttonVariant = isQualifying ? 'primary' : 'success'
 
@@ -54,13 +56,13 @@ export default function SessionModal({
         {/* Session name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nom de la session
+            {t('sessionModal.nameLabel')}
           </label>
           <input
             type="text"
             value={form.name}
             onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-            placeholder={isQualifying ? 'Qualifications' : 'Course'}
+            placeholder={isQualifying ? t('glossary:qualifying_other') : t('glossary:race_one')}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -70,7 +72,7 @@ export default function SessionModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Clock className="w-4 h-4 inline mr-1" />
-              Durée (min)
+              {t('sessionModal.durationLabel')}
             </label>
             <input
               type="number"
@@ -79,12 +81,12 @@ export default function SessionModal({
               min="0"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">0 = illimité</p>
+            <p className="text-xs text-gray-500 mt-1">{t('sessionModal.unlimitedHint')}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <RefreshCw className="w-4 h-4 inline mr-1" />
-              Max tours
+              {t('sessionModal.maxLapsLabel')}
             </label>
             <input
               type="number"
@@ -93,7 +95,7 @@ export default function SessionModal({
               min="0"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">0 = illimité</p>
+            <p className="text-xs text-gray-500 mt-1">{t('sessionModal.unlimitedHint')}</p>
           </div>
         </div>
 
@@ -107,17 +109,17 @@ export default function SessionModal({
               className="w-4 h-4 text-green-500 rounded focus:ring-green-500"
             />
             <span className="text-sm text-gray-700">
-              Utiliser la grille des qualifications
+              {t('sessionModal.useQualifyingGrid')}
             </span>
           </label>
         )}
 
         <ModalFooter>
           <ModalButton variant="secondary" onClick={onClose}>
-            Annuler
+            {t('common:cancel')}
           </ModalButton>
           <ModalButton type="submit" variant={buttonVariant}>
-            {isQualifying ? 'Démarrer les qualifs' : 'Lancer la course'}
+            {isQualifying ? t('sessionModal.startQualifying') : t('sessionModal.startRace')}
           </ModalButton>
         </ModalFooter>
       </form>

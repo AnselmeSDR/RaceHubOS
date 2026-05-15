@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Flag, Timer, Zap } from 'lucide-react'
 import { getImgUrl } from '../../utils/image'
 
@@ -23,6 +24,8 @@ function formatTime(seconds) {
  * @param {object} stats - Optional { duration, gracePeriod, fastest } for summary bar
  */
 export default function Podium({ drivers = [], sessionType = 'race', stats }) {
+  const { t } = useTranslation('race')
+
   const sorted = [...drivers]
     .sort((a, b) => {
       if (sessionType === 'practice') {
@@ -43,7 +46,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
   const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
   const podiumHeight = ['h-44', 'h-32', 'h-28']
   const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
-  const podiumLabel = ['1er', '2ème', '3ème']
+  const podiumLabel = [t('podium.first'), t('podium.second'), t('podium.third')]
   const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
   const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
 
@@ -71,19 +74,19 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
                   <span className="text-2xl font-black text-foreground/80">{podiumLabel[realIdx]}</span>
                   <div className="text-center space-y-0.5">
                     {realIdx === 0 ? (
-                      <div className="font-mono text-xs text-green-400">Vainqueur</div>
+                      <div className="font-mono text-xs text-green-400">{t('podium.winner')}</div>
                     ) : (
                       <div className="font-mono text-xs text-red-400">
                         {sessionType === 'practice'
                           ? `+${formatLapTime((sd.bestLapTime || 0) - (podium[0]?.bestLapTime || 0))}`
                           : (sd.totalLaps || 0) < (podium[0]?.totalLaps || 0)
-                            ? `+${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0)} tour${(podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) > 1 ? 's' : ''}`
+                            ? t('podium.lapsGap', { count: (podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) })
                             : `+${formatLapTime((sd.totalTime || 0) - (podium[0]?.totalTime || 0))}`
                         }
                       </div>
                     )}
                     <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
-                    {sessionType !== 'practice' && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} tours</div>}
+                    {sessionType !== 'practice' && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} {t('glossary:lap', { count: sd.totalLaps || 0 }).toLowerCase()}</div>}
                   </div>
                 </div>
               </div>
@@ -100,7 +103,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
               {sorted[0]?.totalLaps || 0}
               {stats.maxLaps && <span className="text-muted-foreground">/{stats.maxLaps}</span>}
             </div>
-            <div className="text-xs text-muted-foreground">Tours</div>
+            <div className="text-xs text-muted-foreground">{t('glossary:lap_other')}</div>
           </div>
           {stats.duration != null && (
             <div>
@@ -109,7 +112,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
                 {formatTime(stats.duration)}
                 {stats.maxDuration && <span className="text-muted-foreground">/{formatTime(Math.floor(stats.maxDuration / 1000))}</span>}
               </div>
-              <div className="text-xs text-muted-foreground">Durée</div>
+              <div className="text-xs text-muted-foreground">{t('podium.duration')}</div>
             </div>
           )}
           {stats.gracePeriodUsed && (
@@ -118,7 +121,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
                 <Flag className="size-4" />
                 {Math.round((stats.gracePeriod || 30000) / 1000)}s
               </div>
-              <div className="text-xs text-muted-foreground">Grace</div>
+              <div className="text-xs text-muted-foreground">{t('podium.grace')}</div>
             </div>
           )}
           {fastest && (

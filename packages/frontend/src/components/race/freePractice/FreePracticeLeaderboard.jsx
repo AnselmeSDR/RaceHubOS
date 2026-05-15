@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Flag, Clock, RefreshCw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import FreePracticeEntry from './FreePracticeEntry'
 
 const SORT_OPTIONS = {
@@ -13,6 +14,7 @@ export default function FreePracticeLeaderboard({
     configs,
     onReset
 }) {
+    const { t } = useTranslation('race')
     const [sortBy, setSortBy] = useState(SORT_OPTIONS.LAPS)
 
     const entries = useMemo(() => {
@@ -51,7 +53,7 @@ export default function FreePracticeLeaderboard({
                 <div className="px-4 py-3 border-b flex items-center justify-between">
                     <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                         <Flag className="w-5 h-5 text-green-500" />
-                        Classement
+                        {t('freePracticeLeaderboard.title')}
                     </h2>
 
                     <div className="flex items-center gap-2">
@@ -66,7 +68,7 @@ export default function FreePracticeLeaderboard({
                                 }`}
                             >
                                 <RefreshCw className="w-4 h-4" />
-                                Tours
+                                {t('freePracticeLeaderboard.sortLaps')}
                             </button>
                             <button
                                 onClick={() => setSortBy(SORT_OPTIONS.BEST_TIME)}
@@ -77,7 +79,7 @@ export default function FreePracticeLeaderboard({
                                 }`}
                             >
                                 <Clock className="w-4 h-4" />
-                                Temps
+                                {t('freePracticeLeaderboard.sortTime')}
                             </button>
                         </div>
 
@@ -85,7 +87,7 @@ export default function FreePracticeLeaderboard({
                             onClick={onReset}
                             className="text-sm text-gray-500 hover:text-gray-700"
                         >
-                            Réinitialiser
+                            {t('freePracticeLeaderboard.reset')}
                         </button>
                     </div>
                 </div>
@@ -93,8 +95,8 @@ export default function FreePracticeLeaderboard({
                 {entries.length === 0 ? (
                     <div className="px-4 py-12 text-center text-gray-400">
                         <Flag className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>En attente des tours...</p>
-                        <p className="text-sm mt-1">Roulez sur le circuit</p>
+                        <p>{t('freePracticeLeaderboard.waitingTitle')}</p>
+                        <p className="text-sm mt-1">{t('freePracticeLeaderboard.waitingHint')}</p>
                     </div>
                 ) : (
                     <div className="p-4 space-y-2">

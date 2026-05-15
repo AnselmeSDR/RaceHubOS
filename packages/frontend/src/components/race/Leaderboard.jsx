@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { getImgUrl } from '../../utils/image'
@@ -8,10 +9,12 @@ import { getImgUrl } from '../../utils/image'
  * Leaderboard - Real-time race leaderboard with NASCAR-style driver cards
  */
 export default function Leaderboard({ leaderboard = [] }) {
+  const { t } = useTranslation('race')
+
   if (!leaderboard || leaderboard.length === 0) {
     return (
       <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">
-        No entries in the leaderboard
+        {t('leaderboard.empty')}
       </div>
     )
   }
@@ -123,7 +126,7 @@ export default function Leaderboard({ leaderboard = [] }) {
               <div className="flex items-center gap-6 flex-shrink-0">
                 {/* Laps */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Tours</div>
+                  <div className="text-xs text-gray-400 uppercase">{t('leaderboard.laps')}</div>
                   <div className="font-mono font-bold text-lg text-gray-900">
                     {entry.laps ?? entry.lapCount ?? 0}
                   </div>
@@ -131,19 +134,19 @@ export default function Leaderboard({ leaderboard = [] }) {
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Meilleur</div>
+                  <div className="text-xs text-gray-400 uppercase">{t('leaderboard.best')}</div>
                   <LapTime time={entry.bestLap} size="md" highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 uppercase">Dernier</div>
+                  <div className="text-xs text-gray-400 uppercase">{t('leaderboard.last')}</div>
                   <LapTime time={entry.lastLap} size="md" />
                 </div>
 
                 {/* Gap */}
                 <div className="text-center min-w-[80px]">
-                  <div className="text-xs text-gray-400 uppercase">Écart</div>
+                  <div className="text-xs text-gray-400 uppercase">{t('leaderboard.gap')}</div>
                   <GapDisplay gap={entry.gap} position={position} />
                 </div>
               </div>

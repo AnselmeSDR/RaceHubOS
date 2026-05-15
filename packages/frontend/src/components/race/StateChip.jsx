@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 /**
  * StateChip - Race state badge
  * Color-coded chip displaying current session state
@@ -20,41 +22,43 @@ const STATUS_MAP = {
 }
 
 export default function StateChip({ state, status }) {
+  const { t } = useTranslation('race')
+
   // Support both 'state' and 'status' props
   const rawValue = status || state
   const normalizedState = STATUS_MAP[rawValue] || 'IDLE'
 
   const stateConfig = {
     IDLE: {
-      label: 'Free Practice',
+      label: t('stateChip.idle'),
       bgColor: 'bg-gray-100',
       textColor: 'text-gray-600',
       borderColor: 'border-gray-300',
       pulse: false,
     },
     PENDING: {
-      label: 'Starting...',
+      label: t('stateChip.pending'),
       bgColor: 'bg-yellow-100',
       textColor: 'text-yellow-700',
       borderColor: 'border-yellow-400',
       pulse: true,
     },
     RUNNING: {
-      label: 'Racing',
+      label: t('stateChip.running'),
       bgColor: 'bg-green-100',
       textColor: 'text-green-700',
       borderColor: 'border-green-400',
       pulse: true,
     },
     PAUSED: {
-      label: 'Paused',
+      label: t('stateChip.paused'),
       bgColor: 'bg-orange-100',
       textColor: 'text-orange-700',
       borderColor: 'border-orange-400',
       pulse: false,
     },
     RESULTS: {
-      label: 'Results',
+      label: t('stateChip.results'),
       bgColor: 'bg-blue-100',
       textColor: 'text-blue-700',
       borderColor: 'border-blue-400',

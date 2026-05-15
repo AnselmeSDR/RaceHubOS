@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { GAP_COLORS } from '../../lib/colors'
 
 /**
@@ -6,6 +7,8 @@ import { GAP_COLORS } from '../../lib/colors'
  * For races: leader shows total time, others show gap (laps or time)
  */
 export default function GapDisplay({ gap, position, leaderBestLap }) {
+  const { t } = useTranslation('race')
+
   // Leader: show best lap if available, otherwise "Leader"
   if (position === 1) {
     if (leaderBestLap && leaderBestLap > 0) {
@@ -13,7 +16,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
     }
     return (
       <span className={`text-sm font-bold ${GAP_COLORS.leader} uppercase tracking-wide`}>
-        Leader
+        {t('gapDisplay.leader')}
       </span>
     )
   }
@@ -28,7 +31,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
     if (gap.type === 'laps') {
       return (
         <span className={`font-mono tabular-nums text-sm font-medium ${GAP_COLORS.laps}`}>
-          +{gap.value} tour{gap.value > 1 ? 's' : ''}
+          {t('gapDisplay.lapsGap', { count: gap.value })}
         </span>
       )
     }
