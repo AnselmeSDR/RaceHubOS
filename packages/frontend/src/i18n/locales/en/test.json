@@ -1,0 +1,83 @@
+{
+  "title": "Test Console",
+  "status": {
+    "socketOk": "Socket OK",
+    "socketOff": "Socket Off",
+    "cuConnected": "CU Connected",
+    "cuOffline": "CU Offline",
+    "session": "Session: {{id}}",
+    "noSession": "No Session"
+  },
+  "raceState": {
+    "unknown": "Unknown",
+    "racing": "Racing",
+    "lights": "Lights {{count}}/5",
+    "falseStart": "False Start",
+    "go": "Go!",
+    "stopped": "Stopped",
+    "state": "State {{state}}"
+  },
+  "modes": {
+    "fuel": "Fuel",
+    "real": "Real",
+    "pitLane": "Pit Lane",
+    "lapCounter": "Lap Counter"
+  },
+  "cu": {
+    "title": "Control Unit",
+    "scanConnect": "Scan & Connect",
+    "stop": "STOP",
+    "start": "START",
+    "esc": "ESC",
+    "resetTimer": "Reset Timer",
+    "clearPos": "Clear Pos",
+    "info": "Info",
+    "disconnect": "Disconnect",
+    "buttonTitle": "Button {{id}}: {{name}}",
+    "display": "Display: {{count}} cars",
+    "fuel": "Fuel: [{{values}}]"
+  },
+  "config": {
+    "toggle": "Config",
+    "title": "Controller Configuration",
+    "controller": "Controller {{number}}",
+    "driverPlaceholder": "-- Driver --",
+    "carPlaceholder": "-- Car --",
+    "autoSaved": "Configuration saved automatically. {{driverCount}} drivers, {{carCount}} cars available."
+  },
+  "logs": {
+    "title": "Logs",
+    "grouped": "Grouped",
+    "chrono": "Chrono",
+    "filterAll": "All",
+    "filterLap": "Laps",
+    "filterStatus": "Status",
+    "filterError": "Errors",
+    "filterSuccess": "Success",
+    "filterInfo": "Info",
+    "clearTitle": "Clear logs",
+    "waiting": "Waiting for events...",
+    "groupCount": "{{type}} ({{count}})",
+    "logDataTitle": "Log data to console",
+    "logData": "[data]",
+    "typeSuccess": "success",
+    "typeError": "error",
+    "typeLap": "lap",
+    "typeStatus": "status",
+    "typeInfo": "info"
+  },
+  "leaderboard": {
+    "title": "Live Leaderboard",
+    "clearTitle": "Clear leaderboard",
+    "noData": "No lap data yet",
+    "colPos": "Pos",
+    "colCar": "Car",
+    "colLaps": "Laps",
+    "colBest": "Best",
+    "colLast": "Last",
+    "defaultDriver": "Driver {{number}}",
+    "defaultCar": "Car {{number}}",
+    "totalLaps": "Total Laps: {{count}}",
+    "cars": "Cars: {{count}}"
+  }
+}

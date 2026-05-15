@@ -1,0 +1,83 @@
+{
+  "title": "Console de test",
+  "status": {
+    "socketOk": "Socket OK",
+    "socketOff": "Socket désactivé",
+    "cuConnected": "CU connectée",
+    "cuOffline": "CU hors ligne",
+    "session": "Session : {{id}}",
+    "noSession": "Aucune session"
+  },
+  "raceState": {
+    "unknown": "Inconnu",
+    "racing": "En course",
+    "lights": "Feux {{count}}/5",
+    "falseStart": "Faux départ",
+    "go": "Partez !",
+    "stopped": "Arrêté",
+    "state": "État {{state}}"
+  },
+  "modes": {
+    "fuel": "Carburant",
+    "real": "Réel",
+    "pitLane": "Voie des stands",
+    "lapCounter": "Compteur de tours"
+  },
+  "cu": {
+    "title": "Control Unit",
+    "scanConnect": "Scanner et connecter",
+    "stop": "STOP",
+    "start": "START",
+    "esc": "ESC",
+    "resetTimer": "Réinitialiser le chrono",
+    "clearPos": "Effacer position",
+    "info": "Info",
+    "disconnect": "Déconnecter",
+    "buttonTitle": "Bouton {{id}} : {{name}}",
+    "display": "Affichage : {{count}} voitures",
+    "fuel": "Carburant : [{{values}}]"
+  },
+  "config": {
+    "toggle": "Configuration",
+    "title": "Configuration des controllers",
+    "controller": "Controller {{number}}",
+    "driverPlaceholder": "-- Pilote --",
+    "carPlaceholder": "-- Voiture --",
+    "autoSaved": "Configuration sauvegardée automatiquement. {{driverCount}} pilotes, {{carCount}} voitures disponibles."
+  },
+  "logs": {
+    "title": "Logs",
+    "grouped": "Groupé",
+    "chrono": "Chrono",
+    "filterAll": "Tous",
+    "filterLap": "Tours",
+    "filterStatus": "Statut",
+    "filterError": "Erreurs",
+    "filterSuccess": "Succès",
+    "filterInfo": "Info",
+    "clearTitle": "Effacer les logs",
+    "waiting": "En attente d'événements...",
+    "groupCount": "{{type}} ({{count}})",
+    "logDataTitle": "Logger les données dans la console",
+    "logData": "[données]",
+    "typeSuccess": "succès",
+    "typeError": "erreur",
+    "typeLap": "tour",
+    "typeStatus": "statut",
+    "typeInfo": "info"
+  },
+  "leaderboard": {
+    "title": "Classement en direct",
+    "clearTitle": "Effacer le classement",
+    "noData": "Aucune donnée de tour pour l'instant",
+    "colPos": "Pos",
+    "colCar": "Voiture",
+    "colLaps": "Tours",
+    "colBest": "Meilleur",
+    "colLast": "Dernier",
+    "defaultDriver": "Pilote {{number}}",
+    "defaultCar": "Voiture {{number}}",
+    "totalLaps": "Total tours : {{count}}",
+    "cars": "Voitures : {{count}}"
+  }
+}
