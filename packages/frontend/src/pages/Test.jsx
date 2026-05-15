@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
 import { Wifi, WifiOff, Trash2, Play, Square, RefreshCw, X, Zap, User, Settings } from 'lucide-react'
 import { API_URL, CONTROLLER_COLORS, CU_BUTTONS, MODE_FLAGS } from '../constants'
@@ -23,6 +24,7 @@ const autoAssignControllers = (drivers, cars, currentConfig) => {
 }
 
 export default function Test() {
+  const { t, i18n } = useTranslation('test')
   const [logs, setLogs] = useState([])
   const [connected, setConnected] = useState(false)
   const [cuConnected, setCuConnected] = useState(false)
@@ -106,14 +108,14 @@ export default function Test() {
       const driver = config.driverId ? drivers.find(d => d.id === config.driverId) : null
       const car = config.carId ? cars.find(c => c.id === config.carId) : null
       return {
-        driverName: driver?.name || config.driverName || `Driver ${controller}`,
-        carName: car ? `${car.brand} ${car.model}` : config.carName || `Car ${controller}`,
+        driverName: driver?.name || config.driverName || t('leaderboard.defaultDriver', { number: controller }),
+        carName: car ? `${car.brand} ${car.model}` : config.carName || t('leaderboard.defaultCar', { number: controller }),
         color: car?.color || driver?.color || config.color || CONTROLLER_COLORS[controller] || '#888'
       }
     }
     return {
-      driverName: `Driver ${controller}`,
-      carName: `Car ${controller}`,
+      driverName: t('leaderboard.defaultDriver', { number: controller }),
+      carName: t('leaderboard.defaultCar', { number: controller }),
       color: CONTROLLER_COLORS[controller] || '#888'
     }
   }
@@ -344,6 +346,17 @@ export default function Test() {
     }
   }
 
+  const getLogTypeLabel = (type) => {
+    const labels = {
+      success: t('logs.typeSuccess'),
+      error: t('logs.typeError'),
+      lap: t('logs.typeLap'),
+      status: t('logs.typeStatus'),
+      info: t('logs.typeInfo')
+    }
+    return labels[type] || type
+  }
+
   const getSourceBadge = (source) => {
     const colors = {
       APP: 'bg-gray-600',
@@ -384,23 +397,23 @@ export default function Test() {
 
   // Decode CU status
   const getRaceState = () => {
-    if (!cuStatus) return { text: 'Unknown', color: 'gray' }
+    if (!cuStatus) return { text: t('raceState.unknown'), color: 'gray' }
     const start = cuStatus.start
-    if (start === 0) return { text: 'Racing', color: 'green' }
-    if (start >= 1 && start <= 5) return { text: `Lights ${start}/5`, color: 'yellow' }
-    if (start === 6) return { text: 'False Start', color: 'red' }
-    if (start === 7) return { text: 'Go!', color: 'green' }
-    if (start >= 8) return { text: 'Stopped', color: 'red' }
-    return { text: `State ${start}`, color: 'gray' }
+    if (start === 0) return { text: t('raceState.racing'), color: 'green' }
+    if (start >= 1 && start <= 5) return { text: t('raceState.lights', { count: start }), color: 'yellow' }
+    if (start === 6) return { text: t('raceState.falseStart'), color: 'red' }
+    if (start === 7) return { text: t('raceState.go'), color: 'green' }
+    if (start >= 8) return { text: t('raceState.stopped'), color: 'red' }
+    return { text: t('raceState.state', { state: start }), color: 'gray' }
   }
 
   const getModes = () => {
     if (!cuStatus) return []
     const modes = []
-    if (cuStatus.mode & MODE_FLAGS.FUEL) modes.push('Fuel')
-    if (cuStatus.mode & MODE_FLAGS.REAL) modes.push('Real')
-    if (cuStatus.mode & MODE_FLAGS.PIT_LANE) modes.push('Pit Lane')
-    if (cuStatus.mode & MODE_FLAGS.LAP_COUNTER) modes.push('Lap Counter')
+    if (cuStatus.mode & MODE_FLAGS.FUEL) modes.push(t('modes.fuel'))
+    if (cuStatus.mode & MODE_FLAGS.REAL) modes.push(t('modes.real'))
+    if (cuStatus.mode & MODE_FLAGS.PIT_LANE) modes.push(t('modes.pitLane'))
+    if (cuStatus.mode & MODE_FLAGS.LAP_COUNTER) modes.push(t('modes.lapCounter'))
     return modes
   }
 
@@ -412,20 +425,20 @@ export default function Test() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Test Console</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('title')}</h1>
           {/* Socket status */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
             connected ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
           }`}>
             {connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-            {connected ? 'Socket OK' : 'Socket Off'}
+            {connected ? t('status.socketOk') : t('status.socketOff')}
           </div>
           {/* CU status */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
             cuConnected ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
           }`}>
             <Zap className="w-4 h-4" />
-            {cuConnected ? 'CU Connected' : 'CU Offline'}
+            {cuConnected ? t('status.cuConnected') : t('status.cuOffline')}
           </div>
           {/* Race state */}
           {cuConnected && (
@@ -437,7 +450,7 @@ export default function Test() {
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
             testSession ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
           }`}>
-            {testSession ? `Session: ${testSession.id.substring(0, 8)}` : 'No Session'}
+            {testSession ? t('status.session', { id: testSession.id.substring(0, 8) }) : t('status.noSession')}
           </div>
           {/* Modes */}
           {modes.length > 0 && (
@@ -456,7 +469,7 @@ export default function Test() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-700 dark:text-gray-200">Control Unit</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-200">{t('cu.title')}</span>
             {!cuConnected ? (
               <button
                 onClick={scanAndConnect}
@@ -464,7 +477,7 @@ export default function Test() {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
-                Scan & Connect
+                {t('cu.scanConnect')}
               </button>
             ) : (
               <>
@@ -476,7 +489,7 @@ export default function Test() {
                     className="flex items-center gap-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-bold"
                   >
                     <Square className="w-5 h-5" />
-                    STOP
+                    {t('cu.stop')}
                   </button>
                 ) : (
                   <button
@@ -485,7 +498,7 @@ export default function Test() {
                     className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
                     <Play className="w-4 h-4" />
-                    START
+                    {t('cu.start')}
                   </button>
                 )}
                 <button
@@ -493,7 +506,7 @@ export default function Test() {
                   disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
                 >
-                  ESC
+                  {t('cu.esc')}
                 </button>
                 <button
                   onClick={() => apiCall('/reset-timer')}
@@ -501,14 +514,14 @@ export default function Test() {
                   className="flex items-center gap-1 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Reset Timer
+                  {t('cu.resetTimer')}
                 </button>
                 <button
                   onClick={() => apiCall('/clear-position')}
                   disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
-                  Clear Pos
+                  {t('cu.clearPos')}
                 </button>
                 <button
                   onClick={async () => {
@@ -530,7 +543,7 @@ export default function Test() {
                   disabled={actionLoading}
                   className="flex items-center gap-1 px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
                 >
-                  Info
+                  {t('cu.info')}
                 </button>
 
                 {/* CU Buttons */}
@@ -541,7 +554,7 @@ export default function Test() {
                       onClick={() => apiCall(`/button/${id}`)}
                       disabled={actionLoading}
                       className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50 text-xs"
-                      title={`Button ${id}: ${name}`}
+                      title={t('cu.buttonTitle', { id, name })}
                     >
                       {name}
                     </button>
@@ -555,7 +568,7 @@ export default function Test() {
                   className="flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 ml-2"
                 >
                   <X className="w-4 h-4" />
-                  Disconnect
+                  {t('cu.disconnect')}
                 </button>
               </>
             )}
@@ -564,9 +577,9 @@ export default function Test() {
           {/* Status info */}
           {cuConnected && cuStatus && (
             <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
-              <span>Display: {cuStatus.display || 6} cars</span>
+              <span>{t('cu.display', { count: cuStatus.display || 6 })}</span>
               {cuStatus.fuel && (
-                <span>Fuel: [{cuStatus.fuel.slice(0, cuStatus.display || 6).join(', ')}]</span>
+                <span>{t('cu.fuel', { values: cuStatus.fuel.slice(0, cuStatus.display || 6).join(', ') })}</span>
               )}
             </div>
           )}
@@ -577,7 +590,7 @@ export default function Test() {
             className={`flex items-center gap-1 px-3 py-2 rounded-lg ${showConfig ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'} hover:bg-blue-200 dark:hover:bg-blue-900/70`}
           >
             <Settings className="w-4 h-4" />
-            Config
+            {t('config.toggle')}
           </button>
         </div>
       </div>
@@ -587,7 +600,7 @@ export default function Test() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
           <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
             <User className="w-5 h-5" />
-            Configuration des Controllers
+            {t('config.title')}
           </h3>
           <div className="grid grid-cols-4 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(controller => {
@@ -600,7 +613,7 @@ export default function Test() {
                       className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">Controller {controller}</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">{t('config.controller', { number: controller })}</span>
                   </div>
                   <div className="space-y-2">
                     <select
@@ -608,7 +621,7 @@ export default function Test() {
                       onChange={(e) => updateControllerConfig(controller, 'driverId', e.target.value)}
                       className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
-                      <option value="">-- Pilote --</option>
+                      <option value="">{t('config.driverPlaceholder')}</option>
                       {drivers.map(d => (
                         <option key={d.id} value={d.id}>
                           #{d.number} {d.name}
@@ -620,7 +633,7 @@ export default function Test() {
                       onChange={(e) => updateControllerConfig(controller, 'carId', e.target.value)}
                       className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
-                      <option value="">-- Voiture --</option>
+                      <option value="">{t('config.carPlaceholder')}</option>
                       {cars.map(c => (
                         <option key={c.id} value={c.id}>
                           {c.brand} {c.model}
@@ -633,7 +646,7 @@ export default function Test() {
             })}
           </div>
           <p className="text-xs text-gray-400 mt-2">
-            Configuration sauvegardée automatiquement. {drivers.length} pilotes, {cars.length} voitures disponibles.
+            {t('config.autoSaved', { driverCount: drivers.length, carCount: cars.length })}
           </p>
         </div>
       )}
@@ -643,7 +656,7 @@ export default function Test() {
         <div className="col-span-2 bg-gray-900 rounded-lg flex flex-col overflow-hidden">
           <div className="flex items-center justify-between p-3 border-b border-gray-700">
             <div className="flex items-center gap-2">
-              <span className="text-white font-semibold">Logs</span>
+              <span className="text-white font-semibold">{t('logs.title')}</span>
               <span className="text-gray-400 text-sm">({filteredLogs.length})</span>
             </div>
             <div className="flex items-center gap-2">
@@ -651,7 +664,7 @@ export default function Test() {
                 onClick={() => setGroupByType(!groupByType)}
                 className={`px-2 py-1 text-sm rounded ${groupByType ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}
               >
-                {groupByType ? 'Groupé' : 'Chrono'}
+                {groupByType ? t('logs.grouped') : t('logs.chrono')}
               </button>
               {!groupByType && (
                 <select
@@ -659,18 +672,18 @@ export default function Test() {
                   onChange={(e) => setFilter(e.target.value)}
                   className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700"
                 >
-                  <option value="all">All</option>
-                  <option value="lap">Laps</option>
-                  <option value="status">Status</option>
-                  <option value="error">Errors</option>
-                  <option value="success">Success</option>
-                  <option value="info">Info</option>
+                  <option value="all">{t('logs.filterAll')}</option>
+                  <option value="lap">{t('logs.filterLap')}</option>
+                  <option value="status">{t('logs.filterStatus')}</option>
+                  <option value="error">{t('logs.filterError')}</option>
+                  <option value="success">{t('logs.filterSuccess')}</option>
+                  <option value="info">{t('logs.filterInfo')}</option>
                 </select>
               )}
               <button
                 onClick={clearLogs}
                 className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
-                title="Clear logs"
+                title={t('logs.clearTitle')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -680,7 +693,7 @@ export default function Test() {
           <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
             {filteredLogs.length === 0 ? (
               <div className="text-gray-500 text-center py-8">
-                Waiting for events...
+                {t('logs.waiting')}
               </div>
             ) : groupByType ? (
               // Grouped view by type
@@ -691,13 +704,13 @@ export default function Test() {
                   return (
                     <div key={type}>
                       <div className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(type)} bg-gray-800`}>
-                        {type} ({typeLogs.length})
+                        {t('logs.groupCount', { type: getLogTypeLabel(type), count: typeLogs.length })}
                       </div>
                       <div className="space-y-1 pl-2 border-l-2 border-gray-700">
                         {typeLogs.map((log, i) => (
                           <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
                             <span className="text-gray-500 flex-shrink-0">
-                              {new Date(log.timestamp).toLocaleTimeString()}
+                              {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
                             </span>
                             <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
                               {log.source}
@@ -707,9 +720,9 @@ export default function Test() {
                               <button
                                 onClick={() => console.log(log.data)}
                                 className="text-gray-500 hover:text-gray-300 flex-shrink-0"
-                                title="Log data to console"
+                                title={t('logs.logDataTitle')}
                               >
-                                [data]
+                                {t('logs.logData')}
                               </button>
                             )}
                           </div>
@@ -725,7 +738,7 @@ export default function Test() {
                 {filteredLogs.map((log, i) => (
                   <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
                     <span className="text-gray-500 flex-shrink-0">
-                      {new Date(log.timestamp).toLocaleTimeString()}
+                      {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
                     </span>
                     <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
                       {log.source}
@@ -735,9 +748,9 @@ export default function Test() {
                       <button
                         onClick={() => console.log(log.data)}
                         className="text-gray-500 hover:text-gray-300 flex-shrink-0"
-                        title="Log data to console"
+                        title={t('logs.logDataTitle')}
                       >
-                        [data]
+                        {t('logs.logData')}
                       </button>
                     )}
                   </div>
@@ -751,11 +764,11 @@ export default function Test() {
         {/* Leaderboard Panel */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col overflow-hidden">
           <div className="flex items-center justify-between p-3 border-b dark:border-gray-700">
-            <span className="font-semibold text-gray-800 dark:text-white">Live Leaderboard</span>
+            <span className="font-semibold text-gray-800 dark:text-white">{t('leaderboard.title')}</span>
             <button
               onClick={clearLeaderboard}
               className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400"
-              title="Clear leaderboard"
+              title={t('leaderboard.clearTitle')}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -764,17 +777,17 @@ export default function Test() {
           <div className="flex-1 overflow-y-auto">
             {sortedLeaderboard.length === 0 ? (
               <div className="text-gray-400 text-center py-8 text-sm">
-                No lap data yet
+                {t('leaderboard.noData')}
               </div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                   <tr className="text-left text-gray-500 dark:text-gray-400 text-xs">
-                    <th className="px-3 py-2">Pos</th>
-                    <th className="px-3 py-2">Car</th>
-                    <th className="px-3 py-2 text-right">Laps</th>
-                    <th className="px-3 py-2 text-right">Best</th>
-                    <th className="px-3 py-2 text-right">Last</th>
+                    <th className="px-3 py-2">{t('leaderboard.colPos')}</th>
+                    <th className="px-3 py-2">{t('leaderboard.colCar')}</th>
+                    <th className="px-3 py-2 text-right">{t('leaderboard.colLaps')}</th>
+                    <th className="px-3 py-2 text-right">{t('leaderboard.colBest')}</th>
+                    <th className="px-3 py-2 text-right">{t('leaderboard.colLast')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -818,8 +831,8 @@ export default function Test() {
           {sortedLeaderboard.length > 0 && (
             <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex justify-between">
-                <span>Total Laps: {sortedLeaderboard.reduce((s, e) => s + e.laps, 0)}</span>
-                <span>Cars: {sortedLeaderboard.length}</span>
+                <span>{t('leaderboard.totalLaps', { count: sortedLeaderboard.reduce((s, e) => s + e.laps, 0) })}</span>
+                <span>{t('leaderboard.cars', { count: sortedLeaderboard.length })}</span>
               </div>
             </div>
           )}
