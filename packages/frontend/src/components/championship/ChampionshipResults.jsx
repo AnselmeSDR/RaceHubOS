@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trophy, Timer, Clock, Zap, TrendingUp, Activity, Heart, Loader2 } from 'lucide-react'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
@@ -30,13 +31,14 @@ const AWARD_ICONS = {
 
 // ---- Podium ----
 function ResultsPodium({ podium }) {
+  const { t } = useTranslation('championships')
   if (!podium || podium.length < 2) return null
 
   const podiumBorder = ['border-yellow-400', 'border-gray-300', 'border-orange-400']
   const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
   const podiumHeight = ['h-28', 'h-20', 'h-16']
   const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
-  const podiumLabel = ['1er', '2ème', '3ème']
+  const podiumLabel = [t('results.podiumLabels.first'), t('results.podiumLabels.second'), t('results.podiumLabels.third')]
   const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
   const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
 
@@ -57,7 +59,7 @@ function ResultsPodium({ podium }) {
               )}
             </div>
             <span className="text-sm font-bold mb-0.5">{entry.driver?.name}</span>
-            <span className="text-[10px] text-muted-foreground mb-1">{entry.totalLaps} tours</span>
+            <span className="text-[10px] text-muted-foreground mb-1">{t('results.lapsCount', { count: entry.totalLaps })}</span>
             <div className={`${podiumHeight[realIdx]} w-full ${podiumBg[realIdx]} ${podiumBorder[realIdx]} border-t-2 rounded-t-lg flex items-start justify-center pt-1.5 ${podiumGlow[realIdx]} shadow-lg`}>
               <span className="text-lg font-black text-foreground">{podiumLabel[realIdx]}</span>
             </div>
@@ -70,6 +72,7 @@ function ResultsPodium({ podium }) {
 
 // ---- Award card ----
 function AwardCard({ award }) {
+  const { t } = useTranslation('championships')
   const Icon = AWARD_ICONS[award.id] || Trophy
 
   const renderValue = () => {
@@ -86,7 +89,7 @@ function AwardCard({ award }) {
       case 'comeback':
         return (
           <div>
-            <span className="font-mono text-lg font-bold text-session-race">+{award.gain} place{award.gain > 1 ? 's' : ''}</span>
+            <span className="font-mono text-lg font-bold text-session-race">{t('results.award.places', { count: award.gain })}</span>
             <div className="text-[10px] text-muted-foreground mt-0.5">P{award.qualifPos} → P{award.racePos}</div>
           </div>
         )
@@ -100,8 +103,8 @@ function AwardCard({ award }) {
       case 'iron-man':
         return (
           <div>
-            <span className="font-mono text-lg font-bold text-delta-gained">{award.totalLaps} tours</span>
-            <div className="text-[10px] text-muted-foreground mt-0.5">{award.finishedRaces} course{award.finishedRaces > 1 ? 's' : ''} terminée{award.finishedRaces > 1 ? 's' : ''}</div>
+            <span className="font-mono text-lg font-bold text-delta-gained">{t('results.award.lapsCount', { count: award.totalLaps })}</span>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('results.award.finishedRaces', { count: award.finishedRaces })}</div>
           </div>
         )
       default:
@@ -132,6 +135,7 @@ function AwardCard({ award }) {
 
 // ---- Standings table ----
 function StandingsTable({ standings }) {
+  const { t } = useTranslation('championships')
   if (!standings?.length) return null
 
   return (
@@ -140,10 +144,10 @@ function StandingsTable({ standings }) {
         <thead>
           <tr className="text-left text-muted-foreground text-xs uppercase bg-muted/50">
             <th className="px-3 py-2 w-8">#</th>
-            <th className="px-3 py-2">Pilote</th>
-            <th className="px-3 py-2 text-center w-16">Tours</th>
-            <th className="px-3 py-2 text-right w-24">Temps</th>
-            <th className="px-3 py-2 text-right w-20">Écart</th>
+            <th className="px-3 py-2">{t('results.table.driver')}</th>
+            <th className="px-3 py-2 text-center w-16">{t('results.table.laps')}</th>
+            <th className="px-3 py-2 text-right w-24">{t('results.table.time')}</th>
+            <th className="px-3 py-2 text-right w-20">{t('results.table.gap')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -190,10 +194,10 @@ function StandingsTable({ standings }) {
                 <td className="px-3 py-2 text-right">
                   {gap ? (
                     <span className={`font-mono text-xs font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-muted-foreground'}`}>
-                      {gap.type === 'laps' ? `+${gap.value} t` : `+${(gap.value / 1000).toFixed(3)}`}
+                      {gap.type === 'laps' ? t('results.gapLaps', { count: gap.value }) : `+${(gap.value / 1000).toFixed(3)}`}
                     </span>
                   ) : (
-                    <span className={`text-xs font-bold ${GAP_COLORS.leader}`}>Leader</span>
+                    <span className={`text-xs font-bold ${GAP_COLORS.leader}`}>{t('results.leader')}</span>
                   )}
                 </td>
               </tr>
@@ -207,6 +211,7 @@ function StandingsTable({ standings }) {
 
 // ---- Main component ----
 export default function ChampionshipResults({ championshipId }) {
+  const { t } = useTranslation('championships')
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -234,7 +239,7 @@ export default function ChampionshipResults({ championshipId }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Chargement...
+        {t('results.loading')}
       </div>
     )
   }
@@ -242,7 +247,7 @@ export default function ChampionshipResults({ championshipId }) {
   if (!results || (!results.standings?.length && !results.awards?.length)) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
-        Aucun résultat disponible. Terminez au moins une course.
+        {t('results.noResults')}
       </div>
     )
   }
@@ -252,7 +257,7 @@ export default function ChampionshipResults({ championshipId }) {
       {/* Podium */}
       {results.podium?.length >= 2 && (
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-4 text-center">Podium</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-4 text-center">{t('results.podium')}</h3>
           <ResultsPodium podium={results.podium} />
         </div>
       )}
@@ -262,7 +267,7 @@ export default function ChampionshipResults({ championshipId }) {
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3 flex items-center gap-2">
             <Trophy className="size-4 text-championship" />
-            Meilleurs moments
+            {t('results.bestMoments')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {results.awards.map(award => (
@@ -275,7 +280,7 @@ export default function ChampionshipResults({ championshipId }) {
       {/* Full standings */}
       {results.standings?.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Classement final</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">{t('results.finalStandings')}</h3>
           <StandingsTable standings={results.standings} />
         </div>
       )}

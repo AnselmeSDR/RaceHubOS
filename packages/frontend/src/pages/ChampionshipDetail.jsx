@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Flag } from 'lucide-react'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
 import ChampionshipBracket from '../components/championship/ChampionshipBracket'
@@ -18,6 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function ChampionshipDetail() {
   const { id } = useParams()
+  const { t } = useTranslation('championships')
   const { startRace: triggerCuStart } = useDevice()
   const {
     entries: sessionEntries,
@@ -344,7 +346,7 @@ export default function ChampionshipDetail() {
           {/* Right: Standings */}
           {showStandings && (
             <div>
-              <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
+              <h2 className="text-sm font-semibold mb-3">{t('detail.generalStandings')}</h2>
               <StandingsTabs
                 standings={standings}
                 drivers={drivers}

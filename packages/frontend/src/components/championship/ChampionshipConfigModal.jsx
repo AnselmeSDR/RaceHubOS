@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trophy, Plus, Trash2, Pencil, ChevronUp, ChevronDown, Clock, Flag, RefreshCw, Check, X, Users, Zap, UserPlus } from 'lucide-react'
 import {
   Sheet,
@@ -15,8 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const SESSION_TYPES = {
-  qualif: { label: 'Qualification', shortLabel: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
-  race: { label: 'Course', shortLabel: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
+  qualif: { labelKey: 'configModal.sessionTypes.qualif', shortLabel: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
+  race: { labelKey: 'configModal.sessionTypes.race', shortLabel: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
 }
 
 export default function ChampionshipConfigModal({
@@ -30,6 +31,7 @@ export default function ChampionshipConfigModal({
   onFinish,
   onSessionsChange
 }) {
+  const { t } = useTranslation('championships')
   const [name, setName] = useState(championship?.name || '')
   const [trackId, setTrackId] = useState(championship?.trackId || '')
   const [saving, setSaving] = useState(false)
@@ -65,7 +67,7 @@ export default function ChampionshipConfigModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: currentParticipants }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       setAddingDriver('')
       onSessionsChange?.()
     } catch (err) { setError(err.message) }
@@ -81,7 +83,7 @@ export default function ChampionshipConfigModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participants: currentParticipants }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       onSessionsChange?.()
     } catch (err) { setError(err.message) }
   }
@@ -97,14 +99,14 @@ export default function ChampionshipConfigModal({
   }
 
   const handleSave = async () => {
-    if (!name.trim()) { setError('Le nom est requis'); return }
+    if (!name.trim()) { setError(t('configModal.nameRequired')); return }
     setSaving(true); setError('')
     try {
       const res = await fetch(`${API_URL}/api/championships/${championship.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), trackId: trackId || null })
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       const data = await res.json()
       onSave(data.data)
       onClose()
@@ -124,7 +126,7 @@ export default function ChampionshipConfigModal({
           order: qrSessions.length
         })
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       setShowNewSession(null)
       setNewSessionForm({ name: '', duration: 5, maxLaps: 10, useTime: true, useLaps: false })
       onSessionsChange?.()
@@ -184,13 +186,13 @@ export default function ChampionshipConfigModal({
           <input type="checkbox" checked={form.useTime} onChange={(e) => setForm(f => ({ ...f, useTime: e.target.checked }))} className="accent-blue-500" />
           <Clock className="size-3.5 text-muted-foreground" />
           <Input type="number" value={form.duration} onChange={(e) => setForm(f => ({ ...f, duration: parseInt(e.target.value) || 1 }))} disabled={!form.useTime} className="w-14 h-7 text-center" />
-          <span className="text-xs text-muted-foreground">min</span>
+          <span className="text-xs text-muted-foreground">{t('configModal.fields.minUnit')}</span>
         </label>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={form.useLaps} onChange={(e) => setForm(f => ({ ...f, useLaps: e.target.checked }))} className="accent-green-500" />
           <RefreshCw className="size-3.5 text-muted-foreground" />
           <Input type="number" value={form.maxLaps} onChange={(e) => setForm(f => ({ ...f, maxLaps: parseInt(e.target.value) || 1 }))} disabled={!form.useLaps} className="w-14 h-7 text-center" />
-          <span className="text-xs text-muted-foreground">tours</span>
+          <span className="text-xs text-muted-foreground">{t('configModal.fields.lapsUnit')}</span>
         </label>
       </div>
     )
@@ -202,7 +204,7 @@ export default function ChampionshipConfigModal({
         <SheetHeader className="px-4 pt-4 pb-2">
           <SheetTitle className="flex items-center gap-2">
             <Trophy className="size-4 text-yellow-500" />
-            Configuration Championnat
+            {t('configModal.title')}
           </SheetTitle>
           <SheetDescription>{championship?.name}</SheetDescription>
         </SheetHeader>
@@ -215,18 +217,18 @@ export default function ChampionshipConfigModal({
           {/* Championship info */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nom</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('configModal.name')}</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Circuit</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('configModal.track')}</label>
               <Select value={trackId || '_none'} onValueChange={(v) => setTrackId(v === '_none' ? '' : v)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner un circuit..." />
+                  <SelectValue placeholder={t('configModal.selectTrack')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="_none">-- Sélectionner --</SelectItem>
-                  {tracks.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  <SelectItem value="_none">{t('configModal.selectPlaceholder')}</SelectItem>
+                  {tracks.map(track => <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -237,7 +239,7 @@ export default function ChampionshipConfigModal({
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Users className="size-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Participants ({championship.participants?.length || 0})</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('configModal.participants', { count: championship.participants?.length || 0 })}</span>
               </div>
               <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
                 {(championship.participants || []).map((p, i) => (
@@ -260,7 +262,7 @@ export default function ChampionshipConfigModal({
                     onChange={e => { handleAddParticipant(e.target.value); }}
                     className="flex-1 h-6 text-xs bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-ring rounded"
                   >
-                    <option value="">Ajouter un pilote...</option>
+                    <option value="">{t('configModal.addDriver')}</option>
                     {availableDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
@@ -271,13 +273,13 @@ export default function ChampionshipConfigModal({
           {/* Sessions */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Sessions</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('configModal.sessions')}</span>
               <div className="flex gap-1">
                 <Button variant="ghost" size="sm" onClick={() => setShowNewSession('qualif')} className="text-blue-500 h-7">
-                  <Plus className="size-3" /> Qualif
+                  <Plus className="size-3" /> {t('configModal.addQualif')}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowNewSession('race')} className="text-green-500 h-7">
-                  <Plus className="size-3" /> Course
+                  <Plus className="size-3" /> {t('configModal.addRace')}
                 </Button>
               </div>
             </div>
@@ -285,7 +287,7 @@ export default function ChampionshipConfigModal({
             <div className="border border-border rounded-lg divide-y divide-border">
               {qrSessions.length === 0 && !showNewSession && (
                 <div className="p-6 text-center text-muted-foreground text-sm">
-                  Aucune session. Ajoutez une qualification ou une course.
+                  {t('configModal.noSessions')}
                 </div>
               )}
 
@@ -300,7 +302,7 @@ export default function ChampionshipConfigModal({
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Badge className={config.color}>{getSessionLabel(session)}</Badge>
-                          <Input value={sessionForm.name} onChange={(e) => setSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={config.label} className="flex-1 h-7" />
+                          <Input value={sessionForm.name} onChange={(e) => setSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={t(config.labelKey)} className="flex-1 h-7" />
                           <Button size="sm" className="h-7" onClick={() => handleUpdateSession(session.id)}>
                             <Check className="size-3.5" />
                           </Button>
@@ -325,14 +327,14 @@ export default function ChampionshipConfigModal({
 
                         <Badge className={config.color}>{getSessionLabel(session)}</Badge>
                         <Icon className="size-3.5 text-muted-foreground" />
-                        <span className="font-medium text-sm flex-1">{session.name || config.label}</span>
+                        <span className="font-medium text-sm flex-1">{session.name || t(config.labelKey)}</span>
                         <span className="text-xs text-muted-foreground">
                           {session.maxDuration ? `${Math.round(session.maxDuration / 60000)}min` : ''}
                           {session.maxDuration && session.maxLaps ? ' / ' : ''}
                           {session.maxLaps ? `${session.maxLaps}t` : ''}
                         </span>
                         {session.status !== 'draft' && (
-                          <Badge variant="outline" className="text-[10px]">{{ active: 'En cours', paused: 'En pause', finishing: 'Finition', finished: 'Terminé' }[session.status] || session.status}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{t(`configModal.sessionStatus.${session.status}`, session.status)}</Badge>
                         )}
                         {session.status === 'draft' && (
                           <>
@@ -357,9 +359,9 @@ export default function ChampionshipConfigModal({
                       <Badge className={SESSION_TYPES[showNewSession].color}>
                         {showNewSession === 'qualif' ? 'Q' : 'R'}{qrSessions.filter(s => s.type === showNewSession).length + 1}
                       </Badge>
-                      <Input value={newSessionForm.name} onChange={(e) => setNewSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={SESSION_TYPES[showNewSession].label} className="flex-1 h-7" />
+                      <Input value={newSessionForm.name} onChange={(e) => setNewSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={t(SESSION_TYPES[showNewSession].labelKey)} className="flex-1 h-7" />
                       <Button size="sm" className="h-7" onClick={handleCreateSession} disabled={!newSessionForm.useTime && !newSessionForm.useLaps}>
-                        <Check className="size-3.5" /> Créer
+                        <Check className="size-3.5" /> {t('configModal.create')}
                       </Button>
                       <Button variant="ghost" size="sm" className="h-7" onClick={() => setShowNewSession(null)}>
                         <X className="size-3.5" />
@@ -386,18 +388,18 @@ export default function ChampionshipConfigModal({
               } catch (err) { setError(err.message) }
             }}>
               <RefreshCw className="size-3.5" />
-              Réouvrir le championnat
+              {t('configModal.reopenChampionship')}
             </Button>
           ) : onFinish ? (
             <Button variant="destructive" size="sm" onClick={() => { onFinish(); onClose() }}>
               <Flag className="size-3.5" />
-              Terminer le championnat
+              {t('configModal.finishChampionship')}
             </Button>
           ) : <div />}
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={onClose}>Fermer</Button>
+            <Button variant="outline" onClick={onClose}>{t('common:close')}</Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Sauvegarde...' : 'Enregistrer'}
+              {saving ? t('common:saving') : t('common:save')}
             </Button>
           </div>
         </div>

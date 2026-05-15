@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronRight, Clock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { STATUS_COLORS } from '../../lib/colors'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const STATUS_ICONS = { draft: Circle, active: Loader2, paused: Clock, finishing: Clock, finished: CheckCircle2 }
-const STATUS_LABELS = { draft: 'En attente', active: 'En cours', paused: 'En pause', finishing: 'Finition', finished: 'Terminé' }
 
 function formatTime(ms) {
   if (!ms) return '-'
@@ -18,6 +18,7 @@ function formatTime(ms) {
 }
 
 function BracketCard({ label, name, status, drivers, type, showTimes = false }) {
+  const { t } = useTranslation('championships')
   const s = STATUS_COLORS[status] || STATUS_COLORS.draft
   const StatusIcon = STATUS_ICONS[status] || Circle
   const borderColor = type === 'qualif'
@@ -33,7 +34,7 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
         <span className="font-semibold text-sm">{label}</span>
         <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
           <StatusIcon className={`w-3 h-3 ${status === 'active' ? 'animate-spin' : ''}`} />
-          {STATUS_LABELS[status] || status}
+          {t(`bracket.statusLabels.${status}`, status)}
         </span>
       </div>
       {name && <p className="text-xs text-muted-foreground mb-2">{name}</p>}
@@ -55,13 +56,14 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground italic">En attente des qualifications...</p>
+        <p className="text-xs text-muted-foreground italic">{t('bracket.waitingQualifs')}</p>
       )}
     </div>
   )
 }
 
 export default function ChampionshipBracket({ championshipId, onSessionSelect }) {
+  const { t } = useTranslation('championships')
   const [bracket, setBracket] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -98,7 +100,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Chargement...
+        {t('bracket.loading')}
       </div>
     )
   }
@@ -110,17 +112,17 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>{bracket.participants?.length} participants</span>
+        <span>{t('bracket.participants', { count: bracket.participants?.length || 0 })}</span>
         <span>&middot;</span>
-        <span>{qualifGroups.length} qualif{qualifGroups.length > 1 ? 's' : ''}</span>
+        <span>{t('bracket.qualifsCount', { count: qualifGroups.length })}</span>
         <span>&middot;</span>
-        <span>{raceGroups.length} course{raceGroups.length > 1 ? 's' : ''}</span>
+        <span>{t('bracket.racesCount', { count: raceGroups.length })}</span>
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-start">
         {/* Qualif column */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">Qualifications</h3>
+          <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('bracket.qualifications')}</h3>
           {qualifGroups.map((g) => (
             <button
               key={g.sessionId}
@@ -143,7 +145,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
         <div className="flex flex-col items-center justify-center min-h-[200px] px-2">
           {allQualifsFinished ? (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-center text-muted-foreground mb-2">Classement Qualif</p>
+              <p className="text-xs font-semibold text-center text-muted-foreground mb-2">{t('bracket.qualifRanking')}</p>
               <div className="border border-border rounded-lg p-2 bg-card space-y-1 min-w-[140px]">
                 {mergedRanking.map((entry) => (
                   <div key={entry.driverId} className="flex items-center gap-2 text-xs">
@@ -164,14 +166,14 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
           ) : (
             <div className="text-center space-y-2">
               <ChevronRight className="w-6 h-6 text-muted-foreground mx-auto" />
-              <p className="text-xs text-muted-foreground">Classement après<br/>toutes les qualifs</p>
+              <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('bracket.rankingAfterQualifs') }} />
             </div>
           )}
         </div>
 
         {/* Race column */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">Courses</h3>
+          <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">{t('bracket.races')}</h3>
           {raceGroups.map((g) => (
             <button
               key={g.sessionId}

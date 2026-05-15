@@ -14,5 +14,240 @@
     "selectTrack": "Select a track...",
     "saved": "Championship created successfully",
     "createError": "Error during creation"
+  },
+  "detail": {
+    "defaultName": "Championship",
+    "noTrack": "No track defined",
+    "resultsTab": "Results",
+    "finished": "Finished",
+    "finishChampionship": "Finish championship",
+    "hideBracket": "Hide bracket",
+    "showBracket": "Show bracket",
+    "hideStandings": "Hide standings",
+    "showStandings": "Show standings",
+    "configuration": "Configuration",
+    "generalStandings": "General Standings"
+  },
+  "sessionSection": {
+    "selectSession": "Select a session",
+    "labels": {
+      "practice": "FP"
+    },
+    "copyFromPractice": "Copy from FP",
+    "table": {
+      "ctrl": "Ctrl",
+      "driver": "Driver",
+      "car": "Car",
+      "grid": "Grid"
+    },
+    "incompleteDriverNoCar": "Ctrl {{n}}: driver without car",
+    "incompleteCarNoDriver": "Ctrl {{n}}: car without driver",
+    "duration": "Duration (min)",
+    "durationPlaceholder": "0 = unlimited",
+    "maxLaps": "Max laps",
+    "maxLapsPlaceholder": "0 = unlimited",
+    "gracePeriod": "Grace (sec)",
+    "maxLapTime": "Max time (sec)",
+    "maxLapTimePlaceholder": "0 = no filter",
+    "autoAssignWait": "Drivers assigned automatically after qualifications",
+    "pause": "pause",
+    "timeRemaining": "{{time}} remaining",
+    "lapsCount": "{{current}} laps",
+    "lapsCountTotal": "{{current}} / {{total}} laps",
+    "lapsRemaining": "{{count}} remaining",
+    "checkeredFlag": "Checkered flag",
+    "pauseAction": "Pause",
+    "connectionLost": "Connection lost - Reconnecting...",
+    "lights": "Lights {{n}}/5",
+    "racing": "Racing",
+    "cuStopped": "CU stopped",
+    "paused": "Pause {{time}}",
+    "connectCu": "Connect a CU",
+    "incompleteConfig": "Incomplete config",
+    "starting": "Starting...",
+    "start": "Start",
+    "resumeCu": "Resume CU",
+    "resume": "Resume",
+    "finish": "Finish",
+    "waitingSessionEnd": "Waiting for session end",
+    "status": {
+      "active": "Running",
+      "paused": "Paused",
+      "finishing": "Ending session...",
+      "finished": "Finished",
+      "draft": "Draft"
+    }
+  },
+  "bracket": {
+    "loading": "Loading...",
+    "statusLabels": {
+      "draft": "Waiting",
+      "active": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "finished": "Finished"
+    },
+    "waitingQualifs": "Waiting for qualifications...",
+    "participants_one": "{{count}} participant",
+    "participants_other": "{{count}} participants",
+    "qualifsCount_one": "{{count}} qualif",
+    "qualifsCount_other": "{{count}} qualifs",
+    "racesCount_one": "{{count}} race",
+    "racesCount_other": "{{count}} races",
+    "qualifications": "Qualifications",
+    "races": "Races",
+    "qualifRanking": "Qualif Ranking",
+    "rankingAfterQualifs": "Ranking after<br/>all qualifs"
+  },
+  "standings": {
+    "tabs": {
+      "practiceLabel": "Free Practice",
+      "practiceShort": "Practice",
+      "qualifLabel": "Qualifications",
+      "qualifShort": "Qualif",
+      "raceLabel": "Races",
+      "raceShort": "Race"
+    },
+    "unknownDriver": "Unknown driver",
+    "noStandings": "No standings available",
+    "lapsCount": "{{count}} laps",
+    "laps": "Laps",
+    "total": "Total",
+    "gap": "Gap",
+    "gapLaps_one": "+{{count}} lap",
+    "gapLaps_other": "+{{count}} laps",
+    "points": "{{count}} pts"
+  },
+  "results": {
+    "loading": "Loading...",
+    "noResults": "No results available. Finish at least one race.",
+    "podium": "Podium",
+    "podiumLabels": {
+      "first": "1st",
+      "second": "2nd",
+      "third": "3rd"
+    },
+    "lapsCount": "{{count}} laps",
+    "bestMoments": "Best moments",
+    "finalStandings": "Final standings",
+    "table": {
+      "driver": "Driver",
+      "laps": "Laps",
+      "time": "Time",
+      "gap": "Gap"
+    },
+    "gapLaps": "+{{count}} l",
+    "leader": "Leader",
+    "award": {
+      "places_one": "+{{count}} place",
+      "places_other": "+{{count}} places",
+      "lapsCount": "{{count}} laps",
+      "finishedRaces_one": "{{count}} race finished",
+      "finishedRaces_other": "{{count}} races finished"
+    }
+  },
+  "configModal": {
+    "title": "Championship Configuration",
+    "name": "Name",
+    "track": "Track",
+    "selectTrack": "Select a track...",
+    "selectPlaceholder": "-- Select --",
+    "participants": "Participants ({{count}})",
+    "addDriver": "Add a driver...",
+    "sessions": "Sessions",
+    "addQualif": "Qualif",
+    "addRace": "Race",
+    "noSessions": "No session. Add a qualification or a race.",
+    "create": "Create",
+    "reopenChampionship": "Reopen championship",
+    "finishChampionship": "Finish championship",
+    "nameRequired": "Name is required",
+    "genericError": "Error",
+    "sessionTypes": {
+      "qualif": "Qualification",
+      "race": "Race"
+    },
+    "sessionStatus": {
+      "active": "Running",
+      "paused": "Paused",
+      "finishing": "Finishing",
+      "finished": "Finished"
+    },
+    "fields": {
+      "minUnit": "min",
+      "lapsUnit": "laps"
+    }
+  },
+  "sessionConfigModal": {
+    "title": "Session Configuration",
+    "sessionTypeLabels": {
+      "practice": "Free Practice",
+      "qualif": "Qualifications",
+      "race": "Race"
+    },
+    "name": "Name",
+    "type": "Type",
+    "duration": "Duration (minutes)",
+    "maxLaps": "Max laps",
+    "gracePeriod": "Grace period (sec)",
+    "controllerConfig": "Controllers Configuration",
+    "copyFromPractice": "Copy from FP",
+    "table": {
+      "ctrl": "Ctrl",
+      "driver": "Driver",
+      "car": "Car",
+      "grid": "Grid"
+    },
+    "status": "Status",
+    "draft": "Draft",
+    "incompleteConfig": "Incomplete configuration",
+    "incompleteDriverNoCar": "Ctrl {{n}}: driver without car",
+    "incompleteCarNoDriver": "Ctrl {{n}}: car without driver",
+    "completeToReady": "Complete the config to set as \"Ready\"",
+    "reset": "Reset"
+  },
+  "wizard": {
+    "title": "New auto championship",
+    "steps": {
+      "info": "Info",
+      "participants": "Drivers",
+      "config": "Configuration",
+      "preview": "Preview"
+    },
+    "autoMode": "Automatic mode",
+    "name": "Championship name",
+    "namePlaceholder": "Championship 2026",
+    "track": "Track",
+    "selectTrack": "Select a track...",
+    "participantsCount_one": "{{count}} participant",
+    "participantsCount_other": "{{count}} participants",
+    "driverPlaceholder": "Driver...",
+    "driversPerQualif": "Drivers per qualif",
+    "driversPerRace": "Drivers per race",
+    "qualifGroups_one": "{{count}} qualif group",
+    "qualifGroups_other": "{{count}} qualif groups",
+    "raceGroups_one": "{{count}} race",
+    "raceGroups_other": "{{count}} races",
+    "qualifications": "Qualifications",
+    "races": "Races",
+    "duration": "Duration",
+    "laps": "Laps",
+    "totalSummary": "Total: {{total}} sessions (1 FP + {{qualifs}} + {{races}})",
+    "groupQualifs_one": "{{count}} qualif",
+    "groupQualifs_other": "{{count}} qualifs",
+    "groupRaces_one": "{{count}} race",
+    "groupRaces_other": "{{count}} races",
+    "groupDrivers_one": "{{count}} driver",
+    "groupDrivers_other": "{{count}} drivers",
+    "globalRanking": "Global ranking",
+    "globalRankingHint": "(best lap)",
+    "positionsRange": "Positions {{start}} to {{end}}",
+    "previewNote1": "Drivers will be automatically distributed into races after qualifications.",
+    "previewNote2": "The final ranking is determined by race results.",
+    "next": "Next",
+    "creating": "Creating...",
+    "createChampionship": "Create championship",
+    "createError": "Error during creation",
+    "connectionError": "Server connection error"
   }
 }

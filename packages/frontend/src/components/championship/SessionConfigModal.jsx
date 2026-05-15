@@ -1,12 +1,7 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trash2, RefreshCw, Clock, Flag, FlaskConical, Copy, AlertTriangle } from 'lucide-react'
 import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
-
-const SESSION_TYPE_LABELS = {
-  practice: 'Essais Libres',
-  qualif: 'Qualifications',
-  race: 'Course'
-}
 
 const SESSION_TYPE_ICONS = {
   practice: FlaskConical,
@@ -36,6 +31,7 @@ export default function SessionConfigModal({
   onDelete,
   onReset
 }) {
+  const { t } = useTranslation('championships')
   // Form state
   const [name, setName] = useState(session?.name || '')
   // Duration in DB is ms, UI shows minutes
@@ -203,7 +199,7 @@ export default function SessionConfigModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Configuration Session"
+      title={t('sessionConfigModal.title')}
       icon={<TypeIcon className="w-5 h-5 text-gray-500" />}
       size="2xl"
     >
@@ -213,13 +209,13 @@ export default function SessionConfigModal({
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nom
+              {t('sessionConfigModal.name')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={SESSION_TYPE_LABELS[session?.type]}
+              placeholder={t(`sessionConfigModal.sessionTypeLabels.${session?.type}`)}
               disabled={!canEdit}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -228,10 +224,10 @@ export default function SessionConfigModal({
           {/* Type (readonly) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Type
+              {t('sessionConfigModal.type')}
             </label>
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
-              {SESSION_TYPE_LABELS[session?.type]}
+              {t(`sessionConfigModal.sessionTypeLabels.${session?.type}`)}
             </div>
           </div>
         </div>
@@ -241,7 +237,7 @@ export default function SessionConfigModal({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Duree (minutes)
+                {t('sessionConfigModal.duration')}
               </label>
               <input
                 type="number"
@@ -254,7 +250,7 @@ export default function SessionConfigModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Max tours
+                {t('sessionConfigModal.maxLaps')}
               </label>
               <input
                 type="number"
@@ -267,7 +263,7 @@ export default function SessionConfigModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Grace period (sec)
+                {t('sessionConfigModal.gracePeriod')}
               </label>
               <input
                 type="number"
@@ -286,7 +282,7 @@ export default function SessionConfigModal({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Configuration Controllers
+              {t('sessionConfigModal.controllerConfig')}
             </label>
             {canEdit && practiceSession && (
               <button
@@ -294,7 +290,7 @@ export default function SessionConfigModal({
                 className="flex items-center gap-1.5 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
               >
                 <Copy className="w-4 h-4" />
-                Copier depuis EL
+                {t('sessionConfigModal.copyFromPractice')}
               </button>
             )}
           </div>
@@ -302,10 +298,10 @@ export default function SessionConfigModal({
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  <th className="px-3 py-2">Ctrl</th>
-                  <th className="px-3 py-2">Pilote</th>
-                  <th className="px-3 py-2">Voiture</th>
-                  <th className="px-3 py-2 w-20">Grille</th>
+                  <th className="px-3 py-2">{t('sessionConfigModal.table.ctrl')}</th>
+                  <th className="px-3 py-2">{t('sessionConfigModal.table.driver')}</th>
+                  <th className="px-3 py-2">{t('sessionConfigModal.table.car')}</th>
+                  <th className="px-3 py-2 w-20">{t('sessionConfigModal.table.grid')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -369,7 +365,7 @@ export default function SessionConfigModal({
         {canEdit && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Statut
+              {t('sessionConfigModal.status')}
             </label>
             <div className="flex items-center gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -381,7 +377,7 @@ export default function SessionConfigModal({
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Brouillon</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{t('sessionConfigModal.draft')}</span>
               </label>
             </div>
 
@@ -390,15 +386,15 @@ export default function SessionConfigModal({
               <div className="mt-3 p-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs">
-                  <p className="text-orange-700 dark:text-orange-300 font-medium">Configuration incomplète</p>
+                  <p className="text-orange-700 dark:text-orange-300 font-medium">{t('sessionConfigModal.incompleteConfig')}</p>
                   <p className="text-orange-600 dark:text-orange-400 mt-0.5">
                     {incompleteControllers.map(ic => {
-                      if (ic.hasDriver && !ic.hasCar) return `Ctrl ${ic.controller + 1}: pilote sans voiture`
-                      if (!ic.hasDriver && ic.hasCar) return `Ctrl ${ic.controller + 1}: voiture sans pilote`
+                      if (ic.hasDriver && !ic.hasCar) return t('sessionConfigModal.incompleteDriverNoCar', { n: ic.controller + 1 })
+                      if (!ic.hasDriver && ic.hasCar) return t('sessionConfigModal.incompleteCarNoDriver', { n: ic.controller + 1 })
                       return null
                     }).filter(Boolean).join(' • ')}
                   </p>
-                  <p className="text-orange-600 dark:text-orange-400 mt-1">Complétez la config pour passer en "Prêt"</p>
+                  <p className="text-orange-600 dark:text-orange-400 mt-1">{t('sessionConfigModal.completeToReady')}</p>
                 </div>
               </div>
             )}
@@ -414,7 +410,7 @@ export default function SessionConfigModal({
                 className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-sm"
               >
                 <Trash2 className="w-4 h-4" />
-                Supprimer
+                {t('common:delete')}
               </button>
             )}
             {canReset && (
@@ -423,21 +419,21 @@ export default function SessionConfigModal({
                 className="flex items-center gap-1.5 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors text-sm"
               >
                 <RefreshCw className="w-4 h-4" />
-                Reinitialiser
+                {t('sessionConfigModal.reset')}
               </button>
             )}
           </div>
 
           <ModalFooter>
             <ModalButton variant="secondary" onClick={onClose}>
-              Annuler
+              {t('common:cancel')}
             </ModalButton>
             <ModalButton
               variant="primary"
               onClick={handleSave}
               disabled={saving || (!canEdit && !isFinished)}
             >
-              {saving ? 'Sauvegarde...' : 'Enregistrer'}
+              {saving ? t('common:saving') : t('common:save')}
             </ModalButton>
           </ModalFooter>
         </div>
