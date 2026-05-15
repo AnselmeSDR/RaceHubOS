@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy, GitBranch, Zap, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +25,7 @@ export default function ChampionshipHeader({
   showResults,
   onSelectResults,
 }) {
+  const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
     if (session.type === 'practice') return 'EL'
     const sameType = sessions.filter(s => s.type === session.type)
@@ -51,7 +53,7 @@ export default function ChampionshipHeader({
       <div className="flex items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold">{championship?.name || 'Championnat'}</h1>
+            <h1 className="text-sm font-semibold">{championship?.name || t('detail.defaultName')}</h1>
             {championship?.mode === 'auto' && (
               <Badge className="bg-primary/10 text-primary text-[10px] py-0 px-1.5">
                 <Zap className="size-2.5 mr-0.5" />
@@ -59,7 +61,7 @@ export default function ChampionshipHeader({
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">{championship?.track?.name || 'Circuit non défini'}</p>
+          <p className="text-xs text-muted-foreground">{championship?.track?.name || t('detail.noTrack')}</p>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -96,30 +98,30 @@ export default function ChampionshipHeader({
             }`}
           >
             <Award className="size-3.5" />
-            Résultats
+            {t('detail.resultsTab')}
           </button>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5">
         {isFinished && (
-          <Badge className="bg-muted text-muted-foreground">Terminé</Badge>
+          <Badge className="bg-muted text-muted-foreground">{t('detail.finished')}</Badge>
         )}
         {canFinish && (
           <Button size="sm" onClick={onFinish} className="bg-yellow-500 hover:bg-yellow-600 text-white">
             <Trophy className="size-3.5" />
-            Terminer le championnat
+            {t('detail.finishChampionship')}
           </Button>
         )}
         {championship?.mode === 'auto' && (
-          <button onClick={onToggleBracket} className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showBracket ? 'Masquer le bracket' : 'Afficher le bracket'}>
+          <button onClick={onToggleBracket} className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showBracket ? t('detail.hideBracket') : t('detail.showBracket')}>
             <GitBranch className="size-4" />
           </button>
         )}
-        <button onClick={onToggleStandings} className={`p-1.5 rounded transition-colors ${showStandings ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}>
+        <button onClick={onToggleStandings} className={`p-1.5 rounded transition-colors ${showStandings ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showStandings ? t('detail.hideStandings') : t('detail.showStandings')}>
           {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
         </button>
-        <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title="Configuration">
+        <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={t('detail.configuration')}>
           <Settings className="size-4" />
         </button>
       </div>

@@ -14,5 +14,240 @@
     "selectTrack": "Sélectionner un circuit...",
     "saved": "Championnat créé avec succès",
     "createError": "Erreur lors de la création"
+  },
+  "detail": {
+    "defaultName": "Championnat",
+    "noTrack": "Circuit non défini",
+    "resultsTab": "Résultats",
+    "finished": "Terminé",
+    "finishChampionship": "Terminer le championnat",
+    "hideBracket": "Masquer le bracket",
+    "showBracket": "Afficher le bracket",
+    "hideStandings": "Masquer le classement",
+    "showStandings": "Afficher le classement",
+    "configuration": "Configuration",
+    "generalStandings": "Classement Général"
+  },
+  "sessionSection": {
+    "selectSession": "Sélectionnez une session",
+    "labels": {
+      "practice": "EL"
+    },
+    "copyFromPractice": "Copier depuis EL",
+    "table": {
+      "ctrl": "Ctrl",
+      "driver": "Pilote",
+      "car": "Voiture",
+      "grid": "Grille"
+    },
+    "incompleteDriverNoCar": "Ctrl {{n}}: pilote sans voiture",
+    "incompleteCarNoDriver": "Ctrl {{n}}: voiture sans pilote",
+    "duration": "Durée (min)",
+    "durationPlaceholder": "0 = illimité",
+    "maxLaps": "Max tours",
+    "maxLapsPlaceholder": "0 = illimité",
+    "gracePeriod": "Grace (sec)",
+    "maxLapTime": "Temps max (sec)",
+    "maxLapTimePlaceholder": "0 = pas de filtre",
+    "autoAssignWait": "Pilotes assignés automatiquement après les qualifications",
+    "pause": "pause",
+    "timeRemaining": "{{time}} restant",
+    "lapsCount": "{{current}} tours",
+    "lapsCountTotal": "{{current}} / {{total}} tours",
+    "lapsRemaining": "{{count}} restants",
+    "checkeredFlag": "Drapeau à damier",
+    "pauseAction": "Pause",
+    "connectionLost": "Connexion perdue - Reconnexion...",
+    "lights": "Feux {{n}}/5",
+    "racing": "En course",
+    "cuStopped": "CU arrêté",
+    "paused": "Pause {{time}}",
+    "connectCu": "Connecter un CU",
+    "incompleteConfig": "Config incomplète",
+    "starting": "Démarrage...",
+    "start": "Démarrer",
+    "resumeCu": "Reprendre CU",
+    "resume": "Reprendre",
+    "finish": "Terminer",
+    "waitingSessionEnd": "Attente fin de session",
+    "status": {
+      "active": "En cours",
+      "paused": "En pause",
+      "finishing": "Fin de session...",
+      "finished": "Terminé",
+      "draft": "Brouillon"
+    }
+  },
+  "bracket": {
+    "loading": "Chargement...",
+    "statusLabels": {
+      "draft": "En attente",
+      "active": "En cours",
+      "paused": "En pause",
+      "finishing": "Finition",
+      "finished": "Terminé"
+    },
+    "waitingQualifs": "En attente des qualifications...",
+    "participants_one": "{{count}} participant",
+    "participants_other": "{{count}} participants",
+    "qualifsCount_one": "{{count}} qualif",
+    "qualifsCount_other": "{{count}} qualifs",
+    "racesCount_one": "{{count}} course",
+    "racesCount_other": "{{count}} courses",
+    "qualifications": "Qualifications",
+    "races": "Courses",
+    "qualifRanking": "Classement Qualif",
+    "rankingAfterQualifs": "Classement après<br/>toutes les qualifs"
+  },
+  "standings": {
+    "tabs": {
+      "practiceLabel": "Essais Libres",
+      "practiceShort": "Libre",
+      "qualifLabel": "Qualifications",
+      "qualifShort": "Qualif",
+      "raceLabel": "Courses",
+      "raceShort": "Course"
+    },
+    "unknownDriver": "Pilote inconnu",
+    "noStandings": "Aucun classement disponible",
+    "lapsCount": "{{count}} tours",
+    "laps": "Tours",
+    "total": "Total",
+    "gap": "Écart",
+    "gapLaps_one": "+{{count}} tour",
+    "gapLaps_other": "+{{count}} tours",
+    "points": "{{count}} pts"
+  },
+  "results": {
+    "loading": "Chargement...",
+    "noResults": "Aucun résultat disponible. Terminez au moins une course.",
+    "podium": "Podium",
+    "podiumLabels": {
+      "first": "1er",
+      "second": "2ème",
+      "third": "3ème"
+    },
+    "lapsCount": "{{count}} tours",
+    "bestMoments": "Meilleurs moments",
+    "finalStandings": "Classement final",
+    "table": {
+      "driver": "Pilote",
+      "laps": "Tours",
+      "time": "Temps",
+      "gap": "Écart"
+    },
+    "gapLaps": "+{{count}} t",
+    "leader": "Leader",
+    "award": {
+      "places_one": "+{{count}} place",
+      "places_other": "+{{count}} places",
+      "lapsCount": "{{count}} tours",
+      "finishedRaces_one": "{{count}} course terminée",
+      "finishedRaces_other": "{{count}} courses terminées"
+    }
+  },
+  "configModal": {
+    "title": "Configuration Championnat",
+    "name": "Nom",
+    "track": "Circuit",
+    "selectTrack": "Sélectionner un circuit...",
+    "selectPlaceholder": "-- Sélectionner --",
+    "participants": "Participants ({{count}})",
+    "addDriver": "Ajouter un pilote...",
+    "sessions": "Sessions",
+    "addQualif": "Qualif",
+    "addRace": "Course",
+    "noSessions": "Aucune session. Ajoutez une qualification ou une course.",
+    "create": "Créer",
+    "reopenChampionship": "Réouvrir le championnat",
+    "finishChampionship": "Terminer le championnat",
+    "nameRequired": "Le nom est requis",
+    "genericError": "Erreur",
+    "sessionTypes": {
+      "qualif": "Qualification",
+      "race": "Course"
+    },
+    "sessionStatus": {
+      "active": "En cours",
+      "paused": "En pause",
+      "finishing": "Finition",
+      "finished": "Terminé"
+    },
+    "fields": {
+      "minUnit": "min",
+      "lapsUnit": "tours"
+    }
+  },
+  "sessionConfigModal": {
+    "title": "Configuration Session",
+    "sessionTypeLabels": {
+      "practice": "Essais Libres",
+      "qualif": "Qualifications",
+      "race": "Course"
+    },
+    "name": "Nom",
+    "type": "Type",
+    "duration": "Durée (minutes)",
+    "maxLaps": "Max tours",
+    "gracePeriod": "Grace period (sec)",
+    "controllerConfig": "Configuration Controllers",
+    "copyFromPractice": "Copier depuis EL",
+    "table": {
+      "ctrl": "Ctrl",
+      "driver": "Pilote",
+      "car": "Voiture",
+      "grid": "Grille"
+    },
+    "status": "Statut",
+    "draft": "Brouillon",
+    "incompleteConfig": "Configuration incomplète",
+    "incompleteDriverNoCar": "Ctrl {{n}}: pilote sans voiture",
+    "incompleteCarNoDriver": "Ctrl {{n}}: voiture sans pilote",
+    "completeToReady": "Complétez la config pour passer en \"Prêt\"",
+    "reset": "Réinitialiser"
+  },
+  "wizard": {
+    "title": "Nouveau championnat auto",
+    "steps": {
+      "info": "Infos",
+      "participants": "Pilotes",
+      "config": "Configuration",
+      "preview": "Aperçu"
+    },
+    "autoMode": "Mode automatique",
+    "name": "Nom du championnat",
+    "namePlaceholder": "Championnat 2026",
+    "track": "Circuit",
+    "selectTrack": "Sélectionner un circuit...",
+    "participantsCount_one": "{{count}} participant",
+    "participantsCount_other": "{{count}} participants",
+    "driverPlaceholder": "Pilote...",
+    "driversPerQualif": "Pilotes par qualif",
+    "driversPerRace": "Pilotes par course",
+    "qualifGroups_one": "{{count}} groupe de qualif",
+    "qualifGroups_other": "{{count}} groupes de qualif",
+    "raceGroups_one": "{{count}} course",
+    "raceGroups_other": "{{count}} courses",
+    "qualifications": "Qualifications",
+    "races": "Courses",
+    "duration": "Durée",
+    "laps": "Tours",
+    "totalSummary": "Total : {{total}} sessions (1 EL + {{qualifs}} + {{races}})",
+    "groupQualifs_one": "{{count}} qualif",
+    "groupQualifs_other": "{{count}} qualifs",
+    "groupRaces_one": "{{count}} course",
+    "groupRaces_other": "{{count}} courses",
+    "groupDrivers_one": "{{count}} pilote",
+    "groupDrivers_other": "{{count}} pilotes",
+    "globalRanking": "Classement global",
+    "globalRankingHint": "(meilleur tour)",
+    "positionsRange": "Positions {{start}} à {{end}}",
+    "previewNote1": "Les pilotes seront automatiquement répartis dans les courses après les qualifications.",
+    "previewNote2": "Le classement final est déterminé par les résultats des courses.",
+    "next": "Suivant",
+    "creating": "Création...",
+    "createChampionship": "Créer le championnat",
+    "createError": "Erreur lors de la création",
+    "connectionError": "Erreur de connexion au serveur"
   }
 }

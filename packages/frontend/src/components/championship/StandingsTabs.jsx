@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FlaskConical, Clock, Flag } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
@@ -16,15 +17,16 @@ export default function StandingsTabs({
   activeTab = 'practice',
   onTabChange
 }) {
+  const { t } = useTranslation('championships')
   const tabs = [
-    { id: 'practice', label: 'Essais Libres', shortLabel: 'Libre', icon: FlaskConical, color: 'purple' },
-    { id: 'qualif', label: 'Qualifications', shortLabel: 'Qualif', icon: Clock, color: 'blue' },
-    { id: 'race', label: 'Courses', shortLabel: 'Course', icon: Flag, color: 'green' }
+    { id: 'practice', label: t('standings.tabs.practiceLabel'), shortLabel: t('standings.tabs.practiceShort'), icon: FlaskConical, color: 'purple' },
+    { id: 'qualif', label: t('standings.tabs.qualifLabel'), shortLabel: t('standings.tabs.qualifShort'), icon: Clock, color: 'blue' },
+    { id: 'race', label: t('standings.tabs.raceLabel'), shortLabel: t('standings.tabs.raceShort'), icon: Flag, color: 'green' }
   ]
 
   // Get driver info by ID
   const getDriver = (driverId) => {
-    return drivers.find(d => d.id === driverId) || { name: 'Pilote inconnu', color: '#6B7280' }
+    return drivers.find(d => d.id === driverId) || { name: t('standings.unknownDriver'), color: '#6B7280' }
   }
 
   // Get sorted standings for current tab
@@ -127,7 +129,7 @@ export default function StandingsTabs({
       <div>
         {sortedStandings.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
-            Aucun classement disponible
+            {t('standings.noStandings')}
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -181,7 +183,7 @@ export default function StandingsTabs({
                         <span className="truncate">{standing.car.brand} {standing.car.model}</span>
                       )}
                       {activeTab !== 'race' && (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
-                        <span>• {standing.totalLaps || standing.raceTotalLaps || standing.laps} tours</span>
+                        <span>• {t('standings.lapsCount', { count: standing.totalLaps || standing.raceTotalLaps || standing.laps })}</span>
                       )}
                     </div>
                   </div>
@@ -214,7 +216,7 @@ export default function StandingsTabs({
                       <>
                         {/* Tours */}
                         <div className="text-center min-w-[40px]">
-                          <div className="text-[10px] text-muted-foreground/50 uppercase">Tours</div>
+                          <div className="text-[10px] text-muted-foreground/50 uppercase">{t('standings.laps')}</div>
                           <span className="font-mono text-sm font-bold text-foreground">
                             {standing.totalLaps || standing.raceTotalLaps || 0}
                           </span>
@@ -223,7 +225,7 @@ export default function StandingsTabs({
                         {/* Écart + Temps total */}
                         <div className="text-right min-w-[70px]">
                           <div className="text-[10px] text-muted-foreground/50 uppercase">
-                            {position === 1 ? 'Total' : 'Écart'}
+                            {position === 1 ? t('standings.total') : t('standings.gap')}
                           </div>
                           {position === 1 ? (
                             <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
@@ -231,7 +233,7 @@ export default function StandingsTabs({
                             <>
                               <span className={`font-mono text-sm font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-foreground'}`}>
                                 {gap.type === 'laps'
-                                  ? `+${gap.value} tour${gap.value > 1 ? 's' : ''}`
+                                  ? t('standings.gapLaps', { count: gap.value })
                                   : `+${(gap.value / 1000).toFixed(3)}`
                                 }
                               </span>
@@ -245,7 +247,7 @@ export default function StandingsTabs({
                         </div>
                         {standing.points !== undefined && (
                           <span className="font-bold text-foreground text-sm w-12 text-right">
-                            {standing.points} pts
+                            {t('standings.points', { count: standing.points })}
                           </span>
                         )}
                       </>
