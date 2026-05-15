@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
 
 export default function BalancingStandings({ standings = [] }) {
+  const { t } = useTranslation('balancing')
   const sorted = useMemo(() => {
     return [...standings]
       .filter(s => s.lapTime > 0)
@@ -13,7 +15,7 @@ export default function BalancingStandings({ standings = [] }) {
   if (sorted.length === 0) {
     return (
       <div className="bg-card rounded-xl shadow-sm border border-border p-8 text-center text-muted-foreground text-sm">
-        Aucun classement disponible
+        {t('standings.empty')}
       </div>
     )
   }
@@ -24,7 +26,7 @@ export default function BalancingStandings({ standings = [] }) {
     <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase">
-          Meilleur temps par voiture
+          {t('standings.bestPerCar')}
         </h3>
       </div>
       <div className="divide-y divide-border">
@@ -80,14 +82,14 @@ export default function BalancingStandings({ standings = [] }) {
                     {car?.brand} {car?.model}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {standing.laps || 0} tours · {history.length} session{history.length > 1 ? 's' : ''}
+                    {t('standings.lapsAndSessions', { laps: standing.laps || 0, count: history.length })}
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div className="text-right space-y-0.5">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="text-xs text-muted-foreground/60 w-7 text-left">Best</span>
+                    <span className="text-xs text-muted-foreground/60 w-7 text-left">{t('standings.best')}</span>
                     <LapTime time={standing.lapTime} size="sm" />
                     <span className="font-mono text-xs text-muted-foreground w-16 text-right">
                       {gap !== null ? `+${(gap / 1000).toFixed(3)}` : ''}
@@ -95,14 +97,14 @@ export default function BalancingStandings({ standings = [] }) {
                   </div>
                   {standing.median && (
                     <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-muted-foreground/60 w-7 text-left">Méd.</span>
+                      <span className="text-xs text-muted-foreground/60 w-7 text-left">{t('standings.median')}</span>
                       <LapTime time={standing.median} size="sm" />
                       <span className="w-16" />
                     </div>
                   )}
                   {standing.avg60 && (
                     <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-muted-foreground/60 w-7 text-left">60%</span>
+                      <span className="text-xs text-muted-foreground/60 w-7 text-left">{t('standings.avg60')}</span>
                       <LapTime time={standing.avg60} size="sm" />
                       <span className="w-16" />
                     </div>

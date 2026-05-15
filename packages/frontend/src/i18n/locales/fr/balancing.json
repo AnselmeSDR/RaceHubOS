@@ -1,0 +1,37 @@
+{
+  "page": {
+    "trackPlaceholder": "Sélectionner circuit...",
+    "title": "Équilibrage",
+    "newSession": "Nouvelle session",
+    "showStandings": "Afficher le classement",
+    "hideStandings": "Masquer le classement",
+    "standingsTitle": "Classement Général"
+  },
+  "session": {
+    "defaultName": "Équilibrage"
+  },
+  "chart": {
+    "carFallback": "Voiture {{number}}",
+    "noLapData": "Aucune donnée de tour disponible",
+    "title": "Évolution des temps au tour",
+    "axisLap": "Tour(s)",
+    "axisTime": "Temps (s)",
+    "tooltipLapLabel": "Tour {{lap}}",
+    "tooltipValue": "{{value}}s",
+    "lapsCount_one": "{{count}} tour",
+    "lapsCount_other": "{{count}} tours",
+    "best": "Meilleur",
+    "bestMedian5": "Best méd. 5",
+    "avg60": "Moy. 60%",
+    "medianPer5": "Médiane / 5 tours"
+  },
+  "standings": {
+    "empty": "Aucun classement disponible",
+    "bestPerCar": "Meilleur temps par voiture",
+    "lapsAndSessions_one": "{{laps}} tours · {{count}} session",
+    "lapsAndSessions_other": "{{laps}} tours · {{count}} sessions",
+    "best": "Best",
+    "median": "Méd.",
+    "avg60": "60%"
+  }
+}
