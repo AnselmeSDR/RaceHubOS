@@ -1,0 +1,11 @@
+{
+  "topBar": {
+    "selectTrackPlaceholder": "Select track...",
+    "newSession": "New session",
+    "showStandings": "Show standings",
+    "hideStandings": "Hide standings"
+  },
+  "standings": {
+    "title": "Overall Standings"
+  }
+}

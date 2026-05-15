@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, PanelRightClose, PanelRightOpen, FlaskConical, Clock, Flag } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDevice } from '../context/DeviceContext'
@@ -20,12 +21,13 @@ import StandingsTabs from '../components/championship/StandingsTabs'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const SESSION_TYPES = [
-  { value: 'practice', label: 'Essais libres' },
-  { value: 'qualif', label: 'Qualifications' },
-  { value: 'race', label: 'Course' },
+  { value: 'practice' },
+  { value: 'qualif' },
+  { value: 'race' },
 ]
 
 export default function FreeSessionPage() {
+  const { t } = useTranslation('freeSession')
   const { startRace: triggerCuStart } = useDevice()
   const {
     session,
@@ -141,7 +143,7 @@ export default function FreeSessionPage() {
       const result = await createSession({
         trackId: selectedTrackId,
         type: selectedType,
-        name: SESSION_TYPES.find(t => t.value === selectedType)?.label || selectedType,
+        name: t(`glossary:sessionTypeFull.${selectedType}`),
         status: 'draft',
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
@@ -201,7 +203,7 @@ export default function FreeSessionPage() {
           body: JSON.stringify({ drivers: data.drivers })
         })
         // Sync to other free sessions on same track
-        const otherTypes = SESSION_TYPES.map(t => t.value).filter(t => t !== selectedType)
+        const otherTypes = SESSION_TYPES.map(st => st.value).filter(type => type !== selectedType)
         for (const type of otherTypes) {
           const res = await fetch(`${API_URL}/api/sessions?trackId=${selectedTrackId}&type=${type}&championshipId=null`)
           const result = await res.json()
@@ -238,7 +240,7 @@ export default function FreeSessionPage() {
     if (result.success) await fetchStandings()
   }
 
-  const selectedTrack = tracks.find(t => t.id === selectedTrackId)
+  const selectedTrack = tracks.find(track => track.id === selectedTrackId)
   const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === selectedType
 
   return (
@@ -248,7 +250,7 @@ export default function FreeSessionPage() {
         <div className="flex items-center gap-3">
           <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Sélectionner circuit..." />
+              <SelectValue placeholder={t('topBar.selectTrackPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {tracks.map(track => (
@@ -270,7 +272,7 @@ export default function FreeSessionPage() {
                 return (
                   <TabsTrigger key={type.value} value={type.value} className={activeColor}>
                     <Icon className="size-3.5" />
-                    {type.label}
+                    {t(`glossary:sessionTypeFull.${type.value}`)}
                   </TabsTrigger>
                 )
               })}
@@ -286,13 +288,13 @@ export default function FreeSessionPage() {
             disabled={!selectedTrackId || isSessionActive || loading}
           >
             <Plus className="size-4" />
-            Nouvelle session
+            {t('topBar.newSession')}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleStandings}
-            title={showStandings ? 'Masquer le classement' : 'Afficher le classement'}
+            title={showStandings ? t('topBar.hideStandings') : t('topBar.showStandings')}
             className={showStandings ? 'bg-primary/10 text-primary' : ''}
           >
             {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
@@ -346,7 +348,7 @@ export default function FreeSessionPage() {
 
           {/* Right: Standings */}
           {showStandings && <div>
-            <h2 className="text-sm font-semibold mb-3">Classement Général</h2>
+            <h2 className="text-sm font-semibold mb-3">{t('standings.title')}</h2>
             <StandingsTabs
               standings={standings}
               drivers={drivers}
