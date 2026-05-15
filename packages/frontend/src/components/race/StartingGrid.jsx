@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { DriverGridPosition } from '../DriverDisplays'
@@ -7,6 +8,8 @@ import { DriverGridPosition } from '../DriverDisplays'
  * 2 pilotes par rangée, disposition en quinconce
  */
 export default function StartingGrid({ entries = [] }) {
+  const { t } = useTranslation('race')
+
   // Sort by gridPos, fallback to controller order
   const sortedEntries = [...entries].sort((a, b) => {
     const gridA = a.gridPos ?? a.controller ?? 999
@@ -19,8 +22,8 @@ export default function StartingGrid({ entries = [] }) {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
           <Users className="size-10 mb-3 opacity-30" />
-          <p className="font-medium">Aucun pilote sur la grille</p>
-          <p className="text-xs mt-1">Configurez les pilotes pour démarrer</p>
+          <p className="font-medium">{t('startingGrid.emptyTitle')}</p>
+          <p className="text-xs mt-1">{t('startingGrid.emptyHint')}</p>
         </CardContent>
       </Card>
     )
@@ -40,7 +43,7 @@ export default function StartingGrid({ entries = [] }) {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
           </svg>
-          Grille de départ
+          {t('startingGrid.title')}
         </span>
       </div>
 
@@ -50,7 +53,7 @@ export default function StartingGrid({ entries = [] }) {
           <div key={rowIndex}>
             {/* Row label */}
             <div className="text-xs font-bold text-muted-foreground/50 uppercase tracking-wider mb-2 pl-1">
-              RANG {rowIndex + 1}
+              {t('startingGrid.row', { number: rowIndex + 1 })}
             </div>
 
             {/* 2 drivers per row, staggered */}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, Pause, Flag, X, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StateChip from '../race/StateChip'
 import Leaderboard from '../race/Leaderboard'
 import LapTime from '../race/LapTime'
@@ -38,13 +39,14 @@ export default function Session({
   onReset,
   onDismiss,
 }) {
+  const { t } = useTranslation('race')
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showResultsModal, setShowResultsModal] = useState(false)
 
   if (!session) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500">
-        Aucune session sélectionnée
+        {t('session.noSession')}
       </div>
     )
   }
@@ -68,9 +70,9 @@ export default function Session({
     progress = Math.min(100, Math.max(0, (elapsed / total) * 100))
   }
 
-  const sessionTypeLabel = session.type === 'qualif' ? 'Qualifications'
-    : session.type === 'race' ? 'Course'
-    : 'Essais libres'
+  const sessionTypeLabel = session.type === 'qualif' ? t('session.typeQualif')
+    : session.type === 'race' ? t('session.typeRace')
+    : t('session.typePractice')
 
   const handleCancel = async () => {
     setShowCancelConfirm(false)
@@ -109,7 +111,7 @@ export default function Session({
           {/* Center: Timer */}
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <div className="text-xs text-gray-500 uppercase">Temps</div>
+              <div className="text-xs text-gray-500 uppercase">{t('session.elapsed')}</div>
               <div className="text-3xl font-mono font-bold text-white tabular-nums">
                 {formatTime(elapsed)}
               </div>
@@ -118,7 +120,7 @@ export default function Session({
               <>
                 <div className="w-px h-10 bg-gray-700" />
                 <div className="text-center">
-                  <div className="text-xs text-gray-500 uppercase">Restant</div>
+                  <div className="text-xs text-gray-500 uppercase">{t('session.remaining')}</div>
                   <div className={`text-3xl font-mono font-bold tabular-nums ${
                     remaining < 60 ? 'text-red-500 animate-pulse' : 'text-white'
                   }`}>
@@ -134,7 +136,7 @@ export default function Session({
             cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
           }`}>
             {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-            <span className="text-sm font-medium">{cuConnected ? 'CU OK' : 'CU Off'}</span>
+            <span className="text-sm font-medium">{cuConnected ? t('session.cuOk') : t('session.cuOff')}</span>
           </div>
         </div>
 
@@ -165,7 +167,7 @@ export default function Session({
               {!cuConnected && (
                 <span className="flex items-center gap-1.5 text-orange-400 text-sm">
                   <AlertTriangle className="w-5 h-5" />
-                  Connecter un CU
+                  {t('session.connectCu')}
                 </span>
               )}
               <button
@@ -174,7 +176,7 @@ export default function Session({
                 className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all"
               >
                 <Play className="w-6 h-6" />
-                Démarrer
+                {t('session.start')}
               </button>
             </>
           )}
@@ -188,7 +190,7 @@ export default function Session({
                 className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-bold rounded-xl"
               >
                 <Pause className="w-6 h-6" />
-                Pause
+                {t('session.pause')}
               </button>
               <button
                 onClick={onStop}
@@ -196,7 +198,7 @@ export default function Session({
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
               >
                 <Flag className="w-6 h-6" />
-                Terminer
+                {t('session.finish')}
               </button>
             </>
           )}
@@ -210,7 +212,7 @@ export default function Session({
                 className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl"
               >
                 <Play className="w-6 h-6" />
-                Reprendre
+                {t('session.resume')}
               </button>
               <button
                 onClick={onStop}
@@ -218,7 +220,7 @@ export default function Session({
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl"
               >
                 <Flag className="w-6 h-6" />
-                Terminer
+                {t('session.finish')}
               </button>
             </>
           )}
@@ -226,7 +228,7 @@ export default function Session({
           {/* Finishing: Just show status */}
           {isFinishing && (
             <div className="text-orange-400 font-bold animate-pulse">
-              Dernier tour en cours...
+              {t('session.lastLapInProgress')}
             </div>
           )}
 
@@ -236,7 +238,7 @@ export default function Session({
               onClick={() => setShowResultsModal(true)}
               className="flex items-center gap-2 px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl"
             >
-              Voir Résultats
+              {t('session.viewResults')}
             </button>
           )}
         </div>

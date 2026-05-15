@@ -1,0 +1,138 @@
+{
+  "gapDisplay": {
+    "leader": "Leader",
+    "lapsGap_one": "+{{count}} lap",
+    "lapsGap_other": "+{{count}} laps"
+  },
+  "stateChip": {
+    "idle": "Free Practice",
+    "pending": "Starting...",
+    "running": "Racing",
+    "paused": "Paused",
+    "results": "Results"
+  },
+  "startingGrid": {
+    "title": "Starting grid",
+    "emptyTitle": "No drivers on the grid",
+    "emptyHint": "Configure drivers to start",
+    "row": "Row {{number}}"
+  },
+  "podium": {
+    "first": "1st",
+    "second": "2nd",
+    "third": "3rd",
+    "winner": "Winner",
+    "lapsGap_one": "+{{count}} lap",
+    "lapsGap_other": "+{{count}} laps",
+    "laps": "Laps",
+    "duration": "Duration",
+    "grace": "Grace"
+  },
+  "leaderboard": {
+    "empty": "No entries in the leaderboard",
+    "laps": "Laps",
+    "best": "Best",
+    "last": "Last",
+    "gap": "Gap",
+    "total": "Total"
+  },
+  "resultsModal": {
+    "title": "Results",
+    "colPos": "Pos",
+    "colDriver": "Driver",
+    "colLaps": "Laps",
+    "colBest": "Best",
+    "backToFreePractice": "Back to free practice"
+  },
+  "sessionHeader": {
+    "elapsed": "Elapsed",
+    "remaining": "Remaining",
+    "cuOk": "CU OK",
+    "cuOff": "CU Off"
+  },
+  "cancelConfirmModal": {
+    "title": "Cancel the session?",
+    "message": "This will cancel the current session.",
+    "back": "Back",
+    "confirm": "Cancel the session"
+  },
+  "sessionModal": {
+    "nameLabel": "Session name",
+    "durationLabel": "Duration (min)",
+    "maxLapsLabel": "Max laps",
+    "unlimitedHint": "0 = unlimited",
+    "useQualifyingGrid": "Use the qualifying grid",
+    "startQualifying": "Start qualifying",
+    "startRace": "Start the race"
+  },
+  "trackRecords": {
+    "title": "Records",
+    "noRecord": "No record",
+    "selectTrack": "Select a track",
+    "practice": "Practice",
+    "qualif": "Qualifying",
+    "race": "Race"
+  },
+  "freePracticeEntry": {
+    "laps": "Laps",
+    "best": "Best",
+    "last": "Last",
+    "controller": "Ctrl {{number}}"
+  },
+  "freePracticeLeaderboard": {
+    "title": "Leaderboard",
+    "sortLaps": "Laps",
+    "sortTime": "Time",
+    "reset": "Reset",
+    "waitingTitle": "Waiting for laps...",
+    "waitingHint": "Drive on the track"
+  },
+  "freePracticeHeader": {
+    "title": "Free Practice",
+    "selectTrack": "Select track...",
+    "qualifying": "Qualifying",
+    "race": "Race",
+    "cuConnected": "CU Connected",
+    "cuDisconnected": "CU Disconnected"
+  },
+  "controllerConfig": {
+    "title": "Driver Configuration",
+    "session": "Session"
+  },
+  "startLights": {
+    "cancelTitle": "Cancel (Esc)",
+    "falseStart": "FALSE START",
+    "go": "GO!",
+    "start": "START"
+  },
+  "session": {
+    "noSession": "No session selected",
+    "typePractice": "Free practice",
+    "typeQualif": "Qualifying",
+    "typeRace": "Race",
+    "elapsed": "Elapsed",
+    "remaining": "Remaining",
+    "cuOk": "CU OK",
+    "cuOff": "CU Off",
+    "connectCu": "Connect a CU",
+    "start": "Start",
+    "pause": "Pause",
+    "finish": "Finish",
+    "resume": "Resume",
+    "lastLapInProgress": "Last lap in progress...",
+    "viewResults": "View Results"
+  },
+  "controllerSlot": {
+    "controller": "Controller {{number}}",
+    "driverLabel": "Driver",
+    "carLabel": "Car",
+    "select": "Select..."
+  },
+  "configStatus": {
+    "ready": "Ready",
+    "toConfigure_one": "{{count}} controller to configure",
+    "toConfigure_other": "{{count}} controllers to configure",
+    "toConfigureWithSlots_one": "{{count}} controller to configure ({{slots}})",
+    "toConfigureWithSlots_other": "{{count}} controllers to configure ({{slots}})"
+  }
+}

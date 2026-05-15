@@ -1,4 +1,5 @@
 import { Wifi, WifiOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import StateChip from '../StateChip'
 
 export default function SessionHeader({
@@ -11,6 +12,8 @@ export default function SessionHeader({
     remainingFormatted,
     progress
 }) {
+    const { t } = useTranslation('race')
+
     return (
         <header className="bg-black/50 backdrop-blur-sm border-b border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -30,7 +33,7 @@ export default function SessionHeader({
                 {/* Center: Timer */}
                 <div className="flex items-center gap-6">
                     <div className="text-center">
-                        <div className="text-xs text-gray-500 uppercase">Temps</div>
+                        <div className="text-xs text-gray-500 uppercase">{t('sessionHeader.elapsed')}</div>
                         <div className="text-3xl font-mono font-bold text-white tabular-nums">
                             {elapsedFormatted}
                         </div>
@@ -39,7 +42,7 @@ export default function SessionHeader({
                         <>
                             <div className="w-px h-10 bg-gray-700" />
                             <div className="text-center">
-                                <div className="text-xs text-gray-500 uppercase">Restant</div>
+                                <div className="text-xs text-gray-500 uppercase">{t('sessionHeader.remaining')}</div>
                                 <div className={`text-3xl font-mono font-bold tabular-nums ${
                                     remaining < 60000 ? 'text-red-500 animate-pulse' : 'text-white'
                                 }`}>
@@ -55,7 +58,7 @@ export default function SessionHeader({
                     cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
                 }`}>
                     {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-                    <span className="text-sm font-medium">{cuConnected ? 'CU OK' : 'CU Off'}</span>
+                    <span className="text-sm font-medium">{cuConnected ? t('sessionHeader.cuOk') : t('sessionHeader.cuOff')}</span>
                 </div>
             </div>
 

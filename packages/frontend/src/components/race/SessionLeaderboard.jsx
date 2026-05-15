@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
@@ -21,6 +22,7 @@ export default function SessionLeaderboard({
   expanded = false,
 }) {
   const { isDark } = useApp()
+  const { t } = useTranslation('race')
   const gradientEnd = 'var(--card)'
 
   // Sort entries based on sortBy prop
@@ -84,7 +86,7 @@ export default function SessionLeaderboard({
   if (!entries || entries.length === 0) {
     return (
       <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
-        No entries in the leaderboard
+        {t('leaderboard.empty')}
       </div>
     )
   }
@@ -218,7 +220,7 @@ export default function SessionLeaderboard({
               <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-6'} flex-shrink-0`}>
                 {/* Laps */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Tours</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.laps')}</div>
                   <div className={`font-mono font-bold ${expanded ? 'text-2xl' : 'text-lg'} text-foreground`}>
                     {stats.laps ?? 0}
                   </div>
@@ -226,26 +228,26 @@ export default function SessionLeaderboard({
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Meilleur</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.best')}</div>
                   <LapTime time={stats.bestLap} size={expanded ? 'xl' : 'md'} highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>Dernier</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.last')}</div>
                   <LapTime time={stats.lastLap} size={expanded ? 'xl' : 'md'} />
                 </div>
 
                 {/* Gap / Total */}
                 <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
-                    {sortBy === 'race' ? (position === 1 ? (sessionStatus === 'finished' ? 'Total' : 'Écart') : 'Écart') : 'Écart'}
+                    {sortBy === 'race' && position === 1 && sessionStatus === 'finished' ? t('leaderboard.total') : t('leaderboard.gap')}
                   </div>
                   {sortBy === 'race' && position === 1 ? (
                     sessionStatus === 'finished' ? (
                       <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
                     ) : (
-                      <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>Leader</span>
+                      <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>{t('gapDisplay.leader')}</span>
                     )
                   ) : (
                     <GapDisplay

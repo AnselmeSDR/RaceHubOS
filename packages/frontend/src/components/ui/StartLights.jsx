@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useDevice } from '../../context/DeviceContext'
 
 /**
@@ -7,6 +8,7 @@ import { useDevice } from '../../context/DeviceContext'
  * Consumes cuStatus directly from DeviceContext
  */
 export default function StartLights({ onCancel }) {
+  const { t } = useTranslation('race')
   const { cuStatus, startRace } = useDevice()
   const cuStart = cuStatus?.start ?? 9
 
@@ -104,7 +106,7 @@ export default function StartLights({ onCancel }) {
         <button
           onClick={handleCancel}
           className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors z-10"
-          title="Annuler (Échap)"
+          title={t('startLights.cancelTitle')}
         >
           <X className="size-6" />
         </button>
@@ -155,7 +157,7 @@ export default function StartLights({ onCancel }) {
           {isFalseStart && (
             <div className="text-center animate-pulse">
               <span className="text-5xl font-black text-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.8)] tracking-wider">
-                FAUX DÉPART
+                {t('startLights.falseStart')}
               </span>
             </div>
           )}
@@ -164,7 +166,7 @@ export default function StartLights({ onCancel }) {
           {showGo && !isFalseStart && (
             <div className="text-center animate-bounce">
               <span className="text-8xl font-black text-green-400 drop-shadow-[0_0_50px_rgba(74,222,128,0.9)] tracking-wider">
-                GO!
+                {t('startLights.go')}
               </span>
             </div>
           )}
@@ -177,7 +179,7 @@ export default function StartLights({ onCancel }) {
             >
               {/* Shine effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <span className="relative tracking-widest">START</span>
+              <span className="relative tracking-widest">{t('startLights.start')}</span>
             </button>
           )}
 
