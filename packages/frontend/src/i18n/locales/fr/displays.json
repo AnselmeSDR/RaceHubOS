@@ -1,0 +1,246 @@
+{
+  "page": {
+    "title": "Displays - Composants d'affichage",
+    "subtitle": "Collection de tous les composants d'affichage utilisés dans l'application"
+  },
+  "tabs": {
+    "drivers": "Pilotes",
+    "championship": "Championnat",
+    "race": "Course",
+    "crud": "CRUD",
+    "config": "Config",
+    "unused": "Non utilisés"
+  },
+  "usage": {
+    "unused": "Non utilisé"
+  },
+  "loading": "Chargement...",
+  "noDriversFound": "Aucun pilote trouvé. Ajoutez des pilotes pour voir les composants.",
+  "drivers": {
+    "profileHeader": {
+      "title": "Profile Header",
+      "description": "En-tête de profil détaillé avec toutes les statistiques"
+    },
+    "listItem": {
+      "title": "List Item",
+      "description": "Format liste compact pour sélections et vues compactes"
+    },
+    "gridPosition": {
+      "title": "Grid Position",
+      "description": "Grille de départ style NASCAR avec ROW"
+    },
+    "standing": {
+      "title": "Standing",
+      "description": "Classement avec position, points et changement"
+    },
+    "selectCard": {
+      "title": "Select Card",
+      "description": "Sélection multi-pilotes pour configuration de session"
+    },
+    "badge": {
+      "title": "Badge",
+      "description": "Badges compacts pour menus, notifications, etc."
+    },
+    "row": "ROW",
+    "sizeSmall": "Small",
+    "sizeMedium": "Medium (avec nom)",
+    "sizeLarge": "Large",
+    "sizeExtraLarge": "Extra Large"
+  },
+  "race": {
+    "lapTime": {
+      "title": "LapTime",
+      "description": "Affichage formaté des temps au tour (mm:ss.ms)"
+    },
+    "stateChip": {
+      "title": "StateChip",
+      "description": "Indicateur d'état de session/CU"
+    },
+    "gapDisplay": {
+      "title": "GapDisplay",
+      "description": "Affichage de l'écart entre pilotes"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "description": "Classement en temps réel de la session"
+    },
+    "freePracticeLeaderboard": {
+      "title": "FreePracticeLeaderboard",
+      "description": "Classement avec filtres Tours/Temps pour essais libres"
+    },
+    "lapTimeDefault": "size=\"md\" (default)",
+    "lapTimeIsBest": "isBest=true",
+    "lapTimeNull": "null/invalid"
+  },
+  "championship": {
+    "sessionTypes": {
+      "title": "Types de Session",
+      "description": "Sélectionnez le type de session pour voir les différents états"
+    },
+    "statusBadges": {
+      "title": "Badges de Statut",
+      "description": "Indicateurs d'état de la session"
+    },
+    "leaderboardByType": {
+      "title": "Leaderboard - {{type}}",
+      "descriptionPractice": "Classement par nombre de tours, puis meilleur temps",
+      "descriptionQualif": "Classement par meilleur temps au tour",
+      "descriptionRace": "Classement par tours complétés, avec écarts"
+    },
+    "freePracticeLeaderboard": {
+      "title": "FreePracticeLeaderboard",
+      "description": "Classement essais libres avec filtres Tours/Temps"
+    },
+    "standingsPanel": {
+      "title": "Panneau Classement Général",
+      "description": "Onglets Libre / Qualif / Course avec classements cumulés",
+      "heading": "Classement Général"
+    },
+    "sessionTypeLabels": {
+      "practice": "Essais Libres",
+      "qualif": "Qualifications",
+      "race": "Course"
+    },
+    "activeSession": "Session active:",
+    "statusDraft": "draft",
+    "statusActive": "En cours",
+    "statusFinishing": "🏁 Fin de session...",
+    "statusFinished": "Terminé",
+    "maxLaps": "{{count}} tours max",
+    "raceLaps": "{{count}} tours",
+    "tabFree": "Libre",
+    "tabQualif": "Qualif",
+    "tabRace": "Course"
+  },
+  "crud": {
+    "pageHeader": {
+      "title": "PageHeader",
+      "description": "En-tête de page CRUD avec titre, recherche et bouton d'action"
+    },
+    "viewToggleButtons": {
+      "title": "ViewToggleButtons",
+      "description": "Toggle entre vue grille et liste",
+      "currentView": "Vue actuelle: {{view}}"
+    },
+    "emptyState": {
+      "title": "EmptyState",
+      "description": "État vide pour les listes sans données",
+      "demoTitle": "Aucun pilote",
+      "demoMessage": "Commencez par ajouter votre premier pilote"
+    },
+    "entityCard": {
+      "title": "EntityCard",
+      "description": "Carte d'entité générique avec image et stats"
+    },
+    "statBadge": {
+      "title": "StatBadge",
+      "description": "Badge de statistique pour EntityCard"
+    },
+    "colorPickerField": {
+      "title": "ColorPickerField",
+      "description": "Sélecteur de couleur pour formulaires",
+      "label": "Couleur du pilote"
+    },
+    "rangeField": {
+      "title": "RangeField",
+      "description": "Slider pour valeurs numériques (ex: vitesse, accélération)",
+      "label": "Vitesse max"
+    },
+    "errorMessage": {
+      "title": "ErrorMessage",
+      "description": "Affichage des messages d'erreur",
+      "demoMessage": "Une erreur s'est produite lors du chargement des données."
+    },
+    "addDriver": "Ajouter un pilote",
+    "noTeam": "Sans équipe",
+    "statRaces": "Courses",
+    "statLaps": "Tours",
+    "statWins": "Victoires",
+    "statPodiums": "Podiums",
+    "modalTitle": "Exemple de Modal",
+    "modalContent": "Contenu de la modal avec FormField",
+    "modalFieldName": "Nom",
+    "modalFieldNamePlaceholder": "Entrez un nom"
+  },
+  "config": {
+    "configStatus": {
+      "title": "ConfigStatus",
+      "description": "Indicateur de statut de configuration des controllers",
+      "incomplete": "Configuration incomplète ({{count}} manquantes)",
+      "complete": "Configuration complète"
+    },
+    "controllerConfigSection": {
+      "title": "ControllerConfigSection",
+      "description": "Section de configuration des controllers avec pilotes/voitures"
+    }
+  },
+  "unused": {
+    "banner": {
+      "title_one": "Composant non utilisé ({{count}})",
+      "title_other": "Composants non utilisés ({{count}})",
+      "description": "Ces composants existent dans le codebase mais ne sont importés nulle part. Ils peuvent être utiles pour de futures fonctionnalités ou peuvent être supprimés."
+    },
+    "driverBadge": {
+      "title": "DriverBadge",
+      "description": "Badges compacts - disponible mais non utilisé dans les pages"
+    },
+    "driverGridPosition": {
+      "title": "DriverGridPosition",
+      "description": "Grille de départ - disponible mais non utilisé"
+    },
+    "driverStanding": {
+      "title": "DriverStanding",
+      "description": "Classement pilote - disponible mais non utilisé"
+    },
+    "driverSelectCard": {
+      "title": "DriverSelectCard",
+      "description": "Carte de sélection - disponible mais non utilisé"
+    },
+    "entityCard": {
+      "title": "EntityCard",
+      "description": "Carte d'entité générique - disponible mais non utilisé",
+      "subtitle": "Exemple d'entité"
+    },
+    "statBadge": {
+      "title": "StatBadge",
+      "description": "Badge de statistique - disponible mais non utilisé"
+    }
+  },
+  "demo": {
+    "title": "Composants d'affichage des pilotes",
+    "subtitle": "Différents styles inspirés de NASCAR et F1 pour afficher les pilotes",
+    "profileHeader": {
+      "title": "1. Profile Header (En-tête de profil détaillé)",
+      "description": "Pour une page de profil complète avec toutes les statistiques"
+    },
+    "listItem": {
+      "title": "2. List Item (Format liste compact)",
+      "description": "Pour les listes, sélections, et vues compactes"
+    },
+    "gridPosition": {
+      "title": "3. Grid Position (Grille de départ NASCAR)",
+      "description": "Pour afficher la grille de départ avec ROW 1, ROW 2, etc."
+    },
+    "standing": {
+      "title": "4. Standing (Classement avec points)",
+      "description": "Pour les classements de championnat avec positions et points"
+    },
+    "selectCard": {
+      "title": "5. Select Card (Sélection multi-pilotes)",
+      "description": "Pour sélectionner les pilotes d'une session",
+      "selectedCount_one": "{{count}} pilote sélectionné",
+      "selectedCount_other": "{{count}} pilotes sélectionnés"
+    },
+    "badge": {
+      "title": "6. Badge (Badges compacts)",
+      "description": "Pour affichage compact dans les menus, notifications, etc."
+    },
+    "noDriversFound": "Aucun pilote trouvé. Ajoutez des pilotes pour voir la démo."
+  },
+  "driverDisplays": {
+    "races": "Courses",
+    "wins": "Victoires",
+    "bestLap": "Meilleur Tour",
+    "points": "Points"
+  }
+}

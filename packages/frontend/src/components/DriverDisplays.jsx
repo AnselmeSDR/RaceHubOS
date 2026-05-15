@@ -1,4 +1,5 @@
 import { Trophy, Flag, BarChart3 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useApp } from '../context/AppContext'
 
 import { getImgUrl } from '../utils/image'
@@ -8,6 +9,7 @@ import { getImgUrl } from '../utils/image'
  * Inspiré du style NASCAR Starting Grid
  */
 export function DriverListItem({ driver, position, selected, onClick, showStats = false }) {
+  const { t } = useTranslation('displays')
   return (
     <div
       onClick={onClick}
@@ -70,11 +72,11 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
       {showStats && (
         <div className="flex gap-4 text-sm">
           <div className="text-center">
-            <div className="text-gray-500 dark:text-gray-400 text-xs">Courses</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">{t('driverDisplays.races')}</div>
             <div className="font-bold text-gray-900 dark:text-white">{driver._count?.sessions || 0}</div>
           </div>
           <div className="text-center">
-            <div className="text-gray-500 dark:text-gray-400 text-xs">Victoires</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">{t('driverDisplays.wins')}</div>
             <div className="font-bold text-yellow-600">{driver.wins || 0}</div>
           </div>
         </div>
@@ -187,6 +189,7 @@ export function DriverGridPosition({ driver, side = 'left' }) {
  * Style F1 avec toutes les stats
  */
 export function DriverProfileHeader({ driver }) {
+  const { t } = useTranslation('displays')
   return (
     <div
       className="relative overflow-hidden rounded-2xl shadow-2xl"
@@ -273,26 +276,26 @@ export function DriverProfileHeader({ driver }) {
             <div className="grid grid-cols-4 gap-4 mt-6">
               <StatBox
                 icon={<Flag className="w-5 h-5" />}
-                label="Courses"
+                label={t('glossary:race_other')}
                 value={driver._count?.sessions || 0}
                 color={driver.color}
               />
               <StatBox
                 icon={<Trophy className="w-5 h-5" />}
-                label="Victoires"
+                label={t('glossary:win_other')}
                 value={driver.wins || 0}
                 color="#EAB308"
                 highlight
               />
               <StatBox
                 icon={<Trophy className="w-5 h-5" />}
-                label="Podiums"
+                label={t('glossary:podium_other')}
                 value={driver.podiums || 0}
                 color={driver.color}
               />
               <StatBox
                 icon={<BarChart3 className="w-5 h-5" />}
-                label="Tours"
+                label={t('glossary:lap_other')}
                 value={driver._count?.laps || 0}
                 color={driver.color}
               />
@@ -303,7 +306,7 @@ export function DriverProfileHeader({ driver }) {
               <div className="mt-4 inline-block">
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-6 py-3 shadow-md">
                   <div className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Meilleur Tour
+                    {t('driverDisplays.bestLap')}
                   </div>
                   <div
                     className="text-3xl font-black tabular-nums"
@@ -332,6 +335,7 @@ export function DriverProfileHeader({ driver }) {
  * Style F1/NASCAR standings
  */
 export function DriverStanding({ driver, position, points, change }) {
+  const { t } = useTranslation('displays')
   const positionColors = {
     1: 'bg-yellow-400 text-yellow-900',
     2: 'bg-gray-300 text-gray-900',
@@ -380,7 +384,7 @@ export function DriverStanding({ driver, position, points, change }) {
           <div className="text-2xl font-black" style={{ color: driver.color }}>
             {points}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Points</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('driverDisplays.points')}</div>
         </div>
       )}
     </div>

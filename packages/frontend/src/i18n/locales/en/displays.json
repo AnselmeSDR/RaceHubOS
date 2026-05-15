@@ -1,0 +1,246 @@
+{
+  "page": {
+    "title": "Displays - Display components",
+    "subtitle": "Collection of all display components used in the application"
+  },
+  "tabs": {
+    "drivers": "Drivers",
+    "championship": "Championship",
+    "race": "Race",
+    "crud": "CRUD",
+    "config": "Config",
+    "unused": "Unused"
+  },
+  "usage": {
+    "unused": "Unused"
+  },
+  "loading": "Loading...",
+  "noDriversFound": "No driver found. Add drivers to see the components.",
+  "drivers": {
+    "profileHeader": {
+      "title": "Profile Header",
+      "description": "Detailed profile header with all statistics"
+    },
+    "listItem": {
+      "title": "List Item",
+      "description": "Compact list format for selections and compact views"
+    },
+    "gridPosition": {
+      "title": "Grid Position",
+      "description": "NASCAR-style starting grid with ROW"
+    },
+    "standing": {
+      "title": "Standing",
+      "description": "Standings with position, points and change"
+    },
+    "selectCard": {
+      "title": "Select Card",
+      "description": "Multi-driver selection for session configuration"
+    },
+    "badge": {
+      "title": "Badge",
+      "description": "Compact badges for menus, notifications, etc."
+    },
+    "row": "ROW",
+    "sizeSmall": "Small",
+    "sizeMedium": "Medium (with name)",
+    "sizeLarge": "Large",
+    "sizeExtraLarge": "Extra Large"
+  },
+  "race": {
+    "lapTime": {
+      "title": "LapTime",
+      "description": "Formatted lap time display (mm:ss.ms)"
+    },
+    "stateChip": {
+      "title": "StateChip",
+      "description": "Session/CU state indicator"
+    },
+    "gapDisplay": {
+      "title": "GapDisplay",
+      "description": "Display of the gap between drivers"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "description": "Real-time session leaderboard"
+    },
+    "freePracticeLeaderboard": {
+      "title": "FreePracticeLeaderboard",
+      "description": "Leaderboard with Laps/Time filters for free practice"
+    },
+    "lapTimeDefault": "size=\"md\" (default)",
+    "lapTimeIsBest": "isBest=true",
+    "lapTimeNull": "null/invalid"
+  },
+  "championship": {
+    "sessionTypes": {
+      "title": "Session Types",
+      "description": "Select the session type to see the different states"
+    },
+    "statusBadges": {
+      "title": "Status Badges",
+      "description": "Session state indicators"
+    },
+    "leaderboardByType": {
+      "title": "Leaderboard - {{type}}",
+      "descriptionPractice": "Ranking by number of laps, then best time",
+      "descriptionQualif": "Ranking by best lap time",
+      "descriptionRace": "Ranking by completed laps, with gaps"
+    },
+    "freePracticeLeaderboard": {
+      "title": "FreePracticeLeaderboard",
+      "description": "Free practice leaderboard with Laps/Time filters"
+    },
+    "standingsPanel": {
+      "title": "Overall Standings Panel",
+      "description": "Free / Qualif / Race tabs with cumulative standings",
+      "heading": "Overall Standings"
+    },
+    "sessionTypeLabels": {
+      "practice": "Free Practice",
+      "qualif": "Qualifying",
+      "race": "Race"
+    },
+    "activeSession": "Active session:",
+    "statusDraft": "draft",
+    "statusActive": "Running",
+    "statusFinishing": "🏁 Session ending...",
+    "statusFinished": "Finished",
+    "maxLaps": "{{count}} laps max",
+    "raceLaps": "{{count}} laps",
+    "tabFree": "Free",
+    "tabQualif": "Qualif",
+    "tabRace": "Race"
+  },
+  "crud": {
+    "pageHeader": {
+      "title": "PageHeader",
+      "description": "CRUD page header with title, search and action button"
+    },
+    "viewToggleButtons": {
+      "title": "ViewToggleButtons",
+      "description": "Toggle between grid and list view",
+      "currentView": "Current view: {{view}}"
+    },
+    "emptyState": {
+      "title": "EmptyState",
+      "description": "Empty state for lists without data",
+      "demoTitle": "No driver",
+      "demoMessage": "Start by adding your first driver"
+    },
+    "entityCard": {
+      "title": "EntityCard",
+      "description": "Generic entity card with image and stats"
+    },
+    "statBadge": {
+      "title": "StatBadge",
+      "description": "Statistic badge for EntityCard"
+    },
+    "colorPickerField": {
+      "title": "ColorPickerField",
+      "description": "Color picker for forms",
+      "label": "Driver color"
+    },
+    "rangeField": {
+      "title": "RangeField",
+      "description": "Slider for numeric values (e.g. speed, acceleration)",
+      "label": "Max speed"
+    },
+    "errorMessage": {
+      "title": "ErrorMessage",
+      "description": "Display of error messages",
+      "demoMessage": "An error occurred while loading the data."
+    },
+    "addDriver": "Add a driver",
+    "noTeam": "No team",
+    "statRaces": "Races",
+    "statLaps": "Laps",
+    "statWins": "Wins",
+    "statPodiums": "Podiums",
+    "modalTitle": "Modal Example",
+    "modalContent": "Modal content with FormField",
+    "modalFieldName": "Name",
+    "modalFieldNamePlaceholder": "Enter a name"
+  },
+  "config": {
+    "configStatus": {
+      "title": "ConfigStatus",
+      "description": "Controller configuration status indicator",
+      "incomplete": "Incomplete configuration ({{count}} missing)",
+      "complete": "Complete configuration"
+    },
+    "controllerConfigSection": {
+      "title": "ControllerConfigSection",
+      "description": "Controller configuration section with drivers/cars"
+    }
+  },
+  "unused": {
+    "banner": {
+      "title_one": "Unused component ({{count}})",
+      "title_other": "Unused components ({{count}})",
+      "description": "These components exist in the codebase but are not imported anywhere. They may be useful for future features or can be removed."
+    },
+    "driverBadge": {
+      "title": "DriverBadge",
+      "description": "Compact badges - available but not used in pages"
+    },
+    "driverGridPosition": {
+      "title": "DriverGridPosition",
+      "description": "Starting grid - available but not used"
+    },
+    "driverStanding": {
+      "title": "DriverStanding",
+      "description": "Driver standing - available but not used"
+    },
+    "driverSelectCard": {
+      "title": "DriverSelectCard",
+      "description": "Selection card - available but not used"
+    },
+    "entityCard": {
+      "title": "EntityCard",
+      "description": "Generic entity card - available but not used",
+      "subtitle": "Entity example"
+    },
+    "statBadge": {
+      "title": "StatBadge",
+      "description": "Statistic badge - available but not used"
+    }
+  },
+  "demo": {
+    "title": "Driver display components",
+    "subtitle": "Various NASCAR and F1 inspired styles to display drivers",
+    "profileHeader": {
+      "title": "1. Profile Header (Detailed profile header)",
+      "description": "For a complete profile page with all statistics"
+    },
+    "listItem": {
+      "title": "2. List Item (Compact list format)",
+      "description": "For lists, selections, and compact views"
+    },
+    "gridPosition": {
+      "title": "3. Grid Position (NASCAR starting grid)",
+      "description": "To display the starting grid with ROW 1, ROW 2, etc."
+    },
+    "standing": {
+      "title": "4. Standing (Standings with points)",
+      "description": "For championship standings with positions and points"
+    },
+    "selectCard": {
+      "title": "5. Select Card (Multi-driver selection)",
+      "description": "To select the drivers of a session",
+      "selectedCount_one": "{{count}} driver selected",
+      "selectedCount_other": "{{count}} drivers selected"
+    },
+    "badge": {
+      "title": "6. Badge (Compact badges)",
+      "description": "For compact display in menus, notifications, etc."
+    },
+    "noDriversFound": "No driver found. Add drivers to see the demo."
+  },
+  "driverDisplays": {
+    "races": "Races",
+    "wins": "Wins",
+    "bestLap": "Best Lap",
+    "points": "Points"
+  }
+}
