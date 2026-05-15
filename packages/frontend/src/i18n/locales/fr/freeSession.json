@@ -1,0 +1,11 @@
+{
+  "topBar": {
+    "selectTrackPlaceholder": "Sélectionner circuit...",
+    "newSession": "Nouvelle session",
+    "showStandings": "Afficher le classement",
+    "hideStandings": "Masquer le classement"
+  },
+  "standings": {
+    "title": "Classement Général"
+  }
+}
