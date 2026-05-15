@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Users, Flag, Settings, Layers, AlertTriangle, Clock, RefreshCw, Trophy, FlaskConical } from 'lucide-react'
 
 // Driver components
@@ -77,6 +78,7 @@ const COMPONENT_USAGE = {
 }
 
 export default function Displays() {
+  const { t } = useTranslation('displays')
   const [activeTab, setActiveTab] = useState('drivers')
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
@@ -85,12 +87,12 @@ export default function Displays() {
   const [loading, setLoading] = useState(true)
 
   const tabs = [
-    { id: 'drivers', label: 'Pilotes', Icon: Users },
-    { id: 'championship', label: 'Championnat', Icon: Trophy },
-    { id: 'race', label: 'Course', Icon: Flag },
-    { id: 'crud', label: 'CRUD', Icon: Layers },
-    { id: 'config', label: 'Config', Icon: Settings },
-    { id: 'unused', label: 'Non utilisés', Icon: AlertTriangle },
+    { id: 'drivers', label: t('tabs.drivers'), Icon: Users },
+    { id: 'championship', label: t('tabs.championship'), Icon: Trophy },
+    { id: 'race', label: t('tabs.race'), Icon: Flag },
+    { id: 'crud', label: t('tabs.crud'), Icon: Layers },
+    { id: 'config', label: t('tabs.config'), Icon: Settings },
+    { id: 'unused', label: t('tabs.unused'), Icon: AlertTriangle },
   ]
 
   useEffect(() => {
@@ -132,10 +134,10 @@ export default function Displays() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Displays - Composants d'affichage
+          {t('page.title')}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Collection de tous les composants d'affichage utilisés dans l'application
+          {t('page.subtitle')}
         </p>
       </div>
 
@@ -222,11 +224,12 @@ export default function Displays() {
 
 // Usage badge component
 function UsageBadge({ componentName }) {
+  const { t } = useTranslation('displays')
   const usage = COMPONENT_USAGE[componentName] || []
   if (usage.length === 0) {
     return (
       <span className="text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
-        Non utilisé
+        {t('usage.unused')}
       </span>
     )
   }
@@ -261,6 +264,8 @@ function SectionHeader({ title, description, componentName, code }) {
 
 // Drivers Displays Tab
 function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
+  const { t } = useTranslation('displays')
+
   if (loading) {
     return <LoadingState />
   }
@@ -269,7 +274,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
     return (
       <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
         <p className="text-gray-500 dark:text-gray-400">
-          Aucun pilote trouvé. Ajoutez des pilotes pour voir les composants.
+          {t('noDriversFound')}
         </p>
       </div>
     )
@@ -282,8 +287,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverProfileHeader */}
       <section>
         <SectionHeader
-          title="Profile Header"
-          description="En-tête de profil détaillé avec toutes les statistiques"
+          title={t('drivers.profileHeader.title')}
+          description={t('drivers.profileHeader.description')}
           componentName="DriverProfileHeader"
           code="<DriverProfileHeader />"
         />
@@ -293,8 +298,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverListItem */}
       <section>
         <SectionHeader
-          title="List Item"
-          description="Format liste compact pour sélections et vues compactes"
+          title={t('drivers.listItem.title')}
+          description={t('drivers.listItem.description')}
           componentName="DriverListItem"
           code="<DriverListItem />"
         />
@@ -313,8 +318,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverGridPosition */}
       <section>
         <SectionHeader
-          title="Grid Position"
-          description="Grille de départ style NASCAR avec ROW"
+          title={t('drivers.gridPosition.title')}
+          description={t('drivers.gridPosition.description')}
           componentName="DriverGridPosition"
           code="<DriverGridPosition />"
         />
@@ -328,7 +333,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
                   <>
                     <DriverGridPosition driver={driver} row={row} side="left" />
                     <div className="w-20 text-center">
-                      <div className="font-black text-2xl text-gray-400">ROW</div>
+                      <div className="font-black text-2xl text-gray-400">{t('drivers.row')}</div>
                       <div className="font-black text-3xl text-gray-900 dark:text-white">{row}</div>
                     </div>
                   </>
@@ -336,7 +341,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
                 {side === 'right' && (
                   <>
                     <div className="w-20 text-center">
-                      <div className="font-black text-2xl text-gray-400">ROW</div>
+                      <div className="font-black text-2xl text-gray-400">{t('drivers.row')}</div>
                       <div className="font-black text-3xl text-gray-900 dark:text-white">{row}</div>
                     </div>
                     <DriverGridPosition driver={driver} row={row} side="right" />
@@ -351,8 +356,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverStanding */}
       <section>
         <SectionHeader
-          title="Standing"
-          description="Classement avec position, points et changement"
+          title={t('drivers.standing.title')}
+          description={t('drivers.standing.description')}
           componentName="DriverStanding"
           code="<DriverStanding />"
         />
@@ -372,8 +377,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverSelectCard */}
       <section>
         <SectionHeader
-          title="Select Card"
-          description="Sélection multi-pilotes pour configuration de session"
+          title={t('drivers.selectCard.title')}
+          description={t('drivers.selectCard.description')}
           componentName="DriverSelectCard"
           code="<DriverSelectCard />"
         />
@@ -392,14 +397,14 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
       {/* DriverBadge */}
       <section>
         <SectionHeader
-          title="Badge"
-          description="Badges compacts pour menus, notifications, etc."
+          title={t('drivers.badge.title')}
+          description={t('drivers.badge.description')}
           componentName="DriverBadge"
           code="<DriverBadge />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Small</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('drivers.sizeSmall')}</p>
             <div className="flex flex-wrap gap-3">
               {drivers.slice(0, 6).map((driver) => (
                 <DriverBadge key={driver.id} driver={driver} size="sm" showName={false} />
@@ -407,7 +412,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Medium (avec nom)</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('drivers.sizeMedium')}</p>
             <div className="flex flex-wrap gap-3">
               {drivers.slice(0, 4).map((driver) => (
                 <DriverBadge key={driver.id} driver={driver} size="md" showName={true} />
@@ -415,7 +420,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
             </div>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Large</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('drivers.sizeLarge')}</p>
             <div className="flex flex-wrap gap-3">
               {drivers.slice(0, 3).map((driver) => (
                 <DriverBadge key={driver.id} driver={driver} size="lg" showName={false} />
@@ -430,6 +435,8 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
 
 // Race Displays Tab
 function RaceDisplays({ drivers, cars, loading }) {
+  const { t } = useTranslation('displays')
+
   if (loading) return <LoadingState />
 
   // Demo data
@@ -463,8 +470,8 @@ function RaceDisplays({ drivers, cars, loading }) {
       {/* LapTime */}
       <section>
         <SectionHeader
-          title="LapTime"
-          description="Affichage formaté des temps au tour (mm:ss.ms)"
+          title={t('race.lapTime.title')}
+          description={t('race.lapTime.description')}
           componentName="LapTime"
           code="<LapTime time={5234} />"
         />
@@ -474,7 +481,7 @@ function RaceDisplays({ drivers, cars, loading }) {
             <LapTime time={5234} size="sm" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">size="md" (default)</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('race.lapTimeDefault')}</p>
             <LapTime time={5234} size="md" />
           </div>
           <div>
@@ -482,11 +489,11 @@ function RaceDisplays({ drivers, cars, loading }) {
             <LapTime time={5234} size="lg" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">isBest=true</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('race.lapTimeIsBest')}</p>
             <LapTime time={5234} isBest={true} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">null/invalid</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('race.lapTimeNull')}</p>
             <LapTime time={null} />
           </div>
         </div>
@@ -495,8 +502,8 @@ function RaceDisplays({ drivers, cars, loading }) {
       {/* StateChip */}
       <section>
         <SectionHeader
-          title="StateChip"
-          description="Indicateur d'état de session/CU"
+          title={t('race.stateChip.title')}
+          description={t('race.stateChip.description')}
           componentName="StateChip"
           code="<StateChip state='racing' />"
         />
@@ -512,8 +519,8 @@ function RaceDisplays({ drivers, cars, loading }) {
       {/* GapDisplay */}
       <section>
         <SectionHeader
-          title="GapDisplay"
-          description="Affichage de l'écart entre pilotes"
+          title={t('race.gapDisplay.title')}
+          description={t('race.gapDisplay.description')}
           componentName="GapDisplay"
           code="<GapDisplay gap='+2.5s' />"
         />
@@ -528,8 +535,8 @@ function RaceDisplays({ drivers, cars, loading }) {
       {/* Leaderboard */}
       <section>
         <SectionHeader
-          title="Leaderboard"
-          description="Classement en temps réel de la session"
+          title={t('race.leaderboard.title')}
+          description={t('race.leaderboard.description')}
           componentName="Leaderboard"
           code="<Leaderboard leaderboard={[...]} />"
         />
@@ -541,8 +548,8 @@ function RaceDisplays({ drivers, cars, loading }) {
       {/* FreePracticeLeaderboard */}
       <section>
         <SectionHeader
-          title="FreePracticeLeaderboard"
-          description="Classement avec filtres Tours/Temps pour essais libres"
+          title={t('race.freePracticeLeaderboard.title')}
+          description={t('race.freePracticeLeaderboard.description')}
           componentName="FreePracticeLeaderboard"
           code="<FreePracticeLeaderboard />"
         />
@@ -561,6 +568,7 @@ function RaceDisplays({ drivers, cars, loading }) {
 
 // Championship Displays Tab
 function ChampionshipDisplays({ drivers, cars, loading }) {
+  const { t } = useTranslation('displays')
   const [sessionType, setSessionType] = useState('practice')
 
   if (loading) return <LoadingState />
@@ -621,9 +629,9 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
   }))
 
   const sessionTypeLabels = {
-    practice: { label: 'Essais Libres', icon: FlaskConical, color: 'bg-gray-500' },
-    qualif: { label: 'Qualifications', icon: Clock, color: 'bg-purple-500' },
-    race: { label: 'Course', icon: Flag, color: 'bg-green-500' },
+    practice: { label: t('championship.sessionTypeLabels.practice'), icon: FlaskConical, color: 'bg-gray-500' },
+    qualif: { label: t('championship.sessionTypeLabels.qualif'), icon: Clock, color: 'bg-purple-500' },
+    race: { label: t('championship.sessionTypeLabels.race'), icon: Flag, color: 'bg-green-500' },
   }
 
   const currentSession = sessionTypeLabels[sessionType]
@@ -634,8 +642,8 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
       {/* Session Type Selector */}
       <section>
         <SectionHeader
-          title="Types de Session"
-          description="Sélectionnez le type de session pour voir les différents états"
+          title={t('championship.sessionTypes.title')}
+          description={t('championship.sessionTypes.description')}
           componentName="SessionType"
           code="sessionType: 'practice' | 'qualif' | 'race'"
         />
@@ -657,7 +665,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
             ))}
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>Session active:</span>
+            <span>{t('championship.activeSession')}</span>
             <span className={`inline-flex items-center gap-1 px-2 py-1 ${currentSession.color} text-white rounded-full text-xs font-medium`}>
               <SessionIcon className="w-3 h-3" />
               {currentSession.label}
@@ -669,23 +677,23 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
       {/* Session Status Badges */}
       <section>
         <SectionHeader
-          title="Badges de Statut"
-          description="Indicateurs d'état de la session"
+          title={t('championship.statusBadges.title')}
+          description={t('championship.statusBadges.description')}
           componentName="SessionStatus"
           code="status: 'draft' | 'active' | 'finishing' | 'finished'"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex flex-wrap gap-3">
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-            draft
+            {t('championship.statusDraft')}
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
-            En cours
+            {t('championship.statusActive')}
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 animate-pulse">
-            🏁 Fin de session...
+            {t('championship.statusFinishing')}
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-            Terminé
+            {t('championship.statusFinished')}
           </span>
         </div>
       </section>
@@ -693,11 +701,11 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
       {/* Leaderboard by Session Type */}
       <section>
         <SectionHeader
-          title={`Leaderboard - ${currentSession.label}`}
+          title={t('championship.leaderboardByType.title', { type: currentSession.label })}
           description={
-            sessionType === 'practice' ? 'Classement par nombre de tours, puis meilleur temps' :
-            sessionType === 'qualif' ? 'Classement par meilleur temps au tour' :
-            'Classement par tours complétés, avec écarts'
+            sessionType === 'practice' ? t('championship.leaderboardByType.descriptionPractice') :
+            sessionType === 'qualif' ? t('championship.leaderboardByType.descriptionQualif') :
+            t('championship.leaderboardByType.descriptionRace')
           }
           componentName="Leaderboard"
           code={`<Leaderboard sessionType="${sessionType}" />`}
@@ -713,13 +721,13 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
             {sessionType === 'qualif' && (
               <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
                 <Clock className="w-3 h-3" />
-                5 tours max
+                {t('championship.maxLaps', { count: 5 })}
               </span>
             )}
             {sessionType === 'race' && (
               <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
                 <RefreshCw className="w-3 h-3" />
-                25 tours
+                {t('championship.raceLaps', { count: 25 })}
               </span>
             )}
           </div>
@@ -730,8 +738,8 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
       {/* FreePracticeLeaderboard with sort options */}
       <section>
         <SectionHeader
-          title="FreePracticeLeaderboard"
-          description="Classement essais libres avec filtres Tours/Temps"
+          title={t('championship.freePracticeLeaderboard.title')}
+          description={t('championship.freePracticeLeaderboard.description')}
           componentName="FreePracticeLeaderboard"
           code="<FreePracticeLeaderboard />"
         />
@@ -747,8 +755,8 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
       {/* Standings Panel Example */}
       <section>
         <SectionHeader
-          title="Panneau Classement Général"
-          description="Onglets Libre / Qualif / Course avec classements cumulés"
+          title={t('championship.standingsPanel.title')}
+          description={t('championship.standingsPanel.description')}
           componentName="StandingsPanel"
           code="<StandingsPanel />"
         />
@@ -756,21 +764,21 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           <div className="p-4 border-b dark:border-gray-700">
             <h3 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
-              Classement Général
+              {t('championship.standingsPanel.heading')}
             </h3>
           </div>
           <div className="flex border-b dark:border-gray-700">
             <button className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent">
               <FlaskConical className="w-4 h-4 inline mr-1" />
-              Libre
+              {t('championship.tabFree')}
             </button>
             <button className="flex-1 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 border-b-2 border-purple-500">
               <Clock className="w-4 h-4 inline mr-1" />
-              Qualif
+              {t('championship.tabQualif')}
             </button>
             <button className="flex-1 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-b-2 border-transparent">
               <Flag className="w-4 h-4 inline mr-1" />
-              Course
+              {t('championship.tabRace')}
             </button>
           </div>
           <div className="p-4 space-y-2">
@@ -817,6 +825,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
 
 // CRUD Displays Tab
 function CRUDDisplays({ drivers, cars, tracks, loading }) {
+  const { t } = useTranslation('displays')
   const [showModal, setShowModal] = useState(false)
   const [view, setView] = useState('grid')
 
@@ -829,18 +838,18 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* PageHeader */}
       <section>
         <SectionHeader
-          title="PageHeader"
-          description="En-tête de page CRUD avec titre, recherche et bouton d'action"
+          title={t('crud.pageHeader.title')}
+          description={t('crud.pageHeader.description')}
           componentName="PageHeader"
           code="<PageHeader />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <PageHeader
-            title="Pilotes"
+            title={t('glossary:driver_other')}
             searchValue=""
             onSearchChange={() => {}}
             onAdd={() => setShowModal(true)}
-            addLabel="Ajouter un pilote"
+            addLabel={t('crud.addDriver')}
           />
         </div>
       </section>
@@ -848,31 +857,31 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* ViewToggleButtons */}
       <section>
         <SectionHeader
-          title="ViewToggleButtons"
-          description="Toggle entre vue grille et liste"
+          title={t('crud.viewToggleButtons.title')}
+          description={t('crud.viewToggleButtons.description')}
           componentName="ViewToggleButtons"
           code="<ViewToggleButtons />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <ViewToggleButtons mode={view} onChange={setView} />
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Vue actuelle: {view}</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('crud.viewToggleButtons.currentView', { view })}</p>
         </div>
       </section>
 
       {/* EmptyState */}
       <section>
         <SectionHeader
-          title="EmptyState"
-          description="État vide pour les listes sans données"
+          title={t('crud.emptyState.title')}
+          description={t('crud.emptyState.description')}
           componentName="EmptyState"
           code="<EmptyState />"
         />
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           <EmptyState
             icon={<Users className="w-8 h-8" />}
-            title="Aucun pilote"
-            message="Commencez par ajouter votre premier pilote"
-            actionLabel="Ajouter un pilote"
+            title={t('crud.emptyState.demoTitle')}
+            message={t('crud.emptyState.demoMessage')}
+            actionLabel={t('crud.addDriver')}
             onAction={() => {}}
           />
         </div>
@@ -881,8 +890,8 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* EntityCard */}
       <section>
         <SectionHeader
-          title="EntityCard"
-          description="Carte d'entité générique avec image et stats"
+          title={t('crud.entityCard.title')}
+          description={t('crud.entityCard.description')}
           componentName="EntityCard"
           code="<EntityCard />"
         />
@@ -892,14 +901,14 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
               key={driver.id}
               image={driver.img}
               title={driver.name}
-              subtitle={driver.team?.name || 'Sans équipe'}
+              subtitle={driver.team?.name || t('crud.noTeam')}
               color={driver.color}
               onClick={() => {}}
               onEdit={() => {}}
               onDelete={() => {}}
             >
-              <StatBadge label="Courses" value={driver._count?.sessions || 0} />
-              <StatBadge label="Tours" value={driver._count?.laps || 0} />
+              <StatBadge label={t('crud.statRaces')} value={driver._count?.sessions || 0} />
+              <StatBadge label={t('crud.statLaps')} value={driver._count?.laps || 0} />
             </EntityCard>
           ))}
         </div>
@@ -908,30 +917,30 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* StatBadge */}
       <section>
         <SectionHeader
-          title="StatBadge"
-          description="Badge de statistique pour EntityCard"
+          title={t('crud.statBadge.title')}
+          description={t('crud.statBadge.description')}
           componentName="StatBadge"
           code="<StatBadge label='Tours' value={42} />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex gap-4">
-          <StatBadge label="Courses" value={15} />
-          <StatBadge label="Tours" value={234} />
-          <StatBadge label="Victoires" value={3} />
-          <StatBadge label="Podiums" value={8} />
+          <StatBadge label={t('crud.statRaces')} value={15} />
+          <StatBadge label={t('crud.statLaps')} value={234} />
+          <StatBadge label={t('crud.statWins')} value={3} />
+          <StatBadge label={t('crud.statPodiums')} value={8} />
         </div>
       </section>
 
       {/* ColorPickerField */}
       <section>
         <SectionHeader
-          title="ColorPickerField"
-          description="Sélecteur de couleur pour formulaires"
+          title={t('crud.colorPickerField.title')}
+          description={t('crud.colorPickerField.description')}
           componentName="ColorPickerField"
           code="<ColorPickerField />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-md">
           <ColorPickerField
-            label="Couleur du pilote"
+            label={t('crud.colorPickerField.label')}
             value={demoDriver?.color || '#3B82F6'}
             onChange={() => {}}
           />
@@ -941,14 +950,14 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* RangeField */}
       <section>
         <SectionHeader
-          title="RangeField"
-          description="Slider pour valeurs numériques (ex: vitesse, accélération)"
+          title={t('crud.rangeField.title')}
+          description={t('crud.rangeField.description')}
           componentName="RangeField"
           code="<RangeField />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-md">
           <RangeField
-            label="Vitesse max"
+            label={t('crud.rangeField.label')}
             value={80}
             onChange={() => {}}
             min={0}
@@ -960,29 +969,29 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
       {/* ErrorMessage */}
       <section>
         <SectionHeader
-          title="ErrorMessage"
-          description="Affichage des messages d'erreur"
+          title={t('crud.errorMessage.title')}
+          description={t('crud.errorMessage.description')}
           componentName="ErrorMessage"
           code="<ErrorMessage message='...' />"
         />
         <div className="space-y-4">
-          <ErrorMessage message="Une erreur s'est produite lors du chargement des données." />
+          <ErrorMessage message={t('crud.errorMessage.demoMessage')} />
         </div>
       </section>
 
       {/* Modal Demo */}
       {showModal && (
-        <Modal title="Exemple de Modal" onClose={() => setShowModal(false)}>
-          <p className="text-gray-600 mb-4">Contenu de la modal avec FormField</p>
-          <FormField label="Nom">
-            <TextField value="" onChange={() => {}} placeholder="Entrez un nom" />
+        <Modal title={t('crud.modalTitle')} onClose={() => setShowModal(false)}>
+          <p className="text-gray-600 mb-4">{t('crud.modalContent')}</p>
+          <FormField label={t('crud.modalFieldName')}>
+            <TextField value="" onChange={() => {}} placeholder={t('crud.modalFieldNamePlaceholder')} />
           </FormField>
           <ModalFooter>
             <ModalButton variant="secondary" onClick={() => setShowModal(false)}>
-              Annuler
+              {t('common:cancel')}
             </ModalButton>
             <ModalButton variant="primary" onClick={() => setShowModal(false)}>
-              Sauvegarder
+              {t('common:save')}
             </ModalButton>
           </ModalFooter>
         </Modal>
@@ -993,6 +1002,8 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
 
 // Config Displays Tab
 function ConfigDisplays({ drivers, cars, loading }) {
+  const { t } = useTranslation('displays')
+
   if (loading) return <LoadingState />
 
   const demoConfigs = drivers.slice(0, 6).map((driver, idx) => ({
@@ -1008,14 +1019,14 @@ function ConfigDisplays({ drivers, cars, loading }) {
       {/* ConfigStatus */}
       <section>
         <SectionHeader
-          title="ConfigStatus"
-          description="Indicateur de statut de configuration des controllers"
+          title={t('config.configStatus.title')}
+          description={t('config.configStatus.description')}
           componentName="ConfigStatus"
           code="<ConfigStatus />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Configuration incomplète (3 manquantes)</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('config.configStatus.incomplete', { count: 3 })}</p>
             <ConfigStatus
               unconfiguredCount={3}
               unconfiguredSlots={[4, 5, 6]}
@@ -1023,7 +1034,7 @@ function ConfigDisplays({ drivers, cars, loading }) {
             />
           </div>
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Configuration complète</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('config.configStatus.complete')}</p>
             <ConfigStatus
               unconfiguredCount={0}
               unconfiguredSlots={[]}
@@ -1036,8 +1047,8 @@ function ConfigDisplays({ drivers, cars, loading }) {
       {/* ControllerConfigSection */}
       <section>
         <SectionHeader
-          title="ControllerConfigSection"
-          description="Section de configuration des controllers avec pilotes/voitures"
+          title={t('config.controllerConfigSection.title')}
+          description={t('config.controllerConfigSection.description')}
           componentName="ControllerConfigSection"
           code="<ControllerConfigSection />"
         />
@@ -1060,6 +1071,8 @@ function ConfigDisplays({ drivers, cars, loading }) {
 
 // Unused Components Tab
 function UnusedDisplays({ drivers, cars, loading }) {
+  const { t } = useTranslation('displays')
+
   if (loading) return <LoadingState />
 
   const unusedComponents = Object.entries(COMPONENT_USAGE)
@@ -1070,11 +1083,10 @@ function UnusedDisplays({ drivers, cars, loading }) {
     <>
       <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-6 mb-8">
         <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-300 mb-2">
-          Composants non utilisés ({unusedComponents.length})
+          {t('unused.banner.title', { count: unusedComponents.length })}
         </h2>
         <p className="text-orange-700 dark:text-orange-400 text-sm mb-4">
-          Ces composants existent dans le codebase mais ne sont importés nulle part.
-          Ils peuvent être utiles pour de futures fonctionnalités ou peuvent être supprimés.
+          {t('unused.banner.description')}
         </p>
         <div className="flex flex-wrap gap-2">
           {unusedComponents.map(name => (
@@ -1088,8 +1100,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* DriverBadge - Unused in pages */}
       <section>
         <SectionHeader
-          title="DriverBadge"
-          description="Badges compacts - disponible mais non utilisé dans les pages"
+          title={t('unused.driverBadge.title')}
+          description={t('unused.driverBadge.description')}
           componentName="DriverBadge"
           code="<DriverBadge />"
         />
@@ -1105,8 +1117,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* DriverGridPosition - Unused */}
       <section>
         <SectionHeader
-          title="DriverGridPosition"
-          description="Grille de départ - disponible mais non utilisé"
+          title={t('unused.driverGridPosition.title')}
+          description={t('unused.driverGridPosition.description')}
           componentName="DriverGridPosition"
           code="<DriverGridPosition />"
         />
@@ -1120,8 +1132,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* DriverStanding - Unused */}
       <section>
         <SectionHeader
-          title="DriverStanding"
-          description="Classement pilote - disponible mais non utilisé"
+          title={t('unused.driverStanding.title')}
+          description={t('unused.driverStanding.description')}
           componentName="DriverStanding"
           code="<DriverStanding />"
         />
@@ -1141,8 +1153,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* DriverSelectCard - Unused */}
       <section>
         <SectionHeader
-          title="DriverSelectCard"
-          description="Carte de sélection - disponible mais non utilisé"
+          title={t('unused.driverSelectCard.title')}
+          description={t('unused.driverSelectCard.description')}
           componentName="DriverSelectCard"
           code="<DriverSelectCard />"
         />
@@ -1161,8 +1173,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* EntityCard - Unused */}
       <section>
         <SectionHeader
-          title="EntityCard"
-          description="Carte d'entité générique - disponible mais non utilisé"
+          title={t('unused.entityCard.title')}
+          description={t('unused.entityCard.description')}
           componentName="EntityCard"
           code="<EntityCard />"
         />
@@ -1172,7 +1184,7 @@ function UnusedDisplays({ drivers, cars, loading }) {
               key={driver.id}
               image={driver.img}
               title={driver.name}
-              subtitle="Exemple d'entité"
+              subtitle={t('unused.entityCard.subtitle')}
               color={driver.color}
               onClick={() => {}}
             >
@@ -1185,8 +1197,8 @@ function UnusedDisplays({ drivers, cars, loading }) {
       {/* StatBadge - Unused */}
       <section>
         <SectionHeader
-          title="StatBadge"
-          description="Badge de statistique - disponible mais non utilisé"
+          title={t('unused.statBadge.title')}
+          description={t('unused.statBadge.description')}
           componentName="StatBadge"
           code="<StatBadge />"
         />
@@ -1201,11 +1213,12 @@ function UnusedDisplays({ drivers, cars, loading }) {
 
 // Loading state component
 function LoadingState() {
+  const { t } = useTranslation('displays')
   return (
     <div className="flex items-center justify-center py-12">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loading')}</p>
       </div>
     </div>
   )
