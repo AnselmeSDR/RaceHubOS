@@ -330,7 +330,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   <select
                     value={driver.driverId}
                     onChange={(e) => updateDriver(index, 'driverId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="flex-1 h-9 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">{t('glossary:driver', { count: 1 })}</option>
                     {drivers.map((d) => (
@@ -343,7 +343,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   <select
                     value={driver.carId}
                     onChange={(e) => updateDriver(index, 'carId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="flex-1 h-9 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">{t('glossary:car', { count: 1 })}</option>
                     {cars.map((c) => (
@@ -356,7 +356,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   <select
                     value={driver.controller}
                     onChange={(e) => updateDriver(index, 'controller', e.target.value)}
-                    className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="w-24 h-9 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   >
                     <option value="">{t('form.controllerShort')}</option>
                     {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
@@ -378,7 +378,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     value={driver.gridPos || ''}
                     onChange={(e) => updateDriver(index, 'gridPos', e.target.value ? parseInt(e.target.value) : null)}
                     placeholder={t('form.gridPlaceholder')}
-                    className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="w-20 h-9 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                   />
 
                   <button
