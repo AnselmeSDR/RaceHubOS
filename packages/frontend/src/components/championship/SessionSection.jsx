@@ -329,7 +329,7 @@ export default function SessionSection({
                     {session.type !== 'balancing' && (
                       <td className="py-2">
                         <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
-                          <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
+                          <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
                             <SelectValue placeholder="---" />
                           </SelectTrigger>
                           <SelectContent>
@@ -358,7 +358,7 @@ export default function SessionSection({
                           defaultValue={controllerConfigs[ctrl]?.gridPos || ''}
                           onBlur={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
                           placeholder="-"
-                          className="text-center h-7 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
+                          className="text-center h-8 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
                         />
                       </td>
                     )}
