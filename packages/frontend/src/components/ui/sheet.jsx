@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
@@ -51,6 +52,7 @@ function SheetContent({
   showCloseButton = true,
   ...props
 }) {
+  const { t } = useTranslation('common')
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -67,7 +69,7 @@ function SheetContent({
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button variant="ghost" className="absolute top-3 right-3" size="icon-sm">
               <XIcon />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t('close')}</span>
             </Button>
           </SheetPrimitive.Close>
         )}

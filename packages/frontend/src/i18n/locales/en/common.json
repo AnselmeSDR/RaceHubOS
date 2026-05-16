@@ -63,5 +63,14 @@
     "selectImage": "Please select an image.",
     "readError": "Error reading the file",
     "uploadError": "Error uploading the image"
+  },
+  "imageCropper": {
+    "title": "Crop image",
+    "zoom": "Zoom"
+  },
+  "sidebar": {
+    "title": "Sidebar",
+    "description": "Displays the mobile sidebar.",
+    "toggle": "Toggle sidebar"
   }
 }
