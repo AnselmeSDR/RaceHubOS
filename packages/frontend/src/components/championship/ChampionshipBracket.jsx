@@ -40,22 +40,29 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
       {name && <p className="text-xs text-muted-foreground mb-2">{name}</p>}
       {drivers?.length > 0 ? (
         <div className="space-y-1">
-          {drivers.map((sd, i) => (
-            <div key={sd.id || i} className="flex items-center gap-2 text-xs">
-              {sd.gridPos && (
-                <span className="w-4 text-right text-muted-foreground">{sd.gridPos}.</span>
-              )}
-              {sd.driver?.img && (
-                <img src={`${API_URL}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
-              )}
-              <span className="flex-1 truncate">{sd.driver?.name || '?'}</span>
-              {showTimes && (
-                type === 'race'
-                  ? sd.totalTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
-                  : sd.bestLapTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
-              )}
-            </div>
-          ))}
+          {drivers.map((sd, i) => {
+            const isFinishedRace = type === 'race' && showTimes
+            const leadingPos = isFinishedRace ? sd.finalPos : sd.gridPos
+            const isPodium = isFinishedRace && sd.finalPos >= 1 && sd.finalPos <= 3
+            return (
+              <div key={sd.id || i} className="flex items-center gap-2 text-xs">
+                {leadingPos && (
+                  <span className={`w-4 text-right font-medium ${
+                    isPodium ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'
+                  }`}>{leadingPos}.</span>
+                )}
+                {sd.driver?.img && (
+                  <img src={`${API_URL}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
+                )}
+                <span className="flex-1 truncate">{sd.driver?.name || '?'}</span>
+                {showTimes && (
+                  type === 'race'
+                    ? sd.totalTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
+                    : sd.bestLapTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
+                )}
+              </div>
+            )
+          })}
         </div>
       ) : (
         <p className="text-xs text-muted-foreground italic">{t('bracket.waitingQualifs')}</p>
