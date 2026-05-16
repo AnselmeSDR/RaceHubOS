@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { cva } from "class-variance-authority";
 import { Slot } from "radix-ui"
 
@@ -128,6 +129,7 @@ function Sidebar({
   dir,
   ...props
 }) {
+  const { t } = useTranslation('common')
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
   if (collapsible === "none") {
@@ -160,8 +162,8 @@ function Sidebar({
           }
           side={side}>
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{t('sidebar.title')}</SheetTitle>
+            <SheetDescription>{t('sidebar.description')}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -216,6 +218,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }) {
+  const { t } = useTranslation('common')
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -231,7 +234,7 @@ function SidebarTrigger({
       }}
       {...props}>
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{t('sidebar.toggle')}</span>
     </Button>
   );
 }

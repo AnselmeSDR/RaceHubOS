@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react'
 import LapTime from '../race/LapTime'
 
@@ -13,6 +14,7 @@ export default function EntityCard({
   badge,
   footer
 }) {
+  const { t } = useTranslation('common')
   return (
     <div
       onClick={onClick}
@@ -65,11 +67,11 @@ export default function EntityCard({
           <div className="mt-3 p-2 rounded-lg bg-muted/50">
             <div className="flex items-center gap-2">
               <Trophy className="size-4 text-yellow-500" />
-              <span className="text-xs text-muted-foreground">Record:</span>
+              <span className="text-xs text-muted-foreground">{t('record')}:</span>
               <LapTime time={record.time} size="sm" />
             </div>
             {record.holder && (
-              <p className="text-xs text-muted-foreground mt-1 truncate">par {record.holder}</p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">{t('by')} {record.holder}</p>
             )}
           </div>
         )}

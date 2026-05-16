@@ -63,5 +63,14 @@
     "selectImage": "Veuillez sélectionner une image.",
     "readError": "Erreur lors de la lecture du fichier",
     "uploadError": "Erreur lors de l'upload de l'image"
+  },
+  "imageCropper": {
+    "title": "Recadrer l'image",
+    "zoom": "Zoom"
+  },
+  "sidebar": {
+    "title": "Barre latérale",
+    "description": "Affiche la barre latérale mobile.",
+    "toggle": "Basculer la barre latérale"
   }
 }

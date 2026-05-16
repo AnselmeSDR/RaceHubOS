@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import { XCircle, CheckCircle, AlertTriangle, Info, X } from 'lucide-react'
 
 export default function ErrorMessage({ type = 'error', message, onClose, className = '' }) {
+  const { t } = useTranslation('common')
   if (!message) return null
 
   const styles = {
@@ -54,7 +56,7 @@ export default function ErrorMessage({ type = 'error', message, onClose, classNa
               onClick={onClose}
               className={`inline-flex rounded-md p-1.5 ${style.text} hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-${type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'yellow' : 'blue'}-50 focus:ring-${type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'yellow' : 'blue'}-600`}
             >
-              <span className="sr-only">Fermer</span>
+              <span className="sr-only">{t('close')}</span>
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>

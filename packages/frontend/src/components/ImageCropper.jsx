@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import Cropper from 'react-easy-crop'
 import { X, Check } from 'lucide-react'
@@ -19,6 +20,7 @@ export default function ImageCropper({
   cropShape = 'round',
   aspect = 1
 }) {
+  const { t } = useTranslation('common')
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
@@ -58,7 +60,7 @@ export default function ImageCropper({
     >
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
-        <h3 className="text-white font-bold text-lg">Recadrer l'image</h3>
+        <h3 className="text-white font-bold text-lg">{t('imageCropper.title')}</h3>
         <div className="flex gap-2">
           <button
             type="button"
@@ -98,7 +100,7 @@ export default function ImageCropper({
       <div className="bg-gray-900 border-t border-gray-700 p-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center gap-4">
-            <span className="text-white text-sm font-medium whitespace-nowrap">Zoom</span>
+            <span className="text-white text-sm font-medium whitespace-nowrap">{t('imageCropper.zoom')}</span>
             <input
               type="range"
               min={1}
