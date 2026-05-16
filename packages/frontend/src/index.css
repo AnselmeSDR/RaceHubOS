@@ -184,7 +184,7 @@
   --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
   --sidebar-border: oklch(0.922 0.005 34.3);
   --sidebar-ring: oklch(0.714 0.014 41.2);
-  /* Session type colors — darker shade for light mode contrast */
+  /* Session type colors (600-level, identical in light & dark) */
   --session-practice: var(--color-purple-600);
   --session-qualif: var(--color-blue-600);
   --session-race: var(--color-green-600);
@@ -223,9 +223,4 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.274 0.006 286.033);
   --sidebar-ring: oklch(0.442 0.017 285.823);
-  /* Session type colors — lighter shade for dark mode contrast */
-  --session-practice: var(--color-purple-400);
-  --session-qualif: var(--color-blue-400);
-  --session-race: var(--color-green-400);
-  --session-balancing: var(--color-orange-400);
 }
