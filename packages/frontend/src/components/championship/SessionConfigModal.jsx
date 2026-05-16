@@ -317,7 +317,7 @@ export default function SessionConfigModal({
                         value={controllerConfigs[controller]?.driverId || ''}
                         onChange={(e) => handleControllerChange(controller, 'driverId', e.target.value)}
                         disabled={!canEdit}
-                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
                         {getAvailableDrivers(controller).map(driver => (
@@ -332,7 +332,7 @@ export default function SessionConfigModal({
                         value={controllerConfigs[controller]?.carId || ''}
                         onChange={(e) => handleControllerChange(controller, 'carId', e.target.value)}
                         disabled={!canEdit}
-                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
                         {getAvailableCars(controller).map(car => (
@@ -351,7 +351,7 @@ export default function SessionConfigModal({
                         onChange={(e) => handleControllerChange(controller, 'gridPos', e.target.value ? Number(e.target.value) : null)}
                         disabled={!canEdit}
                         placeholder="-"
-                        className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </td>
                   </tr>
