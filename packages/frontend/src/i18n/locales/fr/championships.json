@@ -100,14 +100,6 @@
     "rankingAfterQualifs": "Classement après<br/>toutes les qualifs"
   },
   "standings": {
-    "tabs": {
-      "practiceLabel": "Essais Libres",
-      "practiceShort": "Libre",
-      "qualifLabel": "Qualifications",
-      "qualifShort": "Qualif",
-      "raceLabel": "Courses",
-      "raceShort": "Course"
-    },
     "unknownDriver": "Pilote inconnu",
     "noStandings": "Aucun classement disponible",
     "lapsCount": "{{count}} tours",

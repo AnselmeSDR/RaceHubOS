@@ -19,9 +19,9 @@ export default function StandingsTabs({
 }) {
   const { t } = useTranslation('championships')
   const tabs = [
-    { id: 'practice', label: t('standings.tabs.practiceLabel'), shortLabel: t('standings.tabs.practiceShort'), icon: FlaskConical, color: 'purple' },
-    { id: 'qualif', label: t('standings.tabs.qualifLabel'), shortLabel: t('standings.tabs.qualifShort'), icon: Clock, color: 'blue' },
-    { id: 'race', label: t('standings.tabs.raceLabel'), shortLabel: t('standings.tabs.raceShort'), icon: Flag, color: 'green' }
+    { id: 'practice', label: t('glossary:sessionTypeFull.practice'), shortLabel: t('glossary:sessionType.practice'), icon: FlaskConical, color: 'purple' },
+    { id: 'qualif', label: t('glossary:sessionTypeFull.qualif'), shortLabel: t('glossary:sessionType.qualif'), icon: Clock, color: 'blue' },
+    { id: 'race', label: t('glossary:sessionTypeFull.race'), shortLabel: t('glossary:sessionType.race'), icon: Flag, color: 'green' }
   ]
 
   // Get driver info by ID
