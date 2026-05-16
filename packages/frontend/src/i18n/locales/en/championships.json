@@ -100,14 +100,6 @@
     "rankingAfterQualifs": "Ranking after<br/>all qualifs"
   },
   "standings": {
-    "tabs": {
-      "practiceLabel": "Free Practice",
-      "practiceShort": "Practice",
-      "qualifLabel": "Qualifications",
-      "qualifShort": "Qualif",
-      "raceLabel": "Races",
-      "raceShort": "Race"
-    },
     "unknownDriver": "Unknown driver",
     "noStandings": "No standings available",
     "lapsCount": "{{count}} laps",
