@@ -312,10 +312,10 @@ export default function SessionSection({
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground text-xs uppercase">
-                <th className="pb-2 font-medium w-12">{t('sessionSection.table.ctrl')}</th>
-                {session.type !== 'balancing' && <th className="pb-2 font-medium">{t('sessionSection.table.driver')}</th>}
-                <th className="pb-2 font-medium">{t('sessionSection.table.car')}</th>
-                {session.type !== 'balancing' && <th className="pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>}
+                <th className="px-2 pb-2 font-medium w-12">{t('sessionSection.table.ctrl')}</th>
+                {session.type !== 'balancing' && <th className="px-2 pb-2 font-medium">{t('sessionSection.table.driver')}</th>}
+                <th className="px-2 pb-2 font-medium">{t('sessionSection.table.car')}</th>
+                {session.type !== 'balancing' && <th className="px-2 pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -323,11 +323,11 @@ export default function SessionSection({
                 const sd = sessionDrivers.find(d => Number(d.controller) === ctrl)
                 return (
                   <tr key={ctrl} className="text-foreground">
-                    <td className="py-2">
+                    <td className="px-2 py-2">
                       <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
                     </td>
                     {session.type !== 'balancing' && (
-                      <td className="py-2">
+                      <td className="px-2 py-2">
                         <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
                           <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
                             <SelectValue placeholder="---" />
@@ -339,9 +339,9 @@ export default function SessionSection({
                         </Select>
                       </td>
                     )}
-                    <td className="py-2">
+                    <td className="px-2 py-2">
                       <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
-                        <SelectTrigger className="w-full h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
+                        <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
                           <SelectValue placeholder="---" />
                         </SelectTrigger>
                         <SelectContent>
@@ -351,7 +351,7 @@ export default function SessionSection({
                       </Select>
                     </td>
                     {session.type !== 'balancing' && (
-                      <td className="py-2">
+                      <td className="px-2 py-2">
                         <Input
                           key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
                           type="number" min="1" max="6"
