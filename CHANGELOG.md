@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-05-16
+
+### Added
+- **Traduction i18n EN/FR** : toute l'app est désormais traduisible, basée sur `react-i18next`
+  - Infrastructure : `import.meta.glob` auto-détecte les fichiers de traduction, fallback FR, détection navigateur, persistance localStorage
+  - Sélecteur de langue dans **Paramètres**
+  - Namespaces : `common`, `glossary` (termes métier + statuts + types de session), `layout`, `settings`, `dashboard`, `drivers`, `cars`, `tracks`, `teams`, `sessions`, `stats`, `championships`, `race`, `balancing`, `freeSession`, `displays`, `test`
+  - Pluriels gérés par i18next (`_one` / `_other`) — paramètre `count` automatique
+  - Dates locale-aware (`toLocaleDateString(i18n.language)`)
+  - Toutes les pages migrées (Settings, Layout, Dashboard, Drivers, Cars, Tracks, Teams, Sessions, Stats, Championships + tous les profils détail + Mode Libre, Équilibrage, Displays, Test) ainsi que tous les composants race/championship/balancing/crud/ui
+- **`ChampionshipBracket`** : pour les courses terminées, affichage de la **position finale** (P1/P2/P3 en jaune pour le podium) et du **temps total** par pilote, en plus de la position de grille
+
+### Changed
+- **Couleurs de type de session centralisées** dans `lib/colors.js` (helper `sessionBadgeClass()`) et basées sur les variables du thème (`bg-session-practice`, `bg-session-race`, etc.) — plus de duplication des classes Tailwind dans 6 fichiers
+- **`StandingsTabs`** utilise désormais `glossary:sessionType` / `glossary:sessionTypeFull` au lieu de ses propres clés dupliquées
+- **`SessionSection`** : hauteur uniforme `h-8` sur Select/Input + gap horizontal sur les cellules du tableau de config
+
+### Fixed
+- **`DriverProfile`, `CarProfile`, `TrackProfile`, `SessionDetail`** : remplacement du `confirm()` natif par `ConfirmModal` pour le reset stats / suppression
+- **`SessionDetail`** : code mort nettoyé (`getImgUrl`, `formatDuration`, `totalPauseDuration`, `totalLaps`, `fastestDriver` — scaffolding jamais branché)
+- **`Dashboard`** : alignement vertical correct des valeurs des cartes stats (icône + label dans une div, valeur dans l'autre, `justify-between`)
+- **`Dashboard` "Records absolus"** : chaque record dans sa propre carte bordée → la valeur d'un item n'est plus collée au label du suivant
+
 ## [1.11.0] - 2026-05-13
 
 ### Added
