@@ -186,6 +186,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
                 status={g.status}
                 drivers={g.drivers}
                 type="race"
+                showTimes={g.status === 'finished'}
               />
             </button>
           ))}
