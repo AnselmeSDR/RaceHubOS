@@ -49,8 +49,10 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
                 <img src={`${API_URL}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
               )}
               <span className="flex-1 truncate">{sd.driver?.name || '?'}</span>
-              {showTimes && sd.bestLapTime && (
-                <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
+              {showTimes && (
+                type === 'race'
+                  ? sd.totalTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
+                  : sd.bestLapTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
               )}
             </div>
           ))}
