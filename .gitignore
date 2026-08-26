@@ -55,3 +55,6 @@ CLAUDE.md
 
 packages/backend/public/uploads-remote-backup/
 
+
+# Exports de classement (données de course, pas du code)
+*.xlsx
