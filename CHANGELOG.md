@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-08-26
+
+### Added
+- **Colonne « Championnat » dans les statistiques** (TASK-02) : chaque temps indique le championnat dans lequel il a été réalisé, ou « — » lorsqu'il vient d'une course libre, d'essais ou d'un équilibrage
+  - Colonne triable et cliquable, qui ouvre la fiche du championnat
+  - Placée entre « Circuit » et « Session »
+  - **Filtre par championnat**, avec une option « Hors championnat » pour isoler les courses libres, essais et équilibrages ; plusieurs championnats peuvent être combinés
+
+### Fixed
+- **Menus de filtre et listes déroulantes transparents au défilement** : leur fond était translucide, l'opacité venant d'un effet de flou porté par un calque interne — qui défilait avec le contenu et disparaissait dès qu'on faisait défiler la liste, laissant voir la page au travers. Le fond est désormais opaque
+- **Listes déroulantes qui se repositionnaient pendant le défilement** (constaté sur le PC de course) : les options se décalaient et empêchaient de choisir une valeur située plus bas. Les listes sont maintenant ancrées au champ (`position="popper"`) au lieu d'être alignées sur l'option sélectionnée
+- **Ordre des colonnes après l'ajout d'une nouvelle colonne** : l'ordre mémorisé d'une liste ne connaît pas les colonnes ajoutées ensuite, qui se retrouvaient reléguées en fin de tableau — hors écran. Elles sont désormais réinsérées à la position où elles sont définies, sans perdre l'ordre choisi par l'utilisateur
+
 ## [1.16.0] - 2026-08-26
 
 ### Added
