@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 import { EventEmitter } from 'events';
 
 export class ConfigService extends EventEmitter {
   constructor(io) {
     super();
-    this.prisma = new PrismaClient();
+    this.prisma = createPrismaClient();
     this.io = io;
   }
 

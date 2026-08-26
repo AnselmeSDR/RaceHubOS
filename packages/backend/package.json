@@ -9,9 +9,9 @@
     "dev": "npx prisma generate && node --watch src/index.js",
     "start": "node scripts/startup.js && node src/index.js",
     "cli": "node src/cli/sim.js",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --runInBand --passWithNoTests",
-    "test:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --watch --runInBand",
-    "test:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test jest --coverage --runInBand",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test DATABASE_URL=\"file:./test.db\" jest --runInBand --passWithNoTests",
+    "test:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test DATABASE_URL=\"file:./test.db\" jest --watch --runInBand",
+    "test:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test DATABASE_URL=\"file:./test.db\" jest --coverage --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -19,11 +19,12 @@
   },
   "dependencies": {
     "@abandonware/noble": "^1.9.2-26",
-    "@prisma/client": "^6.19.2",
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "ink": "^6.6.0",
+    "ink": "^7.1.1",
     "ink-text-input": "^6.0.0",
     "multer": "^2.0.2",
     "react": "^19.2.3",
@@ -33,7 +34,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "jest": "^30.2.0",
-    "prisma": "^6.19.2",
+    "prisma": "^7.10.0",
     "supertest": "^7.2.2"
   }
 }

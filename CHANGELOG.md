@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-08-26
+
+### Added
+- **Sauvegarde datée avant chaque mise à jour** : la base est copiée dans `packages/backend/prisma/db-old/` sous la forme `AAAA-MM-JJ_HH-MM-SS_<raison>.db`, avec rotation automatique (10 dernières conservées)
+  - Déclenchée par la mise à jour depuis l'application (`update`), par la migration de schéma au démarrage (`schema-push`) et par les installeurs Windows/macOS (`install`)
+  - Copie réalisée via `VACUUM INTO` : cohérente même si le serveur tourne, et sans fichiers `-wal`/`-shm` associés
+  - Sauvegarde manuelle possible : `node scripts/backup-db.js <raison>`
+  - Remplace l'unique `dev.db.backup` qui était écrasé à chaque mise à jour — il n'y avait donc jamais d'historique
+
+### Changed
+- **Prisma 6 → 7** : nouvel adaptateur SQLite officiel (`@prisma/adapter-better-sqlite3`), configuration déportée dans `prisma.config.js`, et instanciation centralisée via `createPrismaClient()` (`src/lib/prisma.js`) — plus aucun `new PrismaClient()` dispersé dans les routes et services
+  - `src/lib/database-url.js` conserve le comportement Prisma 6 : un `DATABASE_URL` relatif (`file:./dev.db`) reste résolu depuis le dossier `prisma/`
+  - Dates stockées en `unixepoch-ms`, comme avant la migration
+- **Outillage frontend** : Vite 7 → 8, `@vitejs/plugin-react` 5 → 6, ESLint 9 → 10, `@tailwindcss/vite` 4.2 → 4.3
+- **Bibliothèques** : framer-motion 12 → 13, react-easy-crop 5 → 6, ink 6 → 7, plus les mises à jour compatibles (i18next, react-i18next, lucide-react, shadcn, globals, React 19.2.3)
+- **Node.js 22+ requis** (au lieu de 20+) : imposé par Vite 8 et ESLint 10 — les installeurs Windows et macOS/Linux vérifient et installent la bonne version
+- **`package-lock.json` désormais versionné** : les installations sur le PC de course sont reproductibles à l'identique
+
+### Fixed
+- **Détection de mise à jour** : la comparaison avec GitHub était une simple inégalité de chaînes (`latestVersion !== currentVersion`), donc une version **plus ancienne** était annoncée comme « nouvelle version disponible » — et une mise à jour lancée depuis ce bandeau aurait fait un retour arrière avec `db push` sur un schéma antérieur. La comparaison est désormais sémantique (`src/lib/version.js`, couverte par des tests)
+- **Les tests effaçaient la base réelle** : `npm test` s'exécutait sur `dev.db` (via le `DATABASE_URL` du `.env`) alors que `setup.js` vide toutes les tables — un simple lancement des tests détruisait pilotes, voitures, sessions et tours
+  - Les tests utilisent désormais une base jetable `prisma/test.db`, **créée au lancement** à partir de `schema.prisma` (`prisma migrate diff`) et supprimée à la fin
+  - `setup.js` refuse de démarrer si `DATABASE_URL` ne pointe pas sur une base de test
+- **`startup.js`** : la base est sauvegardée avant la migration ; si `prisma db push` échoue, la version n'est plus marquée comme migrée et le démarrage s'interrompt avec un message explicite — auparavant l'application démarrait sur un schéma désynchronisé sans jamais réessayer
+  - `--skip-generate` retiré : l'option n'existe plus dans Prisma 7
+
 ## [1.12.1] - 2026-08-26
 
 ### Added

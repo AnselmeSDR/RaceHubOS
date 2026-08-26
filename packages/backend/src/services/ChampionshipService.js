@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 
 /**
  * ChampionshipService - Championship-specific operations
@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
  */
 export class ChampionshipService {
   constructor(io) {
-    this.prisma = new PrismaClient();
+    this.prisma = createPrismaClient();
     this.io = io;
     this.sessionService = null;
   }

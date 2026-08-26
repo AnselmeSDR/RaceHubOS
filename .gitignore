@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build outputs
 dist/
@@ -36,6 +35,11 @@ npm-debug.log*
 prisma/migrations/
 **/prisma/.version
 
+packages/backend/prisma/test.db
+packages/backend/prisma/test.db-shm
+packages/backend/prisma/test.db-wal
+packages/backend/prisma/db-old/
+packages/backend/prisma/dev.db.emptied-by-tests-*
 packages/backend/prisma/dev.db-shm
 packages/backend/prisma/dev.db-wal
 
@@ -51,4 +55,3 @@ CLAUDE.md
 
 packages/backend/public/uploads-remote-backup/
 
-packages/backend/prisma/dev.db.local-backup-20260512-201007

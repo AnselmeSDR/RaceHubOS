@@ -10,6 +10,9 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '../../../..');
 
 const router = express.Router();
+import { backupDatabase } from '../lib/backupDatabase.js';
+import { isNewerVersion } from '../lib/version.js';
+
 const execAsync = promisify(exec);
 
 let isUpdating = false;
@@ -46,7 +49,8 @@ router.get('/check', async (req, res) => {
 
     const remotePkg = await response.json();
     const latestVersion = remotePkg.version;
-    const updateAvailable = latestVersion !== currentVersion;
+    // Strict comparison: an older remote version must never look like an update
+    const updateAvailable = isNewerVersion(latestVersion, currentVersion);
 
     res.json({
       success: true,
@@ -73,12 +77,10 @@ router.post('/apply', async (req, res) => {
   res.json({ success: true, message: 'Mise à jour lancée' });
 
   try {
-    // Backup database
-    const dbPath = path.join(rootDir, 'packages/backend/prisma/dev.db');
-    if (fs.existsSync(dbPath)) {
-      emitProgress(1, 'Sauvegarde de la base de données...');
-      fs.copyFileSync(dbPath, dbPath + '.backup');
-    }
+    // Backup database (dated snapshot in prisma/db-old/, keeps the last 10)
+    emitProgress(1, 'Sauvegarde de la base de données...');
+    const backupPath = backupDatabase({ reason: 'update' });
+    if (backupPath) console.log(`💾 Sauvegarde avant mise à jour: ${backupPath}`);
 
     // Git pull (clean merge, preserve untracked files like db/uploads)
     emitProgress(2, 'Téléchargement de la mise à jour...');

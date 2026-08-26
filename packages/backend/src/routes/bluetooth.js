@@ -1,9 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 import { SIMULATOR_ADDRESS } from '../services/simulator.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Device references (set from index.js)
 let controlUnit = null;

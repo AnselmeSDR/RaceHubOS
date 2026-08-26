@@ -34,23 +34,23 @@ fi
 if ! command -v node &>/dev/null; then
     echo "  Node.js non trouvé. Installation..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install node@20
+        brew install node@22
     else
-        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
         sudo apt-get install -y nodejs
     fi
     echo "  Node.js installé. Relancez ce script."
     exit 0
 fi
 
-# Check Node version (20+)
+# Check Node version (22+)
 NODE_MAJOR=$(node -v | sed 's/v//' | cut -d. -f1)
-if [ "$NODE_MAJOR" -lt 20 ]; then
-    echo "  ATTENTION: Node.js v$NODE_MAJOR détecté, v20+ requis."
+if [ "$NODE_MAJOR" -lt 22 ]; then
+    echo "  ATTENTION: Node.js v$NODE_MAJOR détecté, v22+ requis."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install node@20
+        brew install node@22
     else
-        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
         sudo apt-get install -y nodejs
     fi
     echo "  Node.js mis à jour. Relancez ce script."
@@ -181,6 +181,8 @@ fi
 
 cd "$TARGET_DIR/packages/backend"
 npx prisma generate
+# Dated backup in prisma/db-old/ before touching the schema
+node scripts/backup-db.js install || true
 npx prisma db push --accept-data-loss 2>/dev/null || npx prisma migrate deploy 2>/dev/null || true
 echo "  OK"
 echo ""

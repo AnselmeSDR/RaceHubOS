@@ -1,8 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // GET /api/preferences/:key
 router.get('/:key', async (req, res) => {
