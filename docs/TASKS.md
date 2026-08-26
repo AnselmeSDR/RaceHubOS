@@ -257,10 +257,18 @@
 
 ### TASK-30: Revoir le système d'update de l'app
 **Domaine**: Backend + Build
+**Statut**: ✅ Fiabilisé en v1.13.0 / v1.14.0 — la question de fond reste ouverte
 **Description**: Le système d'update actuel doit être repensé.
-**Action**:
-- Définir le besoin (auto-update, manuel, OTA ?)
-- Proposer un nouveau flow
+**Fait**:
+- Détection de version sémantique : une version plus ancienne n'est plus annoncée comme une mise à jour (v1.13.0)
+- Sauvegarde datée de la base avant toute mise à jour, migration ou installation (v1.13.0)
+- `startup.js` sauvegarde avant migration et s'interrompt si `db push` échoue, au lieu de démarrer sur un schéma désynchronisé (v1.13.0)
+- Retour arrière automatique si l'installation des dépendances ou le build échoue (v1.14.0)
+- La migration de schéma, seule étape irréversible, passe en dernier (v1.14.0)
+**Reste à décider**:
+- Le besoin de fond : auto-update, manuel, OTA ?
+- Fiabiliser le redémarrage : `process.exit(42)` suppose que le lanceur `.bat` relance sur ce code
+- Vérifier après le pull que la version obtenue est bien celle annoncée
 
 ### TASK-31: Utiliser des clés de traduction (i18n) partout
 **Domaine**: Frontend
@@ -281,6 +289,7 @@
 ### RUSH-01: 🐛 Empêcher tout tour supplémentaire pour un pilote ayant terminé
 **Domaine**: Backend + communication CU
 **Priorité**: Haute
+**Statut**: ✅ Fait en v1.12.1 (commit `c359b75`) — reste à valider en course réelle avec la CU
 **Description**: Dès qu'un pilote remplit sa condition de fin de course, il ne doit plus pouvoir enregistrer de tour supplémentaire, même si les autres pilotes sont encore dans la période de grâce.
 **À vérifier**:
 - Identifier comment l'état `finished` est suivi pour chaque pilote/contrôleur

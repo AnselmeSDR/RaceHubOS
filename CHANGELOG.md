@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-08-26
+
+### Added
+- **Retour arrière automatique en cas de mise à jour ratée** : si `npm install` ou le build du frontend échoue après le `git pull`, l'application revient au commit précédent, réinstalle ses dépendances et reconstruit le frontend
+  - Auparavant, un réseau coupé ou une dépendance qui ne compile pas laissait l'installation à moitié faite : au redémarrage suivant, l'app ne fonctionnait plus
+  - Si la restauration elle-même échoue, le message l'indique explicitement au lieu de rester silencieux
+  - Couvert par des tests d'intégration sur un vrai dépôt git
+
+### Changed
+- **La migration de schéma passe en dernier** dans la mise à jour, après l'installation et le build : c'est la seule étape irréversible, elle n'est donc tentée qu'une fois le code en place. En cas d'échec, `startup.js` la rejoue au redémarrage
+
 ## [1.13.0] - 2026-08-26
 
 ### Added
