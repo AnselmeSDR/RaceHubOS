@@ -493,6 +493,23 @@ router.get('/laptimes', async (req, res) => {
     const sessionFilter = {};
     if (trackId) sessionFilter.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
     if (sessionType) sessionFilter.type = sessionType.includes(',') ? { in: sessionType.split(',') } : sessionType;
+
+    // 'none' selects laps outside any championship (free race, practice, balancing)
+    const championshipId = req.query.championshipId;
+    if (championshipId) {
+      const requested = championshipId.split(',');
+      const ids = requested.filter((id) => id !== 'none');
+      const wantsNone = requested.includes('none');
+
+      if (wantsNone && ids.length) {
+        sessionFilter.OR = [{ championshipId: { in: ids } }, { championshipId: null }];
+      } else if (wantsNone) {
+        sessionFilter.championshipId = null;
+      } else {
+        sessionFilter.championshipId = ids.length > 1 ? { in: ids } : ids[0];
+      }
+    }
+
     if (req.query.has_championship === 'true') sessionFilter.championshipId = { not: null };
     if (Object.keys(sessionFilter).length > 0) {
       where.session = sessionFilter;
@@ -506,6 +523,7 @@ router.get('/laptimes', async (req, res) => {
       car: { car: { brand: sortOrder } },
       track: { session: { track: { name: sortOrder } } },
       sessionType: { session: { type: sortOrder } },
+      championship: { session: { championship: { name: sortOrder } } },
       date: { session: { createdAt: sortOrder } },
     };
     const orderBy = sortByMap[sortBy] || { lapTime: 'asc' };
@@ -526,6 +544,9 @@ router.get('/laptimes', async (req, res) => {
           createdAt: true,
           track: {
             select: { id: true, name: true, color: true, img: true },
+          },
+          championship: {
+            select: { id: true, name: true },
           },
         },
       },
@@ -557,6 +578,7 @@ router.get('/laptimes', async (req, res) => {
         car: (a, b) => (`${a.car?.brand} ${a.car?.model}`).localeCompare(`${b.car?.brand} ${b.car?.model}`),
         track: (a, b) => (a.session.track?.name || '').localeCompare(b.session.track?.name || ''),
         sessionType: (a, b) => (a.session.type || '').localeCompare(b.session.type || ''),
+        championship: (a, b) => (a.session.championship?.name || '').localeCompare(b.session.championship?.name || ''),
         date: (a, b) => new Date(a.session.createdAt) - new Date(b.session.createdAt),
       };
       const compareFn = sortFns[sortBy] || sortFns.lapTime;
@@ -592,6 +614,7 @@ router.get('/laptimes', async (req, res) => {
       driver: withImageUrl(lap.driver),
       car: withImageUrl(lap.car),
       track: withImageUrl(lap.session.track),
+      championship: lap.session.championship,
       sessionId: lap.session.id,
       sessionDate: lap.session.createdAt,
     }));

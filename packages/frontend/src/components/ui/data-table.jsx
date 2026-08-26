@@ -31,6 +31,38 @@ import { motion } from 'framer-motion'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
+/**
+ * Merge a saved column order with the columns actually defined.
+ *
+ * A saved order predates any column added later, and TanStack pushes unknown
+ * columns to the end — a new column would land off-screen for existing users.
+ * Columns missing from the saved order are reinserted where they were defined,
+ * relative to the neighbour that precedes them.
+ */
+function mergeColumnOrder(savedOrder, columns) {
+  // No saved order: leave it to TanStack, which already uses the definition order
+  if (!savedOrder?.length) return []
+
+  // Same id resolution as TanStack: an accessor column may carry only accessorKey
+  const natural = columns.map((c) => c.id ?? c.accessorKey).filter(Boolean)
+  const known = new Set(natural)
+  const merged = savedOrder.filter((id) => known.has(id))
+
+  natural.forEach((id, index) => {
+    if (merged.includes(id)) return
+
+    // Anchor on the closest preceding column that survived in the saved order
+    let anchor = -1
+    for (let i = index - 1; i >= 0; i--) {
+      const position = merged.indexOf(natural[i])
+      if (position !== -1) { anchor = position; break }
+    }
+    merged.splice(anchor + 1, 0, id)
+  })
+
+  return merged
+}
+
 function savePref(key, value) {
   if (!key) return
   fetch(`${API_URL}/api/preferences/${key}`, {
@@ -62,7 +94,7 @@ export function DataTable({
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState(initialPrefs?.columnVisibility || {})
-  const [columnOrder, setColumnOrder] = useState(initialPrefs?.columnOrder || [])
+  const [columnOrder, setColumnOrder] = useState(() => mergeColumnOrder(initialPrefs?.columnOrder, columns))
   const [rowSelection, setRowSelection] = useState({})
   if (clearSelectionRef) clearSelectionRef.current = () => setRowSelection({})
   const [globalFilter, setGlobalFilter] = useState('')
