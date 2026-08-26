@@ -13,6 +13,9 @@ const backendDir = path.join(__dirname, '..');
 const rootDir = path.join(backendDir, '../..');
 const versionFile = path.join(backendDir, 'prisma', '.version');
 
+// Exit code telling the launcher the database migration failed
+const MIGRATION_FAILED = 43;
+
 const currentVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8')).version;
 const lastVersion = fs.existsSync(versionFile) ? fs.readFileSync(versionFile, 'utf-8').trim() : null;
 
@@ -28,8 +31,8 @@ if (lastVersion !== currentVersion) {
     const backupPath = backupDatabase({ reason: 'schema-push' });
     if (backupPath) console.log(`💾 Sauvegarde avant migration: ${backupPath}`);
   } catch (err) {
-    console.error('❌ Sauvegarde impossible; migration annulée:', err.message);
-    throw err;
+    console.error('❌ Sauvegarde de la base impossible; migration annulée:', err.message);
+    process.exit(MIGRATION_FAILED);
   }
 
   console.log('⚙️  Prisma db push...');
@@ -37,8 +40,10 @@ if (lastVersion !== currentVersion) {
     run('npx prisma db push --accept-data-loss');
     fs.writeFileSync(versionFile, currentVersion);
   } catch (err) {
-    console.error('❌ db push failed; startup aborted to protect the database:', err.message);
-    throw err;
+    console.error('❌ Migration de la base échouée; démarrage interrompu:', err.message);
+    // Exit code read by the launcher, which offers to repair instead of
+    // starting the app on a schema that does not match the code
+    process.exit(MIGRATION_FAILED);
   }
 } else {
   console.log(`✅ Version ${currentVersion} — schema à jour`);

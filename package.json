@@ -1,6 +1,6 @@
 {
   "name": "racehubos",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Open Source Race Management System for Carrera Digital 132/124",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -13,6 +13,7 @@
     "dev:frontend": "npm run dev -w @racehubos/frontend",
     "build": "npm run build -w @racehubos/frontend",
     "start": "npm run start -w @racehubos/backend",
+    "repair": "node scripts/repair.js",
     "lint": "npm run lint --workspaces"
   },
   "devDependencies": {
