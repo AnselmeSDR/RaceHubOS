@@ -58,6 +58,11 @@ export class SessionService extends EventEmitter {
   async handleLap(data) {
     const { controller, lapTime, sector } = data;
 
+    // Ignore stale hardware events when there is no running session.
+    if (!this.activeSessionId || !this.isActive()) {
+      return;
+    }
+
     // Only process finish line (sector 1) with valid lap time
     if (sector !== 1 || lapTime <= 0) {
       return;
@@ -65,6 +70,12 @@ export class SessionService extends EventEmitter {
 
     const driver = this.getDriverByController(controller);
     if (!driver) {
+      return;
+    }
+
+    // A driver who has already crossed their finish line must not record
+    // additional laps while the other drivers use the grace period.
+    if (this.hasDriverFinished(driver)) {
       return;
     }
 
@@ -142,22 +153,29 @@ export class SessionService extends EventEmitter {
   }
 
   /**
+   * Check whether a driver has completed their individual finish condition.
+   * - Lap-based race: the configured lap limit has been reached.
+   * - Time-based race: one final lap has been completed after the checkered flag.
+   */
+  hasDriverFinished(driver) {
+    const maxLaps = this.sessionConfig?.maxLaps;
+
+    if (maxLaps) {
+      return driver.totalLaps >= maxLaps;
+    }
+
+    return this.sessionStatus === 'finishing'
+      && driver.lapsAtFinishing != null
+      && driver.totalLaps > driver.lapsAtFinishing;
+  }
+
+  /**
    * Reduce speed to 1 for a driver who has completed their finish condition.
    * Other drivers keep their normal speed.
    */
   async throttleIfFinished(driver) {
     if (driver._throttled) return;
-
-    const maxLaps = this.sessionConfig?.maxLaps;
-    let finished = false;
-
-    if (maxLaps) {
-      finished = driver.totalLaps >= maxLaps;
-    } else if (this.sessionStatus === 'finishing' && driver.lapsAtFinishing != null) {
-      finished = driver.totalLaps > driver.lapsAtFinishing;
-    }
-
-    if (!finished) return;
+    if (!this.hasDriverFinished(driver)) return;
 
     const device = this.syncService?.getDevice();
     if (!device?.setSpeed) return;
@@ -1200,4 +1218,3 @@ export class SessionService extends EventEmitter {
 }
 
 export default SessionService;
-

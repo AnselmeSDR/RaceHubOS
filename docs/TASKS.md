@@ -271,3 +271,130 @@
 - Remplacer par des clés de traduction
 - Sélecteur de langue dans les paramètres
 **Note**: transverse — à coordonner avec TASK-03 et TASK-04 qui mentionnent déjà des libellés i18n par enum.
+
+---
+
+## 🏎️ Demandes Rush — ordre de traitement
+
+> Backlog ordonné à traiter point par point. Chaque tâche doit être analysée, implémentée puis validée avant de passer à la suivante.
+
+### RUSH-01: 🐛 Empêcher tout tour supplémentaire pour un pilote ayant terminé
+**Domaine**: Backend + communication CU
+**Priorité**: Haute
+**Description**: Dès qu'un pilote remplit sa condition de fin de course, il ne doit plus pouvoir enregistrer de tour supplémentaire, même si les autres pilotes sont encore dans la période de grâce.
+**À vérifier**:
+- Identifier comment l'état `finished` est suivi pour chaque pilote/contrôleur
+- Ignorer tout nouveau passage de ligne pour un pilote déjà terminé
+- Vérifier si la puissance de sa voiture est déjà coupée individuellement et fiabiliser cette commande si nécessaire
+- Tester les courses au nombre de tours et les courses au temps
+- Tester plusieurs passages pendant la période de grâce
+**Décision**: ne pas considérer la réduction de la période de grâce à 15 secondes comme le correctif principal. La période de grâce doit laisser finir les autres pilotes sans autoriser de nouveaux tours aux pilotes déjà classés.
+**Lié à**: TASK-12, TASK-13 et TASK-17
+
+### RUSH-02: Ajouter un pilote de référence à l'équilibrage
+**Domaine**: Frontend + Backend
+**Description**: Permettre de sélectionner un pilote de référence pour effectuer les runs d'équilibrage.
+**À décider**:
+- Utiliser un pilote existant, par exemple **Le STIG** ou **Touille**
+- Déterminer si ce pilote est obligatoire, présélectionné ou simplement proposé
+- Vérifier comment ses tours apparaissent dans les statistiques et l'historique
+
+### RUSH-03: Séparer les statistiques par circuit et afficher la session d'origine
+**Domaine**: Frontend + Backend
+**Description**: Ajouter en haut de la page Statistiques un sélecteur de circuit afin de ne jamais mélanger les temps de différents tracés.
+**Action**:
+- Filtrer toutes les statistiques par `trackId`
+- Définir le circuit sélectionné par défaut et gérer l'absence de circuit
+- Remplacer la colonne « Circuit » par la session dans laquelle le temps a été réalisé
+- Afficher **Course libre**, **Équilibrage** ou le nom du **Championnat** selon l'origine du temps
+- Vérifier le comportement des anciens tours et des circuits supprimés
+**Critère d'acceptation**: aucun temps d'un autre circuit ne doit apparaître après la sélection d'un circuit.
+**Lié à**: TASK-02, TASK-03, TASK-05 et TASK-08
+
+### RUSH-04: Régler la puissance de toutes les voitures au lancement d'une course
+**Domaine**: Frontend + Backend
+**Description**: Lors de la préparation d'une course, permettre de choisir une puissance commune et de l'appliquer à toutes les voitures en une seule action, sans ouvrir les paramètres de chaque voiture.
+**Action**:
+- Ajouter un contrôle global de puissance dans l'écran de lancement
+- Appliquer la valeur à toutes les voitures sélectionnées tout en permettant, si utile, des ajustements individuels
+- Enregistrer la puissance réellement utilisée avec la session ou les résultats
+- Afficher la puissance des voitures dans les statistiques
+
+### RUSH-05: 🐛 Vérifier la correspondance entre puissance en pourcentage et valeur CU
+**Domaine**: Backend + communication CU
+**Priorité**: Haute
+**Description**: Vérifier que **70 %** dans l'application envoie réellement la valeur **7** attendue par la Carrera Control Unit et produit la puissance correspondante.
+**Action**:
+- Tracer la valeur UI, la conversion, la commande envoyée et la valeur confirmée par la CU
+- Vérifier les arrondis et les bornes de l'échelle
+- Tester au minimum 0 %, 10 %, 50 %, 70 % et 100 %
+- Corriger la conversion ou le libellé si l'échelle réelle n'est pas linéaire
+**Critère d'acceptation**: le mapping affiché est documenté et vérifié sur la base réelle.
+
+### RUSH-06: Concevoir le mode « Relais »
+**Domaine**: Produit + Frontend + Backend + communication CU
+**Description**: Commencer par définir précisément le fonctionnement d'une course en relais avant son implémentation.
+**Questions à trancher**:
+- Composition et taille des équipes
+- Durée ou nombre de tours par relais
+- Déclenchement manuel ou détection automatique du passage aux stands
+- Attribution pilote/voiture pendant les changements
+- Pénalités, fenêtre de relais et durée minimale d'arrêt
+- Classement, statistiques et affichage en direct
+**Premier livrable**: spécification fonctionnelle et proposition de parcours UI.
+**Lié à**: TASK-18 et TASK-19
+
+### RUSH-07: Assigner une voiture principale à chaque pilote
+**Domaine**: Frontend + Backend
+**Description**: Ajouter une voiture principale au profil du pilote et la présélectionner automatiquement dès que ce pilote est choisi.
+**Action**:
+- Ajouter une relation optionnelle `defaultCarId` sur le pilote
+- Permettre son choix dans le profil du pilote
+- Présélectionner cette voiture dans les écrans de configuration de course et de championnat
+- Laisser l'utilisateur remplacer cette présélection pour une session donnée
+**Décision proposée**: stocker la voiture principale dans le profil pilote, car cette préférence dépasse le cadre d'un championnat.
+
+### RUSH-08: Créer des badges pour les pilotes et les voitures
+**Domaine**: Frontend + Backend
+**Description**: Permettre d'attribuer des badges aux pilotes et aux voitures, puis de les afficher dans les statistiques.
+**Action**:
+- Définir les données d'un badge : nom, description et logo
+- Autoriser une petite image dédiée, distincte des grandes images de pilote et de voiture
+- Définir les critères d'attribution manuels ou automatiques
+- Afficher les badges dans les profils et les statistiques sans surcharger les tableaux
+
+### RUSH-09: Autoriser les qualifications avec un seul pilote
+**Domaine**: Frontend + Backend
+**Description**: Dans la création d'un championnat, autoriser une session de qualification avec **1 pilote minimum** afin d'organiser des qualifications solo pendant un nombre défini de tours.
+**Action**:
+- Faire passer la validation minimale de 2 à 1 pilote pour les qualifications
+- Vérifier la rotation des pilotes et la fin de session en mode solo
+- Tester les qualifications limitées au temps et au nombre de tours
+
+### RUSH-10: Renommer les qualifications et les courses
+**Domaine**: Frontend + Backend
+**Description**: Dans la création et l'édition d'un championnat, permettre de modifier directement le nom de chaque qualification et de chaque course.
+**Action**:
+- Ajouter un champ de nom par session
+- Proposer un nom par défaut, mais le rendre modifiable immédiatement
+- Réutiliser ce nom dans le planning, l'écran de course, l'historique et les statistiques
+
+### RUSH-11: Ajouter plusieurs sessions d'essais libres chronométrées aux championnats
+**Domaine**: Frontend + Backend
+**Description**: Permettre de créer plusieurs sessions d'essais libres avec une durée définie dans un championnat. Elles servent à garantir le même temps d'entraînement à tous les pilotes, sans compter au classement.
+**Action**:
+- Ajouter le type « Essais libres » dans le constructeur de championnat
+- Autoriser plusieurs sessions et leur réorganisation
+- Configurer leur durée et les pilotes concernés
+- Exclure explicitement leurs résultats du classement du championnat
+- Conserver leurs tours dans les statistiques du circuit avec l'origine « Essais libres — nom du championnat »
+
+### RUSH-12: Choisir les pilotes autorisés lors de la création d'un championnat
+**Domaine**: Frontend + Backend
+**Description**: À la création ou à l'édition d'un championnat, sélectionner la liste des pilotes participants. Seuls ces pilotes doivent ensuite être proposés dans les sessions de ce championnat.
+**Action**:
+- Ajouter un sélecteur multiple de pilotes dans le formulaire du championnat
+- Persister la liste des participants
+- Filtrer tous les sélecteurs de pilote des qualifications, essais et courses
+- Gérer proprement l'ajout ou le retrait d'un participant après la création
+**Lié à**: TASK-22
