@@ -257,7 +257,7 @@
 
 ### TASK-30: Revoir le système d'update de l'app
 **Domaine**: Backend + Build
-**Statut**: ✅ Fiabilisé en v1.13.0 / v1.14.0 — la question de fond reste ouverte
+**Statut**: ✅ Fiabilisé en v1.13.0 → v1.15.0 — la question de fond reste ouverte
 **Description**: Le système d'update actuel doit être repensé.
 **Fait**:
 - Détection de version sémantique : une version plus ancienne n'est plus annoncée comme une mise à jour (v1.13.0)
@@ -265,10 +265,12 @@
 - `startup.js` sauvegarde avant migration et s'interrompt si `db push` échoue, au lieu de démarrer sur un schéma désynchronisé (v1.13.0)
 - Retour arrière automatique si l'installation des dépendances ou le build échoue (v1.14.0)
 - La migration de schéma, seule étape irréversible, passe en dernier (v1.14.0)
+- Les lanceurs Windows/macOS refusent de démarrer sur une installation cassée : erreur affichée et choix réparer / réessayer / fermer (v1.15.0)
+- `npm run repair` rejoue une mise à jour hors de l'app, quand celle-ci ne démarre pas (v1.15.0)
 **Reste à décider**:
 - Le besoin de fond : auto-update, manuel, OTA ?
-- Fiabiliser le redémarrage : `process.exit(42)` suppose que le lanceur `.bat` relance sur ce code
 - Vérifier après le pull que la version obtenue est bien celle annoncée
+- Le lanceur Windows n'a pas pu être testé sur Windows (développement sous macOS) : à valider au premier lancement sur le PC de course
 
 ### TASK-31: Utiliser des clés de traduction (i18n) partout
 **Domaine**: Frontend

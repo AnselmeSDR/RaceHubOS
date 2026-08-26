@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-08-26
+
+### Added
+- **L'application ne démarre plus sur une installation cassée** : si le démarrage échoue, les lanceurs Windows et macOS affichent l'erreur et proposent trois choix — relancer la mise à jour (réparation), réessayer de démarrer, ou fermer
+  - Auparavant la fenêtre se refermait sans message : impossible de savoir ce qui s'était passé
+  - Le navigateur ne s'ouvre que si l'application répond réellement
+  - Un échec de migration est distingué des autres erreurs (code de sortie 43) et indique que la base n'a pas été modifiée, avec l'emplacement de la sauvegarde
+- **`npm run repair`** : rejoue une mise à jour hors de l'application (récupération, dépendances, build, sauvegarde, migration) — utilisable quand l'app ne démarre pas et ne peut donc pas proposer sa propre mise à jour
+
+### Changed
+- **`startup.js`** sort avec le code 43 quand la migration échoue, au lieu d'une erreur non qualifiée, pour que le lanceur puisse expliquer précisément le problème
+
 ## [1.14.0] - 2026-08-26
 
 ### Added
