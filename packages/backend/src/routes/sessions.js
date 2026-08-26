@@ -1,5 +1,6 @@
 import express from 'express';
 import SessionService from '../services/SessionService.js';
+import { getReferenceDriver } from '../lib/referenceDriver.js';
 
 const router = express.Router();
 let sessionService;
@@ -262,13 +263,18 @@ router.put('/:id/drivers', async (req, res) => {
 
     await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
 
+    // Balancing measures cars, not drivers: every entry belongs to the reference
+    // driver, whoever actually holds the controller. Without one configured, the
+    // chosen drivers are kept and the UI warns about it.
+    const reference = session.type === 'balancing' ? await getReferenceDriver(prisma()) : null;
+
     // Accept partial configs (driver OR car) for draft sessions
     const validDrivers = drivers.filter(d => (d.driverId || d.carId) && d.controller !== undefined);
     if (validDrivers.length > 0) {
       await prisma().sessionDriver.createMany({
         data: validDrivers.map((d, idx) => ({
           sessionId: id,
-          driverId: d.driverId || null,
+          driverId: reference?.id ?? d.driverId ?? null,
           carId: d.carId || null,
           controller: Number(d.controller),
           gridPos: d.gridPos ?? idx + 1

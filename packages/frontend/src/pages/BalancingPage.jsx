@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, PanelRightClose, PanelRightOpen, AlertTriangle } from 'lucide-react'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
@@ -20,6 +21,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function BalancingPage() {
   const { t } = useTranslation('balancing')
+  const navigate = useNavigate()
   const { startRace: triggerCuStart } = useDevice()
   const {
     session,
@@ -37,6 +39,7 @@ export default function BalancingPage() {
   } = useSession()
 
   const [tracks, setTracks] = useState([])
+  const [referenceDriver, setReferenceDriver] = useState(undefined) // undefined = not loaded yet
   const [loading, setLoading] = useState(false)
   const { showStandings, toggleStandings, balancingTrack: selectedTrackId, setBalancingTrack: setSelectedTrackId } = useApp()
   const [standings, setStandings] = useState([])
@@ -96,6 +99,14 @@ export default function BalancingPage() {
       console.error('Error fetching standings:', error)
     }
   }, [selectedTrackId])
+
+  // Balancing laps are credited to the reference driver; warn when none is set
+  useEffect(() => {
+    fetch(`${API_URL}/api/drivers/reference`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setReferenceDriver(d.data) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => { fetchStandings() }, [selectedTrackId])
 
@@ -262,6 +273,18 @@ export default function BalancingPage() {
 
       {/* Main content */}
       <div className="flex-1 overflow-auto p-4">
+        {referenceDriver === null && (
+          <div className="mb-4 flex items-start gap-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
+            <AlertTriangle className="size-4 text-yellow-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{t('referenceWarning.title')}</p>
+              <p className="text-xs text-muted-foreground">{t('referenceWarning.message')}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
+              {t('referenceWarning.action')}
+            </Button>
+          </div>
+        )}
         <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
           {/* Left: Session + Chart */}
           <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>

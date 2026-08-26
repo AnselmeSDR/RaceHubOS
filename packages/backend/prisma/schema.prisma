@@ -9,6 +9,7 @@ datasource db {
 model Driver {
   id                String             @id @default(cuid())
   name              String
+  isReference       Boolean            @default(false) // Reference driver: owns every balancing lap
   email             String?            @unique
   img               String?
   color             String             @default("#3B82F6")
