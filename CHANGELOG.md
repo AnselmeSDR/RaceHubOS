@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2026-08-26
+
+### Added
+- **Tests de fin de session** : couverture des limites en tours et au temps pour les essais libres, qualifications, courses et sessions d'équilibrage
+- **Backlog Rush** : ajout des 12 prochaines évolutions produit dans `docs/TASKS.md`
+
+### Fixed
+- **Tours supplémentaires après l'arrivée** : les passages d'un pilote ayant déjà terminé sont ignorés pendant la période de grâce, sans modifier ses tours, ses temps ou son classement
+- **Événements CU tardifs** : les passages reçus lorsqu'aucune session n'est active sont désormais ignorés
+
 ## [1.12.0] - 2026-05-16
 
 ### Added
