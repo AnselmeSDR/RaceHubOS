@@ -49,10 +49,10 @@ if errorlevel 1 (
     exit /b 0
 )
 
-:: Check minimum version (Node 20+)
+:: Check minimum version (Node 22+)
 for /f "tokens=1 delims=v." %%v in ('node -v') do set "NODE_MAJOR=%%v"
-if !NODE_MAJOR! LSS 20 (
-    echo  ATTENTION: Node.js v!NODE_MAJOR! detecte, v20+ requis.
+if !NODE_MAJOR! LSS 22 (
+    echo  ATTENTION: Node.js v!NODE_MAJOR! detecte, v22+ requis.
     echo  Mise a jour via winget...
     winget upgrade --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
     if errorlevel 1 (
@@ -210,6 +210,8 @@ if not exist "!TARGET_DIR!\packages\backend\.env" (
 
 cd /d "!TARGET_DIR!\packages\backend"
 call npx prisma generate
+:: Dated backup in prisma\db-old\ before touching the schema
+call node scripts\backup-db.js install
 call npx prisma db push --accept-data-loss 2>nul || call npx prisma migrate deploy 2>nul
 echo  OK
 echo.

@@ -1,9 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // GET /api/tracks - List all tracks
 router.get('/', async (req, res) => {

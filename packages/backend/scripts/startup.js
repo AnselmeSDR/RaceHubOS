@@ -6,6 +6,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { backupDatabase } from '../src/lib/backupDatabase.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendDir = path.join(__dirname, '..');
@@ -23,13 +24,22 @@ run('npx prisma generate');
 
 if (lastVersion !== currentVersion) {
   console.log(`📦 Version changed: ${lastVersion || 'none'} → ${currentVersion}`);
+  try {
+    const backupPath = backupDatabase({ reason: 'schema-push' });
+    if (backupPath) console.log(`💾 Sauvegarde avant migration: ${backupPath}`);
+  } catch (err) {
+    console.error('❌ Sauvegarde impossible; migration annulée:', err.message);
+    throw err;
+  }
+
   console.log('⚙️  Prisma db push...');
   try {
-    run('npx prisma db push --skip-generate --accept-data-loss');
+    run('npx prisma db push --accept-data-loss');
+    fs.writeFileSync(versionFile, currentVersion);
   } catch (err) {
-    console.error('⚠️  db push failed (non-blocking):', err.message);
+    console.error('❌ db push failed; startup aborted to protect the database:', err.message);
+    throw err;
   }
-  fs.writeFileSync(versionFile, currentVersion);
 } else {
   console.log(`✅ Version ${currentVersion} — schema à jour`);
 }

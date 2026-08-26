@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '../../..');
 const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
 const APP_VERSION = pkg.version;
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma.js';
 import { CarreraSimulator } from './services/simulator.js';
 import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
@@ -42,7 +42,7 @@ import { ChampionshipService } from './services/ChampionshipService.js';
 
 const app = express();
 const httpServer = createServer(app);
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Configure SQLite for performance (WAL mode)
 async function configureSQLite() {

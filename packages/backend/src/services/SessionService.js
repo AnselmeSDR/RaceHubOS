@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../lib/prisma.js';
 import EventEmitter from 'events';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
@@ -18,7 +18,7 @@ export class SessionService extends EventEmitter {
   constructor(io) {
     super();
     this.io = io;
-    this.prisma = new PrismaClient();
+    this.prisma = createPrismaClient();
     this.syncService = null;
 
     // Session state
