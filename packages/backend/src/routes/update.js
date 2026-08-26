@@ -65,6 +65,27 @@ router.get('/check', async (req, res) => {
 });
 
 /**
+ * Undo a failed update: back to the previous commit, with dependencies and
+ * build restored. Runs before any schema migration, so the database is untouched.
+ */
+export async function rollback(previousCommit, reason, { cwd = rootDir } = {}) {
+  console.error(`⚠️  Mise à jour échouée (${reason}) — retour à ${previousCommit.slice(0, 8)}`);
+  emitProgress(0, 'Échec de la mise à jour, restauration de la version précédente...');
+
+  try {
+    await execAsync(`git reset --hard ${previousCommit}`, { cwd, timeout: 60000 });
+    await execAsync('npm install --legacy-peer-deps', { cwd, timeout: 300000 });
+    await execAsync('npm run build', { cwd, timeout: 120000 });
+    console.log('✅ Version précédente restaurée');
+  } catch (err) {
+    // Nothing else we can do automatically — make it loud rather than silent
+    console.error('❌ Restauration impossible:', err.message);
+    emitProgress(0, `Restauration impossible: ${err.message}. Relancez l'installeur.`, 'error');
+    throw err;
+  }
+}
+
+/**
  * POST /api/update/apply
  * Pull latest, install, build, migrate, restart
  */
@@ -82,6 +103,10 @@ router.post('/apply', async (req, res) => {
     const backupPath = backupDatabase({ reason: 'update' });
     if (backupPath) console.log(`💾 Sauvegarde avant mise à jour: ${backupPath}`);
 
+    // Remember where we stand, so a failed update can be undone
+    const { stdout: headBefore } = await execAsync('git rev-parse HEAD', { cwd: rootDir, timeout: 10000 });
+    const previousCommit = headBefore.trim();
+
     // Git pull (clean merge, preserve untracked files like db/uploads)
     emitProgress(2, 'Téléchargement de la mise à jour...');
     await execAsync('git fetch origin main', { cwd: rootDir, timeout: 60000 });
@@ -89,18 +114,26 @@ router.post('/apply', async (req, res) => {
     await execAsync('git checkout -- .', { cwd: rootDir, timeout: 10000 }).catch(() => {});
     await execAsync('git pull origin main --ff-only', { cwd: rootDir, timeout: 60000 });
 
-    // npm install (postinstall prisma removed — handled by startup.js on restart)
-    emitProgress(3, 'Installation des dépendances...');
-    await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
+    // From here the working tree is on the new version: any failure must roll back,
+    // otherwise the next restart runs on a half-installed app.
+    try {
+      // npm install (postinstall prisma removed — handled by startup.js on restart)
+      emitProgress(3, 'Installation des dépendances...');
+      await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
 
-    // Prisma (may fail on Windows due to locked DLL — will retry on restart)
-    emitProgress(4, 'Migration de la base de données...');
+      // Build frontend
+      emitProgress(4, 'Build du frontend...');
+      await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
+    } catch (error) {
+      await rollback(previousCommit, error.message);
+      throw new Error(`Mise à jour annulée, version précédente restaurée (${error.message})`);
+    }
+
+    // Schema migration comes last, once the code is installed and built:
+    // it is the only irreversible step, and startup.js retries it on restart.
+    emitProgress(5, 'Migration de la base de données...');
     await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
     await execAsync('npx prisma db push --accept-data-loss', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
-
-    // Build frontend
-    emitProgress(5, 'Build du frontend...');
-    await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
 
     const newVersion = getLocalVersion();
 
