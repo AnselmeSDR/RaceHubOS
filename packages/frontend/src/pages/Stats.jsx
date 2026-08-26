@@ -23,11 +23,13 @@ export default function Stats() {
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
   const [tracks, setTracks] = useState([])
+  const [championships, setChampionships] = useState([])
 
   const [filters, setFilters] = useState({
     driverId: [],
     carId: [],
     trackId: [],
+    championshipId: [],
     sessionType: [],
     unique: true,
     deleted: false,
@@ -41,10 +43,12 @@ export default function Stats() {
       fetch(`${API_URL}/api/drivers`).then(r => r.json()),
       fetch(`${API_URL}/api/cars`).then(r => r.json()),
       fetch(`${API_URL}/api/tracks`).then(r => r.json()),
-    ]).then(([d, c, t]) => {
+      fetch(`${API_URL}/api/championships`).then(r => r.json()),
+    ]).then(([d, c, t, ch]) => {
       if (d.success) setDrivers(d.data || [])
       if (c.success) setCars(c.data || [])
       if (t.success) setTracks(t.data || [])
+      if (ch.success) setChampionships(ch.data || [])
     }).catch(() => {})
   }, [])
 
@@ -63,6 +67,7 @@ export default function Stats() {
       if (filters.driverId.length) params.append('driverId', filters.driverId.join(','))
       if (filters.carId.length) params.append('carId', filters.carId.join(','))
       if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
+      if (filters.championshipId.length) params.append('championshipId', filters.championshipId.join(','))
       if (filters.sessionType.length) params.append('sessionType', filters.sessionType.join(','))
       params.append('unique', String(filters.unique))
       if (filters.deleted) params.append('deleted', 'true')
@@ -232,6 +237,36 @@ export default function Stats() {
       },
     },
     {
+      id: 'championship',
+      accessorFn: (row) => row.championship?.name || '',
+      meta: { label: t('glossary:championship', { count: 1 }) },
+      header: ({ column }) => (
+        <FilterHeader
+          column={column}
+          label={t('glossary:championship', { count: 1 })}
+          active={filtersRef.current.championshipId.length > 0}
+          value={filtersRef.current.championshipId}
+          options={[
+            ...championships.map(c => ({ value: c.id, label: c.name })),
+            { value: 'none', label: t('noChampionship') },
+          ]}
+          onChange={(v) => setFilters(f => ({ ...f, championshipId: v }))}
+        />
+      ),
+      cell: ({ row }) => {
+        const championship = row.original.championship
+        if (!championship) return <span className="text-muted-foreground/50">—</span>
+        return (
+          <span
+            className="truncate cursor-pointer hover:opacity-80"
+            onClick={(e) => { e.stopPropagation(); navigate(`/championships/${championship.id}`) }}
+          >
+            {championship.name}
+          </span>
+        )
+      },
+    },
+    {
       id: 'sessionType',
       accessorFn: (row) => row.sessionType,
       meta: { label: t('glossary:session', { count: 1 }) },
@@ -268,7 +303,7 @@ export default function Stats() {
     },
   ], [drivers, cars, tracks, t, i18n.language])
 
-  const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.sessionType.length > 0 || filters.deleted
+  const hasActiveFilters = filters.driverId.length > 0 || filters.carId.length > 0 || filters.trackId.length > 0 || filters.championshipId.length > 0 || filters.sessionType.length > 0 || filters.deleted
 
   return (
     <ListPage

@@ -4,5 +4,6 @@
   "emptyMessage": "No times recorded",
   "options": {
     "bestPerDriverCar": "Best per driver/car"
-  }
+  },
+  "noChampionship": "Outside championship"
 }

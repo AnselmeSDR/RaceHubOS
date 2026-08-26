@@ -4,5 +4,6 @@
   "emptyMessage": "Aucun temps enregistré",
   "options": {
     "bestPerDriverCar": "Meilleur par pilote/voiture"
-  }
+  },
+  "noChampionship": "Hors championnat"
 }

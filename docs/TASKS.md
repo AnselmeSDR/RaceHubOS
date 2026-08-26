@@ -19,10 +19,12 @@
 
 ### TASK-02: Colonne "Championnat" dans les stats
 **Domaine**: Frontend
+**Statut**: ✅ Fait en v1.17.0
 **Description**: Ajouter une colonne dans le tableau des statistiques indiquant le championnat dans lequel le temps a été réalisé.
 **Action**:
-- Backend : joindre `championship` dans la requête stats
-- Frontend : ajouter la colonne dans le tableau + filtre
+- ✅ Backend : `championship` joint dans la requête stats (+ tri, y compris en mode dédupliqué)
+- ✅ Frontend : colonne dans le tableau, cliquable vers la fiche du championnat
+- ✅ Filtre par championnat, avec option « Hors championnat » et combinaison de plusieurs championnats
 
 ### TASK-03: Ajouter "Équilibrage" dans le filtre de sessions + rendre le filtre dynamique
 **Domaine**: Frontend + Backend
