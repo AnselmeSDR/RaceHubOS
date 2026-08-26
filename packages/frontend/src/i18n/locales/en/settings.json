@@ -64,5 +64,23 @@
     "scanning": "Scanning...",
     "devicesFound": "{{count}} device(s) found",
     "deviceDeleted": "Device {{name}} deleted"
+  },
+  "referenceDriver": {
+    "title": "Reference driver",
+    "description": "Every balancing lap is credited to them, whoever actually holds the controller.",
+    "select": "Choose a driver",
+    "none": "No reference driver",
+    "noneWarning": "Without a reference driver, balancing laps are credited to nobody.",
+    "createStig": "Create The STIG",
+    "creating": "Creating...",
+    "created": "The STIG was created and set as reference driver",
+    "migrate": "Claim past balancing laps",
+    "migrateDesc": "Reassigns balancing laps already recorded to the reference driver.",
+    "migrating": "Claiming...",
+    "migrated_zero": "No lap to reassign",
+    "migrated_one": "{{count}} lap reassigned to {{name}}",
+    "migrated_other": "{{count}} laps reassigned to {{name}}",
+    "error": "Error: {{message}}",
+    "migrateButton": "Claim"
   }
 }

@@ -33,5 +33,10 @@
     "best": "Best",
     "median": "Med.",
     "avg60": "60%"
+  },
+  "referenceWarning": {
+    "title": "No reference driver",
+    "message": "Balancing laps will not be credited to any driver. Set one in the settings.",
+    "action": "Open settings"
   }
 }

@@ -245,6 +245,7 @@ export default function Stats() {
             { value: 'practice', label: t('glossary:sessionTypeFull.practice') },
             { value: 'qualif', label: t('glossary:sessionTypeFull.qualif') },
             { value: 'race', label: t('glossary:sessionTypeFull.race') },
+            { value: 'balancing', label: t('glossary:sessionTypeFull.balancing') },
           ]}
           onChange={(v) => setFilters(f => ({ ...f, sessionType: v }))}
         />

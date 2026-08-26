@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-08-26
+
+### Added
+- **Pilote de référence pour l'équilibrage** (RUSH-02) : l'équilibrage mesure les voitures, pas les pilotes — tous ses tours reviennent désormais à un pilote unique, quel que soit celui qui tient la manette
+  - **Paramètres** : sélection du pilote de référence, bouton **Créer Le STIG** (sans doublon si le pilote existe déjà) et bouton pour réattribuer les tours d'équilibrage déjà enregistrés
+  - **Page Équilibrage** : avertissement et raccourci vers les paramètres tant qu'aucun pilote de référence n'est défini
+  - Les sessions d'équilibrage attribuent automatiquement leurs tours au pilote de référence ; les courses, qualifications et essais gardent leur pilote réel
+  - Nouveau champ `Driver.isReference` — un seul pilote de référence à la fois, modifiable comme n'importe quel pilote (le renommer ne casse rien)
+- **Filtre « Équilibrage » dans les statistiques** : les tours d'équilibrage étaient déjà enregistrés avec ce type mais restaient absents du filtre
+
 ## [1.15.0] - 2026-08-26
 
 ### Added

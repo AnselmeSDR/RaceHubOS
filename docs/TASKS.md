@@ -304,11 +304,14 @@
 
 ### RUSH-02: Ajouter un pilote de référence à l'équilibrage
 **Domaine**: Frontend + Backend
+**Statut**: ✅ Fait en v1.16.0
 **Description**: Permettre de sélectionner un pilote de référence pour effectuer les runs d'équilibrage.
-**À décider**:
-- Utiliser un pilote existant, par exemple **Le STIG** ou **Touille**
-- Déterminer si ce pilote est obligatoire, présélectionné ou simplement proposé
-- Vérifier comment ses tours apparaissent dans les statistiques et l'historique
+**Décisions prises**:
+- Le pilote se choisit dans les **Paramètres**, parmi les pilotes existants ; un bouton crée « Le STIG » au besoin
+- Ni obligatoire ni créé automatiquement : sans lui, la page Équilibrage affiche un avertissement et un raccourci vers les paramètres
+- Tous les tours d'équilibrage lui sont attribués (`Driver.isReference`), y compris rétroactivement via le bouton de réattribution
+- Les tours d'équilibrage étaient jusqu'ici enregistrés **sans pilote** (`driverId` NULL) : ils ne polluaient donc pas les statistiques des autres pilotes
+- Le filtre « Équilibrage » a été ajouté à la page Statistiques
 
 ### RUSH-03: Séparer les statistiques par circuit et afficher la session d'origine
 **Domaine**: Frontend + Backend

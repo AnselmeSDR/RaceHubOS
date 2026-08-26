@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
@@ -67,6 +68,68 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/drivers/:id - Get driver by ID
+/**
+ * GET /api/drivers/reference
+ * Current reference driver (null when none is configured)
+ */
+router.get('/reference', async (req, res) => {
+  try {
+    const driver = await getReferenceDriver(prisma);
+    res.json({ success: true, data: driver ? withImageUrl(driver) : null });
+  } catch (error) {
+    console.error('Error fetching reference driver:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/drivers/reference  { driverId }
+ * Pass driverId: null to clear it
+ */
+router.put('/reference', async (req, res) => {
+  try {
+    const { driverId } = req.body;
+    const driver = await setReferenceDriver(prisma, driverId ?? null);
+    res.json({ success: true, data: driver ? withImageUrl(driver) : null });
+  } catch (error) {
+    console.error('Error setting reference driver:', error);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/drivers/reference/stig
+ * Create "Le STIG" and make it the reference driver
+ */
+router.post('/reference/stig', async (req, res) => {
+  try {
+    const driver = await createStig(prisma);
+    res.status(201).json({ success: true, data: withImageUrl(driver) });
+  } catch (error) {
+    console.error('Error creating reference driver:', error);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/drivers/reference/migrate-balancing
+ * Move past balancing laps onto the reference driver
+ */
+router.post('/reference/migrate-balancing', async (req, res) => {
+  try {
+    const reference = await getReferenceDriver(prisma);
+    if (!reference) {
+      return res.status(400).json({ success: false, error: 'No reference driver configured' });
+    }
+
+    const moved = await migrateBalancingLaps(prisma, reference.id);
+    res.json({ success: true, data: { driver: withImageUrl(reference), ...moved } });
+  } catch (error) {
+    console.error('Error migrating balancing laps:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

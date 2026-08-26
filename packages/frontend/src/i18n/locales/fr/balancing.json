@@ -33,5 +33,10 @@
     "best": "Best",
     "median": "Méd.",
     "avg60": "60%"
+  },
+  "referenceWarning": {
+    "title": "Aucun pilote de référence",
+    "message": "Les tours d'équilibrage ne seront attribués à aucun pilote. Définissez-en un dans les paramètres.",
+    "action": "Ouvrir les paramètres"
   }
 }
