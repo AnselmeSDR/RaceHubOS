@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { User, Trophy, Flag, BarChart3, Pencil } from 'lucide-react'
+import { User, Trophy, Flag, BarChart3, Pencil, Trash2 } from 'lucide-react'
 import { FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Badge } from '@/components/ui/badge'
@@ -175,6 +176,15 @@ export default function Drivers() {
     },
   ], [t])
 
+  // Deletion is confirmed inside the button itself, then the list reloads
+  async function handleDelete(id) {
+    try {
+      await fetch(`${API_URL}/api/drivers/${id}`, { method: 'DELETE' })
+    } finally {
+      loadData(0)
+    }
+  }
+
   return (
     <ListPage
       title={t('glossary:driver', { count: 2 })}
@@ -193,7 +203,7 @@ export default function Drivers() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((driver) => (
-            <DriverCard key={driver.id} driver={driver} onClick={() => navigate(`/drivers/${driver.id}`)} onEdit={() => { setEditingDriver(driver); setShowForm(true) }} />
+            <DriverCard key={driver.id} driver={driver} onClick={() => navigate(`/drivers/${driver.id}`)} onEdit={() => { setEditingDriver(driver); setShowForm(true) }} onDelete={() => handleDelete(driver.id)} />
           ))}
         </div>
       )}
@@ -226,7 +236,7 @@ export default function Drivers() {
   )
 }
 
-function DriverCard({ driver, onClick, onEdit }) {
+function DriverCard({ driver, onClick, onEdit, onDelete }) {
   const { t } = useTranslation('drivers')
   const wins = driver.wins || 0
   const podiums = driver.podiums || 0
@@ -240,12 +250,16 @@ function DriverCard({ driver, onClick, onEdit }) {
         boxShadow: `0 4px 6px rgba(0,0,0,0.1), 0 0 20px ${driver.color}40`
       }}
     >
-      <button
-        onClick={(e) => { e.stopPropagation(); onEdit() }}
-        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
-      >
-        <Pencil className="size-3.5" />
-      </button>
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+          aria-label={t('common:edit')}
+        >
+          <Pencil className="size-3.5" />
+        </button>
+        <DeleteButton onDelete={onDelete} />
+      </div>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: driver.color }} />
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `repeating-linear-gradient(45deg, ${driver.color}, ${driver.color} 10px, transparent 10px, transparent 20px)` }} />
 

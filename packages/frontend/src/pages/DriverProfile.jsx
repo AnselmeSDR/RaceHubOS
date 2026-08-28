@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -79,6 +80,15 @@ export default function DriverProfile() {
 
   const driverColor = driver.color || '#3B82F6'
 
+  // Deleting from the profile: the entity is soft-deleted, then we leave the page
+  async function handleDelete() {
+    try {
+      await fetch(`${API_URL}/api/drivers/${driver.id}`, { method: 'DELETE' })
+    } finally {
+      navigate('/drivers')
+    }
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -127,6 +137,7 @@ export default function DriverProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
+          <DeleteButton variant="outline" onDelete={handleDelete} />
         </div>
       </div>
 

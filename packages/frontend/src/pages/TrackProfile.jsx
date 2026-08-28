@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Flag, MapPin, Trophy, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -73,6 +74,15 @@ export default function TrackProfile() {
 
   const trackColor = track.color || '#9333EA'
 
+  // Deleting from the profile: the entity is soft-deleted, then we leave the page
+  async function handleDelete() {
+    try {
+      await fetch(`${API_URL}/api/tracks/${track.id}`, { method: 'DELETE' })
+    } finally {
+      navigate('/tracks')
+    }
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -106,6 +116,7 @@ export default function TrackProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
+          <DeleteButton variant="outline" onDelete={handleDelete} />
         </div>
       </div>
 

@@ -47,14 +47,6 @@
     "title": "Aucun élément",
     "message": "Commencez par en ajouter un"
   },
-  "deleteConfirm": {
-    "title": "Confirmer la suppression",
-    "titlePermanent": "Suppression définitive",
-    "message_one": "{{count}} élément sera supprimé.",
-    "message_other": "{{count}} éléments seront supprimés.",
-    "messagePermanent_one": "{{count}} élément sera supprimé définitivement. Cette action est irréversible.",
-    "messagePermanent_other": "{{count}} éléments seront supprimés définitivement. Cette action est irréversible."
-  },
   "photo": {
     "label": "Photo",
     "choose": "Choisir une image",
@@ -72,5 +64,6 @@
     "title": "Barre latérale",
     "description": "Affiche la barre latérale mobile.",
     "toggle": "Basculer la barre latérale"
-  }
+  },
+  "deleteConfirmShort": "Confirmer ?"
 }

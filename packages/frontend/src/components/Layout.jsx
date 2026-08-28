@@ -62,11 +62,11 @@ function PageHeader() {
         {header.hasGrid && (
           <Tabs value={header.viewMode} onValueChange={header.onViewModeChange}>
             <TabsList>
-              <TabsTrigger value="grid">
+              <TabsTrigger value="grid" data-testid="view-grid">
                 <LayoutGridIcon className="w-4 h-4" />
                 {t('common:grid')}
               </TabsTrigger>
-              <TabsTrigger value="list">
+              <TabsTrigger value="list" data-testid="view-list">
                 <ListIcon className="w-4 h-4" />
                 {t('common:list')}
               </TabsTrigger>

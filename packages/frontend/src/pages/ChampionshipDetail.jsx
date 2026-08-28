@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Flag } from 'lucide-react'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
@@ -19,6 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function ChampionshipDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { t } = useTranslation('championships')
   const { startRace: triggerCuStart } = useDevice()
   const {
@@ -273,10 +274,20 @@ export default function ChampionshipDetail() {
     )
   }
 
+  // Deleting the championship hides its sessions and laps too (cascade)
+  async function handleDeleteChampionship() {
+    try {
+      await fetch(`${API_URL}/api/championships/${id}`, { method: 'DELETE' })
+    } finally {
+      navigate('/championships')
+    }
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header bar with session tabs */}
       <ChampionshipHeader
+        onDelete={handleDeleteChampionship}
         championship={championship}
         sessions={sessions}
         selectedSession={selectedSession}

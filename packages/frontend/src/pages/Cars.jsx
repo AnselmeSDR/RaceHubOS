@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Car, Flag, Zap, Flame, FlaskConical, Pencil } from 'lucide-react'
+import { Car, Flag, Zap, Flame, FlaskConical, Pencil, Trash2 } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
@@ -173,6 +174,15 @@ export default function Cars() {
     },
   ], [t])
 
+  // Deletion is confirmed inside the button itself, then the list reloads
+  async function handleDelete(id) {
+    try {
+      await fetch(`${API_URL}/api/cars/${id}`, { method: 'DELETE' })
+    } finally {
+      loadData(0)
+    }
+  }
+
   return (
     <ListPage
       title={t('glossary:car', { count: 2 })}
@@ -191,7 +201,7 @@ export default function Cars() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((car) => (
-            <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} onEdit={() => { setEditingCar(car); setShowForm(true) }} />
+            <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} onEdit={() => { setEditingCar(car); setShowForm(true) }} onDelete={() => handleDelete(car.id)} />
           ))}
         </div>
       )}
@@ -223,7 +233,7 @@ export default function Cars() {
   )
 }
 
-function CarCard({ car, onClick, onEdit }) {
+function CarCard({ car, onClick, onEdit, onDelete }) {
   const { t } = useTranslation('cars')
   const carColor = car.color || '#22C55E'
 
@@ -233,12 +243,16 @@ function CarCard({ car, onClick, onEdit }) {
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)` }}
     >
-      <button
-        onClick={(e) => { e.stopPropagation(); onEdit() }}
-        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
-      >
-        <Pencil className="size-3.5" />
-      </button>
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+          aria-label={t('common:edit')}
+        >
+          <Pencil className="size-3.5" />
+        </button>
+        <DeleteButton onDelete={onDelete} />
+      </div>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: carColor }} />
 
       <div className="relative p-6 pb-4">
