@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
+import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MapPin, RefreshCw, Rocket, Clock, Trophy, Pencil } from 'lucide-react'
+import { MapPin, RefreshCw, Rocket, Clock, Trophy, Pencil, Trash2 } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
@@ -150,6 +151,15 @@ export default function Tracks() {
     },
   ], [t])
 
+  // Deletion is confirmed inside the button itself, then the list reloads
+  async function handleDelete(id) {
+    try {
+      await fetch(`${API_URL}/api/tracks/${id}`, { method: 'DELETE' })
+    } finally {
+      loadData(0)
+    }
+  }
+
   return (
     <ListPage
       title={t('glossary:track', { count: 2 })}
@@ -177,7 +187,7 @@ export default function Tracks() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((track) => (
-            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} onEdit={() => { setEditingTrack(track); setShowForm(true) }} />
+            <TrackCard key={track.id} track={track} onClick={() => navigate(`/tracks/${track.id}`)} onEdit={() => { setEditingTrack(track); setShowForm(true) }} onDelete={() => handleDelete(track.id)} />
           ))}
         </div>
       )}
@@ -200,7 +210,7 @@ export default function Tracks() {
   )
 }
 
-function TrackCard({ track, onClick, onEdit }) {
+function TrackCard({ track, onClick, onEdit, onDelete }) {
   const { t } = useTranslation('tracks')
   const trackColor = track.color || '#9333EA'
 
@@ -210,12 +220,16 @@ function TrackCard({ track, onClick, onEdit }) {
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${trackColor}10 0%, ${trackColor}05 100%)` }}
     >
-      <button
-        onClick={(e) => { e.stopPropagation(); onEdit() }}
-        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
-      >
-        <Pencil className="size-3.5" />
-      </button>
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+          aria-label={t('common:edit')}
+        >
+          <Pencil className="size-3.5" />
+        </button>
+        <DeleteButton onDelete={onDelete} />
+      </div>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: trackColor }} />
 
       <div className="relative p-6 pb-4">

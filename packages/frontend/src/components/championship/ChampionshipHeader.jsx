@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import DeleteButton from '@/components/ui/DeleteButton'
 import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy, GitBranch, Zap, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,7 @@ export default function ChampionshipHeader({
   onSelectSession,
   onConfig,
   showConfig,
+  onDelete,
   onFinish,
   showStandings,
   onToggleStandings,
@@ -124,6 +126,7 @@ export default function ChampionshipHeader({
         <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={t('detail.configuration')}>
           <Settings className="size-4" />
         </button>
+        {onDelete && <DeleteButton variant="outline" onDelete={onDelete} />}
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import DeleteButton from '../components/ui/DeleteButton'
 import { useTranslation } from 'react-i18next'
-import { Users } from 'lucide-react'
+import { Users, Trash2, Pencil } from 'lucide-react'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
@@ -108,6 +109,15 @@ export default function Teams() {
     },
   ], [t])
 
+  // Deletion is confirmed inside the button itself, then the list reloads
+  async function handleDelete(id) {
+    try {
+      await fetch(`${API_URL}/api/teams/${id}`, { method: 'DELETE' })
+    } finally {
+      loadData(0)
+    }
+  }
+
   return (
     <ListPage
       title={t('glossary:team', { count: 2 })}
@@ -135,7 +145,7 @@ export default function Teams() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((team) => (
-            <TeamCard key={team.id} team={team} onClick={() => { setEditingTeam(team); setShowForm(true) }} />
+            <TeamCard key={team.id} team={team} onClick={() => { setEditingTeam(team); setShowForm(true) }} onDelete={() => handleDelete(team.id)} />
           ))}
         </div>
       )}
@@ -158,7 +168,7 @@ export default function Teams() {
   )
 }
 
-function TeamCard({ team, onClick }) {
+function TeamCard({ team, onClick, onEdit, onDelete }) {
   const { t } = useTranslation('teams')
   const teamColor = team.color || '#F97316'
 
@@ -168,6 +178,18 @@ function TeamCard({ team, onClick }) {
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${teamColor}10 0%, ${teamColor}05 100%)` }}
     >
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        {onEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
+            aria-label={t('common:edit')}
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
+        <DeleteButton onDelete={onDelete} />
+      </div>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: teamColor }} />
 
       <div className="relative p-6 pb-4">

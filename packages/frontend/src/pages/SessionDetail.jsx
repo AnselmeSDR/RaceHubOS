@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Flag, MapPin, Trash2, Trophy, Users2, Clock, Timer, Pause, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -29,7 +30,6 @@ export default function SessionDetail() {
   const navigate = useNavigate()
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -138,7 +138,6 @@ export default function SessionDetail() {
   }, [session])
 
   async function handleDelete() {
-    setShowDeleteConfirm(false)
     try {
       const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: 'DELETE' })
       if (res.ok) navigate('/history')
@@ -203,19 +202,8 @@ export default function SessionDetail() {
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(true)} className="text-destructive hover:text-destructive">
-          <Trash2 className="size-4" />
-        </Button>
+        <DeleteButton variant="outline" onDelete={handleDelete} />
       </div>
-
-      <ConfirmModal
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title={t('common:deleteConfirm.title')}
-        message={t('profile.deleteMessage')}
-        confirmLabel={t('common:delete')}
-      />
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
