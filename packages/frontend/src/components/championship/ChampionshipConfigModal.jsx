@@ -50,6 +50,17 @@ export default function ChampionshipConfigModal({
   const [newSessionForm, setNewSessionForm] = useState({ name: '', duration: 5, maxLaps: 10, useTime: true, useLaps: false })
 
   const isAuto = championship?.mode === 'auto'
+  // A finished championship is a record: its configuration is read-only
+  const isFinished = championship?.status === 'finished'
+
+  // The track list only carries active tracks; a championship run on a since-deleted
+  // track would otherwise show an empty field instead of its actual value.
+  const trackOptions = useMemo(() => {
+    const current = championship?.track
+    if (!current || tracks.some(tr => tr.id === current.id)) return tracks
+    return [...tracks, { ...current, isDeleted: true }]
+  }, [tracks, championship?.track])
+
   const [addingDriver, setAddingDriver] = useState('')
 
   // For auto mode: check what's editable
@@ -215,20 +226,29 @@ export default function ChampionshipConfigModal({
           )}
 
           {/* Championship info */}
+          {isFinished && (
+            <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 px-3 py-2 text-xs">
+              {t('configModal.finishedLocked')}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('configModal.name')}</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+              <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isFinished} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('configModal.track')}</label>
-              <Select value={trackId || '_none'} onValueChange={(v) => setTrackId(v === '_none' ? '' : v)}>
+              <Select value={trackId || '_none'} onValueChange={(v) => setTrackId(v === '_none' ? '' : v)} disabled={isFinished}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t('configModal.selectTrack')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_none">{t('configModal.selectPlaceholder')}</SelectItem>
-                  {tracks.map(track => <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>)}
+                  {trackOptions.map(track => (
+                    <SelectItem key={track.id} value={track.id}>
+                      {track.isDeleted ? t('configModal.deletedTrack', { name: track.name }) : track.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -247,7 +267,7 @@ export default function ChampionshipConfigModal({
                     <span className="text-muted-foreground w-4 text-right">{i + 1}</span>
                     {p.driver?.img && <img src={`${API_URL}${p.driver.img}`} className="w-5 h-5 rounded-full object-cover" alt="" />}
                     <span className="font-medium flex-1 truncate">{p.driver?.name}</span>
-                    {!hasStartedQualif && (
+                    {!hasStartedQualif && !isFinished && (
                       <button onClick={() => handleRemoveParticipant(p.driverId)} className="p-0.5 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10">
                         <X className="size-3" />
                       </button>
@@ -255,6 +275,7 @@ export default function ChampionshipConfigModal({
                   </div>
                 ))}
                 {/* Add participant row */}
+                {!isFinished && (
                 <div className="flex items-center gap-2 px-3 py-1.5">
                   <UserPlus className="size-3.5 text-muted-foreground" />
                   <select
@@ -266,6 +287,7 @@ export default function ChampionshipConfigModal({
                     {availableDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
+                )}
               </div>
             </div>
           )}
@@ -275,10 +297,10 @@ export default function ChampionshipConfigModal({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">{t('configModal.sessions')}</span>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('qualif')} className="text-blue-500 h-7">
+                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('qualif')} disabled={isFinished} className="text-blue-500 h-7">
                   <Plus className="size-3" /> {t('configModal.addQualif')}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('race')} className="text-green-500 h-7">
+                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('race')} disabled={isFinished} className="text-green-500 h-7">
                   <Plus className="size-3" /> {t('configModal.addRace')}
                 </Button>
               </div>
@@ -316,10 +338,10 @@ export default function ChampionshipConfigModal({
                       <div className="flex items-center gap-2">
                         {session.status === 'draft' && (
                           <div className="flex flex-col">
-                            <button onClick={() => handleMoveSession(session.id, 'up')} disabled={index === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
+                            <button onClick={() => handleMoveSession(session.id, 'up')} disabled={isFinished || index === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
                               <ChevronUp className="size-3.5" />
                             </button>
-                            <button onClick={() => handleMoveSession(session.id, 'down')} disabled={index === qrSessions.length - 1} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
+                            <button onClick={() => handleMoveSession(session.id, 'down')} disabled={isFinished || index === qrSessions.length - 1} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
                               <ChevronDown className="size-3.5" />
                             </button>
                           </div>
@@ -338,10 +360,10 @@ export default function ChampionshipConfigModal({
                         )}
                         {session.status === 'draft' && (
                           <>
-                            <button onClick={() => startEditing(session)} className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted">
+                            <button onClick={() => startEditing(session)} disabled={isFinished} className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted disabled:opacity-20">
                               <Pencil className="size-3.5" />
                             </button>
-                            <button onClick={() => handleDeleteSession(session.id)} className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10">
+                            <button onClick={() => handleDeleteSession(session.id)} disabled={isFinished} className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10 disabled:opacity-20">
                               <Trash2 className="size-3.5" />
                             </button>
                           </>
@@ -398,7 +420,7 @@ export default function ChampionshipConfigModal({
           ) : <div />}
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={onClose}>{t('common:close')}</Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || isFinished}>
               {saving ? t('common:saving') : t('common:save')}
             </Button>
           </div>

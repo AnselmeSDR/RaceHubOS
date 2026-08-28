@@ -284,6 +284,82 @@
 - Sélecteur de langue dans les paramètres
 **Note**: transverse — à coordonner avec TASK-03 et TASK-04 qui mentionnent déjà des libellés i18n par enum.
 
+### TASK-32: 🔍 Étude — `ControllerConfig` répond-il encore à un besoin ?
+**Domaine**: Backend + Frontend
+**Description**: Le modèle `ControllerConfig` est un préréglage **par circuit** (« sur ce circuit, la manette 1 = tel pilote avec telle voiture »), alors que l'attribution des manettes change à chaque session. L'audit montre qu'il n'est en pratique jamais alimenté : à clarifier avant de le faire suivre les suppressions en cascade.
+**Constats (audit du 27/08/2026)**:
+- **La table est vide** : 0 ligne, pour 126 sessions et 12 227 tours enregistrés
+- **Aucun écran du frontend n'appelle `/api/config`** — les routes existent (`GET/PUT /api/config`, `/bulk`, `/validate`, `/:controller`) mais ne sont utilisées par personne
+- La configuration réelle d'une session passe par `PUT /api/sessions/:id/drivers`, qui écrit directement des `SessionDriver`
+- `SessionService.createSession()` lit pourtant `controllerConfig` pour pré-remplir les `SessionDriver` : cette boucle ne produit donc jamais rien
+- `@@unique([trackId, controller])` : une seule attribution par circuit, écrasée à chaque modification — deux sessions du même circuit ne peuvent pas avoir d'attributions différentes
+- Aucun lien vers `Session` ; le champ `isActive` est écrit une fois et jamais lu
+- Pas de `deletedAt` : la table ne peut pas suivre les suppressions douces
+- Les réglages vitesse / frein / carburant ne sont **pas** ici : ils sont portés par `Car` (`maxSpeed`, `brakeForce`, `fuelCapacity`)
+**Questions à trancher**:
+- Le préréglage par circuit correspond-il à un usage réel en course, ou faut-il le supprimer purement et simplement (modèle, service, routes) ?
+- Si on le garde : doit-il devenir un préréglage par championnat, ou rester par circuit ?
+- Faut-il alors un `deletedAt` pour qu'il suive la suppression d'un circuit (cf. TASK-33) ?
+- Le pré-remplissage des pilotes à la création d'une session est-il un besoin réel ? Si oui, il faut l'alimenter depuis un flux réellement utilisé
+**Lié à**: TASK-33 (cascades), RUSH-04 (puissance de toutes les voitures au lancement)
+
+### TASK-33: Passer entièrement aux migrations Prisma (et baseline du PC de course)
+**Domaine**: Backend + Déploiement
+**Priorité**: Haute — bloque tout changement de schéma sûr
+**Description**: Le schéma est aujourd'hui mis à jour par `prisma db push --accept-data-loss`, lancé par `startup.js` au changement de version. Cela fonctionne pour un ajout de colonne, mais **détruit les données sans prévenir** dès qu'un changement implique un renommage, une suppression de colonne ou un changement de type. Il faut passer à `prisma migrate deploy`.
+**Constats (audit du 28/08/2026)**:
+- Les migrations étaient bien versionnées, mais `.gitignore` contenait `prisma/migrations/`, ce qui empêchait d'en **ajouter de nouvelles** : l'historique s'arrêtait au 5 avril 2026, soit 11 opérations de retard sur le schéma réel
+- La ligne du `.gitignore` a été retirée et la migration `20260828_catchup_schema_actuel` comble l'écart (l'historique décrit désormais le schéma exact)
+- Le poste de développement a été baseliné : 5 migrations enregistrées, `migrate status` → « up to date », `migrate deploy` → no-op
+- **La base du PC de course n'est pas baselinée** : son `_prisma_migrations` est inconnu, probablement limité à `20260117150753_init` comme l'était celle du poste de dev
+**⚠️ Ordre impératif**:
+1. **D'abord** baseliner la base de Romain — sinon `migrate deploy` tentera de rejouer `add_preferences` et les suivantes sur des tables existantes. L'échec bloquerait le démarrage, puisque `startup.js` s'interrompt désormais en cas d'erreur de migration
+2. **Ensuite seulement** remplacer `db push` par `migrate deploy` dans `scripts/startup.js`, `src/routes/update.js`, `RaceHubOS-install-win.bat` et `RaceHubOS-install-mac.command`
+**Procédure de baseline chez Romain** (identique à celle appliquée en local le 28/08/2026).
+Tout se lance depuis `C:\Users\Romain\RaceHubOS\packages\backend`. En PowerShell, enchaîner avec `;` et non `&&`.
+
+1. **Arrêter l'application** (fermer la fenêtre RaceHubOS) pour qu'aucune écriture ne soit en cours.
+2. **Récupérer le code** contenant les migrations versionnées : `git pull origin main` à la racine du projet.
+3. **Sauvegarder la base** : `node scripts/backup-db.js avant-baseline` — la copie atterrit dans `prisma/db-old/`.
+4. **Lister ce que la base déclare déjà appliqué** :
+   `npx prisma migrate status`
+   Noter les migrations signalées comme non appliquées ; c'est la liste à traiter à l'étape 6.
+5. **Vérifier qu'il n'y a pas d'écart de schéma réel** :
+   `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`
+   - Sortie vide ou « This is an empty migration » → la base est conforme, passer à l'étape 6.
+   - Sortie non vide → **ne pas marquer les migrations**. Le schéma de Romain diffère du nôtre : lire le SQL produit, l'appliquer manuellement à la main (`sqlite3 prisma/dev.db` ou via un `db push` ponctuel après sauvegarde), puis refaire cette étape jusqu'à obtenir une sortie vide.
+6. **Marquer comme appliquée chaque migration manquante**, une par une :
+   `npx prisma migrate resolve --applied 20260327_add_preferences`
+   `npx prisma migrate resolve --applied 20260327_add_soft_delete`
+   `npx prisma migrate resolve --applied 20260405_remove_ready_status`
+   `npx prisma migrate resolve --applied 20260828_catchup_schema_actuel`
+   (adapter à la liste réellement manquante relevée à l'étape 4 ; `20260117150753_init` est normalement déjà enregistrée)
+7. **Contrôler le résultat** :
+   `npx prisma migrate status` → doit afficher « Database schema is up to date! »
+   `npx prisma migrate deploy` → doit répondre « No pending migrations to apply. »
+8. **Vérifier les données** avant de relancer l'app : nombre de pilotes, de sessions et de tours identiques à l'avant-baseline, et `PRAGMA integrity_check;` à `ok`.
+9. **Rejouer les cascades de suppression** — voir la section ci-dessous.
+10. **Redémarrer RaceHubOS** et confirmer que l'application se lance normalement.
+
+En cas de problème à n'importe quelle étape : restaurer la sauvegarde de l'étape 3 depuis `prisma/db-old/` — le baseline ne touche qu'à la table `_prisma_migrations`, jamais aux données.
+
+**Rattrapage des cascades de suppression** (à faire une seule fois, sur chaque base existante)
+
+Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé avant n'a marqué que l'objet lui-même. Sur le poste de développement, cela représentait **8 146 tours toujours visibles dans les statistiques** alors que leur circuit était supprimé depuis juillet. La base de Romain a le même historique, donc le même écart.
+
+- Simuler d'abord, la commande ne modifie rien :
+  `node scripts/replay-cascades.js`
+  Elle liste, entité par entité, ce qui serait masqué.
+- Appliquer ensuite :
+  `node scripts/replay-cascades.js --apply`
+  Une sauvegarde datée est créée automatiquement dans `prisma/db-old/` avant toute écriture.
+- Contrôler que plus rien ne subsiste :
+  `sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Lap l JOIN Track t ON t.id=l.trackId WHERE l.deletedAt IS NULL AND t.deletedAt IS NOT NULL;"` → doit renvoyer 0
+
+**À prévenir Romain** : les statistiques vont perdre d'un coup une grande partie de leurs temps — sur le poste de dev, 12 036 tours actifs sont tombés à 3 847. Rien n'est effacé : chaque ligne est marquée avec l'horodatage de suppression de son parent, donc restaurer un circuit ramène exactement ses tours. Si le résultat ne convient pas, la sauvegarde de `prisma/db-old/` permet de revenir en arrière.
+**Ensuite, en développement**: tout changement de schéma passe par `prisma migrate dev` (fichier de migration à commiter), plus jamais par `db push`
+**Lié à**: TASK-30 (système de mise à jour), TASK-32 (`ControllerConfig`)
+
 ---
 
 ## 🏎️ Demandes Rush — ordre de traitement

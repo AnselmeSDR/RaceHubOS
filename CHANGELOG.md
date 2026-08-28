@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-08-28
+
+### Changed
+- **Suppressions en cascade** : supprimer un objet masque désormais tout ce qui en dépend, au lieu de laisser des temps orphelins visibles dans les statistiques
+  - **Circuit** → ses championnats, leurs sessions, leurs participants, les engagements, les tours et les records
+  - **Championnat** → ses sessions, leurs engagements, leurs tours et ses participants
+  - **Session** → ses engagements, ses tours et les records qui en sont issus
+  - **Pilote** → ses tours, ses engagements, ses records et ses participations aux championnats
+  - **Voiture** → ses tours, ses engagements et ses records
+  - **Équipe** → elle seule ; ses pilotes sont conservés (la relation est optionnelle : un pilote existe sans équipe)
+  - Chaque clé étrangère du modèle est désormais couverte, à l'exception de `ControllerConfig`, qui n'a pas de champ de suppression douce (cf. TASK-32)
+  - Un record matérialise un tour : masquer le tour masque le record
+  - Toutes les lignes d'une même suppression partagent le même horodatage : la restauration ne relève que ce que cette suppression avait masqué, et laisse supprimé ce qui l'avait été volontairement avant
+  - Tout reste en suppression douce (`deletedAt`) : aucune donnée n'est effacée
+  - `node scripts/replay-cascades.js` rejoue les cascades sur les objets supprimés avant cette version — sans argument il ne fait que rapporter, `--apply` sauvegarde puis applique. Sur le poste de développement, 8 484 lignes restées actives sous un parent supprimé ont été masquées, dont 8 146 tours de trois circuits supprimés en juillet
+- **Participants d'un championnat** : modifier la liste **masque** désormais les pilotes retirés au lieu de les effacer, et **réactive** ceux qu'on remet — auparavant chaque modification supprimait puis recréait toutes les lignes, effaçant toute trace des retraits
+  - Nouveau champ `ChampionshipParticipant.deletedAt`
+  - Les pilotes masqués sont exclus de toutes les lectures (classements, brackets, génération des sessions automatiques)
+  - La règle existante reste en vigueur : au moins deux participants, et pas de retrait d'un pilote ayant déjà couru une qualification
+
+### Added
+- **Bouton de suppression sur les cartes et les pages de détail** : la suppression n'existait qu'en vue liste, derrière une sélection de ligne — en vue grille, rien ne permettait de supprimer, et les pages de détail n'offraient rien non plus (sauf les sessions)
+  - Présent sur les cartes pilote, voiture, circuit et équipe, et dans la barre d'actions des fiches pilote, voiture, circuit, session et championnat
+  - La carte d'une équipe n'avait aucune action : elle gagne aussi la modification
+  - Le bouton se confirme sur place : un premier clic transforme la corbeille en « Confirmer ? », seul le second supprime
+  - L'état armé retombe tout seul au bout de 4 secondes ou dès que la souris quitte la carte, pour qu'une carte ne reste jamais amorcée
+  - Nouveau composant partagé `DeleteButton`
+
+### Fixed
+- **Configuration d'un championnat terminé** : nom, circuit, participants et sessions étaient encore modifiables. Tout est désormais verrouillé, avec un bandeau qui l'explique et invite à rouvrir le championnat ; le bouton **Réouvrir le championnat** reste évidemment actif
+- **Circuit supprimé invisible dans la configuration** : un championnat couru sur un circuit depuis supprimé affichait un champ vide, la liste ne proposant que les circuits actifs. Le circuit référencé est maintenant affiché, signalé « (supprimé) » — 4 de nos 5 championnats étaient concernés
+- **Message d'erreur trompeur sur les doublons** : créer un pilote avec un numéro déjà pris répondait « Email already exists ». La migration Prisma 7 a vidé `error.meta.target`, où le code lisait la colonne en conflit ; l'information vit désormais dans `meta.driverAdapterError.cause.constraint.fields`. `src/lib/prismaErrors.js` lit les deux formats
+- **Nettoyage des tests** : `trackRecord`, `controllerConfig` et `championshipParticipant` n'étaient pas purgés entre les suites, ce qui provoquait des violations de clé étrangère dès qu'un test créait un record
+
 ## [1.17.0] - 2026-08-26
 
 ### Added

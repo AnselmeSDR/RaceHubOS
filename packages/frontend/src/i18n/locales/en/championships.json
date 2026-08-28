@@ -168,7 +168,9 @@
     "fields": {
       "minUnit": "min",
       "lapsUnit": "laps"
-    }
+    },
+    "deletedTrack": "{{name}} (deleted)",
+    "finishedLocked": "Championship finished: the configuration is locked. Reopen it to make changes."
   },
   "sessionConfigModal": {
     "title": "Session Configuration",
