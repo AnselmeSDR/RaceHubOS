@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-const API_URL = process.env.API_URL || 'http://localhost:3001'
+// Served by the Playwright-managed backend, on its own throwaway database
+const API_URL = 'http://localhost:3101'
 
 /**
  * Deleting from a card, in grid view.
@@ -33,13 +34,20 @@ async function stillActive(request, endpoint, id) {
   return Boolean(body.success && body.data && !body.data.deletedAt)
 }
 
-async function openGridAndFindBin(page, path) {
+/**
+ * Open the grid and return the delete button of one precise entity: the page
+ * also lists the fixture data, so "the last card" would target the wrong one.
+ */
+async function openGridAndFindBin(page, path, entityId) {
   await page.goto(path)
   await page.waitForLoadState('networkidle')
   const gridToggle = page.locator('[data-testid="view-grid"]')
   if (await gridToggle.count()) await gridToggle.click()
   await page.waitForTimeout(800)
-  return page.locator('[data-testid="delete-button"]').last()
+
+  const card = page.locator(`[data-testid="entity-card"][data-entity-id="${entityId}"]`)
+  await card.scrollIntoViewIfNeeded()
+  return card.locator('[data-testid="delete-button"]')
 }
 
 for (const entity of ENTITIES) {
@@ -47,12 +55,12 @@ for (const entity of ENTITIES) {
     test('un seul clic arme le bouton sans rien supprimer', async ({ page, request }) => {
       const created = await apiCreate(request, entity.endpoint, entity.create())
 
-      const bin = await openGridAndFindBin(page, entity.path)
+      const bin = await openGridAndFindBin(page, entity.path, created.id)
       await expect(bin).toBeVisible()
       await bin.click()
 
       // the button turned into a confirmation, and nothing was deleted yet
-      await expect(page.locator('[data-testid="delete-button"][data-armed="true"]').last()).toBeVisible()
+      await expect(bin).toHaveAttribute('data-armed', 'true')
       expect(await stillActive(request, entity.endpoint, created.id), 'intact avant confirmation').toBeTruthy()
 
       await request.delete(`${API_URL}${entity.endpoint}/${created.id}`)
@@ -61,9 +69,9 @@ for (const entity of ENTITIES) {
     test('le second clic supprime', async ({ page, request }) => {
       const created = await apiCreate(request, entity.endpoint, entity.create())
 
-      const bin = await openGridAndFindBin(page, entity.path)
+      const bin = await openGridAndFindBin(page, entity.path, created.id)
       await bin.click()
-      await page.locator('[data-testid="delete-button"][data-armed="true"]').last().click()
+      await bin.click()
       await page.waitForTimeout(1200)
 
       expect(await stillActive(request, entity.endpoint, created.id), 'supprimé après confirmation').toBeFalsy()
@@ -72,14 +80,14 @@ for (const entity of ENTITIES) {
     test('le bouton se désarme quand la souris quitte la carte', async ({ page, request }) => {
       const created = await apiCreate(request, entity.endpoint, entity.create())
 
-      const bin = await openGridAndFindBin(page, entity.path)
+      const bin = await openGridAndFindBin(page, entity.path, created.id)
       await bin.click()
-      await expect(page.locator('[data-testid="delete-button"][data-armed="true"]').last()).toBeVisible()
+      await expect(bin).toHaveAttribute('data-armed', 'true')
 
       await page.mouse.move(0, 0)
       await page.waitForTimeout(400)
 
-      await expect(page.locator('[data-testid="delete-button"][data-armed="true"]')).toHaveCount(0)
+      await expect(bin).toHaveAttribute('data-armed', 'false')
       expect(await stillActive(request, entity.endpoint, created.id), 'toujours intact').toBeTruthy()
 
       await request.delete(`${API_URL}${entity.endpoint}/${created.id}`)

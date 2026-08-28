@@ -216,6 +216,8 @@ function TrackCard({ track, onClick, onEdit, onDelete }) {
 
   return (
     <Card
+      data-testid="entity-card"
+      data-entity-id={track.id}
       onClick={onClick}
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${trackColor}10 0%, ${trackColor}05 100%)` }}

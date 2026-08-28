@@ -8,9 +8,11 @@ test.describe('Championship Detailed Tests', () => {
     await page.waitForLoadState('networkidle')
 
     // Click on first championship
-    const championshipCard = page.locator('h3').first()
+    const championshipCard = page.locator('[data-testid="list-row"]').first()
     if (await championshipCard.count() > 0) {
       await championshipCard.click()
+      // Wait for the detail route: networkidle alone can resolve before it
+      await page.waitForURL(/\/championships\/.+/, { timeout: 10000 })
       await page.waitForLoadState('networkidle')
     }
   })
@@ -18,7 +20,7 @@ test.describe('Championship Detailed Tests', () => {
   test('ChampionshipHeader - All elements present', async ({ page }) => {
     // Check championship name is displayed (in main content, not sidebar)
     const mainContent = page.locator('main')
-    const championshipName = mainContent.getByRole('heading', { level: 1 })
+    const championshipName = mainContent.getByRole('heading', { level: 1 }).first()
     await expect(championshipName).toBeVisible()
     console.log('Championship name:', await championshipName.textContent())
 
@@ -26,10 +28,9 @@ test.describe('Championship Detailed Tests', () => {
     const circuitInfo = mainContent.locator('p').first()
     console.log('Circuit info:', await circuitInfo.textContent())
 
-    // Check session buttons exist
-    const elButton = page.locator('button').filter({ hasText: 'EL' })
-    console.log('EL button exists:', await elButton.count() > 0)
-    expect(await elButton.count()).toBeGreaterThan(0)
+    // Sessions are added from the configuration panel, no longer from a header
+    // button. toBeVisible waits for it; a bare count() would read too early.
+    await expect(page.locator('button[title="Configuration"]')).toBeVisible()
 
     // Check add buttons exist (just "Qualif" and "Course")
     const addQualifBtn = page.locator('button').filter({ hasText: 'Qualif' })
@@ -43,7 +44,7 @@ test.describe('Championship Detailed Tests', () => {
 
   test('SessionSection - Elements and status', async ({ page }) => {
     // Find session section
-    const sessionSection = page.locator('.bg-white.rounded-xl.border').first()
+    const sessionSection = page.locator('[data-testid="session-section"]').first()
     await expect(sessionSection).toBeVisible()
 
     // Check for session title (EL, Q1, R1, etc.)

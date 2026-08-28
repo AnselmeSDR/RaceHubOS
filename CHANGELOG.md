@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Configuration d'un championnat terminé** : nom, circuit, participants et sessions étaient encore modifiables. Tout est désormais verrouillé, avec un bandeau qui l'explique et invite à rouvrir le championnat ; le bouton **Réouvrir le championnat** reste évidemment actif
 - **Circuit supprimé invisible dans la configuration** : un championnat couru sur un circuit depuis supprimé affichait un champ vide, la liste ne proposant que les circuits actifs. Le circuit référencé est maintenant affiché, signalé « (supprimé) » — 4 de nos 5 championnats étaient concernés
+- **Les tests d'interface pouvaient viser la base de course** : la configuration Playwright réutilisait le serveur en marche, donc celui branché sur `dev.db`, et les tests y créaient de vraies entités. Ils lancent désormais leurs propres serveurs sur une base jetable, construite à chaque exécution depuis `schema.prisma`
+  - Identifiants de test (`data-testid`) sur les lignes de liste, les cartes, la bascule Grille/Liste et le bouton de suppression : les tests ne dépendent plus de classes CSS, de libellés traduits ni de la position d'un élément
+  - Trois tests d'interface étaient périmés depuis des refontes (cartes de championnat devenues un tableau, classes `.bg-white` remplacées par le thème) : réparés
 - **Message d'erreur trompeur sur les doublons** : créer un pilote avec un numéro déjà pris répondait « Email already exists ». La migration Prisma 7 a vidé `error.meta.target`, où le code lisait la colonne en conflit ; l'information vit désormais dans `meta.driverAdapterError.cause.constraint.fields`. `src/lib/prismaErrors.js` lit les deux formats
 - **Nettoyage des tests** : `trackRecord`, `controllerConfig` et `championshipParticipant` n'étaient pas purgés entre les suites, ce qui provoquait des violations de clé étrangère dès qu'un test créait un record
 

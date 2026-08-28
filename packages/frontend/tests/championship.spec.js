@@ -24,8 +24,8 @@ test.describe('Championship User Journey', () => {
     await page.goto('/championships')
     await page.waitForLoadState('networkidle')
 
-    // Find championship cards (clickable divs with cursor-pointer)
-    const championshipCards = page.locator('.cursor-pointer').filter({ has: page.locator('h3') })
+    // The page lists championships as table rows, identified for tests
+    const championshipCards = page.locator('[data-testid="list-row"]')
     const cardCount = await championshipCards.count()
     console.log('Championships found:', cardCount)
 
@@ -39,7 +39,7 @@ test.describe('Championship User Journey', () => {
       await expect(page).toHaveURL(/\/championships\//)
 
       // Check header elements exist
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
     } else {
       // No championships, check empty state
       console.log('No championships found - testing empty state')
