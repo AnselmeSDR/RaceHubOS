@@ -1152,12 +1152,17 @@ export class SessionService extends EventEmitter {
 
     const now = new Date();
 
-    // Soft delete cascade: laps, session drivers, session
+    // Soft delete cascade: laps, session drivers, track records, session
     await this.prisma.lap.updateMany({
       where: { sessionId, deletedAt: null },
       data: { deletedAt: now },
     });
     await this.prisma.sessionDriver.updateMany({
+      where: { sessionId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    // A record stands for one lap of this session: hiding the lap hides it too
+    await this.prisma.trackRecord.updateMany({
       where: { sessionId, deletedAt: null },
       data: { deletedAt: now },
     });

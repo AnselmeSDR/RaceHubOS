@@ -80,7 +80,7 @@ export class ChampionshipService {
   async generateAutoSessions(championshipId) {
     const championship = await this.prisma.championship.findUnique({
       where: { id: championshipId, deletedAt: null },
-      include: { participants: { orderBy: { order: 'asc' } } },
+      include: { participants: { where: { deletedAt: null }, orderBy: { order: 'asc' } } },
     });
 
     if (!championship || championship.mode !== 'auto') return;
@@ -154,7 +154,7 @@ export class ChampionshipService {
   async assignDriversToRaces(championshipId) {
     const championship = await this.prisma.championship.findUnique({
       where: { id: championshipId, deletedAt: null },
-      include: { participants: true },
+      include: { participants: { where: { deletedAt: null } } },
     });
 
     if (!championship || championship.mode !== 'auto') return;
@@ -251,6 +251,7 @@ export class ChampionshipService {
       where: { id: championshipId, deletedAt: null },
       include: {
         participants: {
+          where: { deletedAt: null },
           include: { driver: true },
           orderBy: { order: 'asc' },
         },

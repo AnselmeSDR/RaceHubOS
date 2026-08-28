@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
@@ -271,10 +272,8 @@ router.delete('/:id', async (req, res) => {
       ]);
     } else {
       // Soft delete
-      await prisma.car.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
+      // Cascade: everything recorded under this car is hidden with it
+      await softDeleteCar(prisma, id);
     }
 
     res.json({
@@ -297,10 +296,7 @@ router.patch('/:id/restore', async (req, res) => {
     const entity = await prisma.car.findUnique({ where: { id } });
     if (!entity) return res.status(404).json({ success: false, error: 'Car not found' });
 
-    await prisma.car.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
+    await restoreCar(prisma, id);
 
     res.json({ success: true, message: 'Car restored' });
   } catch (error) {

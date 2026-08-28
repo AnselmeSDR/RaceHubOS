@@ -16,8 +16,13 @@ const prisma = createPrismaClient();
 
 beforeAll(async () => {
   // Clean database before tests
+  // Children first: several tables reference drivers, cars and tracks with
+  // onDelete: Restrict, so they must go before their parents.
+  await prisma.trackRecord.deleteMany();
+  await prisma.controllerConfig.deleteMany();
   await prisma.lap.deleteMany();
   await prisma.sessionDriver.deleteMany();
+  await prisma.championshipParticipant.deleteMany();
   await prisma.session.deleteMany();
   await prisma.championship.deleteMany();
   await prisma.driver.deleteMany();

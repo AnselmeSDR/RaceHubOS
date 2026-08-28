@@ -228,6 +228,7 @@ model ChampionshipParticipant {
   championshipId String
   driverId       String
   order          Int          @default(0)
+  deletedAt      DateTime?    // Unlinked from the championship; the driver stays readable
   createdAt      DateTime     @default(now())
 
   championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)

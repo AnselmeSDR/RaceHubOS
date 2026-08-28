@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { softDeleteTrack, restoreTrack } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
@@ -255,10 +256,8 @@ router.delete('/:id', async (req, res) => {
       });
     } else {
       // Soft delete
-      await prisma.track.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
+      // Cascade: everything recorded under this track is hidden with it
+      await softDeleteTrack(prisma, id);
     }
 
     res.json({
@@ -281,10 +280,7 @@ router.patch('/:id/restore', async (req, res) => {
     const entity = await prisma.track.findUnique({ where: { id } });
     if (!entity) return res.status(404).json({ success: false, error: 'Track not found' });
 
-    await prisma.track.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
+    await restoreTrack(prisma, id);
 
     res.json({ success: true, message: 'Track restored' });
   } catch (error) {

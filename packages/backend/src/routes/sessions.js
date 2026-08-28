@@ -236,6 +236,10 @@ router.patch('/:id/restore', async (req, res) => {
       where: { sessionId: id, deletedAt: entity.deletedAt },
       data: { deletedAt: null },
     });
+    await prisma().trackRecord.updateMany({
+      where: { sessionId: id, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
 
     res.json({ success: true, message: 'Session restored' });
   } catch (error) {
