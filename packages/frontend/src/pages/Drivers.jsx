@@ -243,6 +243,8 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
 
   return (
     <Card
+      data-testid="entity-card"
+      data-entity-id={driver.id}
       onClick={onClick}
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300"
       style={{

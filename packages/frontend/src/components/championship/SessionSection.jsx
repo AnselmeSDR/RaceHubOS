@@ -262,7 +262,7 @@ export default function SessionSection({
   const isAutoSession = autoMode && session.type !== 'practice'
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div data-testid="session-section" className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">

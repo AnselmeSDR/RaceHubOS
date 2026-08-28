@@ -36,6 +36,9 @@ npm-debug.log*
 **/prisma/.version
 
 packages/backend/prisma/test.db
+packages/backend/prisma/e2e.db
+packages/backend/prisma/e2e.db-shm
+packages/backend/prisma/e2e.db-wal
 packages/backend/prisma/test.db-shm
 packages/backend/prisma/test.db-wal
 packages/backend/prisma/db-old/

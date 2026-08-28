@@ -174,6 +174,8 @@ function TeamCard({ team, onClick, onEdit, onDelete }) {
 
   return (
     <Card
+      data-testid="entity-card"
+      data-entity-id={team.id}
       onClick={onClick}
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${teamColor}10 0%, ${teamColor}05 100%)` }}

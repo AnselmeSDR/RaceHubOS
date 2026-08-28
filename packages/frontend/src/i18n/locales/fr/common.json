@@ -65,5 +65,14 @@
     "description": "Affiche la barre latérale mobile.",
     "toggle": "Basculer la barre latérale"
   },
-  "deleteConfirmShort": "Confirmer ?"
+  "deleteConfirmShort": "Confirmer ?",
+  "deleteConfirm": {
+    "title": "Confirmer la suppression",
+    "titlePermanent": "Suppression définitive",
+    "message_one": "{{count}} élément sera supprimé.",
+    "message_other": "{{count}} éléments seront supprimés.",
+    "messagePermanent_one": "{{count}} élément sera supprimé définitivement. Cette action est irréversible.",
+    "messagePermanent_other": "{{count}} éléments seront supprimés définitivement. Cette action est irréversible."
+  },
+  "edit": "Modifier"
 }

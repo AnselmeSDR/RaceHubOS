@@ -239,6 +239,8 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
 
   return (
     <Card
+      data-testid="entity-card"
+      data-entity-id={car.id}
       onClick={onClick}
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
       style={{ background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)` }}

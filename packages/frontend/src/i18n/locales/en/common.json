@@ -65,5 +65,14 @@
     "description": "Displays the mobile sidebar.",
     "toggle": "Toggle sidebar"
   },
-  "deleteConfirmShort": "Confirm?"
+  "deleteConfirmShort": "Confirm?",
+  "deleteConfirm": {
+    "title": "Confirm deletion",
+    "titlePermanent": "Permanent deletion",
+    "message_one": "{{count}} item will be deleted.",
+    "message_other": "{{count}} items will be deleted.",
+    "messagePermanent_one": "{{count}} item will be permanently deleted. This action is irreversible.",
+    "messagePermanent_other": "{{count}} items will be permanently deleted. This action is irreversible."
+  },
+  "edit": "Edit"
 }

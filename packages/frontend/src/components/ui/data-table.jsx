@@ -343,6 +343,8 @@ export function DataTable({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
+                data-testid="list-row"
+                data-entity-id={row.original?.id}
                 data-state={row.getIsSelected() && 'selected'}
                 className={cn(
                   onRowClick && 'cursor-pointer',
