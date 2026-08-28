@@ -1,6 +1,8 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { softDeleteDriver, restoreDriver } from '../lib/softDelete.js';
 import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
+import { uniqueConstraintFields } from '../lib/prismaErrors.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
@@ -242,7 +244,7 @@ router.post('/', async (req, res) => {
 
     // Handle unique constraint violation (email or number)
     if (error.code === 'P2002') {
-      const field = error.meta?.target?.[0] || 'field';
+      const field = uniqueConstraintFields(error)[0] || 'field';
       return res.status(400).json({
         success: false,
         error: `${field === 'number' ? 'Number' : 'Email'} already exists`,
@@ -300,7 +302,7 @@ router.put('/:id', async (req, res) => {
 
     // Handle unique constraint violation (email or number)
     if (error.code === 'P2002') {
-      const field = error.meta?.target?.[0] || 'field';
+      const field = uniqueConstraintFields(error)[0] || 'field';
       return res.status(400).json({
         success: false,
         error: `${field === 'number' ? 'Number' : 'Email'} already exists`,
@@ -338,10 +340,8 @@ router.delete('/:id', async (req, res) => {
       });
     } else {
       // Soft delete
-      await prisma.driver.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
+      // Cascade: everything recorded under this driver is hidden with it
+      await softDeleteDriver(prisma, id);
     }
 
     res.json({
@@ -364,10 +364,7 @@ router.patch('/:id/restore', async (req, res) => {
     const entity = await prisma.driver.findUnique({ where: { id } });
     if (!entity) return res.status(404).json({ success: false, error: 'Driver not found' });
 
-    await prisma.driver.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
+    await restoreDriver(prisma, id);
 
     res.json({ success: true, message: 'Driver restored' });
   } catch (error) {

@@ -83,6 +83,7 @@ router.get('/:id', async (req, res) => {
       include: {
         track: true,
         participants: {
+          where: { deletedAt: null },
           include: { driver: true },
           orderBy: { order: 'asc' },
         },
@@ -236,7 +237,7 @@ router.post('/', async (req, res) => {
       where: { id: championship.id },
       include: {
         track: true,
-        participants: { include: { driver: true }, orderBy: { order: 'asc' } },
+        participants: { where: { deletedAt: null }, include: { driver: true }, orderBy: { order: 'asc' } },
         sessions: {
           where: { deletedAt: null },
           include: {
@@ -361,6 +362,11 @@ router.delete('/:id', async (req, res) => {
         where: { championshipId: id, deletedAt: null },
         data: { deletedAt: now },
       });
+      // Participants are hidden, not erased: the drivers stay traceable
+      await prisma.championshipParticipant.updateMany({
+        where: { championshipId: id, deletedAt: null },
+        data: { deletedAt: now },
+      });
 
       await prisma.championship.update({
         where: { id },
@@ -395,6 +401,10 @@ router.patch('/:id/restore', async (req, res) => {
     });
 
     await prisma.session.updateMany({
+      where: { championshipId: id, deletedAt: entity.deletedAt },
+      data: { deletedAt: null },
+    });
+    await prisma.championshipParticipant.updateMany({
       where: { championshipId: id, deletedAt: entity.deletedAt },
       data: { deletedAt: null },
     });
@@ -613,7 +623,7 @@ router.put('/:id/participants', async (req, res) => {
       where: { id, deletedAt: null },
       include: {
         sessions: { where: { deletedAt: null } },
-        participants: { orderBy: { order: 'asc' } },
+        participants: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
       },
     });
 
@@ -655,15 +665,22 @@ router.put('/:id/participants', async (req, res) => {
       }
     }
 
-    // Replace participants
-    await prisma.championshipParticipant.deleteMany({ where: { championshipId: id } });
+    // Replace participants without losing the trace of those removed: the
+    // dropped ones are hidden, the kept ones revived — the unique constraint on
+    // (championshipId, driverId) means a plain create would clash with a hidden row.
+    const now = new Date();
+    const keptDriverIds = participants.map((p) => p.driverId);
+
+    await prisma.championshipParticipant.updateMany({
+      where: { championshipId: id, deletedAt: null, driverId: { notIn: keptDriverIds } },
+      data: { deletedAt: now },
+    });
+
     for (let i = 0; i < participants.length; i++) {
-      await prisma.championshipParticipant.create({
-        data: {
-          championshipId: id,
-          driverId: participants[i].driverId,
-          order: i,
-        },
+      await prisma.championshipParticipant.upsert({
+        where: { championshipId_driverId: { championshipId: id, driverId: participants[i].driverId } },
+        create: { championshipId: id, driverId: participants[i].driverId, order: i },
+        update: { order: i, deletedAt: null },
       });
     }
 
@@ -676,7 +693,7 @@ router.put('/:id/participants', async (req, res) => {
     const result = await prisma.championship.findUnique({
       where: { id },
       include: {
-        participants: { include: { driver: true }, orderBy: { order: 'asc' } },
+        participants: { where: { deletedAt: null }, include: { driver: true }, orderBy: { order: 'asc' } },
         sessions: {
           where: { deletedAt: null },
           include: { drivers: { where: { deletedAt: null }, include: { driver: true, car: true } } },
