@@ -168,7 +168,9 @@
     "fields": {
       "minUnit": "min",
       "lapsUnit": "tours"
-    }
+    },
+    "deletedTrack": "{{name}} (supprimé)",
+    "finishedLocked": "Championnat terminé : la configuration est verrouillée. Rouvrez-le pour la modifier."
   },
   "sessionConfigModal": {
     "title": "Configuration Session",

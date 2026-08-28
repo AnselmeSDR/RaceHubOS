@@ -32,7 +32,7 @@ logs/
 npm-debug.log*
 
 # Prisma
-prisma/migrations/
+# Les migrations sont versionnées : elles décrivent le schéma livré sur le PC de course
 **/prisma/.version
 
 packages/backend/prisma/test.db
@@ -42,6 +42,10 @@ packages/backend/prisma/db-old/
 packages/backend/prisma/dev.db.emptied-by-tests-*
 packages/backend/prisma/dev.db-shm
 packages/backend/prisma/dev.db-wal
+
+# Artefacts de test (captures et traces Playwright)
+packages/frontend/test-results/
+packages/frontend/playwright-report/
 
 # Uploads (generated at runtime)
 packages/backend/public/uploads/
