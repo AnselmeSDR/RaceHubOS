@@ -1,10 +1,9 @@
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { getDatabaseUrl } from '../lib/database-url.js';
+import { getDatabasePath } from '../lib/database-url.js';
 
 /** Remove the throwaway test database created by globalSetup. */
 export default function globalTeardown() {
-  const dbPath = fileURLToPath(getDatabaseUrl());
+  const dbPath = getDatabasePath();
   if (!dbPath.endsWith('test.db')) return;
 
   for (const suffix of ['', '-wal', '-shm']) {

@@ -902,8 +902,12 @@ export class SessionService extends EventEmitter {
     const device = this.syncService?.getDevice();
     if (!device?.setSpeed) return;
 
-    const toSpeedBrake = (v) => Math.max(1, Math.min(10, Math.round((v ?? 100) * 10 / 100)));
-    const toFuel = (v) => Math.max(1, Math.min(15, Math.round((v ?? 100) * 15 / 100)));
+    // The CU has 10 levels for speed, brake and fuel alike (manual 30352,
+    // "Setting of the cars' basic speed": 1-10). The protocol carries a nibble,
+    // which is the field size, not the scale.
+    const toLevel = (v) => Math.max(1, Math.min(10, Math.round((v ?? 100) / 10)));
+    const toSpeedBrake = toLevel;
+    const toFuel = toLevel;
 
     const driverByController = new Map(this.sessionDrivers.map(d => [d.controller, d]));
 

@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
-import { getDatabaseUrl } from './database-url.js';
+import { getDatabasePath } from './database-url.js';
 
 const BACKUP_DIR_NAME = 'db-old';
 const DEFAULT_KEEP = 10;
@@ -22,7 +21,7 @@ function timestamp(date = new Date()) {
  * @returns {string|null} path of the backup, or null if there is no database yet
  */
 export function backupDatabase({ reason = 'backup', keep = DEFAULT_KEEP } = {}) {
-  const dbPath = fileURLToPath(getDatabaseUrl());
+  const dbPath = getDatabasePath();
   if (!fs.existsSync(dbPath)) return null;
 
   const backupDir = path.join(path.dirname(dbPath), BACKUP_DIR_NAME);
