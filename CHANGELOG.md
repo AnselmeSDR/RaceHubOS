@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.1] - 2026-08-29
+
+### Fixed
+- **La mise à jour ne démarrait plus sur le PC de course (Windows)** : la migration Prisma 7 échouait avec `os error 161 — chemin d'accès non valide`
+  - `pathToFileURL()` produisait `file:///C:/Users/…`, une URL correcte mais que le moteur de schéma Prisma rejette sous Windows ; il attend la forme `file:C:\Users\…`
+  - Le chemin natif (`getDatabasePath()`) est désormais distinct de l'URL passée à Prisma (`getDatabaseUrl()`) : `fileURLToPath()` transformait `file:C:\…` en `/C:/Users/…`, ce qui aurait cassé les sauvegardes
+  - Le défaut ne pouvait pas se voir en développement : sous macOS et Linux, `file:///Users/…` fonctionne
+  - Les deux sens de la conversion sont couverts par des tests
+- **Réglages voitures exprimés en niveaux** (RUSH-05) : la Control Unit ne connaît que 10 niveaux par réglage (manuel 30352), transmis dans un champ de 4 bits — aucune valeur intermédiaire n'existe
+  - Le carburant était converti sur 15 niveaux : 100 % envoyait 15 et 70 % envoyait 11, au lieu de 10 et 7
+  - La jauge de carburant des cartes était calculée sur 150 : un réservoir plein s'affichait rempli aux deux tiers
+  - Les curseurs offraient 101 positions pour 10 valeurs réelles — régler 70 % ou 74 % produisait le même effet ; ils avancent maintenant par crans et affichent le niveau (`7/10`), celui lu sur les LEDs de la CU
+  - Vitesse en vert, freinage en rouge, réservoir en bleu, avec la barre remplie jusqu'au niveau
+  - Aucune migration : les valeurs enregistrées sont déjà des multiples de 10
+
 ## [1.18.0] - 2026-08-28
 
 ### Changed

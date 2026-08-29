@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '../components/ui/DeleteButton'
+import { formatLevel } from '../utils/carSettings'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -106,9 +107,9 @@ export default function CarProfile() {
               {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-3">
-              <span className="flex items-center gap-1"><Zap className="size-3 text-green-500" />{car.maxSpeed}%</span>
-              <span className="flex items-center gap-1"><Flame className="size-3 text-red-500" />{car.brakeForce}%</span>
-              <span className="flex items-center gap-1"><FlaskConical className="size-3 text-blue-500" />{car.fuelCapacity}</span>
+              <span className="flex items-center gap-1"><Zap className="size-3 text-green-500" />{formatLevel(car.maxSpeed)}</span>
+              <span className="flex items-center gap-1"><Flame className="size-3 text-red-500" />{formatLevel(car.brakeForce)}</span>
+              <span className="flex items-center gap-1"><FlaskConical className="size-3 text-blue-500" />{formatLevel(car.fuelCapacity)}</span>
               <span>{car._count?.sessions || 0} {t('glossary:session', { count: car._count?.sessions || 0 })}</span>
               {car.bestLap && (
                 <span className="flex items-center gap-1">{t('common:record')} <LapTime time={car.bestLap} size="sm" /></span>

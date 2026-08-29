@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
-import { getDatabaseUrl } from '../lib/database-url.js';
+import { getDatabasePath } from '../lib/database-url.js';
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -13,7 +13,7 @@ const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
  * drift from schema.prisma, and no existing database is ever touched.
  */
 export default function globalSetup() {
-  const dbPath = fileURLToPath(getDatabaseUrl());
+  const dbPath = getDatabasePath();
   if (!dbPath.endsWith('test.db')) {
     throw new Error(`Refusing to build a test database at ${dbPath} — expected a path ending in test.db`);
   }

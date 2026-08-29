@@ -8,17 +8,32 @@ import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
+import { formatLevel, levelPercent } from '../utils/carSettings'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-function RangeField({ label, value, onChange, min = 0, max = 100, color }) {
+/**
+ * The Control Unit only knows 10 levels per setting (manual 30352), sent as a
+ * 4-bit value. Stepping by 10 keeps the familiar percentage while making every
+ * position match one real level: 70 % is level 7, and nothing exists between.
+ */
+function RangeField({ label, value, onChange, min = 10, max = 100, step = 10, color = 'var(--color-primary)' }) {
+  const level = Math.round(value / 10)
+  // The filled part follows the thumb, so the track reads as a gauge
+  const filled = ((value - min) / (max - min)) * 100
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       <div className="flex items-center gap-3">
-        <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
-          className="flex-1 h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor: color }} />
-        <span className="text-sm font-medium w-10 text-right">{value}%</span>
+        <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
+          className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+          style={{
+            accentColor: color,
+            background: `linear-gradient(to right, ${color} 0%, ${color} ${filled}%, var(--color-muted) ${filled}%, var(--color-muted) 100%)`,
+          }} />
+        <span className="text-sm font-medium w-12 text-right tabular-nums">
+          {level}<span className="text-muted-foreground">/10</span>
+        </span>
       </div>
     </div>
   )
@@ -112,9 +127,9 @@ export default function Cars() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted rounded-full h-2 w-20">
-            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${row.original.maxSpeed}%` }} />
+            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${levelPercent(row.original.maxSpeed)}%` }} />
           </div>
-          <span className="text-muted-foreground w-10 text-right">{row.original.maxSpeed}%</span>
+          <span className="text-muted-foreground w-12 text-right tabular-nums">{formatLevel(row.original.maxSpeed)}</span>
         </div>
       ),
     },
@@ -125,9 +140,9 @@ export default function Cars() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted rounded-full h-2 w-20">
-            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${row.original.brakeForce}%` }} />
+            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${levelPercent(row.original.brakeForce)}%` }} />
           </div>
-          <span className="text-muted-foreground w-10 text-right">{row.original.brakeForce}%</span>
+          <span className="text-muted-foreground w-12 text-right tabular-nums">{formatLevel(row.original.brakeForce)}</span>
         </div>
       ),
     },
@@ -135,7 +150,7 @@ export default function Cars() {
       id: 'fuelCapacity',
       accessorKey: 'fuelCapacity',
       header: t('fields.fuel'),
-      cell: ({ row }) => <span className="text-muted-foreground">{row.original.fuelCapacity}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground tabular-nums">{formatLevel(row.original.fuelCapacity)}</span>,
     },
     {
       id: 'bestLap',
@@ -285,7 +300,7 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
         {[
           { icon: <Zap className="w-4 h-4" />, label: t('fields.speed'), value: car.maxSpeed, color: '#22C55E' },
           { icon: <Flame className="w-4 h-4" />, label: t('fields.braking'), value: car.brakeForce, color: '#EF4444' },
-          { icon: <FlaskConical className="w-4 h-4" />, label: t('fields.tank'), value: (car.fuelCapacity / 150) * 100, color: '#3B82F6', display: car.fuelCapacity },
+          { icon: <FlaskConical className="w-4 h-4" />, label: t('fields.tank'), value: car.fuelCapacity, color: '#3B82F6', display: car.fuelCapacity },
         ].map((spec) => (
           <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
@@ -294,9 +309,9 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-20 bg-muted rounded-full h-2">
-                <div className="h-2 rounded-full" style={{ width: `${Math.min(spec.value, 100)}%`, backgroundColor: spec.color }} />
+                <div className="h-2 rounded-full" style={{ width: `${levelPercent(spec.value)}%`, backgroundColor: spec.color }} />
               </div>
-              <span className="text-sm font-black w-10 text-right" style={{ color: spec.color }}>{spec.display ?? spec.value}%</span>
+              <span className="text-sm font-black w-12 text-right tabular-nums" style={{ color: spec.color }}>{formatLevel(spec.display ?? spec.value)}</span>
             </div>
           </div>
         ))}
@@ -370,9 +385,9 @@ export function CarFormModal({ car, onClose }) {
       <TextField label={t('fields.year')} type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
       <PhotoUploadField value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="cars" />
       <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <RangeField label={t('fields.maxSpeed')} value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} />
-      <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} />
-      <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} />
+      <RangeField label={t('fields.maxSpeed')} value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} color="#22C55E" />
+      <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
+      <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
     </FormModal>
   )
 }
