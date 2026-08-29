@@ -311,7 +311,7 @@
 - Les migrations étaient bien versionnées, mais `.gitignore` contenait `prisma/migrations/`, ce qui empêchait d'en **ajouter de nouvelles** : l'historique s'arrêtait au 5 avril 2026, soit 11 opérations de retard sur le schéma réel
 - La ligne du `.gitignore` a été retirée et la migration `20260828_catchup_schema_actuel` comble l'écart (l'historique décrit désormais le schéma exact)
 - Le poste de développement a été baseliné : 5 migrations enregistrées, `migrate status` → « up to date », `migrate deploy` → no-op
-- **La base du PC de course n'est pas baselinée** : son `_prisma_migrations` est inconnu, probablement limité à `20260117150753_init` comme l'était celle du poste de dev
+- **La base du PC de course n'est toujours pas baselinée** : son `_prisma_migrations` reste à vérifier. La migration du 29/08 y a été appliquée par `db push`, pas par `migrate deploy`
 **⚠️ Ordre impératif**:
 1. **D'abord** baseliner la base de Romain — sinon `migrate deploy` tentera de rejouer `add_preferences` et les suivantes sur des tables existantes. L'échec bloquerait le démarrage, puisque `startup.js` s'interrompt désormais en cas d'erreur de migration
 2. **Ensuite seulement** remplacer `db push` par `migrate deploy` dans `scripts/startup.js`, `src/routes/update.js`, `RaceHubOS-install-win.bat` et `RaceHubOS-install-mac.command`
@@ -343,7 +343,8 @@ Tout se lance depuis `C:\Users\Romain\RaceHubOS\packages\backend`. En PowerShell
 
 En cas de problème à n'importe quelle étape : restaurer la sauvegarde de l'étape 3 depuis `prisma/db-old/` — le baseline ne touche qu'à la table `_prisma_migrations`, jamais aux données.
 
-**Rattrapage des cascades de suppression** (à faire une seule fois, sur chaque base existante)
+**Rattrapage des cascades de suppression** — ✅ **fait le 29/08/2026 sur les deux machines**
+(8 484 lignes masquées de part et d'autre ; tours actifs passés de 12 977 à 4 788, aucune donnée effacée, intégrité vérifiée)
 
 Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé avant n'a marqué que l'objet lui-même. Sur le poste de développement, cela représentait **8 146 tours toujours visibles dans les statistiques** alors que leur circuit était supprimé depuis juillet. La base de Romain a le même historique, donc le même écart.
 
@@ -359,6 +360,21 @@ Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé av
 **À prévenir Romain** : les statistiques vont perdre d'un coup une grande partie de leurs temps — sur le poste de dev, 12 036 tours actifs sont tombés à 3 847. Rien n'est effacé : chaque ligne est marquée avec l'horodatage de suppression de son parent, donc restaurer un circuit ramène exactement ses tours. Si le résultat ne convient pas, la sauvegarde de `prisma/db-old/` permet de revenir en arrière.
 **Ensuite, en développement**: tout changement de schéma passe par `prisma migrate dev` (fichier de migration à commiter), plus jamais par `db push`
 **Lié à**: TASK-30 (système de mise à jour), TASK-32 (`ControllerConfig`)
+
+### TASK-34: 🐛 L'installeur du bureau n'est jamais mis à jour
+**Domaine**: Déploiement
+**Priorité**: Haute — a déjà bloqué le PC de course
+**Description**: Le lanceur est régénéré depuis son template à chaque mise à jour réussie (`update.js`), mais **l'installeur posé sur le bureau ne l'est jamais**. Sur le PC de course, il datait du 15/04/2026 alors que l'application était en 1.18.0.
+**Ce que ça a provoqué (29/08/2026)**:
+- Le dossier `RaceHubOS-v1.18.0` a été créé avec un `schema.prisma` daté du 15/04, antérieur à la migration Prisma 7 : il contenait encore `url = env("DATABASE_URL")`, que Prisma 7 refuse (`P1012`)
+- `prisma db push` échouait, `.version` restait à 1.12.0 et `startup.js` interrompait le démarrage — le garde-fou a bien joué son rôle, la base n'a pas été touchée et six sauvegardes ont été créées
+- Trois fichiers versionnés étaient modifiés localement : `schema.prisma`, `seed.js`, `package-lock.json`. Un `git checkout --` les a restaurés
+**Action**:
+- Faire régénérer l'installeur du bureau par `update.js`, comme le lanceur : le copier depuis le dépôt vers le bureau après une mise à jour réussie
+- Vérifier à l'installation que l'installeur utilisé correspond à la version installée, et avertir sinon
+- Envisager que `startup.js` détecte un `schema.prisma` modifié localement et le signale explicitement : le message d'erreur Prisma (`P1012`) ne dit pas que le fichier a été écrasé
+**Corrigé manuellement le 29/08/2026** : installeur du bureau remplacé par celui du dépôt, `RaceHubOS.lnk` repointé de v1.9.9 vers v1.18.0
+**Lié à**: TASK-30 (système de mise à jour), TASK-33 (migrations)
 
 ---
 
