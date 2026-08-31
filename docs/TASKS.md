@@ -49,24 +49,11 @@
 **Tant que ce n'est pas tranché**: la règle n'est pas automatisée dans `npm run check`, elle est notée comme écart connu dans `docs/CONVENTIONS.md`.
 **Lié à**: TASK-04
 
-### TASK-04: Centraliser tous les autres champs "stringly-typed" en enums
-**Domaine**: Frontend + Backend
-**Description**: Même problème que TASK-03 : plusieurs champs de la base sont des `String` libres avec des valeurs en dur disséminées dans le code. Audit + migration vers une source unique (enum Prisma + constants partagées front).
-**Candidats identifiés** (à l'audit de la base actuelle) :
-- `Session.status` → `draft | ready | active | finishing | finished` (utilisé partout : SessionContext, SessionSection, SessionConfigModal, etc.)
-- ~~`Session.type`~~ → **fait en v1.20.0** (TASK-03) : le modèle à suivre pour les autres — paquet `@racehubos/shared`, enum Prisma, tests de cohérence avec les traductions
-- `Session.fuelMode` → `OFF | ...` (à inventorier dans SessionForm)
-- `Championship.status` → `planned | ...` (valeurs à inventorier)
-- `Championship.mode` → `manual | auto`
-- `Lap.phase` → vérifier les valeurs utilisées (lié au type de session ?)
-**Action**:
-- Inventorier les valeurs réellement utilisées pour chaque champ (grep `=== 'xxx'`, valeurs par défaut Prisma)
-- Créer les enums Prisma correspondants (attention : migration SQLite — les enums Prisma sont stockés en string mais validés)
-- Exposer un module partagé (ex. `packages/shared/enums.ts`) consommé par front + back
-- Remplacer les comparaisons hardcodées par les constants
-- Vérifier les libellés i18n associés
-**Bénéfice**: ajouter une valeur (ex. nouveau status, nouveau mode championnat) ne nécessitera plus de chasser les `=== 'xxx'` dans tout le code.
-
+### TASK-04: ✅ Centraliser les champs "stringly-typed"
+**Statut**: Terminée le 31/08/2026 (v1.22.0)
+**Fait**: `Session.type` (v1.20.0), puis `Session.status`, `Championship.status`, `Championship.mode`, `Session.fuelMode` (v1.22.0) — 106 endroits dans 19 fichiers. `Lap.phase` est couvert par `SessionType`.
+**Règles retenues**: valeurs dans `@racehubos/shared`, stockées en texte (jamais d'`enum` en base), listées en commentaire dans `schema.prisma`, validées par le code. Vérifié par `npm run check` et `sessionTypes.test.js`.
+**Non partagé**: `Device.type` (`simulator | cu`) ne traverse pas l'API.
 ### TASK-05: Sélection d'un circuit principal dans les paramètres
 **Domaine**: Frontend + Backend
 **Description**: Permettre de choisir un circuit "principal" pour que les stats des pilotes et la page principale (dashboard) soient cohérentes.

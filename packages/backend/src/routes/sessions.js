@@ -1,7 +1,7 @@
 import express from 'express';
 import SessionService from '../services/SessionService.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
-import { SessionType } from '@racehubos/shared';
+import { SessionStatus, SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 let sessionService;
@@ -388,7 +388,7 @@ router.post('/:id/start', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    if (session.status !== 'draft') {
+    if (session.status !== SessionStatus.DRAFT) {
       return res.status(400).json({
         success: false,
         error: `Session must be 'draft' to start, current: ${session.status}`
@@ -421,7 +421,7 @@ router.post('/:id/pause', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    if (session.status !== 'active') {
+    if (session.status !== SessionStatus.ACTIVE) {
       return res.status(400).json({
         success: false,
         error: `Session must be 'active' to pause, current: ${session.status}`
@@ -454,7 +454,7 @@ router.post('/:id/resume', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    if (session.status !== 'paused') {
+    if (session.status !== SessionStatus.PAUSED) {
       return res.status(400).json({
         success: false,
         error: `Session must be 'paused' to resume, current: ${session.status}`

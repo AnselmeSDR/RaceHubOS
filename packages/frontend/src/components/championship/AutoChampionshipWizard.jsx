@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '../crud/FormModal'
 import ErrorMessage from '../ErrorMessage'
+import { ChampionshipMode } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -127,7 +128,7 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
         name: name.trim(),
         season: new Date().getFullYear().toString(),
         trackId,
-        mode: 'auto',
+        mode: ChampionshipMode.AUTO,
         driversPerQualif,
         driversPerRace,
         qualifMaxDuration: useQualifTime && qualifDuration > 0 ? qualifDuration * 60000 : null,

@@ -17,7 +17,7 @@ import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import StartingGrid from '../components/race/StartingGrid'
 import StandingsTabs from '../components/championship/StandingsTabs'
-import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
+import { STANDARD_SESSION_TYPES, SessionStatus, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -149,7 +149,7 @@ export default function FreeSessionPage() {
         trackId: selectedTrackId,
         type: selectedType,
         name: t(`glossary:sessionTypeFull.${selectedType}`),
-        status: 'draft',
+        status: SessionStatus.DRAFT,
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
         gracePeriod: session?.gracePeriod || 30000,
@@ -214,7 +214,7 @@ export default function FreeSessionPage() {
           const result = await res.json()
           if (result.success && result.data?.length > 0) {
             const otherSession = [...result.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-            if (otherSession.status === 'draft') {
+            if (otherSession.status === SessionStatus.DRAFT) {
               await fetch(`${API_URL}/api/sessions/${otherSession.id}/drivers`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -328,7 +328,7 @@ export default function FreeSessionPage() {
                 />
 
                 {session && (
-                  maxLapsCompleted === 0 && session.status !== 'finished' ? (
+                  maxLapsCompleted === 0 && session.status !== SessionStatus.FINISHED ? (
                     <StartingGrid entries={entries} />
                   ) : (
                     <SessionLeaderboard

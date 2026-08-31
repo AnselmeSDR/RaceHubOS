@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SessionType } from '@racehubos/shared'
+import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -50,9 +50,9 @@ export default function ChampionshipConfigModal({
   const [showNewSession, setShowNewSession] = useState(null)
   const [newSessionForm, setNewSessionForm] = useState({ name: '', duration: 5, maxLaps: 10, useTime: true, useLaps: false })
 
-  const isAuto = championship?.mode === 'auto'
+  const isAuto = championship?.mode === ChampionshipMode.AUTO
   // A finished championship is a record: its configuration is read-only
-  const isFinished = championship?.status === 'finished'
+  const isFinished = championship?.status === ChampionshipStatus.FINISHED
 
   // The track list only carries active tracks; a championship run on a since-deleted
   // track would otherwise show an empty field instead of its actual value.
@@ -65,7 +65,7 @@ export default function ChampionshipConfigModal({
   const [addingDriver, setAddingDriver] = useState('')
 
   // For auto mode: check what's editable
-  const hasStartedQualif = sessions.some(s => s.type === SessionType.QUALIF && s.status !== 'draft')
+  const hasStartedQualif = sessions.some(s => s.type === SessionType.QUALIF && s.status !== SessionStatus.DRAFT)
   const participantIds = useMemo(() => new Set((championship?.participants || []).map(p => p.driverId)), [championship?.participants])
   const availableDrivers = useMemo(() => allDrivers.filter(d => !participantIds.has(d.id)), [allDrivers, participantIds])
 
@@ -337,7 +337,7 @@ export default function ChampionshipConfigModal({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        {session.status === 'draft' && (
+                        {session.status === SessionStatus.DRAFT && (
                           <div className="flex flex-col">
                             <button onClick={() => handleMoveSession(session.id, 'up')} disabled={isFinished || index === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20">
                               <ChevronUp className="size-3.5" />
@@ -356,10 +356,10 @@ export default function ChampionshipConfigModal({
                           {session.maxDuration && session.maxLaps ? ' / ' : ''}
                           {session.maxLaps ? `${session.maxLaps}t` : ''}
                         </span>
-                        {session.status !== 'draft' && (
+                        {session.status !== SessionStatus.DRAFT && (
                           <Badge variant="outline" className="text-[10px]">{t(`configModal.sessionStatus.${session.status}`, session.status)}</Badge>
                         )}
-                        {session.status === 'draft' && (
+                        {session.status === SessionStatus.DRAFT && (
                           <>
                             <button onClick={() => startEditing(session)} disabled={isFinished} className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted disabled:opacity-20">
                               <Pencil className="size-3.5" />
@@ -400,12 +400,12 @@ export default function ChampionshipConfigModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
-          {championship?.status === 'finished' ? (
+          {championship?.status === ChampionshipStatus.FINISHED ? (
             <Button variant="outline" size="sm" onClick={async () => {
               try {
                 const res = await fetch(`${API_URL}/api/championships/${championship.id}`, {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ status: 'planned' }),
+                  body: JSON.stringify({ status: ChampionshipStatus.PLANNED }),
                 })
                 if (res.ok) { const d = await res.json(); onSave(d.data); onClose() }
               } catch (err) { setError(err.message) }

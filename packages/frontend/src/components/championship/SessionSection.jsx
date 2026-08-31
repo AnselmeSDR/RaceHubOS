@@ -17,7 +17,7 @@ const SESSION_TYPE_ICONS = {
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 export default function SessionSection({
   session,
@@ -186,12 +186,12 @@ export default function SessionSection({
   const timeProgress = useMemo(() => {
     if (!session) return null
     let currentElapsed = elapsedTime
-    if (session.status === 'finished' && session.startedAt && session.finishedAt)
+    if (session.status === SessionStatus.FINISHED && session.startedAt && session.finishedAt)
       currentElapsed = (new Date(session.finishedAt) - new Date(session.startedAt)) / 1000
     const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
     if (!session.maxDuration || session.maxDuration <= 0) {
-      if ((isRunning && currentElapsed >= 0) || (session.status === 'finished' && currentElapsed > 0))
-        return { type: 'time', current: currentElapsed, pauseTime: totalPauseDuration, total: null, remaining: null, isComplete: session.status === 'finished' }
+      if ((isRunning && currentElapsed >= 0) || (session.status === SessionStatus.FINISHED && currentElapsed > 0))
+        return { type: 'time', current: currentElapsed, pauseTime: totalPauseDuration, total: null, remaining: null, isComplete: session.status === SessionStatus.FINISHED }
       return null
     }
     const totalSeconds = session.maxDuration / 1000
@@ -201,19 +201,19 @@ export default function SessionSection({
   const lapsProgress = useMemo(() => {
     if (!session) return null
     let currentLaps = maxLapsCompleted
-    if (session.status === 'finished' && session.drivers?.length > 0)
+    if (session.status === SessionStatus.FINISHED && session.drivers?.length > 0)
       currentLaps = Math.max(...session.drivers.map(d => d.totalLaps || 0))
     const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
     if (!session.maxLaps || session.maxLaps <= 0) {
-      if ((isRunning && currentLaps >= 0) || (session.status === 'finished' && currentLaps > 0))
-        return { type: 'laps', percentage: session.status === 'finished' ? 100 : 0, current: currentLaps, total: null, remaining: null, isComplete: session.status === 'finished' }
+      if ((isRunning && currentLaps >= 0) || (session.status === SessionStatus.FINISHED && currentLaps > 0))
+        return { type: 'laps', percentage: session.status === SessionStatus.FINISHED ? 100 : 0, current: currentLaps, total: null, remaining: null, isComplete: session.status === SessionStatus.FINISHED }
       return null
     }
     const percentage = Math.min((currentLaps / session.maxLaps) * 100, 100)
     return { type: 'laps', percentage, current: currentLaps, total: session.maxLaps, remaining: Math.max(session.maxLaps - currentLaps, 0), isComplete: currentLaps >= session.maxLaps }
   }, [session, maxLapsCompleted])
 
-  const hasProgress = session?.status !== 'finished' && (timeProgress || lapsProgress || (session?.status === 'finishing' && gracePeriodRemaining !== null))
+  const hasProgress = session?.status !== SessionStatus.FINISHED && (timeProgress || lapsProgress || (session?.status === SessionStatus.FINISHING && gracePeriodRemaining !== null))
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60)
@@ -247,11 +247,11 @@ export default function SessionSection({
 
   const TypeIcon = SESSION_TYPE_ICONS[session.type] || Flag
   const statusConfig = getStatusConfig(session.status)
-  const isActive = session.status === 'active'
-  const isPaused = session.status === 'paused'
-  const isFinishing = session.status === 'finishing'
-  const isFinished = session.status === 'finished'
-  const canStart = session.status === 'draft'
+  const isActive = session.status === SessionStatus.ACTIVE
+  const isPaused = session.status === SessionStatus.PAUSED
+  const isFinishing = session.status === SessionStatus.FINISHING
+  const isFinished = session.status === SessionStatus.FINISHED
+  const canStart = session.status === SessionStatus.DRAFT
   const isLights = isActive && cuStatus?.start >= 1 && cuStatus?.start <= 5
   const isRacing = isActive && cuStatus?.start === 0
   const isCuStopped = isActive && cuStatus?.start >= 8
@@ -259,7 +259,7 @@ export default function SessionSection({
   const canResumeFromPause = isPaused && socketConnected
   const canResumeCu = isCuStopped && socketConnected
   const canStop = (isRacing || isPaused) && socketConnected
-  const canEdit = session.status === 'draft'
+  const canEdit = session.status === SessionStatus.DRAFT
   const isAutoSession = autoMode && session.type !== SessionType.PRACTICE
 
   return (

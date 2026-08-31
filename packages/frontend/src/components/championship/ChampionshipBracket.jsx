@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Clock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { STATUS_COLORS } from '../../lib/colors'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -34,7 +34,7 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
       <div className="flex items-center justify-between mb-2">
         <span className="font-semibold text-sm">{label}</span>
         <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
-          <StatusIcon className={`w-3 h-3 ${status === 'active' ? 'animate-spin' : ''}`} />
+          <StatusIcon className={`w-3 h-3 ${status === SessionStatus.ACTIVE ? 'animate-spin' : ''}`} />
           {t(`bracket.statusLabels.${status}`, status)}
         </span>
       </div>
@@ -147,7 +147,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
                 status={g.status}
                 drivers={g.drivers}
                 type={SessionType.QUALIF}
-                showTimes={g.status === 'finished'}
+                showTimes={g.status === SessionStatus.FINISHED}
               />
             </button>
           ))}
@@ -198,7 +198,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
                 status={g.status}
                 drivers={g.drivers}
                 type={SessionType.RACE}
-                showTimes={g.status === 'finished'}
+                showTimes={g.status === SessionStatus.FINISHED}
               />
             </button>
           ))}

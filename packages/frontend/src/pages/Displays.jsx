@@ -34,7 +34,7 @@ import ConfigStatus from '../components/config/ConfigStatus'
 // UI components
 import Modal, { ModalFooter, ModalButton } from '../components/ui/Modal'
 import ErrorMessage from '../components/ErrorMessage'
-import { SessionType, sessionTypeFullKey } from '@racehubos/shared'
+import { SessionStatus, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -681,7 +681,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           title={t('championship.statusBadges.title')}
           description={t('championship.statusBadges.description')}
           componentName="SessionStatus"
-          code="status: 'draft' | 'active' | 'finishing' | 'finished'"
+          code="status: SessionStatus.DRAFT | 'active' | 'finishing' | 'finished'"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex flex-wrap gap-3">
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">

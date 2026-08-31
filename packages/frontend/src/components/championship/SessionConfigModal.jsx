@@ -10,7 +10,7 @@ const SESSION_TYPE_ICONS = {
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
-import { SessionType, sessionTypeFullKey } from '@racehubos/shared'
+import { SessionStatus, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 /**
  * SessionConfigModal - Modal to configure a session
@@ -59,9 +59,9 @@ export default function SessionConfigModal({
 
   const TypeIcon = SESSION_TYPE_ICONS[session?.type] || Flag
   const isPractice = session?.type === SessionType.PRACTICE
-  const isActive = session?.status === 'active'
-  const isFinished = session?.status === 'finished'
-  const canEdit = session?.status === 'draft'
+  const isActive = session?.status === SessionStatus.ACTIVE
+  const isFinished = session?.status === SessionStatus.FINISHED
+  const canEdit = session?.status === SessionStatus.DRAFT
   const canDelete = canEdit || isFinished
   const canReset = isActive || isFinished
 
@@ -374,7 +374,7 @@ export default function SessionConfigModal({
                   type="radio"
                   name="status"
                   value="draft"
-                  checked={status === 'draft'}
+                  checked={status === SessionStatus.DRAFT}
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
                 />

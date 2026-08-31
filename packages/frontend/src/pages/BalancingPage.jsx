@@ -16,7 +16,7 @@ import {
 import SessionSection from '../components/championship/SessionSection'
 import BalancingChart from '../components/balancing/BalancingChart'
 import BalancingStandings from '../components/balancing/BalancingStandings'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -151,7 +151,7 @@ export default function BalancingPage() {
         trackId: selectedTrackId,
         type: SessionType.BALANCING,
         name: t('session.defaultName'),
-        status: 'draft',
+        status: SessionStatus.DRAFT,
         maxDuration: session?.maxDuration || null,
         maxLaps: session?.maxLaps || null,
         gracePeriod: session?.gracePeriod || 30000,
