@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { io } from 'socket.io-client'
 import { useApp } from './AppContext'
 import { useVoice } from './VoiceContext'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -109,7 +109,7 @@ export function SessionProvider({ children }) {
       setSession(prev => {
         if (prev?.id !== data.sessionId) return prev
         const drivers = data.leaderboard?.length > 0 ? data.leaderboard : prev.drivers
-        return { ...prev, status: 'finished', drivers }
+        return { ...prev, status: SessionStatus.FINISHED, drivers }
       })
       setFinishingSession(null)
       // Keep final leaderboard
@@ -270,7 +270,7 @@ export function SessionProvider({ children }) {
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, status: 'draft' })
+        body: JSON.stringify({ trackId, type, status: SessionStatus.DRAFT })
       })
       const createData = await createRes.json()
 
@@ -500,9 +500,9 @@ export function SessionProvider({ children }) {
 
   // ==================== Helpers ====================
 
-  const isActive = session?.status === 'active'
-  const isFinishing = session?.status === 'finishing'
-  const isFinished = session?.status === 'finished'
+  const isActive = session?.status === SessionStatus.ACTIVE
+  const isFinishing = session?.status === SessionStatus.FINISHING
+  const isFinished = session?.status === SessionStatus.FINISHED
 
   // Notify AppContext of session active state
   useEffect(() => {

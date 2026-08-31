@@ -1,5 +1,5 @@
 import { createPrismaClient } from '../lib/prisma.js';
-import { SessionType } from '@racehubos/shared';
+import { ChampionshipMode, SessionStatus, SessionType } from '@racehubos/shared';
 
 /**
  * ChampionshipService - Championship-specific operations
@@ -84,7 +84,7 @@ export class ChampionshipService {
       include: { participants: { where: { deletedAt: null }, orderBy: { order: 'asc' } } },
     });
 
-    if (!championship || championship.mode !== 'auto') return;
+    if (!championship || championship.mode !== ChampionshipMode.AUTO) return;
 
     const { participants, driversPerQualif, driversPerRace, trackId } = championship;
     if (!participants.length || !driversPerQualif || !driversPerRace || !trackId) return;
@@ -94,7 +94,7 @@ export class ChampionshipService {
       where: {
         championshipId,
         type: { in: [SessionType.QUALIF, SessionType.RACE] },
-        status: 'draft',
+        status: SessionStatus.DRAFT,
         deletedAt: null,
       },
     });
@@ -109,7 +109,7 @@ export class ChampionshipService {
         data: {
           name: `Qualification ${g + 1}`,
           type: SessionType.QUALIF,
-          status: 'draft',
+          status: SessionStatus.DRAFT,
           trackId,
           championshipId,
           maxDuration: championship.qualifMaxDuration,
@@ -137,7 +137,7 @@ export class ChampionshipService {
         data: {
           name: `Course ${g + 1}`,
           type: SessionType.RACE,
-          status: 'draft',
+          status: SessionStatus.DRAFT,
           trackId,
           championshipId,
           maxDuration: championship.raceMaxDuration,
@@ -158,14 +158,14 @@ export class ChampionshipService {
       include: { participants: { where: { deletedAt: null } } },
     });
 
-    if (!championship || championship.mode !== 'auto') return;
+    if (!championship || championship.mode !== ChampionshipMode.AUTO) return;
 
     // Get all finished qualif sessions with driver results
     const qualifSessions = await this.prisma.session.findMany({
       where: {
         championshipId,
         type: SessionType.QUALIF,
-        status: 'finished',
+        status: SessionStatus.FINISHED,
         deletedAt: null,
       },
       include: {
@@ -259,7 +259,7 @@ export class ChampionshipService {
       },
     });
 
-    if (!championship || championship.mode !== 'auto') return null;
+    if (!championship || championship.mode !== ChampionshipMode.AUTO) return null;
 
     const sessions = await this.prisma.session.findMany({
       where: { championshipId, deletedAt: null },
@@ -276,7 +276,7 @@ export class ChampionshipService {
     const qualifSessions = sessions.filter(s => s.type === SessionType.QUALIF);
     const raceSessions = sessions.filter(s => s.type === SessionType.RACE);
     const allQualifsFinished = qualifSessions.length > 0
-      && qualifSessions.every(s => s.status === 'finished');
+      && qualifSessions.every(s => s.status === SessionStatus.FINISHED);
 
     // Build merged qualif ranking if all qualifs are done
     let mergedRanking = [];
@@ -302,7 +302,7 @@ export class ChampionshipService {
     }
 
     return {
-      mode: 'auto',
+      mode: ChampionshipMode.AUTO,
       driversPerQualif: championship.driversPerQualif,
       driversPerRace: championship.driversPerRace,
       participants: championship.participants,
@@ -350,13 +350,13 @@ export class ChampionshipService {
       include: { sessions: { where: { deletedAt: null } } },
     });
 
-    if (championship?.mode !== 'auto') return;
+    if (championship?.mode !== ChampionshipMode.AUTO) return;
 
     const finishedSession = championship.sessions.find(s => s.id === sessionId);
     if (finishedSession?.type !== SessionType.QUALIF) return;
 
     const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF);
-    const allFinished = qualifSessions.every(s => s.status === 'finished');
+    const allFinished = qualifSessions.every(s => s.status === SessionStatus.FINISHED);
 
     if (allFinished) {
       await this.assignDriversToRaces(championshipId);
@@ -384,7 +384,7 @@ export class ChampionshipService {
       include: { sessions: { where: { deletedAt: null } } },
     });
 
-    if (championship?.mode !== 'auto') return;
+    if (championship?.mode !== ChampionshipMode.AUTO) return;
 
     const resetSession = championship.sessions.find(s => s.id === sessionId);
     if (resetSession?.type !== SessionType.QUALIF) return;
@@ -412,7 +412,7 @@ export class ChampionshipService {
       where: { id: championshipId, deletedAt: null },
       include: {
         sessions: {
-          where: { status: 'finished', deletedAt: null },
+          where: { status: SessionStatus.FINISHED, deletedAt: null },
           include: {
             drivers: {
               where: { deletedAt: null },

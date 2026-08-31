@@ -11,7 +11,7 @@ import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import BalancingChart from '../components/balancing/BalancingChart'
 import Podium from '../components/race/Podium'
 import LapTime from '../components/race/LapTime'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -182,7 +182,7 @@ export default function SessionDetail() {
             <div className="flex items-center gap-2">
               <h1 className="font-bold text-lg">{session.name || t('unnamedSession', { id: session.id.slice(0, 8) })}</h1>
               <Badge variant="outline">{t(`glossary:sessionTypeFull.${session.type}`, { defaultValue: session.type })}</Badge>
-              <Badge variant={session.status === 'finished' ? 'default' : 'secondary'}>
+              <Badge variant={session.status === SessionStatus.FINISHED ? 'default' : 'secondary'}>
                 {t(`glossary:sessionStatus.${session.status}`, { defaultValue: session.status })}
               </Badge>
             </div>
@@ -209,7 +209,7 @@ export default function SessionDetail() {
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {/* Podium (finished sessions, not balancing) */}
-        {session.status === 'finished' && !isBalancing && session.drivers?.length > 0 && (
+        {session.status === SessionStatus.FINISHED && !isBalancing && session.drivers?.length > 0 && (
           <Card>
             <CardContent className="p-0 overflow-hidden">
               <Podium

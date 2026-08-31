@@ -86,9 +86,9 @@ model Championship {
   id                String                   @id @default(cuid())
   name              String
   season            String
-  status            String                   @default("planned")
+  status            String                   @default("planned") // planned | active | finished — @racehubos/shared
   trackId           String?
-  mode              String                   @default("manual") // "manual" | "auto"
+  mode              String                   @default("manual") // manual | auto — @racehubos/shared
   driversPerQualif  Int?                     // 2-6, only for auto mode
   driversPerRace    Int?                     // 2-6, only for auto mode
   qualifMaxDuration Int?                     // ms, shared config for all qualif sessions
@@ -109,8 +109,8 @@ model Session {
   type           String          // practice | qualif | race | balancing — @racehubos/shared
   trackId        String
   championshipId String?
-  fuelMode       String          @default("OFF")
-  status         String          @default("draft") // draft, ready, active, finishing, finished
+  fuelMode       String          @default("OFF") // OFF | ON — @racehubos/shared
+  status         String          @default("draft") // draft | ready | active | paused | finishing | finished — @racehubos/shared
   maxDuration    Int?            // Session max duration in ms
   maxLaps        Int?
   gracePeriod    Int?            // Grace period after leader finishes (ms), default 30000

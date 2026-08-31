@@ -104,14 +104,19 @@ rule('no-database-enums', 'Aucun enum en base : les valeurs sont du texte', () =
     .map(([line, n]) => `${schemaPath}:${n} — ${line.trim()} : déclarer String et valider dans le code`);
 });
 
-rule('session-types-from-shared', 'Les types de session viennent de @racehubos/shared', () => {
+rule('session-types-from-shared', 'Les valeurs de la base viennent de @racehubos/shared', () => {
   const V = 'practice|qualif|race|balancing';
   // Cible les contextes ou la valeur designe a coup sur un type de session.
   // "race" sert aussi de mode de tri et d'identifiant d'onglet : ces emplois-la
   // ne sont pas des types de session et ne relevent pas de cette regle.
+  const S = 'draft|ready|active|paused|finishing|finished|planned';
   const contexts = [
     new RegExp(`(?:\\w+\\.)?(?:sessionType|currentPhase|type|phase)\\s*(?:===|!==|==|!=|=|:)\\s*'(?:${V})'`),
     new RegExp(`\\btype=\"(?:${V})\"`),
+    new RegExp(`(?:\\w+\\??\\.)?status\\s*(?:===|!==|==|!=)\\s*'(?:${S})'`),
+    new RegExp(`\\bstatus:\\s*'(?:${S})'`),
+    new RegExp(`(?:\\w+\\??\\.)?mode\\s*(?:===|!==|==|!=|:)\\s*'(?:manual|auto)'`),
+    new RegExp(`(?:\\w+\\??\\.)?fuelMode\\s*(?:===|!==|==|!=|:)\\s*'(?:ON|OFF)'`),
   ];
   const offenders = [];
   const skip = (file) => /packages\/shared|i18n\/locales|__tests__|check-rules\.js/.test(rel(file));
@@ -131,7 +136,11 @@ rule('shared-symbols-imported', 'Tout symbole partagé utilisé est importé', (
   // Un build Vite réussi ne détecte pas ce cas : ce n'est pas une erreur de
   // compilation en JS, seulement une ReferenceError a l'execution
   const symbols = ['SessionType', 'SESSION_TYPES', 'STANDARD_SESSION_TYPES',
-    'isSessionType', 'sessionTypeKey', 'sessionTypeFullKey'];
+    'isSessionType', 'sessionTypeKey', 'sessionTypeFullKey',
+    'SessionStatus', 'SESSION_STATUSES', 'RUNNING_SESSION_STATUSES', 'isSessionStatus',
+    'ChampionshipStatus', 'CHAMPIONSHIP_STATUSES', 'isChampionshipStatus',
+    'ChampionshipMode', 'CHAMPIONSHIP_MODES', 'isChampionshipMode',
+    'FuelMode', 'FUEL_MODES', 'isFuelMode'];
   const offenders = [];
 
   for (const file of sourceFiles(['packages/backend/src', 'packages/frontend/src'])) {

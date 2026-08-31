@@ -1,7 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl } from '../utils/imageUrl.js';
-import { SessionType } from '@racehubos/shared';
+import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -163,7 +163,7 @@ router.post('/', async (req, res) => {
     }
 
     // Auto mode validation
-    if (mode === 'auto') {
+    if (mode === ChampionshipMode.AUTO) {
       if (!trackId) {
         return res.status(400).json({ success: false, error: 'Track is required for auto championships' });
       }
@@ -190,11 +190,11 @@ router.post('/', async (req, res) => {
       data: {
         name: name.trim(),
         season: season.trim(),
-        status: status || 'planned',
+        status: status || ChampionshipStatus.PLANNED,
         trackId: trackId || null,
         mode: mode || 'manual',
-        driversPerQualif: mode === 'auto' ? driversPerQualif : null,
-        driversPerRace: mode === 'auto' ? driversPerRace : null,
+        driversPerQualif: mode === ChampionshipMode.AUTO ? driversPerQualif : null,
+        driversPerRace: mode === ChampionshipMode.AUTO ? driversPerRace : null,
         qualifMaxDuration: qualifMaxDuration || null,
         qualifMaxLaps: qualifMaxLaps || null,
         raceMaxDuration: raceMaxDuration || null,
@@ -203,7 +203,7 @@ router.post('/', async (req, res) => {
     });
 
     // Create participants for auto mode
-    if (mode === 'auto' && participants?.length) {
+    if (mode === ChampionshipMode.AUTO && participants?.length) {
       for (let i = 0; i < participants.length; i++) {
         await prisma.championshipParticipant.create({
           data: {
@@ -221,7 +221,7 @@ router.post('/', async (req, res) => {
         data: {
           name: 'Essais Libres',
           type: SessionType.PRACTICE,
-          status: 'draft',
+          status: SessionStatus.DRAFT,
           championshipId: championship.id,
           trackId,
         },
@@ -229,7 +229,7 @@ router.post('/', async (req, res) => {
     }
 
     // Generate auto sessions (qualifs + races)
-    if (mode === 'auto') {
+    if (mode === ChampionshipMode.AUTO) {
       await championshipService.generateAutoSessions(championship.id);
     }
 
@@ -473,8 +473,8 @@ router.get('/:id/results', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Championship not found' });
     }
 
-    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF && s.status === 'finished');
-    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE && s.status === 'finished');
+    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF && s.status === SessionStatus.FINISHED);
+    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE && s.status === SessionStatus.FINISHED);
 
     // --- Final standings (race-based) ---
     const raceStats = {};
@@ -502,7 +502,7 @@ router.get('/:id/results', async (req, res) => {
     // Best lap overall
     let bestLapOverall = null;
     for (const session of championship.sessions) {
-      if (session.status !== 'finished') continue;
+      if (session.status !== SessionStatus.FINISHED) continue;
       for (const lap of session.laps) {
         if (!bestLapOverall || lap.lapTime < bestLapOverall.lapTime) {
           bestLapOverall = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name, sessionType: session.type };
@@ -631,7 +631,7 @@ router.put('/:id/participants', async (req, res) => {
     if (!championship) {
       return res.status(404).json({ success: false, error: 'Championship not found' });
     }
-    if (championship.mode !== 'auto') {
+    if (championship.mode !== ChampionshipMode.AUTO) {
       return res.status(400).json({ success: false, error: 'Only auto championships support participants' });
     }
     if (!participants || participants.length < 2) {
@@ -647,14 +647,14 @@ router.put('/:id/participants', async (req, res) => {
       return res.status(400).json({ success: false, error: 'One or more drivers not found' });
     }
 
-    const hasStartedQualif = championship.sessions.some(s => s.type === SessionType.QUALIF && s.status !== 'draft');
+    const hasStartedQualif = championship.sessions.some(s => s.type === SessionType.QUALIF && s.status !== SessionStatus.DRAFT);
 
     // Cannot remove participants who already raced in a non-draft session
     if (hasStartedQualif) {
       const newIds = new Set(participants.map(p => p.driverId));
       const startedDriverIds = new Set();
       for (const session of championship.sessions) {
-        if (session.type === SessionType.QUALIF && session.status !== 'draft') {
+        if (session.type === SessionType.QUALIF && session.status !== SessionStatus.DRAFT) {
           const drivers = await prisma.sessionDriver.findMany({ where: { sessionId: session.id, deletedAt: null } });
           drivers.forEach(d => { if (d.driverId) startedDriverIds.add(d.driverId); });
         }
@@ -733,7 +733,7 @@ router.get('/:id/standings', async (req, res) => {
             deletedAt: null,
             ...(type === SessionType.PRACTICE ? { type: SessionType.PRACTICE } : {
               type: type === SessionType.QUALIF ? SessionType.QUALIF : SessionType.RACE,
-              status: 'finished'
+              status: SessionStatus.FINISHED
             }),
           },
           include: {

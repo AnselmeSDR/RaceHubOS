@@ -4,7 +4,7 @@ import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, T
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
-import { SessionType } from '@racehubos/shared'
+import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 
 const TYPE_STYLE = {
   [SessionType.PRACTICE]: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
@@ -39,9 +39,9 @@ export default function ChampionshipHeader({
 
   const getStatusDot = (session) => STATUS_DOTS[session.status] || null
 
-  const isFinished = championship?.status === 'finished'
+  const isFinished = championship?.status === ChampionshipStatus.FINISHED
   const qrSessions = sessions.filter(s => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
-  const allSessionsFinished = qrSessions.length > 0 && qrSessions.every(s => s.status === 'finished')
+  const allSessionsFinished = qrSessions.length > 0 && qrSessions.every(s => s.status === SessionStatus.FINISHED)
   const canFinish = allSessionsFinished && !isFinished
 
   const sortedSessions = [...sessions].sort((a, b) => {
@@ -57,7 +57,7 @@ export default function ChampionshipHeader({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold">{championship?.name || t('detail.defaultName')}</h1>
-            {championship?.mode === 'auto' && (
+            {championship?.mode === ChampionshipMode.AUTO && (
               <Badge className="bg-primary/10 text-primary text-[10px] py-0 px-1.5">
                 <Zap className="size-2.5 mr-0.5" />
                 Auto
@@ -116,7 +116,7 @@ export default function ChampionshipHeader({
             {t('detail.finishChampionship')}
           </Button>
         )}
-        {championship?.mode === 'auto' && (
+        {championship?.mode === ChampionshipMode.AUTO && (
           <button onClick={onToggleBracket} className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showBracket ? t('detail.hideBracket') : t('detail.showBracket')}>
             <GitBranch className="size-4" />
           </button>

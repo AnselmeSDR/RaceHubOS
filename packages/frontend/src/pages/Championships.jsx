@@ -7,7 +7,7 @@ import AutoChampionshipWizard from '../components/championship/AutoChampionshipW
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
-import { SessionType } from '@racehubos/shared'
+import { ChampionshipStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -136,7 +136,7 @@ export default function Championships() {
     },
     {
       id: 'status',
-      accessorFn: (row) => row.status || 'planned',
+      accessorFn: (row) => row.status || ChampionshipStatus.PLANNED,
       meta: { label: t('common:status') },
       header: ({ column }) => (
         <FilterHeader
@@ -145,7 +145,7 @@ export default function Championships() {
           active={filtersRef.current.status.length > 0}
           value={filtersRef.current.status}
           options={[
-            { value: 'planned', label: t('glossary:championshipStatus.planned') },
+            { value: ChampionshipStatus.PLANNED, label: t('glossary:championshipStatus.planned') },
             { value: 'active', label: t('glossary:championshipStatus.active') },
             { value: 'finished', label: t('glossary:championshipStatus.finished') },
           ]}
@@ -158,7 +158,7 @@ export default function Championships() {
           finished: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
           planned: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
         }
-        const key = row.original.status || 'planned'
+        const key = row.original.status || ChampionshipStatus.PLANNED
         return (
           <Badge className={styles[key] || styles.planned}>
             {t(`glossary:championshipStatus.${key}`)}

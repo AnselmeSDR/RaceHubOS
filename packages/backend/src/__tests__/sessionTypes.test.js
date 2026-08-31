@@ -2,6 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
+  CHAMPIONSHIP_MODES,
+  CHAMPIONSHIP_STATUSES,
+  FUEL_MODES,
+  SESSION_STATUSES,
   SESSION_TYPES,
   STANDARD_SESSION_TYPES,
   SessionType,
@@ -72,5 +76,24 @@ describe('session types', () => {
     expect(sessionTypeKey(SessionType.RACE)).toBe('glossary:sessionType.race');
     expect(sessionTypeFullKey(SessionType.RACE)).toBe('glossary:sessionTypeFull.race');
     expect(glossary.sessionType.race).toBeTruthy();
+  });
+});
+
+/** Les valeurs documentées dans schema.prisma doivent suivre le module partagé. */
+describe('valeurs stockées en texte', () => {
+  const schema = () => fs.readFileSync(path.join(rootDir, 'packages/backend/prisma/schema.prisma'), 'utf-8');
+  const documented = (field, model) => {
+    const block = schema().match(new RegExp(`model ${model} \\{[^}]*\\}`, 's'))[0];
+    const line = block.split('\n').find((l) => new RegExp(`^\\s*${field}\\s+String`).test(l));
+    return line.split('//')[1].split('—')[0].split('|').map((s) => s.trim()).sort();
+  };
+
+  it.each([
+    ['status', 'Session', SESSION_STATUSES],
+    ['status', 'Championship', CHAMPIONSHIP_STATUSES],
+    ['mode', 'Championship', CHAMPIONSHIP_MODES],
+    ['fuelMode', 'Session', FUEL_MODES],
+  ])('%s de %s', (field, model, values) => {
+    expect(documented(field, model)).toEqual([...values].sort());
   });
 });

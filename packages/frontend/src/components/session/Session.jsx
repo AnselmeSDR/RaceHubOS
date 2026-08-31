@@ -7,7 +7,7 @@ import LapTime from '../race/LapTime'
 import ResultsModal from '../race/session/ResultsModal'
 import CancelConfirmModal from '../race/session/CancelConfirmModal'
 import { StartLights } from '../ui'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 /**
  * Format seconds to MM:SS or HH:MM:SS
@@ -53,11 +53,11 @@ export default function Session({
   }
 
   const status = session.status
-  const isDraft = status === 'draft'
-  const isRunning = status === 'active'
-  const isPaused = status === 'paused'
-  const isFinishing = status === 'finishing'
-  const isFinished = status === 'finished'
+  const isDraft = status === SessionStatus.DRAFT
+  const isRunning = status === SessionStatus.ACTIVE
+  const isPaused = status === SessionStatus.PAUSED
+  const isFinishing = status === SessionStatus.FINISHING
+  const isFinished = status === SessionStatus.FINISHED
 
   const canStart = isDraft && cuConnected
   const canPause = isRunning

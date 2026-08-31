@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Plus, Trash2 } from 'lucide-react'
-import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
+import { FuelMode, STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -14,7 +14,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
     championshipId: '',
     duration: null,
     maxLaps: null,
-    fuelMode: 'OFF',
+    fuelMode: FuelMode.OFF,
     drivers: [],
   })
 

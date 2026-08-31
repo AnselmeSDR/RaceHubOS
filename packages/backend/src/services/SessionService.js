@@ -1,6 +1,6 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import EventEmitter from 'events';
-import { SESSION_TYPES, SessionType, isSessionType } from '@racehubos/shared';
+import { SESSION_TYPES, SessionStatus, SessionType, isSessionType } from '@racehubos/shared';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
 
@@ -165,7 +165,7 @@ export class SessionService extends EventEmitter {
       return driver.totalLaps >= maxLaps;
     }
 
-    return this.sessionStatus === 'finishing'
+    return this.sessionStatus === SessionStatus.FINISHING
       && driver.lapsAtFinishing != null
       && driver.totalLaps > driver.lapsAtFinishing;
   }
@@ -283,7 +283,7 @@ export class SessionService extends EventEmitter {
 
 
     // If session is in finishing state, recreate grace period timer
-    if (session.status === 'finishing' && session.finishingAt) {
+    if (session.status === SessionStatus.FINISHING && session.finishingAt) {
       const gracePeriod = this.sessionConfig.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
       const elapsed = Date.now() - new Date(session.finishingAt).getTime();
       const remaining = Math.max(0, gracePeriod - elapsed);
@@ -292,14 +292,14 @@ export class SessionService extends EventEmitter {
 
       if (remaining > 0) {
         this.gracePeriodTimer = setTimeout(async () => {
-          if (this.sessionStatus === 'finishing') {
+          if (this.sessionStatus === SessionStatus.FINISHING) {
             await this.finishSession('grace_period_elapsed');
           }
         }, remaining);
       } else {
         // Grace period already elapsed, finish immediately
         setImmediate(async () => {
-          if (this.sessionStatus === 'finishing') {
+          if (this.sessionStatus === SessionStatus.FINISHING) {
             await this.finishSession('grace_period_elapsed');
           }
         });
@@ -326,7 +326,7 @@ export class SessionService extends EventEmitter {
 
     await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'active' },
+      data: { status: SessionStatus.ACTIVE },
     });
 
     await this.loadSession(sessionId);
@@ -366,7 +366,7 @@ export class SessionService extends EventEmitter {
 
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
-      data: { status: 'paused', pauses: JSON.stringify(pauses) },
+      data: { status: SessionStatus.PAUSED, pauses: JSON.stringify(pauses) },
     });
 
     const previousStatus = this.sessionStatus;
@@ -386,12 +386,12 @@ export class SessionService extends EventEmitter {
    * Puts CU in lights mode. Pause closes and chrono resumes at GO (via onRaceStart)
    */
   async resumeSession() {
-    if (!this.activeSessionId || this.sessionStatus !== 'paused') return null;
+    if (!this.activeSessionId || this.sessionStatus !== SessionStatus.PAUSED) return null;
 
     // Set status to active but keep pause open until GO
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
-      data: { status: 'active' },
+      data: { status: SessionStatus.ACTIVE },
     });
 
     this.sessionStatus = 'active';
@@ -468,7 +468,7 @@ export class SessionService extends EventEmitter {
    * - Resume from pause: closes pause entry
    */
   async onRaceStart() {
-    if (!this.activeSessionId || this.sessionStatus !== 'active') return;
+    if (!this.activeSessionId || this.sessionStatus !== SessionStatus.ACTIVE) return;
 
     const now = Date.now();
 
@@ -672,7 +672,7 @@ export class SessionService extends EventEmitter {
         remainingTime = Math.max(0, this.sessionConfig.maxDuration - elapsedTime);
 
         // Time is up
-        if (remainingTime === 0 && this.sessionStatus === 'active') {
+        if (remainingTime === 0 && this.sessionStatus === SessionStatus.ACTIVE) {
           if (this.currentPhase === SessionType.BALANCING) {
             // Balancing: stop immediately, no grace period
             await this.finishSession('time_elapsed');
@@ -690,7 +690,7 @@ export class SessionService extends EventEmitter {
       }
 
       let gracePeriodRemaining = null;
-      if (this.sessionStatus === 'finishing' && this.gracePeriodEndsAt) {
+      if (this.sessionStatus === SessionStatus.FINISHING && this.gracePeriodEndsAt) {
         gracePeriodRemaining = Math.max(0, this.gracePeriodEndsAt - Date.now());
         // Check if all drivers finished their lap during finishing phase
         await this.checkSessionComplete();
@@ -723,7 +723,7 @@ export class SessionService extends EventEmitter {
 
   async checkSessionComplete() {
     if (!this.activeSessionId || !this.sessionConfig) return;
-    if (this.sessionStatus !== 'active' && this.sessionStatus !== 'finishing') return;
+    if (this.sessionStatus !== SessionStatus.ACTIVE && this.sessionStatus !== SessionStatus.FINISHING) return;
 
     const { maxLaps } = this.sessionConfig;
 
@@ -734,7 +734,7 @@ export class SessionService extends EventEmitter {
     // Note: time-based finishing is now handled in heartbeat
 
     // Check lap limit
-    if (maxLaps && this.sessionStatus === 'active') {
+    if (maxLaps && this.sessionStatus === SessionStatus.ACTIVE) {
       if (this.currentPhase === SessionType.BALANCING) {
         // Balancing: finish when all active controllers reached maxLaps
         const activeDrivers = this.sessionDrivers.filter(d => d.totalLaps > 0);
@@ -753,7 +753,7 @@ export class SessionService extends EventEmitter {
     }
 
     // Checkered flag logic: check if all drivers finished
-    if (this.sessionStatus === 'finishing') {
+    if (this.sessionStatus === SessionStatus.FINISHING) {
       const allFinished = this.checkAllDriversFinished();
       if (allFinished) {
         shouldStop = true;
@@ -800,7 +800,7 @@ export class SessionService extends EventEmitter {
   async startFinishingPhase(reason) {
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
-      data: { status: 'finishing', finishingAt: new Date() },
+      data: { status: SessionStatus.FINISHING, finishingAt: new Date() },
     });
 
     const previousStatus = this.sessionStatus;
@@ -829,7 +829,7 @@ export class SessionService extends EventEmitter {
 
     // Auto-finish after grace period
     this.gracePeriodTimer = setTimeout(async () => {
-      if (this.sessionStatus === 'finishing') {
+      if (this.sessionStatus === SessionStatus.FINISHING) {
         await this.finishSession('grace_period_elapsed');
       }
     }, gracePeriod);
@@ -837,7 +837,7 @@ export class SessionService extends EventEmitter {
 
   async finishSession(reason) {
     // Guard against multiple concurrent/repeated calls (grace timer + heartbeat + lap event)
-    if (this.sessionStatus === 'finished' || this._finishing) return;
+    if (this.sessionStatus === SessionStatus.FINISHED || this._finishing) return;
     this._finishing = true;
 
     if (this.gracePeriodTimer) {
@@ -868,7 +868,7 @@ export class SessionService extends EventEmitter {
       ),
       this.prisma.session.update({
         where: { id: sessionId },
-        data: { status: 'finished', finishedAt: new Date() },
+        data: { status: SessionStatus.FINISHED, finishedAt: new Date() },
       }),
     ]);
 
@@ -1040,7 +1040,7 @@ export class SessionService extends EventEmitter {
     let gridOrder = null;
     if (type === SessionType.RACE && gridFromQualifying) {
       const lastQualifying = await this.prisma.session.findFirst({
-        where: { trackId: finalTrackId, type: SessionType.QUALIF, status: 'finished', deletedAt: null },
+        where: { trackId: finalTrackId, type: SessionType.QUALIF, status: SessionStatus.FINISHED, deletedAt: null },
         orderBy: { finishedAt: 'desc' },
         include: { drivers: { where: { deletedAt: null }, orderBy: { finalPos: 'asc' } } },
       });
@@ -1129,7 +1129,7 @@ export class SessionService extends EventEmitter {
     // Reset session to draft
     await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'draft', startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
+      data: { status: SessionStatus.DRAFT, startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
     });
 
     // Emit internal event for ChampionshipService

@@ -14,7 +14,7 @@ import ChampionshipConfigModal from '../components/championship/ChampionshipConf
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
-import { SessionType } from '@racehubos/shared'
+import { ChampionshipMode, SessionStatus, SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -148,7 +148,7 @@ export default function ChampionshipDetail() {
 
   // For auto championships, only show participant drivers in session config
   const sessionDrivers = useMemo(() => {
-    if (championship?.mode !== 'auto' || !championship.participants?.length) return drivers
+    if (championship?.mode !== ChampionshipMode.AUTO || !championship.participants?.length) return drivers
     const participantIds = new Set(championship.participants.map(p => p.driverId))
     return drivers.filter(d => participantIds.has(d.id))
   }, [drivers, championship])
@@ -258,7 +258,7 @@ export default function ChampionshipDetail() {
     try {
       const res = await fetch(`${API_URL}/api/championships/${id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'finished' })
+        body: JSON.stringify({ status: SessionStatus.FINISHED })
       })
       if (res.ok) {
         const data = await res.json()
@@ -307,7 +307,7 @@ export default function ChampionshipDetail() {
       {/* Main content */}
       <div className="flex-1 overflow-auto p-4">
         {/* Bracket view for auto championships */}
-        {showBracket && championship?.mode === 'auto' && (
+        {showBracket && championship?.mode === ChampionshipMode.AUTO && (
           <div className="mb-4 bg-card border border-border rounded-xl p-4">
             <ChampionshipBracket
               championshipId={id}
@@ -328,7 +328,7 @@ export default function ChampionshipDetail() {
               sessions={sessions}
               drivers={sessionDrivers}
               cars={cars}
-              autoMode={championship?.mode === 'auto'}
+              autoMode={championship?.mode === ChampionshipMode.AUTO}
               onStart={handleStartSession}
               onPause={handlePauseSession}
               onResume={handleResumeSession}
@@ -340,7 +340,7 @@ export default function ChampionshipDetail() {
             />
 
             {selectedSession && (
-              displayMaxLaps === 0 && selectedSession.status !== 'finished' ? (
+              displayMaxLaps === 0 && selectedSession.status !== SessionStatus.FINISHED ? (
                 <StartingGrid entries={displayEntries} />
               ) : (
                 <SessionLeaderboard

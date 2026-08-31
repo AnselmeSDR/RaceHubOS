@@ -6,7 +6,7 @@ import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
-import { SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -242,10 +242,10 @@ export default function SessionLeaderboard({
                 {/* Gap / Total */}
                 <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
-                    {sortBy === 'race' && position === 1 && sessionStatus === 'finished' ? t('leaderboard.total') : t('leaderboard.gap')}
+                    {sortBy === 'race' && position === 1 && sessionStatus === SessionStatus.FINISHED ? t('leaderboard.total') : t('leaderboard.gap')}
                   </div>
                   {sortBy === 'race' && position === 1 ? (
-                    sessionStatus === 'finished' ? (
+                    sessionStatus === SessionStatus.FINISHED ? (
                       <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
                     ) : (
                       <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>{t('gapDisplay.leader')}</span>

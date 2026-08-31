@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-08-31
+
+### Changed
+- **Les statuts et modes rejoignent `@racehubos/shared`** (TASK-04) : `Session.status`, `Championship.status`, `Championship.mode` et `Session.fuelMode` étaient écrits en dur dans 19 fichiers (106 endroits). Stockés en texte, validés par le code, valeurs listées en commentaire dans le schéma
+- Statuts de championnat et de session distingués : `championship.status` était comparé à des statuts de session
+
 ## [1.21.3] - 2026-08-31
 
 ### Changed
