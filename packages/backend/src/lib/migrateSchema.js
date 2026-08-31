@@ -5,13 +5,14 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getDatabasePath, getDatabaseUrl } from './database-url.js';
+import { NPX } from './npx.js';
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const migrationsDir = path.join(backendDir, 'prisma', 'migrations');
 
 // The URL is passed explicitly: prisma.config.js loads .env, and a stale entry
 // there would otherwise decide which database gets migrated
-const run = (args) => execFileSync('npx', args, {
+const run = (args) => execFileSync(NPX, args, {
   cwd: backendDir,
   encoding: 'utf-8',
   stdio: 'pipe',

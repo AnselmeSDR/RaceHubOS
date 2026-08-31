@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.1] - 2026-08-31
+
+### Fixed
+- **La migration échouait sous Windows** (`spawnSync npx ENOENT`) : `npx` y est un fichier `.cmd`, une extension qu'`execFileSync` ne résout pas. Le défaut ne pouvait pas se voir en développement — sous macOS et Linux, `npx` fonctionne — et il est apparu sur le PC de course, en pleine mise à jour
+  - Le binaire porte désormais son nom de plateforme (`src/lib/npx.js`), dans la migration, la préparation des tests et le contrôle des règles
+  - Une règle de `npm run check` interdit désormais d'appeler `npx` ou `npm` par `execFile`/`spawn` sans cette résolution
+  - `execSync` et `exec` passent par un shell et n'étaient pas concernés
+
 ## [1.21.0] - 2026-08-31
 
 ### Added
