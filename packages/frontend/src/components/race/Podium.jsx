@@ -24,7 +24,7 @@ function formatTime(seconds) {
  * @param {string} sessionType - 'practice' | 'qualif' | 'race'
  * @param {object} stats - Optional { duration, gracePeriod, fastest } for summary bar
  */
-export default function Podium({ drivers = [], sessionType = 'race', stats }) {
+export default function Podium({ drivers = [], sessionType = SessionType.RACE, stats }) {
   const { t } = useTranslation('race')
 
   const sorted = [...drivers]

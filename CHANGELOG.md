@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-08-31
+
+### Added
+- **Un guide de règles que le code doit respecter** (`docs/CONVENTIONS.md`) : chaque règle vient d'un incident réel du projet — le PC de course qui refusait de démarrer, l'équilibrage absent des statistiques, une base réécrite sans prévenir. Le pourquoi est écrit à côté de la règle, car c'est lui qui permet de juger un cas non prévu
+- **`npm run check`** vérifie mécaniquement dix de ces règles ; **`npm run check:push`** ajoute celles qui n'ont de sens qu'avant un push :
+  - aucun `prisma db push`, et `schema.prisma` toujours couvert par une migration
+  - aucun type de session écrit en toutes lettres hors de `@racehubos/shared`
+  - aucun symbole partagé utilisé sans import — **un build Vite réussi ne détecte pas ce cas**, il avait laissé passer 15 fichiers qui auraient planté en course
+  - installeur Windows : pas de `::` dans un bloc parenthésé, parenthèses équilibrées, `INSTALLER_VERSION` présent et incrémenté dès que le fichier change
+  - chaque clé de traduction présente en français et en anglais
+  - scripts de test pointant sur `test.db` et jamais sur la base réelle
+  - version incrémentée et changelog renseigné
+- **`npm run hooks:install`** installe un hook `pre-push` qui lance ces vérifications avant chaque envoi (`git push --no-verify` reste possible en connaissance de cause)
+
+### Fixed
+- Trois valeurs par défaut de type de session restaient écrites en dur (`Podium`, `SessionLeaderboard`, `Displays`) — trouvées par le nouveau contrôle
+
 ## [1.20.0] - 2026-08-31
 
 ### Changed

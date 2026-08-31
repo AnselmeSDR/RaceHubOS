@@ -6,6 +6,7 @@ import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
+import { SessionType } from '@racehubos/shared'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -17,7 +18,7 @@ import { GAP_COLORS } from '../../lib/colors'
 export default function SessionLeaderboard({
   entries = [],
   sortBy = 'laps',
-  sessionType = 'race',
+  sessionType = SessionType.RACE,
   sessionStatus,
   expanded = false,
 }) {
