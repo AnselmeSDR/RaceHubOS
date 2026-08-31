@@ -111,7 +111,7 @@ Updates are handled from within the app:
 git clone https://github.com/AnselmeSDR/RaceHubOS.git
 cd RaceHubOS
 npm install
-cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+cd packages/backend && npx prisma generate && npx prisma migrate deploy && cd ../..
 npm run dev
 ```
 
@@ -217,7 +217,7 @@ Le script gère tout : installe Git/Node.js via winget si absents, clone, instal
 git clone https://github.com/AnselmeSDR/RaceHubOS.git
 cd RaceHubOS
 npm install
-cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+cd packages/backend && npx prisma generate && npx prisma migrate deploy && cd ../..
 npm run dev
 ```
 
@@ -255,7 +255,7 @@ Les mises à jour se font depuis l'application :
 git clone https://github.com/AnselmeSDR/RaceHubOS.git
 cd RaceHubOS
 npm install
-cd packages/backend && npx prisma generate && npx prisma db push && cd ../..
+cd packages/backend && npx prisma generate && npx prisma migrate deploy && cd ../..
 npm run dev
 ```
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-08-31
+
+### Changed
+- **Le schéma passe uniquement par des migrations** : `prisma db push --accept-data-loss` disparaît du démarrage, de la mise à jour, de la réparation et des deux installeurs, remplacé par `prisma migrate deploy`
+  - `db push` réécrit la base pour la faire ressembler au schéma : il ajoute une colonne sans rien casser, mais un renommage ou un changement de type **supprime les données concernées sans prévenir**. Une migration décrit la transformation, donc la conserve
+  - Chaque changement de schéma est désormais un fichier versionné dans `prisma/migrations/`, appliqué à l'identique sur chaque PC ; en développement il se crée avec `npm run prisma:migrate -w @racehubos/backend`
+- **Bases antérieures aux migrations** : Prisma refuse de migrer une base déjà remplie dont il ne connaît pas l'historique (`P3005`) — le cas de toutes les installations existantes, `db push` n'écrivant aucun historique
+  - `src/lib/migrateSchema.js` compare le schéma réel de la base à chaque suite de migrations et marque comme déjà appliquées celles qu'elle contient réellement, avant d'appliquer le reste
+  - Ce que la base contient n'est jamais déduit de son historique, toujours du schéma lui-même : une base à jour est entièrement baselinée, une base en retard ne l'est que jusqu'à son état réel et les migrations manquantes s'exécutent vraiment
+  - Une base qui ne correspond à aucun état connu n'est pas touchée : le démarrage s'interrompt et propose une réparation, plutôt que de migrer à moitié une base de course
+  - Cinq scénarios couverts par des tests sur bases jetables : installation neuve, base à jour sans historique, base en retard, relance, schéma divergent
+  - `npm run migrate -w @racehubos/backend` applique la migration à la main en cas de besoin
+
 ## [1.18.1] - 2026-08-29
 
 ### Fixed

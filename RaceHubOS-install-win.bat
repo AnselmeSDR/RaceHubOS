@@ -212,7 +212,8 @@ cd /d "!TARGET_DIR!\packages\backend"
 call npx prisma generate
 :: Dated backup in prisma\db-old\ before touching the schema
 call node scripts\backup-db.js install
-call npx prisma db push --accept-data-loss 2>nul || call npx prisma migrate deploy 2>nul
+:: Applique les migrations, en baselinant une base anterieure aux migrations
+call node scripts\migrate.js
 echo  OK
 echo.
 

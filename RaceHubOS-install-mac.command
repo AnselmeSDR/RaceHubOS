@@ -183,7 +183,8 @@ cd "$TARGET_DIR/packages/backend"
 npx prisma generate
 # Dated backup in prisma/db-old/ before touching the schema
 node scripts/backup-db.js install || true
-npx prisma db push --accept-data-loss 2>/dev/null || npx prisma migrate deploy 2>/dev/null || true
+# Applique les migrations, en baselinant une base antérieure aux migrations
+node scripts/migrate.js || true
 echo "  OK"
 echo ""
 
