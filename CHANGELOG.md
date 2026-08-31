@@ -5,12 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.21.1] - 2026-08-31
+## [1.21.2] - 2026-08-31
 
 ### Fixed
-- **La migration échouait sous Windows** (`spawnSync npx ENOENT`) : `npx` y est un fichier `.cmd`, une extension qu'`execFileSync` ne résout pas. Le défaut ne pouvait pas se voir en développement — sous macOS et Linux, `npx` fonctionne — et il est apparu sur le PC de course, en pleine mise à jour
-  - Le binaire porte désormais son nom de plateforme (`src/lib/npx.js`), dans la migration, la préparation des tests et le contrôle des règles
-  - Une règle de `npm run check` interdit désormais d'appeler `npx` ou `npm` par `execFile`/`spawn` sans cette résolution
+- **La migration échouait sous Windows**, pour deux raisons enchaînées, aucune visible en développement. Découvert sur le PC de course, en pleine mise à jour
+  - `npx` est un fichier `.cmd` sous Windows, une extension qu'`execFileSync` ne résout pas : `spawnSync npx ENOENT`
+  - Nommer explicitement `npx.cmd` ne suffit pas : depuis les correctifs BatBadBut, node **refuse de lancer un `.cmd` sans shell** (`EINVAL`). Et passer par un shell aurait ramené les problèmes de guillemets sur les chemins contenant des espaces
+  - Le CLI Prisma est désormais appelé **en JavaScript** (`src/lib/prismaCli.js`, `process.execPath`) : même node, pas de shell, pas de guillemets. Dans la migration comme dans la préparation des tests
+  - Une règle de `npm run check` interdit d'appeler `npx` ou `npm` par `execFile`/`spawn`
   - `execSync` et `exec` passent par un shell et n'étaient pas concernés
 
 ## [1.21.0] - 2026-08-31
