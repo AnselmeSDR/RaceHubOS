@@ -17,8 +17,9 @@ import { fileURLToPath } from 'url';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const beforePush = process.argv.includes('--push');
-// npx est un .cmd sous Windows, qu'execFileSync ne resout pas
-const NPX = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+// Le CLI Prisma est appele en JavaScript : npx est un .cmd sous Windows, que
+// execFileSync ne resout pas et que node refuse de lancer sans shell
+const prismaCli = () => path.join(rootDir, 'node_modules', 'prisma', 'build', 'index.js');
 
 const read = (rel) => fs.readFileSync(path.join(rootDir, rel), 'utf-8');
 const exists = (rel) => fs.existsSync(path.join(rootDir, rel));
@@ -78,7 +79,7 @@ rule('migrations-only', 'Le schéma ne change que par une migration', () => {
 rule('schema-matches-migrations', 'schema.prisma est couvert par les migrations', () => {
   if (!exists('packages/backend/prisma/schema.prisma')) return [];
   try {
-    const diff = execFileSync(NPX, ['prisma', 'migrate', 'diff',
+    const diff = execFileSync(process.execPath, [prismaCli(), 'migrate', 'diff',
       '--from-migrations', 'prisma/migrations', '--to-schema', 'prisma/schema.prisma', '--script'],
       { cwd: path.join(rootDir, 'packages/backend'), encoding: 'utf-8', stdio: 'pipe' });
     return /empty migration/i.test(diff)
@@ -211,17 +212,20 @@ rule('version-and-changelog', 'Version incrémentée et changelog à jour', () =
   return offenders;
 }, { onlyBeforePush: true });
 
-rule('npm-binaries-named-for-windows', 'npx/npm lancés par execFile portent leur nom Windows', () => {
-  // npx est un .cmd sous Windows et execFileSync ne resout pas cette extension :
-  // ENOENT. Invisible sur macOS, bloquant sur le PC de course, en pleine migration
+rule('no-npx-through-execfile', 'Prisma n\'est pas lancé par npx via execFile', () => {
+  // Sous Windows npx est un .cmd : execFileSync ne resout pas l'extension
+  // (ENOENT) et, depuis les correctifs BatBadBut, node refuse de lancer un .cmd
+  // sans shell (EINVAL). Les deux echecs sont invisibles sur macOS et Linux, et
+  // les deux se sont produits sur le PC de course, en pleine migration.
+  // La parade : appeler le CLI en JavaScript avec process.execPath.
   const offenders = [];
-  const bad = /(?:execFileSync|execFile|spawnSync|spawn)\(\s*'(npx|npm)'/;
+  const bad = /(?:execFileSync|execFile|spawnSync|spawn)\(\s*(?:'(npx|npm)'|NPX)/;
 
   for (const file of sourceFiles(['packages/backend/src', 'packages/backend/scripts', 'packages/frontend/src', 'scripts'], ['.js', '.jsx', '.mjs'])) {
     if (/check-rules\.mjs$/.test(rel(file))) continue;
     for (const [i, line] of read(rel(file)).split('\n').entries()) {
       if (bad.test(line)) {
-        offenders.push(`${rel(file)}:${i + 1} — utiliser NPX (src/lib/npx.js), pas '${line.match(bad)[1]}'`);
+        offenders.push(`${rel(file)}:${i + 1} — passer par prismaCli() et process.execPath`);
       }
     }
   }

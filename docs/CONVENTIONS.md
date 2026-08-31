@@ -59,13 +59,18 @@ Ni dupliqué, ni redéclaré côté interface « pour éviter la dépendance ».
 
 Après un refactoring qui déplace des symboles : `npm run check`, jamais le seul build.
 
-### Un binaire npm lancé par `execFile` porte son nom Windows `[vérifié]`
+### Un CLI npm ne se lance pas par `npx` via `execFile` `[vérifié]`
 
-Sous Windows, `npx` est un `.cmd`, et `execFileSync` ne résout pas cette extension : `spawnSync npx ENOENT`. Rien n'apparaît sur macOS ni sur Linux — le défaut ne se voit que sur le PC de course, et il s'y est vu **en pleine migration**, bloquant la mise à jour.
+Deux échecs enchaînés, aucun visible en développement, tous deux constatés sur le PC de course **en pleine migration** :
+
+1. `npx` est un `.cmd` sous Windows, extension qu'`execFileSync` ne résout pas → `spawnSync npx ENOENT`
+2. Nommer `npx.cmd` ne suffit pas : depuis les correctifs BatBadBut, node **refuse de lancer un `.cmd` sans shell** → `EINVAL`
+
+Ajouter `shell: true` ramènerait les problèmes de guillemets sur les chemins contenant des espaces. La parade est d'appeler le CLI **en JavaScript**, avec le node courant :
 
 ```js
-import { NPX } from './npx.js'
-execFileSync(NPX, ['prisma', 'migrate', 'deploy'])
+import { prismaCli } from './prismaCli.js'
+execFileSync(process.execPath, [prismaCli(), 'migrate', 'deploy'])
 ```
 
 `execSync` et `exec` passent par un shell et n'ont pas ce problème ; seule la famille `execFile` / `spawn` est concernée.

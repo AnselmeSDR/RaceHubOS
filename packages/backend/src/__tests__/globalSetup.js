@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import { getDatabasePath } from '../lib/database-url.js';
-import { NPX } from '../lib/npx.js';
+import { prismaCli } from '../lib/prismaCli.js';
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -24,7 +24,7 @@ export default function globalSetup() {
   }
 
   const sqlFile = path.join(backendDir, 'prisma', '.test-schema.sql');
-  execFileSync(NPX, ['prisma', 'migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script', '--output', sqlFile], {
+  execFileSync(process.execPath, [prismaCli(), 'migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script', '--output', sqlFile], {
     cwd: backendDir,
     stdio: 'pipe',
   });
