@@ -17,14 +17,19 @@ import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import StartingGrid from '../components/race/StartingGrid'
 import StandingsTabs from '../components/championship/StandingsTabs'
+import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const SESSION_TYPES = [
-  { value: 'practice' },
-  { value: 'qualif' },
-  { value: 'race' },
-]
+// Tailwind cannot build class names at runtime, so each type's colour is
+// spelled out; the list of types themselves comes from @racehubos/shared
+const TAB_STYLE = {
+  [SessionType.PRACTICE]: { icon: FlaskConical, color: 'data-active:!text-session-practice hover:!text-session-practice' },
+  [SessionType.QUALIF]: { icon: Clock, color: 'data-active:!text-session-qualif hover:!text-session-qualif' },
+  [SessionType.RACE]: { icon: Flag, color: 'data-active:!text-session-race hover:!text-session-race' },
+}
+
+const emptyStandings = () => Object.fromEntries(STANDARD_SESSION_TYPES.map((type) => [type, []]))
 
 export default function FreeSessionPage() {
   const { t } = useTranslation('freeSession')
@@ -47,7 +52,7 @@ export default function FreeSessionPage() {
   const [tracks, setTracks] = useState([])
   const [loading, setLoading] = useState(false)
   const { showStandings, toggleStandings, freeTrack: selectedTrackId, setFreeTrack: setSelectedTrackId, freeType: selectedType, setFreeType: setSelectedType } = useApp()
-  const [standings, setStandings] = useState({ practice: [], qualif: [], race: [] })
+  const [standings, setStandings] = useState(emptyStandings)
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
@@ -82,7 +87,7 @@ export default function FreeSessionPage() {
 
   const fetchStandings = useCallback(async () => {
     if (!selectedTrackId) {
-      setStandings({ practice: [], qualif: [], race: [] })
+      setStandings(emptyStandings())
       return
     }
     try {
@@ -203,7 +208,7 @@ export default function FreeSessionPage() {
           body: JSON.stringify({ drivers: data.drivers })
         })
         // Sync to other free sessions on same track
-        const otherTypes = SESSION_TYPES.map(st => st.value).filter(type => type !== selectedType)
+        const otherTypes = STANDARD_SESSION_TYPES.filter(type => type !== selectedType)
         for (const type of otherTypes) {
           const res = await fetch(`${API_URL}/api/sessions?trackId=${selectedTrackId}&type=${type}&championshipId=null`)
           const result = await res.json()
@@ -261,18 +266,12 @@ export default function FreeSessionPage() {
 
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
-              {SESSION_TYPES.map(type => {
-                const Icon = { practice: FlaskConical, qualif: Clock, race: Flag }[type.value]
-                const isActive = selectedType === type.value
-                const activeColor = {
-                  practice: 'data-active:!text-session-practice hover:!text-session-practice',
-                  qualif: 'data-active:!text-session-qualif hover:!text-session-qualif',
-                  race: 'data-active:!text-session-race hover:!text-session-race',
-                }[type.value]
+              {STANDARD_SESSION_TYPES.map(type => {
+                const { icon: Icon, color } = TAB_STYLE[type]
                 return (
-                  <TabsTrigger key={type.value} value={type.value} className={activeColor}>
+                  <TabsTrigger key={type} value={type} className={color}>
                     <Icon className="size-3.5" />
-                    {t(`glossary:sessionTypeFull.${type.value}`)}
+                    {t(sessionTypeFullKey(type))}
                   </TabsTrigger>
                 )
               })}
@@ -335,8 +334,8 @@ export default function FreeSessionPage() {
                     <SessionLeaderboard
                       entries={entries}
                       expanded={!showStandings}
-                      sortBy={session.type === 'practice' ? practiceSortBy : session.type === 'qualif' ? 'bestLap' : 'race'}
-                      onSortChange={session.type === 'practice' ? setPracticeSortBy : undefined}
+                      sortBy={session.type === SessionType.PRACTICE ? practiceSortBy : session.type === SessionType.QUALIF ? 'bestLap' : 'race'}
+                      onSortChange={session.type === SessionType.PRACTICE ? setPracticeSortBy : undefined}
                       sessionType={session.type}
                       sessionStatus={session.status}
                     />

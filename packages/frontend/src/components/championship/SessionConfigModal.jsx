@@ -10,6 +10,7 @@ const SESSION_TYPE_ICONS = {
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
+import { SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 /**
  * SessionConfigModal - Modal to configure a session
@@ -57,7 +58,7 @@ export default function SessionConfigModal({
   const [saving, setSaving] = useState(false)
 
   const TypeIcon = SESSION_TYPE_ICONS[session?.type] || Flag
-  const isPractice = session?.type === 'practice'
+  const isPractice = session?.type === SessionType.PRACTICE
   const isActive = session?.status === 'active'
   const isFinished = session?.status === 'finished'
   const canEdit = session?.status === 'draft'
@@ -67,7 +68,7 @@ export default function SessionConfigModal({
   // Find practice session to copy from (only for non-practice sessions in a championship)
   const practiceSession = useMemo(() => {
     if (isPractice || !session?.championshipId) return null
-    return sessions.find(s => s.type === 'practice' && s.drivers?.length > 0)
+    return sessions.find(s => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
   }, [sessions, isPractice, session?.championshipId])
 
   // Copy config from practice session
@@ -215,7 +216,7 @@ export default function SessionConfigModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t(`sessionConfigModal.sessionTypeLabels.${session?.type}`)}
+              placeholder={t(sessionTypeFullKey(session?.type))}
               disabled={!canEdit}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -227,7 +228,7 @@ export default function SessionConfigModal({
               {t('sessionConfigModal.type')}
             </label>
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
-              {t(`sessionConfigModal.sessionTypeLabels.${session?.type}`)}
+              {t(sessionTypeFullKey(session?.type))}
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
 import LapTime from './race/LapTime'
 import { getImgUrl } from '../utils/image'
+import { SessionType, sessionTypeKey } from '@racehubos/shared'
 
 export function RecordItem({
   position,
@@ -21,7 +22,7 @@ export function RecordItem({
   const { t } = useTranslation('common')
   const isTopThree = position <= 3
   const sessionColor = sessionBadgeClass(sessionType)
-  const sessionLabel = t(`glossary:sessionType.${sessionType || 'practice'}`)
+  const sessionLabel = t(sessionTypeKey(sessionType || SessionType.PRACTICE))
 
   return (
     <div

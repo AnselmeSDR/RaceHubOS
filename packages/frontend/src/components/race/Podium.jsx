@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Flag, Timer, Zap } from 'lucide-react'
 import { getImgUrl } from '../../utils/image'
+import { SessionType } from '@racehubos/shared'
 
 function formatLapTime(ms) {
   if (!ms) return '--'
@@ -28,12 +29,12 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
 
   const sorted = [...drivers]
     .sort((a, b) => {
-      if (sessionType === 'practice') {
+      if (sessionType === SessionType.PRACTICE) {
         const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
         if (lapsB !== lapsA) return lapsB - lapsA
         return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
       }
-      if (sessionType === 'qualif') return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+      if (sessionType === SessionType.QUALIF) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
       const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
       if (lapsB !== lapsA) return lapsB - lapsA
       return (a.totalTime || Infinity) - (b.totalTime || Infinity)
@@ -77,7 +78,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
                       <div className="font-mono text-xs text-green-400">{t('podium.winner')}</div>
                     ) : (
                       <div className="font-mono text-xs text-red-400">
-                        {sessionType === 'practice'
+                        {sessionType === SessionType.PRACTICE
                           ? `+${formatLapTime((sd.bestLapTime || 0) - (podium[0]?.bestLapTime || 0))}`
                           : (sd.totalLaps || 0) < (podium[0]?.totalLaps || 0)
                             ? t('podium.lapsGap', { count: (podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) })
@@ -86,7 +87,7 @@ export default function Podium({ drivers = [], sessionType = 'race', stats }) {
                       </div>
                     )}
                     <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
-                    {sessionType !== 'practice' && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} {t('glossary:lap', { count: sd.totalLaps || 0 }).toLowerCase()}</div>}
+                    {sessionType !== SessionType.PRACTICE && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} {t('glossary:lap', { count: sd.totalLaps || 0 }).toLowerCase()}</div>}
                   </div>
                 </div>
               </div>

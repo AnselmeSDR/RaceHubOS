@@ -1,6 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl } from '../utils/imageUrl.js';
+import { SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -58,7 +59,7 @@ router.get('/track/:trackId', async (req, res) => {
 
       // For race type, get totalTime from SessionDriver
       let raceStatsMap = new Map();
-      if (type === 'race') {
+      if (type === SessionType.RACE) {
         const sessionIds = [...new Set(laps.map(l => l.sessionId))];
         const sessionDrivers = await prisma.sessionDriver.findMany({
           where: { sessionId: { in: sessionIds } },
@@ -92,7 +93,7 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type: 'balancing', ...sessionFilter }
+          session: { type: SessionType.BALANCING, ...sessionFilter }
         },
         orderBy: { lapTime: 'asc' },
         distinct: ['carId'],
@@ -108,7 +109,7 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type: 'balancing', ...sessionFilter }
+          session: { type: SessionType.BALANCING, ...sessionFilter }
         },
         _count: { id: true }
       });
@@ -120,7 +121,7 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type: 'balancing', ...sessionFilter },
+          session: { type: SessionType.BALANCING, ...sessionFilter },
           lapNumber: { gt: 1 },
         },
         select: { carId: true, sessionId: true, lapTime: true },
@@ -201,9 +202,9 @@ router.get('/track/:trackId', async (req, res) => {
     };
 
     const [practiceLaps, qualifLaps, raceLaps, balancingLaps, track] = await Promise.all([
-      getBestByType('practice'),
-      getBestByType('qualif'),
-      getBestByType('race'),
+      getBestByType(SessionType.PRACTICE),
+      getBestByType(SessionType.QUALIF),
+      getBestByType(SessionType.RACE),
       getBalancingBestByCar(),
       prisma.track.findUnique({ where: { id: trackId } })
     ]);

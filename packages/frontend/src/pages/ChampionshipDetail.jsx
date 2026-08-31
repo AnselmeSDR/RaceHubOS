@@ -14,6 +14,7 @@ import ChampionshipConfigModal from '../components/championship/ChampionshipConf
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -42,7 +43,7 @@ export default function ChampionshipDetail() {
   const [loading, setLoading] = useState(true)
 
   const [selectedSessionId, setSelectedSessionId] = useState(() => localStorage.getItem(`championship_${id}_session`) || null)
-  const [standingsTab, setStandingsTab] = useState('practice')
+  const [standingsTab, setStandingsTab] = useState(SessionType.PRACTICE)
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [showChampionshipConfig, setShowChampionshipConfig] = useState(false)
   const [showBracket, setShowBracket] = useState(false)
@@ -345,8 +346,8 @@ export default function ChampionshipDetail() {
                 <SessionLeaderboard
                   entries={displayEntries}
                   expanded={!showStandings}
-                  sortBy={selectedSession.type === 'practice' ? practiceSortBy : selectedSession.type === 'qualif' ? 'bestLap' : 'race'}
-                  onSortChange={selectedSession.type === 'practice' ? setPracticeSortBy : undefined}
+                  sortBy={selectedSession.type === SessionType.PRACTICE ? practiceSortBy : selectedSession.type === SessionType.QUALIF ? 'bestLap' : 'race'}
+                  onSortChange={selectedSession.type === SessionType.PRACTICE ? setPracticeSortBy : undefined}
                   sessionType={selectedSession.type}
                   sessionStatus={selectedSession.status}
                 />

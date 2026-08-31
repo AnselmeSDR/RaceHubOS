@@ -11,6 +11,7 @@ import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import BalancingChart from '../components/balancing/BalancingChart'
 import Podium from '../components/race/Podium'
 import LapTime from '../components/race/LapTime'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -55,7 +56,7 @@ export default function SessionDetail() {
     const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
 
     // Sort
-    const isRace = session.type === 'race'
+    const isRace = session.type === SessionType.RACE
     const sorted = [...drivers].sort((a, b) => {
       if (isRace) {
         if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
@@ -104,7 +105,7 @@ export default function SessionDetail() {
 
   // Build entries for balancing chart (needs laps array per controller)
   const balancingEntries = useMemo(() => {
-    if (!session || session.type !== 'balancing' || !session.laps?.length) return []
+    if (!session || session.type !== SessionType.BALANCING || !session.laps?.length) return []
 
     // Group laps by controller
     const lapsByCtrl = new Map()
@@ -165,8 +166,8 @@ export default function SessionDetail() {
     )
   }
 
-  const isBalancing = session.type === 'balancing'
-  const TypeIcon = isBalancing ? Scale : session.type === 'race' ? Flag : Clock
+  const isBalancing = session.type === SessionType.BALANCING
+  const TypeIcon = isBalancing ? Scale : session.type === SessionType.RACE ? Flag : Clock
 
   return (
     <div className="h-full flex flex-col">
@@ -249,7 +250,7 @@ export default function SessionDetail() {
           entries.length > 0 ? (
             <SessionLeaderboard
               entries={entries}
-              sortBy={session.type === 'race' ? 'race' : 'bestLap'}
+              sortBy={session.type === SessionType.RACE ? 'race' : 'bestLap'}
               sessionType={session.type}
               sessionStatus={session.status}
               expanded

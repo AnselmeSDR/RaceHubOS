@@ -16,6 +16,7 @@ import {
 import SessionSection from '../components/championship/SessionSection'
 import BalancingChart from '../components/balancing/BalancingChart'
 import BalancingStandings from '../components/balancing/BalancingStandings'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -121,7 +122,7 @@ export default function BalancingPage() {
     const previousDrivers = session?.drivers || []
     setLoading(true)
     try {
-      const foundSession = await findOrCreateFreeSession({ trackId: selectedTrackId, type: 'balancing' })
+      const foundSession = await findOrCreateFreeSession({ trackId: selectedTrackId, type: SessionType.BALANCING })
       if (!foundSession) return
 
       if ((!foundSession.drivers || foundSession.drivers.length === 0) && previousDrivers.length > 0) {
@@ -148,7 +149,7 @@ export default function BalancingPage() {
     try {
       const result = await createSession({
         trackId: selectedTrackId,
-        type: 'balancing',
+        type: SessionType.BALANCING,
         name: t('session.defaultName'),
         status: 'draft',
         maxDuration: session?.maxDuration || null,
@@ -229,7 +230,7 @@ export default function BalancingPage() {
     if (result.success) await fetchStandings()
   }
 
-  const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === 'balancing'
+  const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === SessionType.BALANCING
 
   return (
     <div className="h-full flex flex-col">

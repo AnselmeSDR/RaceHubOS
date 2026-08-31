@@ -7,6 +7,7 @@ import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
+import { sessionTypeOptions } from '../utils/sessionTypes'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -134,12 +135,7 @@ export default function SessionsList() {
           label={t('columns.type')}
           active={filtersRef.current.type.length > 0}
           value={filtersRef.current.type}
-          options={[
-            { value: 'practice', label: t('glossary:sessionTypeFull.practice') },
-            { value: 'qualif', label: t('glossary:sessionTypeFull.qualif') },
-            { value: 'race', label: t('glossary:sessionTypeFull.race') },
-            { value: 'balancing', label: t('glossary:sessionTypeFull.balancing') },
-          ]}
+          options={sessionTypeOptions(t)}
           onChange={(v) => setFilters(f => ({ ...f, type: v }))}
         />
       ),

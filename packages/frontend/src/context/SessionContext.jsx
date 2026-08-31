@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { io } from 'socket.io-client'
 import { useApp } from './AppContext'
 import { useVoice } from './VoiceContext'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -123,7 +124,7 @@ export function SessionProvider({ children }) {
       window.dispatchEvent(new CustomEvent('session:finished', { detail: data }))
 
       // Skip podium/voice for balancing sessions
-      if (data.sessionType === 'balancing') return
+      if (data.sessionType === SessionType.BALANCING) return
 
       // Play finish music then announce podium
       try {
@@ -133,7 +134,7 @@ export function SessionProvider({ children }) {
 
         const v = voiceRef.current
         if (v.podiumEnabledRef.current && data.leaderboard?.length > 0) {
-          const isQualif = data.sessionType === 'qualif'
+          const isQualif = data.sessionType === SessionType.QUALIF
           const sorted = [...data.leaderboard]
             .filter(d => d.driver && (d.totalLaps > 0 || d.bestLapTime))
             .sort((a, b) => {
@@ -197,7 +198,7 @@ export function SessionProvider({ children }) {
 
     // Best lap voice announcement (skip for balancing)
     socket.on('session:bestlap', (data) => {
-      if (data.sessionType === 'balancing') return
+      if (data.sessionType === SessionType.BALANCING) return
       const v = voiceRef.current
       if (!v.bestLapEnabledRef.current) return
       if (data.maxLapsCompleted < v.minLapsRef.current) return
@@ -505,7 +506,7 @@ export function SessionProvider({ children }) {
 
   // Notify AppContext of session active state
   useEffect(() => {
-    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== 'balancing')
+    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== SessionType.BALANCING)
   }, [session?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ==================== Computed Data ====================

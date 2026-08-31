@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
 import { Wifi, WifiOff, Trash2, Play, Square, RefreshCw, X, Zap, User, Settings } from 'lucide-react'
 import { API_URL, CONTROLLER_COLORS, CU_BUTTONS, MODE_FLAGS } from '../constants'
+import { SessionType } from '@racehubos/shared'
 
 // Auto-assign drivers/cars to controllers based on DB data
 const autoAssignControllers = (drivers, cars, currentConfig) => {
@@ -57,7 +58,7 @@ export default function Test() {
         const createRes = await fetch(`${API_URL}/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'practice', name: 'Test Session' })
+          body: JSON.stringify({ type: SessionType.PRACTICE, name: 'Test Session' })
         })
         const createData = await createRes.json()
         if (createData.success) session = createData.data

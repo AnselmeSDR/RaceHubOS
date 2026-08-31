@@ -4,6 +4,7 @@ import { FlaskConical, Clock, Flag } from 'lucide-react'
 import LapTime from '../race/LapTime'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
+import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey, sessionTypeKey } from '@racehubos/shared'
 
 /**
  * StandingsTabs - Three tabs for Practice, Qualifications and Races standings
@@ -14,15 +15,21 @@ import { GAP_COLORS } from '../../lib/colors'
 export default function StandingsTabs({
   standings = {},
   drivers = [],
-  activeTab = 'practice',
+  activeTab = SessionType.PRACTICE,
   onTabChange
 }) {
   const { t } = useTranslation('championships')
-  const tabs = [
-    { id: 'practice', label: t('glossary:sessionTypeFull.practice'), shortLabel: t('glossary:sessionType.practice'), icon: FlaskConical, color: 'purple' },
-    { id: 'qualif', label: t('glossary:sessionTypeFull.qualif'), shortLabel: t('glossary:sessionType.qualif'), icon: Clock, color: 'blue' },
-    { id: 'race', label: t('glossary:sessionTypeFull.race'), shortLabel: t('glossary:sessionType.race'), icon: Flag, color: 'green' }
-  ]
+  const TAB_STYLE = {
+    [SessionType.PRACTICE]: { icon: FlaskConical, color: 'purple' },
+    [SessionType.QUALIF]: { icon: Clock, color: 'blue' },
+    [SessionType.RACE]: { icon: Flag, color: 'green' },
+  }
+  const tabs = STANDARD_SESSION_TYPES.map((id) => ({
+    id,
+    label: t(sessionTypeFullKey(id)),
+    shortLabel: t(sessionTypeKey(id)),
+    ...TAB_STYLE[id],
+  }))
 
   // Get driver info by ID
   const getDriver = (driverId) => {
@@ -31,7 +38,7 @@ export default function StandingsTabs({
 
   // Get sorted standings for current tab
   const sortedStandings = useMemo(() => {
-    if (activeTab === 'practice') {
+    if (activeTab === SessionType.PRACTICE) {
       // Practice standings: array of { driverId, lapTime, driver, car, ... }
       const practiceData = standings.practice || []
       return [...practiceData].sort((a, b) => {
@@ -39,7 +46,7 @@ export default function StandingsTabs({
         const bTime = b.lapTime || b.bestTime || Infinity
         return aTime - bTime
       })
-    } else if (activeTab === 'qualif') {
+    } else if (activeTab === SessionType.QUALIF) {
       // Qualif standings from championship standings
       const qualifData = standings.qualif || []
       return [...qualifData]
@@ -68,17 +75,17 @@ export default function StandingsTabs({
     if (index === 0) return null
     const leader = sortedStandings[0]
 
-    if (activeTab === 'practice') {
+    if (activeTab === SessionType.PRACTICE) {
       const leaderTime = leader.lapTime || leader.bestTime
       const currentTime = standing.lapTime || standing.bestTime
       if (leaderTime && currentTime) {
         return { type: 'time', value: currentTime - leaderTime }
       }
-    } else if (activeTab === 'qualif') {
+    } else if (activeTab === SessionType.QUALIF) {
       if (leader.bestTime && standing.bestTime) {
         return { type: 'time', value: standing.bestTime - leader.bestTime }
       }
-    } else if (activeTab === 'race') {
+    } else if (activeTab === SessionType.RACE) {
       const leaderLaps = leader.totalLaps || leader.raceTotalLaps || 0
       const currentLaps = standing.totalLaps || standing.raceTotalLaps || 0
       const lapDiff = leaderLaps - currentLaps
@@ -182,7 +189,7 @@ export default function StandingsTabs({
                       {standing.car && (
                         <span className="truncate">{standing.car.brand} {standing.car.model}</span>
                       )}
-                      {activeTab !== 'race' && (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
+                      {activeTab !== SessionType.RACE && (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
                         <span>• {t('standings.lapsCount', { count: standing.totalLaps || standing.raceTotalLaps || standing.laps })}</span>
                       )}
                     </div>
@@ -190,7 +197,7 @@ export default function StandingsTabs({
 
                   {/* Stats */}
                   <div className="text-right flex items-center gap-3">
-                    {activeTab === 'practice' && (
+                    {activeTab === SessionType.PRACTICE && (
                       <>
                         <LapTime time={standing.lapTime || standing.bestTime} size="sm" />
                         {gap !== null && (
@@ -201,7 +208,7 @@ export default function StandingsTabs({
                       </>
                     )}
 
-                    {activeTab === 'qualif' && (
+                    {activeTab === SessionType.QUALIF && (
                       <>
                         <LapTime time={standing.bestTime} size="sm" />
                         {gap !== null && (
@@ -212,7 +219,7 @@ export default function StandingsTabs({
                       </>
                     )}
 
-                    {activeTab === 'race' && (
+                    {activeTab === SessionType.RACE && (
                       <>
                         {/* Tours */}
                         <div className="text-center min-w-[40px]">

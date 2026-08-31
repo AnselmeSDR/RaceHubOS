@@ -7,6 +7,7 @@ import LapTime from '../race/LapTime'
 import ResultsModal from '../race/session/ResultsModal'
 import CancelConfirmModal from '../race/session/CancelConfirmModal'
 import { StartLights } from '../ui'
+import { SessionType } from '@racehubos/shared'
 
 /**
  * Format seconds to MM:SS or HH:MM:SS
@@ -70,8 +71,8 @@ export default function Session({
     progress = Math.min(100, Math.max(0, (elapsed / total) * 100))
   }
 
-  const sessionTypeLabel = session.type === 'qualif' ? t('session.typeQualif')
-    : session.type === 'race' ? t('session.typeRace')
+  const sessionTypeLabel = session.type === SessionType.QUALIF ? t('session.typeQualif')
+    : session.type === SessionType.RACE ? t('session.typeRace')
     : t('session.typePractice')
 
   const handleCancel = async () => {

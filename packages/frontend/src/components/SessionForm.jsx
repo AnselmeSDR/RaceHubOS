@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Plus, Trash2 } from 'lucide-react'
+import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -8,7 +9,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
   const { t } = useTranslation('sessions')
   const [formData, setFormData] = useState({
     name: '',
-    type: 'practice',
+    type: SessionType.PRACTICE,
     trackId: '',
     championshipId: '',
     duration: null,
@@ -33,7 +34,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
     if (session) {
       setFormData({
         name: session.name || '',
-        type: session.type || 'practice',
+        type: session.type || SessionType.PRACTICE,
         trackId: session.trackId || '',
         championshipId: session.championshipId || '',
         duration: session.duration || null,
@@ -225,9 +226,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="practice">{t('glossary:sessionTypeFull.practice')}</option>
-                  <option value="qualif">{t('glossary:sessionTypeFull.qualif')}</option>
-                  <option value="race">{t('glossary:sessionTypeFull.race')}</option>
+                  {STANDARD_SESSION_TYPES.map((type) => (
+                    <option key={type} value={type}>{t(sessionTypeFullKey(type))}</option>
+                  ))}
                 </select>
               </div>
 

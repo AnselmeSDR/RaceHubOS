@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { SessionType } from '@racehubos/shared'
 
 const KEYS = {
   theme: 'racehubos-theme',
@@ -61,7 +62,7 @@ export function AppProvider({ children }) {
 
   // Free session preferences
   const [freeTrack, _setFreeTrack] = useState(() => localStorage.getItem(KEYS.freeTrack) || null)
-  const [freeType, _setFreeType] = useState(() => localStorage.getItem(KEYS.freeType) || 'practice')
+  const [freeType, _setFreeType] = useState(() => localStorage.getItem(KEYS.freeType) || SessionType.PRACTICE)
 
   const setFreeTrack = useCallback((id) => {
     _setFreeTrack(id)

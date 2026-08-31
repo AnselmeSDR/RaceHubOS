@@ -1,6 +1,7 @@
 import { Trophy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LapTime from '../LapTime'
+import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 function RecordSection({ title, colorClass, records = [] }) {
     const { t } = useTranslation('race')
@@ -31,6 +32,13 @@ function RecordSection({ title, colorClass, records = [] }) {
     )
 }
 
+// Tailwind cannot build class names at runtime, so each type's colour is spelled out
+const RECORD_COLOR = {
+    [SessionType.PRACTICE]: 'text-gray-500',
+    [SessionType.QUALIF]: 'text-blue-600',
+    [SessionType.RACE]: 'text-green-600',
+}
+
 export default function TrackRecordsPanel({ selectedTrack, trackRecords = {} }) {
     const { t } = useTranslation('race')
 
@@ -47,21 +55,14 @@ export default function TrackRecordsPanel({ selectedTrack, trackRecords = {} }) 
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <RecordSection
-                        title={t('trackRecords.practice')}
-                        colorClass="text-gray-500"
-                        records={trackRecords.practice}
-                    />
-                    <RecordSection
-                        title={t('trackRecords.qualif')}
-                        colorClass="text-blue-600"
-                        records={trackRecords.qualif}
-                    />
-                    <RecordSection
-                        title={t('trackRecords.race')}
-                        colorClass="text-green-600"
-                        records={trackRecords.race}
-                    />
+                    {STANDARD_SESSION_TYPES.map((type) => (
+                        <RecordSection
+                            key={type}
+                            title={t(sessionTypeFullKey(type))}
+                            colorClass={RECORD_COLOR[type]}
+                            records={trackRecords[type]}
+                        />
+                    ))}
                 </div>
             )}
         </div>

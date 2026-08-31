@@ -68,10 +68,7 @@
   "trackRecords": {
     "title": "Records",
     "noRecord": "No record",
-    "selectTrack": "Select a track",
-    "practice": "Practice",
-    "qualif": "Qualifying",
-    "race": "Race"
+    "selectTrack": "Select a track"
   },
   "freePracticeEntry": {
     "laps": "Laps",

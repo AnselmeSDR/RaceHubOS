@@ -1,6 +1,7 @@
 import express from 'express';
 import SessionService from '../services/SessionService.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
+import { SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 let sessionService;
@@ -270,7 +271,7 @@ router.put('/:id/drivers', async (req, res) => {
     // Balancing measures cars, not drivers: every entry belongs to the reference
     // driver, whoever actually holds the controller. Without one configured, the
     // chosen drivers are kept and the UI warns about it.
-    const reference = session.type === 'balancing' ? await getReferenceDriver(prisma()) : null;
+    const reference = session.type === SessionType.BALANCING ? await getReferenceDriver(prisma()) : null;
 
     // Accept partial configs (driver OR car) for draft sessions
     const validDrivers = drivers.filter(d => (d.driverId || d.carId) && d.controller !== undefined);
@@ -573,7 +574,7 @@ router.get('/:id/leaderboard', async (req, res) => {
       };
 
       // Include lap history for balancing sessions (needed for chart)
-      if (session.type === 'balancing') {
+      if (session.type === SessionType.BALANCING) {
         const sortedLaps = [...laps].sort((a, b) => a.lapNumber - b.lapNumber);
         entry.laps = sortedLaps.map(l => ({
           lapNumber: l.lapNumber,

@@ -96,11 +96,6 @@
       "description": "Onglets Libre / Qualif / Course avec classements cumulés",
       "heading": "Classement Général"
     },
-    "sessionTypeLabels": {
-      "practice": "Essais Libres",
-      "qualif": "Qualifications",
-      "race": "Course"
-    },
     "activeSession": "Session active:",
     "statusDraft": "draft",
     "statusActive": "En cours",

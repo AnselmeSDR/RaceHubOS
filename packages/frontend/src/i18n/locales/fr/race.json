@@ -68,10 +68,7 @@
   "trackRecords": {
     "title": "Records",
     "noRecord": "Aucun record",
-    "selectTrack": "Sélectionnez un circuit",
-    "practice": "Libre",
-    "qualif": "Qualifications",
-    "race": "Course"
+    "selectTrack": "Sélectionnez un circuit"
   },
   "freePracticeEntry": {
     "laps": "Tours",

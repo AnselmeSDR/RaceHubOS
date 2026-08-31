@@ -174,11 +174,6 @@
   },
   "sessionConfigModal": {
     "title": "Configuration Session",
-    "sessionTypeLabels": {
-      "practice": "Essais Libres",
-      "qualif": "Qualifications",
-      "race": "Course"
-    },
     "name": "Nom",
     "type": "Type",
     "duration": "Durée (minutes)",

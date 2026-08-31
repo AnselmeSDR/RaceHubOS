@@ -1,4 +1,5 @@
 import { createPrismaClient } from '../lib/prisma.js';
+import { SessionType } from '@racehubos/shared';
 
 /**
  * ChampionshipService - Championship-specific operations
@@ -92,7 +93,7 @@ export class ChampionshipService {
     await this.prisma.session.deleteMany({
       where: {
         championshipId,
-        type: { in: ['qualif', 'race'] },
+        type: { in: [SessionType.QUALIF, SessionType.RACE] },
         status: 'draft',
         deletedAt: null,
       },
@@ -107,7 +108,7 @@ export class ChampionshipService {
       const session = await this.prisma.session.create({
         data: {
           name: `Qualification ${g + 1}`,
-          type: 'qualif',
+          type: SessionType.QUALIF,
           status: 'draft',
           trackId,
           championshipId,
@@ -135,7 +136,7 @@ export class ChampionshipService {
       await this.prisma.session.create({
         data: {
           name: `Course ${g + 1}`,
-          type: 'race',
+          type: SessionType.RACE,
           status: 'draft',
           trackId,
           championshipId,
@@ -163,7 +164,7 @@ export class ChampionshipService {
     const qualifSessions = await this.prisma.session.findMany({
       where: {
         championshipId,
-        type: 'qualif',
+        type: SessionType.QUALIF,
         status: 'finished',
         deletedAt: null,
       },
@@ -206,7 +207,7 @@ export class ChampionshipService {
     const raceSessions = await this.prisma.session.findMany({
       where: {
         championshipId,
-        type: 'race',
+        type: SessionType.RACE,
         deletedAt: null,
       },
       orderBy: { autoGroup: 'asc' },
@@ -272,8 +273,8 @@ export class ChampionshipService {
       orderBy: { order: 'asc' },
     });
 
-    const qualifSessions = sessions.filter(s => s.type === 'qualif');
-    const raceSessions = sessions.filter(s => s.type === 'race');
+    const qualifSessions = sessions.filter(s => s.type === SessionType.QUALIF);
+    const raceSessions = sessions.filter(s => s.type === SessionType.RACE);
     const allQualifsFinished = qualifSessions.length > 0
       && qualifSessions.every(s => s.status === 'finished');
 
@@ -352,9 +353,9 @@ export class ChampionshipService {
     if (championship?.mode !== 'auto') return;
 
     const finishedSession = championship.sessions.find(s => s.id === sessionId);
-    if (finishedSession?.type !== 'qualif') return;
+    if (finishedSession?.type !== SessionType.QUALIF) return;
 
-    const qualifSessions = championship.sessions.filter(s => s.type === 'qualif');
+    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF);
     const allFinished = qualifSessions.every(s => s.status === 'finished');
 
     if (allFinished) {
@@ -386,10 +387,10 @@ export class ChampionshipService {
     if (championship?.mode !== 'auto') return;
 
     const resetSession = championship.sessions.find(s => s.id === sessionId);
-    if (resetSession?.type !== 'qualif') return;
+    if (resetSession?.type !== SessionType.QUALIF) return;
 
     // Clear race session drivers since qualif results changed
-    const raceSessions = championship.sessions.filter(s => s.type === 'race');
+    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE);
     for (const race of raceSessions) {
       await this.prisma.sessionDriver.deleteMany({ where: { sessionId: race.id } });
     }
@@ -476,9 +477,9 @@ export class ChampionshipService {
     }
 
     // Use points system based on session type
-    if (session.type === 'race') {
+    if (session.type === SessionType.RACE) {
       return pointsSystem.racePoints || {};
-    } else if (session.type === 'qualif') {
+    } else if (session.type === SessionType.QUALIF) {
       return pointsSystem.qualifPoints || {};
     }
 

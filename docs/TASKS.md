@@ -26,23 +26,27 @@
 - ✅ Frontend : colonne dans le tableau, cliquable vers la fiche du championnat
 - ✅ Filtre par championnat, avec option « Hors championnat » et combinaison de plusieurs championnats
 
-### TASK-03: Ajouter "Équilibrage" dans le filtre de sessions + rendre le filtre dynamique
+### TASK-03: ✅ Ajouter "Équilibrage" dans le filtre de sessions + rendre le filtre dynamique
 **Domaine**: Frontend + Backend
-**Description**: Le filtre de sessions propose aujourd'hui *Essais / Qualification / Course*. Il faut **ajouter "Équilibrage"**, et faire en sorte que le filtre se mette à jour **automatiquement** si on ajoute un nouveau mode de session à l'avenir.
-**Action**:
-- Centraliser les types de session dans un **enum** unique (Prisma + côté front partagé)
-  - Pistes : enum Prisma `SessionType` / constants TS partagées
-- Le composant de filtre lit la liste des types depuis cet enum (pas de hardcode)
-- Ajouter `BALANCING` (ou nom équivalent) à l'enum
-- Vérifier les libellés i18n associés (un libellé par type)
-- Audit : repérer tous les endroits qui listent en dur les types de session pour les brancher sur la source unique
+**Statut**: Terminée le 31/08/2026 (v1.20.0)
+**Description**: Les types de session étaient réécrits à la main partout — 129 endroits dans 24 fichiers. C'est ce qui explique que l'équilibrage existait en base depuis des mois sans apparaître dans le filtre des statistiques : chaque liste était indépendante, et personne ne pouvait toutes les retrouver.
+**Ce qui a été fait**:
+- Paquet **`@racehubos/shared`** (`packages/shared/src/sessionTypes.js`) : `SessionType`, `SESSION_TYPES`, `STANDARD_SESSION_TYPES`, `isSessionType`, et les helpers de clés i18n. Consommé par le serveur comme par l'interface
+- **`enum SessionType` dans `schema.prisma`** : le client Prisma refuse d'enregistrer un type inexistant. **Aucune migration** — SQLite stocke un enum comme du texte, le schéma de la base est inchangé (vérifié : `migrate diff` vide)
+- Les filtres **Statistiques** et **Sessions**, le formulaire de session, les onglets de session libre, les onglets de classement et le panneau des records construisent leur liste depuis la définition partagée
+- Trois séries de libellés faisaient doublon avec le glossaire (`championships`, `displays`, `race`) : supprimées. Tout passe par `glossary:sessionType` / `sessionTypeFull`, seuls à couvrir les quatre types en FR et EN
+- `STANDARD_SESSION_TYPES` exclut volontairement l'équilibrage : il a son propre écran, n'appartient à aucun championnat et ne produit pas de classement
+- Deux constantes locales nommées `SESSION_TYPES` (ChampionshipConfigModal, ChampionshipHeader) entraient en collision avec l'export partagé : renommées `TYPE_STYLE`
+- `src/__tests__/sessionTypes.test.js` interdit toute divergence entre l'enum Prisma, le paquet partagé et les traductions
+**⚠️ À savoir**: un build Vite réussi **ne détecte pas** un symbole utilisé sans import — 15 fichiers auraient planté à l'exécution. Après ce genre de refactoring, vérifier les imports par un contrôle dédié, jamais par le seul build.
+**Lié à**: TASK-04 (autres champs stringly-typed), RUSH-02
 
 ### TASK-04: Centraliser tous les autres champs "stringly-typed" en enums
 **Domaine**: Frontend + Backend
 **Description**: Même problème que TASK-03 : plusieurs champs de la base sont des `String` libres avec des valeurs en dur disséminées dans le code. Audit + migration vers une source unique (enum Prisma + constants partagées front).
 **Candidats identifiés** (à l'audit de la base actuelle) :
 - `Session.status` → `draft | ready | active | finishing | finished` (utilisé partout : SessionContext, SessionSection, SessionConfigModal, etc.)
-- `Session.type` → `practice | qualif | race | balancing` (déjà couvert par TASK-03, à fusionner)
+- ~~`Session.type`~~ → **fait en v1.20.0** (TASK-03) : le modèle à suivre pour les autres — paquet `@racehubos/shared`, enum Prisma, tests de cohérence avec les traductions
 - `Session.fuelMode` → `OFF | ...` (à inventorier dans SessionForm)
 - `Championship.status` → `planned | ...` (valeurs à inventorier)
 - `Championship.mode` → `manual | auto`

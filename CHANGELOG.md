@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-08-31
+
+### Changed
+- **Les types de session ont désormais une seule définition** (TASK-03) : `practice`, `qualif`, `race` et `balancing` étaient réécrits à la main partout — 129 endroits dans 24 fichiers
+  - C'est ce qui explique que l'**équilibrage existait en base depuis des mois sans apparaître dans le filtre des statistiques** : chaque liste de types était une liste indépendante, et personne ne pouvait toutes les retrouver
+  - Un paquet `@racehubos/shared` porte la définition, consommé par le serveur comme par l'interface
+  - `schema.prisma` déclare un `enum SessionType` : le client Prisma **refuse désormais d'enregistrer une session dont le type n'existe pas**. Aucune migration — SQLite stocke un enum comme du texte, le schéma de la base est inchangé
+  - Les filtres des pages **Statistiques** et **Sessions**, le formulaire de session, les onglets de session libre, les onglets de classement et le panneau des records **construisent leur liste depuis cette définition** : ajouter un type le fera apparaître partout, sans avoir à chercher
+  - Trois séries de libellés faisaient doublon avec le glossaire (`championships`, `displays`, `race`) : elles sont supprimées, tout passe par `glossary:sessionType` et `glossary:sessionTypeFull`, seuls à couvrir les quatre types en français comme en anglais
+  - L'équilibrage reste volontairement hors des listes de création de course : il a son propre écran, n'appartient à aucun championnat et ne produit pas de classement
+  - Des tests vérifient que l'enum Prisma, le paquet partagé et les traductions ne peuvent plus diverger — ajouter un type sans son libellé fait échouer la suite
+
 ## [1.19.1] - 2026-08-31
 
 ### Fixed
