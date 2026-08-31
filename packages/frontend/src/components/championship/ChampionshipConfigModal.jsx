@@ -12,12 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const SESSION_TYPES = {
-  qualif: { labelKey: 'configModal.sessionTypes.qualif', shortLabel: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
-  race: { labelKey: 'configModal.sessionTypes.race', shortLabel: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
+const TYPE_STYLE = {
+  [SessionType.QUALIF]: { labelKey: 'configModal.sessionTypes.qualif', shortLabel: 'Q', color: 'bg-blue-500/15 text-blue-600', icon: Clock },
+  [SessionType.RACE]: { labelKey: 'configModal.sessionTypes.race', shortLabel: 'R', color: 'bg-green-500/15 text-green-600', icon: Flag }
 }
 
 export default function ChampionshipConfigModal({
@@ -64,7 +65,7 @@ export default function ChampionshipConfigModal({
   const [addingDriver, setAddingDriver] = useState('')
 
   // For auto mode: check what's editable
-  const hasStartedQualif = sessions.some(s => s.type === 'qualif' && s.status !== 'draft')
+  const hasStartedQualif = sessions.some(s => s.type === SessionType.QUALIF && s.status !== 'draft')
   const participantIds = useMemo(() => new Set((championship?.participants || []).map(p => p.driverId)), [championship?.participants])
   const availableDrivers = useMemo(() => allDrivers.filter(d => !participantIds.has(d.id)), [allDrivers, participantIds])
 
@@ -100,11 +101,11 @@ export default function ChampionshipConfigModal({
   }
 
   const qrSessions = sessions
-    .filter(s => s.type === 'qualif' || s.type === 'race')
+    .filter(s => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
     .sort((a, b) => ((a.order ?? 0) - (b.order ?? 0)) || (new Date(a.createdAt) - new Date(b.createdAt)))
 
   const getSessionLabel = (session) => {
-    const prefix = session.type === 'qualif' ? 'Q' : 'R'
+    const prefix = session.type === SessionType.QUALIF ? 'Q' : 'R'
     const sameType = qrSessions.filter(s => s.type === session.type)
     return `${prefix}${sameType.findIndex(s => s.id === session.id) + 1}`
   }
@@ -297,10 +298,10 @@ export default function ChampionshipConfigModal({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">{t('configModal.sessions')}</span>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('qualif')} disabled={isFinished} className="text-blue-500 h-7">
+                <Button variant="ghost" size="sm" onClick={() => setShowNewSession(SessionType.QUALIF)} disabled={isFinished} className="text-blue-500 h-7">
                   <Plus className="size-3" /> {t('configModal.addQualif')}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowNewSession('race')} disabled={isFinished} className="text-green-500 h-7">
+                <Button variant="ghost" size="sm" onClick={() => setShowNewSession(SessionType.RACE)} disabled={isFinished} className="text-green-500 h-7">
                   <Plus className="size-3" /> {t('configModal.addRace')}
                 </Button>
               </div>
@@ -314,7 +315,7 @@ export default function ChampionshipConfigModal({
               )}
 
               {qrSessions.map((session, index) => {
-                const config = SESSION_TYPES[session.type]
+                const config = TYPE_STYLE[session.type]
                 const Icon = config.icon
                 const isEditing = editingSession === session.id
 
@@ -378,10 +379,10 @@ export default function ChampionshipConfigModal({
                 <div className="p-3 bg-muted/50">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge className={SESSION_TYPES[showNewSession].color}>
-                        {showNewSession === 'qualif' ? 'Q' : 'R'}{qrSessions.filter(s => s.type === showNewSession).length + 1}
+                      <Badge className={TYPE_STYLE[showNewSession].color}>
+                        {showNewSession === SessionType.QUALIF ? 'Q' : 'R'}{qrSessions.filter(s => s.type === showNewSession).length + 1}
                       </Badge>
-                      <Input value={newSessionForm.name} onChange={(e) => setNewSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={t(SESSION_TYPES[showNewSession].labelKey)} className="flex-1 h-7" />
+                      <Input value={newSessionForm.name} onChange={(e) => setNewSessionForm(f => ({ ...f, name: e.target.value }))} placeholder={t(TYPE_STYLE[showNewSession].labelKey)} className="flex-1 h-7" />
                       <Button size="sm" className="h-7" onClick={handleCreateSession} disabled={!newSessionForm.useTime && !newSessionForm.useLaps}>
                         <Check className="size-3.5" /> {t('configModal.create')}
                       </Button>

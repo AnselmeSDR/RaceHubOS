@@ -96,11 +96,6 @@
       "description": "Free / Qualif / Race tabs with cumulative standings",
       "heading": "Overall Standings"
     },
-    "sessionTypeLabels": {
-      "practice": "Free Practice",
-      "qualif": "Qualifying",
-      "race": "Race"
-    },
     "activeSession": "Active session:",
     "statusDraft": "draft",
     "statusActive": "Running",

@@ -34,6 +34,7 @@ import ConfigStatus from '../components/config/ConfigStatus'
 // UI components
 import Modal, { ModalFooter, ModalButton } from '../components/ui/Modal'
 import ErrorMessage from '../components/ErrorMessage'
+import { SessionType, sessionTypeFullKey } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -185,7 +186,7 @@ export default function Displays() {
           />
         )}
 
-        {activeTab === 'race' && (
+        {activeTab === SessionType.RACE && (
           <RaceDisplays
             drivers={drivers}
             cars={cars}
@@ -569,7 +570,7 @@ function RaceDisplays({ drivers, cars, loading }) {
 // Championship Displays Tab
 function ChampionshipDisplays({ drivers, cars, loading }) {
   const { t } = useTranslation('displays')
-  const [sessionType, setSessionType] = useState('practice')
+  const [sessionType, setSessionType] = useState(SessionType.PRACTICE)
 
   if (loading) return <LoadingState />
 
@@ -583,7 +584,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
     }))
 
     switch (type) {
-      case 'practice':
+      case SessionType.PRACTICE:
         return baseData.map((entry, idx) => ({
           ...entry,
           laps: 12 - idx * 2,
@@ -591,7 +592,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           lastLap: 5200 + idx * 100,
           gap: idx === 0 ? null : `+${(idx * 0.8).toFixed(1)}s`,
         }))
-      case 'qualif':
+      case SessionType.QUALIF:
         return baseData.map((entry, idx) => ({
           ...entry,
           laps: 5,
@@ -629,9 +630,9 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
   }))
 
   const sessionTypeLabels = {
-    practice: { label: t('championship.sessionTypeLabels.practice'), icon: FlaskConical, color: 'bg-gray-500' },
-    qualif: { label: t('championship.sessionTypeLabels.qualif'), icon: Clock, color: 'bg-purple-500' },
-    race: { label: t('championship.sessionTypeLabels.race'), icon: Flag, color: 'bg-green-500' },
+    [SessionType.PRACTICE]: { label: t(sessionTypeFullKey(SessionType.PRACTICE)), icon: FlaskConical, color: 'bg-gray-500' },
+    [SessionType.QUALIF]: { label: t(sessionTypeFullKey(SessionType.QUALIF)), icon: Clock, color: 'bg-purple-500' },
+    [SessionType.RACE]: { label: t(sessionTypeFullKey(SessionType.RACE)), icon: Flag, color: 'bg-green-500' },
   }
 
   const currentSession = sessionTypeLabels[sessionType]
@@ -703,8 +704,8 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
         <SectionHeader
           title={t('championship.leaderboardByType.title', { type: currentSession.label })}
           description={
-            sessionType === 'practice' ? t('championship.leaderboardByType.descriptionPractice') :
-            sessionType === 'qualif' ? t('championship.leaderboardByType.descriptionQualif') :
+            sessionType === SessionType.PRACTICE ? t('championship.leaderboardByType.descriptionPractice') :
+            sessionType === SessionType.QUALIF ? t('championship.leaderboardByType.descriptionQualif') :
             t('championship.leaderboardByType.descriptionRace')
           }
           componentName="Leaderboard"
@@ -713,18 +714,18 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden p-4">
           <div className="flex items-center gap-2 mb-4">
             <SessionIcon className={`w-5 h-5 ${
-              sessionType === 'practice' ? 'text-gray-500' :
-              sessionType === 'qualif' ? 'text-purple-500' :
+              sessionType === SessionType.PRACTICE ? 'text-gray-500' :
+              sessionType === SessionType.QUALIF ? 'text-purple-500' :
               'text-green-500'
             }`} />
             <span className="font-semibold text-gray-700 dark:text-gray-200">{currentSession.label}</span>
-            {sessionType === 'qualif' && (
+            {sessionType === SessionType.QUALIF && (
               <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
                 <Clock className="w-3 h-3" />
                 {t('championship.maxLaps', { count: 5 })}
               </span>
             )}
-            {sessionType === 'race' && (
+            {sessionType === SessionType.RACE && (
               <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
                 <RefreshCw className="w-3 h-3" />
                 {t('championship.raceLaps', { count: 25 })}

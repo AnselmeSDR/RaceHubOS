@@ -7,6 +7,7 @@ import AutoChampionshipWizard from '../components/championship/AutoChampionshipW
 import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -113,23 +114,23 @@ export default function Championships() {
     },
     {
       id: 'qualifs',
-      accessorFn: (row) => row.sessions?.filter(s => s.type === 'qualif').length || 0,
+      accessorFn: (row) => row.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0,
       header: t('columns.qualifs'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="w-4 h-4 text-blue-500" />
-          {row.original.sessions?.filter(s => s.type === 'qualif').length || 0}
+          {row.original.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0}
         </span>
       ),
     },
     {
       id: 'races',
-      accessorFn: (row) => row.sessions?.filter(s => s.type === 'race').length || 0,
+      accessorFn: (row) => row.sessions?.filter(s => s.type === SessionType.RACE).length || 0,
       header: t('columns.races'),
       cell: ({ row }) => (
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Flag className="w-4 h-4 text-green-500" />
-          {row.original.sessions?.filter(s => s.type === 'race').length || 0}
+          {row.original.sessions?.filter(s => s.type === SessionType.RACE).length || 0}
         </span>
       ),
     },

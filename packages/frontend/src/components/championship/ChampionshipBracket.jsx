@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Clock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { STATUS_COLORS } from '../../lib/colors'
+import { SessionType } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -21,10 +22,10 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
   const { t } = useTranslation('championships')
   const s = STATUS_COLORS[status] || STATUS_COLORS.draft
   const StatusIcon = STATUS_ICONS[status] || Circle
-  const borderColor = type === 'qualif'
+  const borderColor = type === SessionType.QUALIF
     ? 'border-blue-200 dark:border-blue-800'
     : 'border-green-200 dark:border-green-800'
-  const bgColor = type === 'qualif'
+  const bgColor = type === SessionType.QUALIF
     ? 'bg-blue-50/50 dark:bg-blue-950/20'
     : 'bg-green-50/50 dark:bg-green-950/20'
 
@@ -41,7 +42,7 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
       {drivers?.length > 0 ? (
         <div className="space-y-1">
           {drivers.map((sd, i) => {
-            const isFinishedRace = type === 'race' && showTimes
+            const isFinishedRace = type === SessionType.RACE && showTimes
             const isPodium = isFinishedRace && sd.finalPos >= 1 && sd.finalPos <= 3
             return (
               <div key={sd.id || i} className="flex items-center gap-2 text-xs">
@@ -58,7 +59,7 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
                   }`}>P{sd.finalPos}</span>
                 )}
                 {showTimes && (
-                  type === 'race'
+                  type === SessionType.RACE
                     ? sd.totalTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
                     : sd.bestLapTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
                 )}
@@ -145,7 +146,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
                 name={g.name}
                 status={g.status}
                 drivers={g.drivers}
-                type="qualif"
+                type={SessionType.QUALIF}
                 showTimes={g.status === 'finished'}
               />
             </button>
@@ -196,7 +197,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
                 name={g.name}
                 status={g.status}
                 drivers={g.drivers}
-                type="race"
+                type={SessionType.RACE}
                 showTimes={g.status === 'finished'}
               />
             </button>

@@ -4,11 +4,12 @@ import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, T
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
+import { SessionType } from '@racehubos/shared'
 
-const SESSION_TYPES = {
-  practice: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
-  qualif: { label: 'Q', color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
-  race: { label: 'R', color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
+const TYPE_STYLE = {
+  [SessionType.PRACTICE]: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
+  [SessionType.QUALIF]: { label: 'Q', color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
+  [SessionType.RACE]: { label: 'R', color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
 }
 
 export default function ChampionshipHeader({
@@ -29,23 +30,23 @@ export default function ChampionshipHeader({
 }) {
   const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
-    if (session.type === 'practice') return 'EL'
+    if (session.type === SessionType.PRACTICE) return 'EL'
     const sameType = sessions.filter(s => s.type === session.type)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const index = sameType.findIndex(s => s.id === session.id) + 1
-    return `${session.type === 'qualif' ? 'Q' : 'R'}${index}`
+    return `${session.type === SessionType.QUALIF ? 'Q' : 'R'}${index}`
   }
 
   const getStatusDot = (session) => STATUS_DOTS[session.status] || null
 
   const isFinished = championship?.status === 'finished'
-  const qrSessions = sessions.filter(s => s.type === 'qualif' || s.type === 'race')
+  const qrSessions = sessions.filter(s => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
   const allSessionsFinished = qrSessions.length > 0 && qrSessions.every(s => s.status === 'finished')
   const canFinish = allSessionsFinished && !isFinished
 
   const sortedSessions = [...sessions].sort((a, b) => {
-    if (a.type === 'practice') return -1
-    if (b.type === 'practice') return 1
+    if (a.type === SessionType.PRACTICE) return -1
+    if (b.type === SessionType.PRACTICE) return 1
     if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0)
     return new Date(a.createdAt) - new Date(b.createdAt)
   })
@@ -68,7 +69,7 @@ export default function ChampionshipHeader({
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {sortedSessions.map(session => {
-            const config = SESSION_TYPES[session.type]
+            const config = TYPE_STYLE[session.type]
             const isSelected = selectedSession?.id === session.id
             const Icon = config.icon
             const dot = getStatusDot(session)

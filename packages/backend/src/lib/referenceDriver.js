@@ -1,3 +1,4 @@
+import { SessionType } from '@racehubos/shared';
 /**
  * Reference driver ("Le STIG"): the constant behind every balancing run.
  *
@@ -64,12 +65,12 @@ export async function migrateBalancingLaps(prisma, driverId) {
     const notReference = { OR: [{ driverId: null }, { driverId: { not: driverId } }] };
 
     const laps = await tx.lap.updateMany({
-      where: { phase: 'balancing', ...notReference },
+      where: { phase: SessionType.BALANCING, ...notReference },
       data: { driverId },
     });
 
     const balancingSessions = await tx.session.findMany({
-      where: { type: 'balancing' },
+      where: { type: SessionType.BALANCING },
       select: { id: true },
     });
 

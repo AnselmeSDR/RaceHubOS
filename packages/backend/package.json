@@ -22,6 +22,7 @@
     "@abandonware/noble": "^1.9.2-26",
     "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@racehubos/shared": "*",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

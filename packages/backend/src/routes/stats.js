@@ -1,6 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
+import { SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -49,7 +50,7 @@ router.get('/drivers', async (req, res) => {
 
       // Count races, wins, podiums
       const sessions = driver.sessions || [];
-      const races = sessions.filter(sd => sd.session.type === 'race');
+      const races = sessions.filter(sd => sd.session.type === SessionType.RACE);
       const wins = races.filter(sd => sd.finalPos === 1).length;
       const podiums = races.filter(sd => sd.finalPos && sd.finalPos <= 3).length;
 
@@ -144,7 +145,7 @@ router.get('/cars', async (req, res) => {
         : null;
 
       const sessions = car.sessions || [];
-      const races = sessions.filter(sd => sd.session.type === 'race');
+      const races = sessions.filter(sd => sd.session.type === SessionType.RACE);
       const wins = races.filter(sd => sd.finalPos === 1).length;
 
       return {
@@ -303,12 +304,12 @@ router.get('/leaderboard/drivers', async (req, res) => {
       });
 
       // Sort by best lap for practice/qualif, by laps and best lap for race
-      if (phase === 'practice' || phase === 'qualif') {
+      if (phase === SessionType.PRACTICE || phase === SessionType.QUALIF) {
         leaderboard = leaderboard
           .filter(entry => entry.bestLap !== null)
           .sort((a, b) => a.bestLap - b.bestLap)
           .map((entry, index) => ({ ...entry, position: index + 1 }));
-      } else if (phase === 'race') {
+      } else if (phase === SessionType.RACE) {
         leaderboard = leaderboard
           .sort((a, b) => {
             if (b.laps !== a.laps) return b.laps - a.laps;
@@ -329,7 +330,7 @@ router.get('/leaderboard/drivers', async (req, res) => {
           sessions: {
             where: {
               session: {
-                type: 'race',
+                type: SessionType.RACE,
               },
             },
           },
@@ -392,13 +393,13 @@ router.get('/leaderboard/teams', async (req, res) => {
               where: {
                 session: {
                   championshipId,
-                  type: 'race',
+                  type: SessionType.RACE,
                 },
               },
             } : {
               where: {
                 session: {
-                  type: 'race',
+                  type: SessionType.RACE,
                 },
               },
             },
@@ -668,7 +669,7 @@ router.get('/records', async (req, res) => {
           where: {
             finalPos: 1,
             session: {
-              type: 'race',
+              type: SessionType.RACE,
               ...champFilter,
             },
           },
@@ -690,7 +691,7 @@ router.get('/records', async (req, res) => {
               in: [1, 2, 3],
             },
             session: {
-              type: 'race',
+              type: SessionType.RACE,
               ...champFilter,
             },
           },
@@ -710,7 +711,7 @@ router.get('/records', async (req, res) => {
           where: {
             gridPos: 1,
             session: {
-              type: 'race',
+              type: SessionType.RACE,
               ...champFilter,
             },
           },

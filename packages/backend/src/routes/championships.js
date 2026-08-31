@@ -1,6 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl } from '../utils/imageUrl.js';
+import { SessionType } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -50,9 +51,9 @@ router.get('/', async (req, res) => {
       if (sortBy === 'track') {
         sorted = [...allChampionships].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
       } else if (sortBy === 'qualifs') {
-        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === 'qualif').length || 0) - (b.sessions?.filter(s => s.type === 'qualif').length || 0)));
+        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0) - (b.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0)));
       } else if (sortBy === 'races') {
-        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === 'race').length || 0) - (b.sessions?.filter(s => s.type === 'race').length || 0)));
+        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === SessionType.RACE).length || 0) - (b.sessions?.filter(s => s.type === SessionType.RACE).length || 0)));
       }
     }
 
@@ -219,7 +220,7 @@ router.post('/', async (req, res) => {
       await prisma.session.create({
         data: {
           name: 'Essais Libres',
-          type: 'practice',
+          type: SessionType.PRACTICE,
           status: 'draft',
           championshipId: championship.id,
           trackId,
@@ -472,8 +473,8 @@ router.get('/:id/results', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Championship not found' });
     }
 
-    const qualifSessions = championship.sessions.filter(s => s.type === 'qualif' && s.status === 'finished');
-    const raceSessions = championship.sessions.filter(s => s.type === 'race' && s.status === 'finished');
+    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF && s.status === 'finished');
+    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE && s.status === 'finished');
 
     // --- Final standings (race-based) ---
     const raceStats = {};
@@ -646,14 +647,14 @@ router.put('/:id/participants', async (req, res) => {
       return res.status(400).json({ success: false, error: 'One or more drivers not found' });
     }
 
-    const hasStartedQualif = championship.sessions.some(s => s.type === 'qualif' && s.status !== 'draft');
+    const hasStartedQualif = championship.sessions.some(s => s.type === SessionType.QUALIF && s.status !== 'draft');
 
     // Cannot remove participants who already raced in a non-draft session
     if (hasStartedQualif) {
       const newIds = new Set(participants.map(p => p.driverId));
       const startedDriverIds = new Set();
       for (const session of championship.sessions) {
-        if (session.type === 'qualif' && session.status !== 'draft') {
+        if (session.type === SessionType.QUALIF && session.status !== 'draft') {
           const drivers = await prisma.sessionDriver.findMany({ where: { sessionId: session.id, deletedAt: null } });
           drivers.forEach(d => { if (d.driverId) startedDriverIds.add(d.driverId); });
         }
@@ -730,8 +731,8 @@ router.get('/:id/standings', async (req, res) => {
         sessions: {
           where: {
             deletedAt: null,
-            ...(type === 'practice' ? { type: 'practice' } : {
-              type: type === 'qualif' ? 'qualif' : 'race',
+            ...(type === SessionType.PRACTICE ? { type: SessionType.PRACTICE } : {
+              type: type === SessionType.QUALIF ? SessionType.QUALIF : SessionType.RACE,
               status: 'finished'
             }),
           },
@@ -740,8 +741,8 @@ router.get('/:id/standings', async (req, res) => {
               where: { deletedAt: null },
               include: { driver: true, car: true }
             },
-            laps: type !== 'race' ? {
-              where: type === 'qualif' ? { deletedAt: null } : undefined,
+            laps: type !== SessionType.RACE ? {
+              where: type === SessionType.QUALIF ? { deletedAt: null } : undefined,
               include: { driver: true, car: true }
             } : undefined
           }
@@ -758,7 +759,7 @@ router.get('/:id/standings', async (req, res) => {
 
     let standings = [];
 
-    if (type === 'qualif') {
+    if (type === SessionType.QUALIF) {
       // Qualifying standings: MIN(lapTime) grouped by driverId + carId
       const stats = {};
 
@@ -796,7 +797,7 @@ router.get('/:id/standings', async (req, res) => {
           totalLaps: entry.totalLaps
         }));
 
-    } else if (type === 'race') {
+    } else if (type === SessionType.RACE) {
       // Race standings: SUM(totalLaps), SUM(totalTime) grouped by driverId + carId
       const stats = {};
 
@@ -840,14 +841,14 @@ router.get('/:id/standings', async (req, res) => {
           finishedRaces: entry.finishedRaces
         }));
 
-    } else if (type === 'practice') {
+    } else if (type === SessionType.PRACTICE) {
       // Practice standings: MIN(lapTime) grouped by driverId + carId (includes soft-deleted laps)
       const practiceSession = championship.sessions[0];
 
       if (!practiceSession) {
         return res.json({
           success: true,
-          type: 'practice',
+          type: SessionType.PRACTICE,
           standings: [],
           count: 0
         });

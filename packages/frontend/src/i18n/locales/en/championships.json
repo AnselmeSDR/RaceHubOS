@@ -174,11 +174,6 @@
   },
   "sessionConfigModal": {
     "title": "Session Configuration",
-    "sessionTypeLabels": {
-      "practice": "Free Practice",
-      "qualif": "Qualifications",
-      "race": "Race"
-    },
     "name": "Name",
     "type": "Type",
     "duration": "Duration (minutes)",

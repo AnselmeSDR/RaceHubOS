@@ -1,5 +1,6 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import EventEmitter from 'events';
+import { SESSION_TYPES, SessionType, isSessionType } from '@racehubos/shared';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
 
@@ -24,7 +25,7 @@ export class SessionService extends EventEmitter {
     // Session state
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.currentPhase = 'practice';
+    this.currentPhase = SessionType.PRACTICE;
     this.sessionConfig = null;
     this.sessionStatus = null;
 
@@ -90,7 +91,7 @@ export class SessionService extends EventEmitter {
 
     // Balancing: ignore laps beyond maxLaps per controller
     const maxLaps = this.sessionConfig?.maxLaps;
-    if (this.currentPhase === 'balancing' && maxLaps && driver.totalLaps >= maxLaps) {
+    if (this.currentPhase === SessionType.BALANCING && maxLaps && driver.totalLaps >= maxLaps) {
       return;
     }
 
@@ -99,7 +100,7 @@ export class SessionService extends EventEmitter {
     driver.lastLapTime = Math.round(lapTime);
 
     // Track lap history for balancing chart
-    if (this.currentPhase === 'balancing') {
+    if (this.currentPhase === SessionType.BALANCING) {
       if (!this.lapHistory.has(controller)) {
         this.lapHistory.set(controller, []);
       }
@@ -212,9 +213,9 @@ export class SessionService extends EventEmitter {
 
     this.activeSessionId = session.id;
     this.activeTrackId = session.trackId;
-    this.currentPhase = session.type === 'qualif' ? 'qualif' :
-                        session.type === 'practice' ? 'practice' :
-                        session.type === 'balancing' ? 'balancing' : 'race';
+    // A lap's phase is its session's type; the ladder this replaces spelled out
+    // that identity type by type, and silently fell back to race for a new one
+    this.currentPhase = isSessionType(session.type) ? session.type : SessionType.RACE;
 
     // Reset position tracking for new session
     if (!this.previousPositions) {
@@ -259,7 +260,7 @@ export class SessionService extends EventEmitter {
 
     // Load lap history for balancing sessions (needed for chart data)
     this.lapHistory = new Map();
-    if (session.type === 'balancing') {
+    if (session.type === SessionType.BALANCING) {
       const existingLaps = await this.prisma.lap.findMany({
         where: { sessionId: session.id, deletedAt: null },
         orderBy: { lapNumber: 'asc' },
@@ -434,7 +435,7 @@ export class SessionService extends EventEmitter {
     this.gracePeriodEndsAt = null;
     this.activeSessionId = null;
     this.activeTrackId = null;
-    this.currentPhase = 'practice';
+    this.currentPhase = SessionType.PRACTICE;
     this.sessionConfig = null;
     this.sessionStatus = null;
     this.lapHistory = new Map();
@@ -520,7 +521,7 @@ export class SessionService extends EventEmitter {
   recalculatePositions(lapController = null) {
     if (this.sessionDrivers.length === 0) return;
 
-    const isRace = this.currentPhase === 'race';
+    const isRace = this.currentPhase === SessionType.RACE;
 
     if (isRace) {
       this.sessionDrivers.sort((a, b) => {
@@ -581,7 +582,7 @@ export class SessionService extends EventEmitter {
   }
 
   getEnrichedLeaderboard() {
-    if (this.currentPhase === 'balancing' && this.lapHistory.size > 0) {
+    if (this.currentPhase === SessionType.BALANCING && this.lapHistory.size > 0) {
       return this.sessionDrivers.map(d => ({
         ...d,
         laps: this.lapHistory.get(d.controller) || [],
@@ -601,7 +602,7 @@ export class SessionService extends EventEmitter {
   static calculateDriverGaps(drivers, sessionType) {
     if (!drivers || drivers.length === 0) return drivers;
 
-    const isRace = sessionType === 'race';
+    const isRace = sessionType === SessionType.RACE;
     const sorted = [...drivers].sort((a, b) => {
       if (isRace) {
         if (b.totalLaps !== a.totalLaps) return b.totalLaps - a.totalLaps;
@@ -672,7 +673,7 @@ export class SessionService extends EventEmitter {
 
         // Time is up
         if (remainingTime === 0 && this.sessionStatus === 'active') {
-          if (this.currentPhase === 'balancing') {
+          if (this.currentPhase === SessionType.BALANCING) {
             // Balancing: stop immediately, no grace period
             await this.finishSession('time_elapsed');
           } else {
@@ -734,7 +735,7 @@ export class SessionService extends EventEmitter {
 
     // Check lap limit
     if (maxLaps && this.sessionStatus === 'active') {
-      if (this.currentPhase === 'balancing') {
+      if (this.currentPhase === SessionType.BALANCING) {
         // Balancing: finish when all active controllers reached maxLaps
         const activeDrivers = this.sessionDrivers.filter(d => d.totalLaps > 0);
         if (activeDrivers.length > 0 && activeDrivers.every(d => d.totalLaps >= maxLaps)) {
@@ -997,8 +998,8 @@ export class SessionService extends EventEmitter {
   async createSession(params) {
     const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status: initialStatus } = params;
 
-    if (!['practice', 'qualif', 'race', 'balancing'].includes(type)) {
-      throw new Error('Invalid session type. Must be practice, qualif, race, or balancing');
+    if (!isSessionType(type)) {
+      throw new Error(`Invalid session type. Must be one of: ${SESSION_TYPES.join(', ')}`);
     }
 
     // Resolve trackId from championship if needed
@@ -1018,7 +1019,7 @@ export class SessionService extends EventEmitter {
     // Create session
     const session = await this.prisma.session.create({
       data: {
-        name: name || (type === 'qualif' ? 'Qualifying' : type === 'race' ? 'Race' : type === 'balancing' ? 'Balancing' : 'Practice'),
+        name: name || (type === SessionType.QUALIF ? 'Qualifying' : type === SessionType.RACE ? 'Race' : type === SessionType.BALANCING ? 'Balancing' : 'Practice'),
         type,
         status: initialStatus || 'draft',
         trackId: finalTrackId,
@@ -1037,9 +1038,9 @@ export class SessionService extends EventEmitter {
 
     // Get grid order from last qualifying if requested (for race)
     let gridOrder = null;
-    if (type === 'race' && gridFromQualifying) {
+    if (type === SessionType.RACE && gridFromQualifying) {
       const lastQualifying = await this.prisma.session.findFirst({
-        where: { trackId: finalTrackId, type: 'qualif', status: 'finished', deletedAt: null },
+        where: { trackId: finalTrackId, type: SessionType.QUALIF, status: 'finished', deletedAt: null },
         orderBy: { finishedAt: 'desc' },
         include: { drivers: { where: { deletedAt: null }, orderBy: { finalPos: 'asc' } } },
       });
@@ -1062,7 +1063,7 @@ export class SessionService extends EventEmitter {
             driverId: config.driverId,
             carId: config.carId,
             controller: config.controller,
-            gridPos: type === 'race' ? gridPos : null,
+            gridPos: type === SessionType.RACE ? gridPos : null,
           },
         });
       }
@@ -1076,7 +1077,7 @@ export class SessionService extends EventEmitter {
         championship: true,
         drivers: {
           include: { driver: true, car: true },
-          orderBy: type === 'race' ? { gridPos: 'asc' } : { controller: 'asc' },
+          orderBy: type === SessionType.RACE ? { gridPos: 'asc' } : { controller: 'asc' },
         },
       },
     });

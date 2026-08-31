@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Play, Flag, Clock, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import Modal, { ModalFooter, ModalButton } from '../../ui/Modal'
+import { SessionType } from '@racehubos/shared'
 
 /**
  * Unified session modal for both Qualifying and Race
@@ -18,11 +19,11 @@ export default function SessionModal({
   open,
   onClose,
   onStart,
-  type = 'qualif',
+  type = SessionType.QUALIF,
   initialValues = {}
 }) {
   const { t } = useTranslation('race')
-  const isQualifying = type === 'qualif'
+  const isQualifying = type === SessionType.QUALIF
 
   const [form, setForm] = useState({
     name: initialValues.name || '',

@@ -17,6 +17,7 @@ const SESSION_TYPE_ICONS = {
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
+import { SessionType } from '@racehubos/shared'
 
 export default function SessionSection({
   session,
@@ -123,7 +124,7 @@ export default function SessionSection({
   const incompleteControllers = useMemo(() => {
     return Object.entries(controllerConfigs)
       .filter(([, c]) => {
-        if (session?.type === 'balancing') return false
+        if (session?.type === SessionType.BALANCING) return false
         return (c.driverId && !c.carId) || (!c.driverId && c.carId)
       })
       .map(([ctrl, c]) => ({ controller: Number(ctrl), hasDriver: !!c.driverId, hasCar: !!c.carId }))
@@ -131,8 +132,8 @@ export default function SessionSection({
   const hasIncompleteConfig = incompleteControllers.length > 0
 
   const practiceSession = useMemo(() => {
-    if (session?.type === 'practice' || !session?.championshipId) return null
-    return sessions.find(s => s.type === 'practice' && s.drivers?.length > 0)
+    if (session?.type === SessionType.PRACTICE || !session?.championshipId) return null
+    return sessions.find(s => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
   }, [sessions, session])
 
   const handleCopyFromPractice = async () => {
@@ -176,10 +177,10 @@ export default function SessionSection({
 
   const sessionLabel = useMemo(() => {
     if (!session) return ''
-    if (session.type === 'practice') return t('sessionSection.labels.practice')
+    if (session.type === SessionType.PRACTICE) return t('sessionSection.labels.practice')
     const sameType = sessions.filter(s => s.type === session.type).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const index = sameType.findIndex(s => s.id === session.id) + 1
-    return `${session.type === 'qualif' ? 'Q' : 'R'}${index}`
+    return `${session.type === SessionType.QUALIF ? 'Q' : 'R'}${index}`
   }, [session, sessions, t])
 
   const timeProgress = useMemo(() => {
@@ -259,7 +260,7 @@ export default function SessionSection({
   const canResumeCu = isCuStopped && socketConnected
   const canStop = (isRacing || isPaused) && socketConnected
   const canEdit = session.status === 'draft'
-  const isAutoSession = autoMode && session.type !== 'practice'
+  const isAutoSession = autoMode && session.type !== SessionType.PRACTICE
 
   return (
     <div data-testid="session-section" className="bg-card rounded-xl border border-border overflow-hidden">
@@ -313,9 +314,9 @@ export default function SessionSection({
             <thead>
               <tr className="text-left text-muted-foreground text-xs uppercase">
                 <th className="px-2 pb-2 font-medium w-12">{t('sessionSection.table.ctrl')}</th>
-                {session.type !== 'balancing' && <th className="px-2 pb-2 font-medium">{t('sessionSection.table.driver')}</th>}
+                {session.type !== SessionType.BALANCING && <th className="px-2 pb-2 font-medium">{t('sessionSection.table.driver')}</th>}
                 <th className="px-2 pb-2 font-medium">{t('sessionSection.table.car')}</th>
-                {session.type !== 'balancing' && <th className="px-2 pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>}
+                {session.type !== SessionType.BALANCING && <th className="px-2 pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -326,7 +327,7 @@ export default function SessionSection({
                     <td className="px-2 py-2">
                       <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
                     </td>
-                    {session.type !== 'balancing' && (
+                    {session.type !== SessionType.BALANCING && (
                       <td className="px-2 py-2">
                         <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
                           <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
@@ -350,7 +351,7 @@ export default function SessionSection({
                         </SelectContent>
                       </Select>
                     </td>
-                    {session.type !== 'balancing' && (
+                    {session.type !== SessionType.BALANCING && (
                       <td className="px-2 py-2">
                         <Input
                           key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
@@ -376,8 +377,8 @@ export default function SessionSection({
               </p>
             </div>
           )}
-          {session.type !== 'practice' && (
-            <div className={`grid gap-3 ${session.type === 'balancing' ? 'grid-cols-3' : 'grid-cols-3'}`}>
+          {session.type !== SessionType.PRACTICE && (
+            <div className={`grid gap-3 ${session.type === SessionType.BALANCING ? 'grid-cols-3' : 'grid-cols-3'}`}>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.duration')}</label>
                 <Input
@@ -408,7 +409,7 @@ export default function SessionSection({
                   className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
                 />
               </div>
-              {session.type !== 'balancing' && (
+              {session.type !== SessionType.BALANCING && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.gracePeriod')}</label>
                   <Input
@@ -424,7 +425,7 @@ export default function SessionSection({
                   />
                 </div>
               )}
-              {session.type === 'balancing' && (
+              {session.type === SessionType.BALANCING && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.maxLapTime')}</label>
                   <Input
@@ -463,7 +464,7 @@ export default function SessionSection({
       )}
 
       {/* Auto mode: waiting for qualif results */}
-      {isAutoSession && session.type === 'race' && sessionDrivers.length === 0 && (
+      {isAutoSession && session.type === SessionType.RACE && sessionDrivers.length === 0 && (
         <div className="px-4 py-4 border-b border-border text-center">
           <p className="text-sm text-muted-foreground italic">
             {t('sessionSection.autoAssignWait')}
@@ -537,7 +538,7 @@ export default function SessionSection({
 
 
       {/* Finished summary (skip for balancing) */}
-      {isFinished && session.type !== 'balancing' && sessionDrivers.length > 0 && (
+      {isFinished && session.type !== SessionType.BALANCING && sessionDrivers.length > 0 && (
         <div className="border-b border-border">
           <Podium
             drivers={sessionDrivers}
