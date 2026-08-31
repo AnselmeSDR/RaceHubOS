@@ -31,9 +31,25 @@ Le fichier produit dans `prisma/migrations/` est versionné et appliqué à l'id
 
 Les quatre types de session étaient réécrits à la main dans 24 fichiers. Résultat : l'**équilibrage a existé en base pendant des mois sans apparaître dans le filtre des statistiques**, parce que chaque liste de types était une liste indépendante et que personne ne pouvait toutes les retrouver.
 
-Toute valeur que le serveur et l'interface doivent connaître vit dans **`packages/shared`** (`@racehubos/shared`), et l'enum Prisma correspondant est déclaré dans `schema.prisma` pour que le client refuse d'écrire une valeur inconnue.
+Toute valeur que le serveur et l'interface doivent connaître vit dans **`packages/shared`** (`@racehubos/shared`). Le code valide ce qu'il écrit (`isSessionType`), et les valeurs sont listées en commentaire à côté du champ dans `schema.prisma`.
 
 Restent à traiter (TASK-04) : `Session.status`, `Championship.status`, `Championship.mode`, `Session.fuelMode`.
+
+### La base ne stocke que du texte, jamais un enum `[vérifié]`
+
+Un `enum` déclaré dans `schema.prisma` ne se contente pas de refuser une écriture : **il rend illisible toute ligne portant une valeur qu'il ignore**. Une seule session d'un type inattendu — un import, une correction à la main, une donnée venue d'une version future — et `findMany()` lève :
+
+```
+Value 'endurance' not found in enum 'SessionType'
+```
+
+Plus une seule session n'est lisible. Sur un PC de course, c'est l'application entière à l'arrêt, pour une ligne.
+
+```prisma
+type String   // practice | qualif | race | balancing — @racehubos/shared
+```
+
+Le texte reste lisible quoi qu'il arrive. La validation appartient au code, où une valeur inconnue échoue à l'écriture sans jamais bloquer la lecture.
 
 ### Une suppression en cascade porte un horodatage partagé
 
