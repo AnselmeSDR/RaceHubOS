@@ -340,22 +340,23 @@ Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé av
 **Ensuite, en développement**: tout changement de schéma passe par `npm run prisma:migrate -w @racehubos/backend` (fichier de migration à commiter), plus jamais par `db push`
 **Lié à**: TASK-30 (système de mise à jour), TASK-32 (`ControllerConfig`)
 
-### TASK-34: 🐛 L'installeur du bureau n'est jamais mis à jour
+### TASK-34: ✅ L'installeur du bureau n'est jamais mis à jour
 **Domaine**: Déploiement
-**Priorité**: Haute — a déjà bloqué le PC de course
-**Description**: Le lanceur est régénéré depuis son template à chaque mise à jour réussie (`update.js`), mais **l'installeur posé sur le bureau ne l'est jamais**. Sur le PC de course, il datait du 15/04/2026 alors que l'application était en 1.18.0.
+**Statut**: Terminée le 31/08/2026 (v1.19.1)
+**Description**: L'installeur clonait bien la dernière version de l'application, mais **restait lui-même figé** au jour de son téléchargement. Sur le PC de course, il datait du 15/04/2026 alors que l'application était en 1.18.0.
 **Ce que ça a provoqué (29/08/2026)**:
-- Le dossier `RaceHubOS-v1.18.0` a été créé avec un `schema.prisma` daté du 15/04, antérieur à la migration Prisma 7 : il contenait encore `url = env("DATABASE_URL")`, que Prisma 7 refuse (`P1012`)
-- `prisma db push` échouait, `.version` restait à 1.12.0 et `startup.js` interrompait le démarrage — le garde-fou a bien joué son rôle, la base n'a pas été touchée et six sauvegardes ont été créées
+- Cet installeur périmé recopiait tout le dossier `prisma/` de l'ancienne installation par-dessus la nouvelle : le dossier `RaceHubOS-v1.18.0` s'est retrouvé avec un `schema.prisma` du 15/04 contenant encore `url = env("DATABASE_URL")`, que Prisma 7 refuse (`P1012`)
+- La migration échouait, `.version` restait à 1.12.0 et `startup.js` interrompait le démarrage — le garde-fou a joué son rôle, la base n'a pas été touchée et six sauvegardes ont été créées
 - Trois fichiers versionnés étaient modifiés localement : `schema.prisma`, `seed.js`, `package-lock.json`. Un `git checkout --` les a restaurés
-**Action**:
-- Faire régénérer l'installeur du bureau par `update.js`, comme le lanceur : le copier depuis le dépôt vers le bureau après une mise à jour réussie
-- Vérifier à l'installation que l'installeur utilisé correspond à la version installée, et avertir sinon
-- Envisager que `startup.js` détecte un `schema.prisma` modifié localement et le signale explicitement : le message d'erreur Prisma (`P1012`) ne dit pas que le fichier a été écrasé
-**Corrigé manuellement le 29/08/2026** : installeur du bureau remplacé par celui du dépôt, `RaceHubOS.lnk` repointé de v1.9.9 vers v1.18.0
+**Ce qui a été fait**:
+- **L'installeur se met à jour lui-même dès son lancement**, avant toute autre action : il télécharge sa propre dernière version depuis `raw.githubusercontent.com`, se remplace et se relance. L'argument `--updated` coupe la boucle
+- La comparaison porte sur `INSTALLER_VERSION`, **pas sur le contenu** : Git for Windows convertit les fins de ligne au clone, donc le fichier du bureau ne sera jamais identique à celui de GitHub et une comparaison de contenu relancerait l'installeur sans fin
+- ⚠️ **`INSTALLER_VERSION` est à incrémenter à la main dans les deux installeurs à chaque modification de ces fichiers** — sans cela, la nouvelle version ne sera jamais récupérée
+- Remplacement et relancement tiennent sur une seule ligne : `cmd` comme `bash` lisent une ligne entière avant de l'exécuter, donc rien n'est relu dans le fichier qu'on vient d'écraser
+- **Amorçage** : les installeurs déjà posés sur les bureaux sont antérieurs à ce mécanisme et ne peuvent pas l'acquérir seuls. `update.js` dépose donc un installeur à jour sur le bureau après chaque mise à jour réussie (`src/lib/desktopInstaller.js`, bureau OneDrive et bureau en français compris)
+- Trois commentaires `::` se trouvaient dans un bloc parenthésé de l'installeur Windows — le bloc de copie en cause dans la panne. `cmd.exe` n'y accepte que `REM` ; un test vérifie cette règle et l'équilibre des blocs
+**Reste ouvert**: `startup.js` pourrait détecter un fichier versionné modifié localement et le signaler — le message d'erreur Prisma (`P1012`) ne dit pas que `schema.prisma` a été écrasé, ce qui a coûté du temps de diagnostic.
 **Lié à**: TASK-30 (système de mise à jour), TASK-33 (migrations)
-
----
 
 ## 🏎️ Demandes Rush — ordre de traitement
 
@@ -388,6 +389,7 @@ Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé av
 
 ### RUSH-03: Séparer les statistiques par circuit et afficher la session d'origine
 **Domaine**: Frontend + Backend
+**Statut**: ✅ Fait — la page Statistiques filtre par pilote, voiture, circuit, championnat et type de session (libre / équilibrage / championnat), et sait afficher les temps supprimés
 **Description**: Ajouter en haut de la page Statistiques un sélecteur de circuit afin de ne jamais mélanger les temps de différents tracés.
 **Action**:
 - Filtrer toutes les statistiques par `trackId`
@@ -410,6 +412,7 @@ Les cascades n'existent que depuis la v1.18.0 : tout ce qui a été supprimé av
 ### RUSH-05: 🐛 Vérifier la correspondance entre puissance en pourcentage et valeur CU
 **Domaine**: Backend + communication CU
 **Priorité**: Haute
+**Statut**: ✅ Fait en v1.18.1 — la CU ne connaît que 10 niveaux par réglage, l'application les affiche et les envoie tels quels (trois bugs de conversion corrigés)
 **Description**: Vérifier que **70 %** dans l'application envoie réellement la valeur **7** attendue par la Carrera Control Unit et produit la puissance correspondante.
 **Action**:
 - Tracer la valeur UI, la conversion, la commande envoyée et la valeur confirmée par la CU

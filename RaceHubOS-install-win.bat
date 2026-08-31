@@ -1,4 +1,9 @@
 @echo off
+:: INSTALLER_VERSION 2
+:: A incrementer a CHAQUE modification de ce fichier : c'est ce numero, et non le
+:: contenu, qui declenche la mise a jour automatique ci-dessous. Comparer les
+:: contenus ne marcherait pas -- Git for Windows convertit les fins de ligne au
+:: clone, donc le fichier du bureau ne sera jamais identique a celui de GitHub.
 setlocal enabledelayedexpansion
 title RaceHubOS - Upgrade
 cd /d "%USERPROFILE%"
@@ -10,7 +15,44 @@ echo  ====================================
 echo.
 
 :: -------------------------------------------------------
-:: 0. Check Node.js and Git
+:: 0. Mettre a jour cet installeur avant qu'il agisse
+::
+:: Ce fichier est une copie figee sur le bureau et rien ne le rafraichit. Un
+:: installeur perime fait des choses perimees : celui du PC de course, date du
+:: 15/04, recopiait tout le dossier prisma de l'ancienne installation par-dessus
+:: la nouvelle, ce qui a mis un schema.prisma refuse par Prisma 7 dans un dossier
+:: v1.18.0 tout neuf et empeche l'application de demarrer.
+::
+:: Le remplacement et le relancement tiennent sur une seule ligne : cmd lit une
+:: ligne en entier avant de l'executer, donc rien n'est relu dans le fichier
+:: qu'on vient d'ecraser. L'argument --updated coupe la boucle.
+:: -------------------------------------------------------
+set "SELF_URL=https://raw.githubusercontent.com/AnselmeSDR/RaceHubOS/main/RaceHubOS-install-win.bat"
+set "SELF_NEW=%TEMP%\RaceHubOS-install-win-latest.bat"
+
+if /i not "%~1"=="--updated" (
+    echo  [0/8] Verification de l'installeur...
+    REM Un telechargement rate laisserait sinon croire au fichier de la fois d'avant
+    if exist "!SELF_NEW!" del /f /q "!SELF_NEW!" >nul 2>&1
+    powershell -NoProfile -Command "try { Invoke-WebRequest -Uri '!SELF_URL!' -OutFile '!SELF_NEW!' -UseBasicParsing -TimeoutSec 20 } catch { exit 1 }" >nul 2>&1
+
+    if exist "!SELF_NEW!" (
+        set "LOCAL_IV=0"
+        set "REMOTE_IV=0"
+        for /f "tokens=3" %%v in ('findstr /b /c:":: INSTALLER_VERSION" "%~f0"') do set "LOCAL_IV=%%v"
+        for /f "tokens=3" %%v in ('findstr /b /c:":: INSTALLER_VERSION" "!SELF_NEW!"') do set "REMOTE_IV=%%v"
+
+        if !REMOTE_IV! GTR !LOCAL_IV! ( echo         Installeur !LOCAL_IV! remplace par la version !REMOTE_IV!, relancement... & copy /y "!SELF_NEW!" "%~f0" >nul & start "" "%~f0" --updated & exit )
+
+        echo         A jour ^(version !LOCAL_IV!^)
+    ) else (
+        echo         Verification impossible, poursuite avec cet installeur
+    )
+    echo.
+)
+
+:: -------------------------------------------------------
+:: 0b. Check Node.js and Git
 :: -------------------------------------------------------
 echo  [0/8] Verification des prerequis...
 
@@ -170,19 +212,19 @@ echo.
 if defined SOURCE_DIR (
     echo  [6/8] Copie des donnees depuis !SOURCE_DIR!...
 
-    :: Copy database
+    REM Copy database
     if exist "!SOURCE_DIR!\packages\backend\prisma\dev.db" (
         copy /y "!SOURCE_DIR!\packages\backend\prisma\dev.db" "!TARGET_DIR!\packages\backend\prisma\dev.db" >nul
         echo         Base de donnees copiee
     )
 
-    :: Copy uploads
+    REM Copy uploads
     if exist "!SOURCE_DIR!\packages\backend\public\uploads" (
         xcopy /s /e /i /y "!SOURCE_DIR!\packages\backend\public\uploads" "!TARGET_DIR!\packages\backend\public\uploads" >nul
         echo         Uploads copies
     )
 
-    :: Copy .env files if they exist
+    REM Copy .env files if they exist
     if exist "!SOURCE_DIR!\packages\backend\.env" (
         copy /y "!SOURCE_DIR!\packages\backend\.env" "!TARGET_DIR!\packages\backend\.env" >nul
         echo         Backend .env copie

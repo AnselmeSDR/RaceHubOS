@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.1] - 2026-08-31
+
+### Fixed
+- **L'installeur du bureau n'était jamais mis à jour** : il clonait bien la dernière version de l'application, mais restait lui-même figé au jour où il avait été téléchargé
+  - Celui du PC de course datait du 15 avril et recopiait encore tout le dossier `prisma/` de l'ancienne installation par-dessus la nouvelle. C'est ainsi qu'un `schema.prisma` contenant `url = env("DATABASE_URL")`, que Prisma 7 refuse, s'est retrouvé dans un dossier v1.18.0 tout neuf et a empêché l'application de démarrer
+  - **L'installeur se met désormais à jour lui-même dès son lancement**, avant toute autre action : il compare son numéro à celui publié sur GitHub, se remplace et se relance si besoin
+  - La comparaison porte sur un numéro (`INSTALLER_VERSION`) et non sur le contenu : Git for Windows convertit les fins de ligne au clone, donc le fichier du bureau n'est jamais identique à celui de GitHub et la comparaison de contenu relancerait l'installeur sans fin
+  - Sans réseau ou en cas d'erreur, l'installeur poursuit avec la version dont il dispose au lieu de s'arrêter
+  - Les installeurs déjà posés sur les bureaux sont antérieurs à ce mécanisme et ne peuvent pas l'acquérir seuls : l'application dépose donc un installeur à jour sur le bureau après chaque mise à jour réussie, ce qui l'amorce (bureau déplacé par OneDrive et bureau en français compris)
+- **Trois commentaires `::` se trouvaient à l'intérieur d'un bloc parenthésé** de l'installeur Windows — précisément le bloc de copie en cause dans la panne. `cmd.exe` n'y accepte que `REM` ; un test vérifie désormais cette règle et l'équilibre des blocs, deux erreurs invisibles hors de Windows
+
 ## [1.19.0] - 2026-08-31
 
 ### Changed

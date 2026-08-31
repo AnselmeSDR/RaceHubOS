@@ -4,6 +4,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { refreshDesktopInstaller } from '../lib/desktopInstaller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,6 +151,15 @@ router.post('/apply', async (req, res) => {
       for (const batFile of batFiles) {
         fs.writeFileSync(path.join(rootDir, batFile), batContent);
       }
+    }
+
+    // Bootstraps the installer's self-update on desktops still holding a copy
+    // that predates it — those can never update themselves
+    try {
+      const { copied, target } = refreshDesktopInstaller({ rootDir });
+      if (copied) console.log(`[update] Installeur du bureau mis à jour: ${target}`);
+    } catch (err) {
+      console.warn('[update] Installeur du bureau non mis à jour:', err.message);
     }
 
     emitProgress(7, `Mise à jour v${newVersion} terminée. Redémarrage...`, 'complete');
