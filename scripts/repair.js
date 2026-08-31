@@ -20,7 +20,7 @@ const steps = [
   ['Build du frontend', 'npm run build', rootDir, false],
   ['Sauvegarde de la base', 'node scripts/backup-db.js repair', backendDir, true],
   ['Génération du client Prisma', 'npx prisma generate', backendDir, false],
-  ['Migration de la base', 'npx prisma db push --accept-data-loss', backendDir, false],
+  ['Migration de la base', 'node scripts/migrate.js', backendDir, false],
 ];
 
 console.log('\n🔧 Réparation de RaceHubOS\n');

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npx prisma generate && node --watch src/index.js",
     "start": "node scripts/startup.js && node src/index.js",
+    "migrate": "node scripts/migrate.js",
     "cli": "node src/cli/sim.js",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test DATABASE_URL=\"file:./test.db\" jest --runInBand --passWithNoTests",
     "test:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" NODE_ENV=test DATABASE_URL=\"file:./test.db\" jest --watch --runInBand",

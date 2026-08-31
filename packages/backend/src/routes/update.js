@@ -133,7 +133,9 @@ router.post('/apply', async (req, res) => {
     // it is the only irreversible step, and startup.js retries it on restart.
     emitProgress(5, 'Migration de la base de données...');
     await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
-    await execAsync('npx prisma db push --accept-data-loss', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
+    // scripts/migrate.js baselines a database predating migrations, which plain
+    // `migrate deploy` refuses to touch (P3005)
+    await execAsync('node scripts/migrate.js', { cwd: path.join(rootDir, 'packages/backend'), timeout: 120000 }).catch(() => {});
 
     const newVersion = getLocalVersion();
 
