@@ -1,0 +1,13 @@
+#!/bin/sh
+# Vérifie les règles de docs/CONVENTIONS.md avant chaque push.
+# Installé par « npm run hooks:install ». Contournable par « git push --no-verify »,
+# à n'utiliser qu'en connaissance de cause.
+
+npm run --silent check:push || {
+  echo ""
+  echo "  Push interrompu : des règles ne sont pas respectées."
+  echo "  Chacune est expliquée dans docs/CONVENTIONS.md."
+  echo "  Pour passer outre en connaissance de cause : git push --no-verify"
+  echo ""
+  exit 1
+}

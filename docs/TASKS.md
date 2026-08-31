@@ -41,6 +41,14 @@
 **⚠️ À savoir**: un build Vite réussi **ne détecte pas** un symbole utilisé sans import — 15 fichiers auraient planté à l'exécution. Après ce genre de refactoring, vérifier les imports par un contrôle dédié, jamais par le seul build.
 **Lié à**: TASK-04 (autres champs stringly-typed), RUSH-02
 
+### TASK-35: Trancher le nommage des query params
+**Domaine**: Backend + Frontend
+**Priorité**: Basse
+**Description**: La convention personnelle veut les query params en `snake_case`. Sept sont en `camelCase` (`driverId`, `carId`, `trackId`, `championshipId`, `sessionType`, `sortBy`, `sortOrder`) contre un seul en `snake_case`.
+**À trancher**: aligner sur `snake_case` (serveur et interface changent ensemble, ils sont déployés ensemble) ou acter le `camelCase` comme convention du projet et corriger la règle.
+**Tant que ce n'est pas tranché**: la règle n'est pas automatisée dans `npm run check`, elle est notée comme écart connu dans `docs/CONVENTIONS.md`.
+**Lié à**: TASK-04
+
 ### TASK-04: Centraliser tous les autres champs "stringly-typed" en enums
 **Domaine**: Frontend + Backend
 **Description**: Même problème que TASK-03 : plusieurs champs de la base sont des `String` libres avec des valeurs en dur disséminées dans le code. Audit + migration vers une source unique (enum Prisma + constants partagées front).

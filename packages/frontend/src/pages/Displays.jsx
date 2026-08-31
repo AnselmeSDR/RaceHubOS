@@ -600,7 +600,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           lastLap: 5100 + idx * 150,
           gap: idx === 0 ? null : `+${(idx * 0.12).toFixed(3)}s`,
         }))
-      case 'race':
+      case SessionType.RACE:
         return baseData.map((entry, idx) => ({
           ...entry,
           laps: 25 - idx,
