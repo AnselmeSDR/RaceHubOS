@@ -17,6 +17,8 @@ import { fileURLToPath } from 'url';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const beforePush = process.argv.includes('--push');
+// npx est un .cmd sous Windows, qu'execFileSync ne resout pas
+const NPX = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 const read = (rel) => fs.readFileSync(path.join(rootDir, rel), 'utf-8');
 const exists = (rel) => fs.existsSync(path.join(rootDir, rel));
@@ -76,7 +78,7 @@ rule('migrations-only', 'Le schéma ne change que par une migration', () => {
 rule('schema-matches-migrations', 'schema.prisma est couvert par les migrations', () => {
   if (!exists('packages/backend/prisma/schema.prisma')) return [];
   try {
-    const diff = execFileSync('npx', ['prisma', 'migrate', 'diff',
+    const diff = execFileSync(NPX, ['prisma', 'migrate', 'diff',
       '--from-migrations', 'prisma/migrations', '--to-schema', 'prisma/schema.prisma', '--script'],
       { cwd: path.join(rootDir, 'packages/backend'), encoding: 'utf-8', stdio: 'pipe' });
     return /empty migration/i.test(diff)
@@ -208,6 +210,23 @@ rule('version-and-changelog', 'Version incrémentée et changelog à jour', () =
   }
   return offenders;
 }, { onlyBeforePush: true });
+
+rule('npm-binaries-named-for-windows', 'npx/npm lancés par execFile portent leur nom Windows', () => {
+  // npx est un .cmd sous Windows et execFileSync ne resout pas cette extension :
+  // ENOENT. Invisible sur macOS, bloquant sur le PC de course, en pleine migration
+  const offenders = [];
+  const bad = /(?:execFileSync|execFile|spawnSync|spawn)\(\s*'(npx|npm)'/;
+
+  for (const file of sourceFiles(['packages/backend/src', 'packages/backend/scripts', 'packages/frontend/src', 'scripts'], ['.js', '.jsx', '.mjs'])) {
+    if (/check-rules\.mjs$/.test(rel(file))) continue;
+    for (const [i, line] of read(rel(file)).split('\n').entries()) {
+      if (bad.test(line)) {
+        offenders.push(`${rel(file)}:${i + 1} — utiliser NPX (src/lib/npx.js), pas '${line.match(bad)[1]}'`);
+      }
+    }
+  }
+  return offenders;
+});
 
 rule('translations-cover-both-languages', 'Chaque clé existe en français et en anglais', () => {
   const localesDir = path.join(rootDir, 'packages/frontend/src/i18n/locales');

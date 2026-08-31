@@ -59,6 +59,17 @@ Ni dupliqué, ni redéclaré côté interface « pour éviter la dépendance ».
 
 Après un refactoring qui déplace des symboles : `npm run check`, jamais le seul build.
 
+### Un binaire npm lancé par `execFile` porte son nom Windows `[vérifié]`
+
+Sous Windows, `npx` est un `.cmd`, et `execFileSync` ne résout pas cette extension : `spawnSync npx ENOENT`. Rien n'apparaît sur macOS ni sur Linux — le défaut ne se voit que sur le PC de course, et il s'y est vu **en pleine migration**, bloquant la mise à jour.
+
+```js
+import { NPX } from './npx.js'
+execFileSync(NPX, ['prisma', 'migrate', 'deploy'])
+```
+
+`execSync` et `exec` passent par un shell et n'ont pas ce problème ; seule la famille `execFile` / `spawn` est concernée.
+
 ### Les validations sortent tôt
 
 ```js
