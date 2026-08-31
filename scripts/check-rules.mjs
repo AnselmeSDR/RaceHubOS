@@ -90,6 +90,20 @@ rule('schema-matches-migrations', 'schema.prisma est couvert par les migrations'
   }
 });
 
+rule('no-database-enums', 'Aucun enum en base : les valeurs sont du texte', () => {
+  // Un enum Prisma rend illisible toute ligne portant une valeur qu'il ignore :
+  // findMany() leve, et plus une seule session ne peut etre lue. Sur un PC de
+  // course, c'est l'application entiere a l'arret. Le texte reste lisible quoi
+  // qu'il arrive ; c'est le code qui valide ce qui s'ecrit.
+  const schemaPath = 'packages/backend/prisma/schema.prisma';
+  if (!exists(schemaPath)) return [];
+
+  return read(schemaPath).split('\n')
+    .map((line, i) => [line, i + 1])
+    .filter(([line]) => /^enum\s/.test(line))
+    .map(([line, n]) => `${schemaPath}:${n} — ${line.trim()} : déclarer String et valider dans le code`);
+});
+
 rule('session-types-from-shared', 'Les types de session viennent de @racehubos/shared', () => {
   const V = 'practice|qualif|race|balancing';
   // Cible les contextes ou la valeur designe a coup sur un type de session.

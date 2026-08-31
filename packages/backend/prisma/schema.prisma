@@ -106,7 +106,7 @@ model Championship {
 model Session {
   id             String          @id @default(cuid())
   name           String?
-  type           SessionType
+  type           String          // practice | qualif | race | balancing — @racehubos/shared
   trackId        String
   championshipId String?
   fuelMode       String          @default("OFF")
@@ -251,14 +251,4 @@ model Preference {
   key       String   @id
   value     String   // JSON
   updatedAt DateTime @updatedAt
-}
-
-/// Les types de session. Toute liste de types se lit dans
-/// @racehubos/shared (packages/shared/src/sessionTypes.js) : les valeurs
-/// ci-dessous sont exactement celles qui y sont declarees.
-enum SessionType {
-  practice
-  qualif
-  race
-  balancing
 }
