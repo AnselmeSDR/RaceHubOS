@@ -1,4 +1,7 @@
 #!/bin/bash
+# INSTALLER_VERSION 2
+# À incrémenter à CHAQUE modification de ce fichier : c'est ce numéro, et non le
+# contenu, qui déclenche la mise à jour automatique ci-dessous.
 set -e
 
 echo ""
@@ -6,6 +9,41 @@ echo "  ===================================="
 echo "    RaceHubOS - Upgrade (macOS/Linux)"
 echo "  ===================================="
 echo ""
+
+# -------------------------------------------------------
+# 0. Mettre à jour cet installeur avant qu'il agisse
+#
+# Ce fichier est une copie figée sur le bureau et rien ne le rafraîchit. Un
+# installeur périmé fait des choses périmées : celui du PC de course, daté du
+# 15/04, recopiait tout le dossier prisma de l'ancienne installation par-dessus
+# la nouvelle, ce qui a mis un schema.prisma refusé par Prisma 7 dans un dossier
+# v1.18.0 tout neuf et empêché l'application de démarrer.
+#
+# Le remplacement et le relancement tiennent sur une seule ligne : bash lit une
+# ligne en entier avant de l'exécuter, et exec remplace le processus, donc rien
+# n'est relu dans le fichier qu'on vient d'écraser.
+# -------------------------------------------------------
+SELF_URL="https://raw.githubusercontent.com/AnselmeSDR/RaceHubOS/main/RaceHubOS-install-mac.command"
+SELF_NEW="$(mktemp -t racehubos-install)"
+installerVersion() { grep -m1 '^# INSTALLER_VERSION' "$1" 2>/dev/null | awk '{print $3}'; }
+
+if [ "$1" != "--updated" ]; then
+    echo "  [0/8] Vérification de l'installeur..."
+    if curl -fsSL --max-time 20 "$SELF_URL" -o "$SELF_NEW" 2>/dev/null; then
+        LOCAL_IV=$(installerVersion "$0"); LOCAL_IV=${LOCAL_IV:-0}
+        REMOTE_IV=$(installerVersion "$SELF_NEW"); REMOTE_IV=${REMOTE_IV:-0}
+
+        if [ "$REMOTE_IV" -gt "$LOCAL_IV" ] 2>/dev/null; then
+            echo "         Installeur $LOCAL_IV remplacé par la version $REMOTE_IV, relancement..."
+            cp "$SELF_NEW" "$0" && chmod +x "$0" && rm -f "$SELF_NEW" && exec "$0" --updated
+        fi
+        echo "         À jour (version $LOCAL_IV)"
+    else
+        echo "         Vérification impossible, poursuite avec cet installeur"
+    fi
+    rm -f "$SELF_NEW"
+    echo ""
+fi
 
 # -------------------------------------------------------
 # 0. Check prerequisites
