@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '../components/ui/DeleteButton'
-import { formatLevel } from '../utils/carSettings'
+import ExportButton from '../components/ui/ExportButton'
+import { formatLevel } from '@racehubos/shared'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -124,7 +125,10 @@ export default function CarProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
-          <DeleteButton variant="outline" onDelete={handleDelete} />
+          <div className="flex items-center gap-2">
+            <ExportButton url={`/api/cars/${car.id}/export`} />
+            <DeleteButton variant="outline" onDelete={handleDelete} />
+          </div>
         </div>
       </div>
 

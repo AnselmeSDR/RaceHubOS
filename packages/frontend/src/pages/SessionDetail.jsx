@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Flag, MapPin, Trash2, Trophy, Users2, Clock, Timer, Pause, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '../components/ui/DeleteButton'
+import ExportButton from '../components/ui/ExportButton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -203,7 +204,10 @@ export default function SessionDetail() {
             </div>
           </div>
         </div>
-        <DeleteButton variant="outline" onDelete={handleDelete} />
+        <div className="flex items-center gap-2">
+          <ExportButton url={`/api/sessions/${session.id}/export`} />
+          <DeleteButton variant="outline" onDelete={handleDelete} />
+        </div>
       </div>
 
       {/* Content */}

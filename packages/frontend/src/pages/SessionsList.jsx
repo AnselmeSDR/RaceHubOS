@@ -278,6 +278,7 @@ export default function SessionsList() {
       onRowClick={(row) => !filters.deleted && navigate(`/sessions/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
       deleteEndpoint="/api/sessions"
+      exportEndpoint="/api/sessions/export"
       onDeleted={() => loadData(0)}
       hasMore={hasMore}
       loadingMore={loadingMore}

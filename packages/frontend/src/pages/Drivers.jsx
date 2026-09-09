@@ -208,6 +208,7 @@ export default function Drivers() {
         </div>
       )}
       deleteEndpoint="/api/drivers"
+      exportEndpoint="/api/drivers/export"
       onDeleted={() => loadData(0)}
       hasMore={hasMore}
       loadingMore={loadingMore}

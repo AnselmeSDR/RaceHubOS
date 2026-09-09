@@ -56,8 +56,9 @@
 **Intérêt**: savoir avec quoi une voiture a couru, et retrouver ce qui marchait.
 **Lié à**: TASK-37 (configuration figée par session), TASK-36 (export)
 
-### TASK-36: Export Excel d'une session ou d'un championnat
+### TASK-36: ⏳ Export Excel d'une session ou d'un championnat
 **Domaine**: Backend + Frontend
+**Statut**: Livré en v1.23.0, sauf les réglages figés par session (TASK-37) — l'export affiche pour l'instant les réglages actuels de la voiture
 **Description**: Un bouton sur chaque session et chaque championnat produit un classeur Excel reprenant tout ce qui a été couru.
 
 **Feuilles de référence** (une par modèle, uniquement les entités présentes dans l'export) :
