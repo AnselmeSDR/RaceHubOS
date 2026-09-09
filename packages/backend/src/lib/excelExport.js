@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { createRequire } from 'module';
-import { ChampionshipMode, ChampionshipStatus, FuelMode, SessionStatus, SessionType, formatLevel, toLevel } from '@racehubos/shared';
+import { CAR_NUMBER_SPECS, CAR_TEXT_SPECS, ChampionshipMode, ChampionshipStatus, FuelMode, SessionStatus, SessionType, formatLevel, toLevel } from '@racehubos/shared';
 
 /**
  * Excel export of a session or a championship.
@@ -295,6 +295,8 @@ function addCarStandings(sheet, cars, carStats, heading = 'Voitures') {
     { header: 'Tours', value: (c) => stat(c).laps, width: 8 },
     { header: 'Meilleur tour', value: (c) => duration(stat(c).bestLap), width: 13, numFmt: DURATION_FORMAT },
     { header: 'Tour moyen', value: (c) => duration(averageLap(stat(c))), width: 13, numFmt: DURATION_FORMAT },
+    // Seules les caractéristiques renseignées : sinon dix-sept colonnes vides
+    ...carSpecColumns(cars),
   ], ranked);
   sheet.addRow([]);
 }
@@ -338,6 +340,28 @@ function addReferenceSheet(workbook, { drivers, cars, teams, tracks }, driverSta
 
 // ---------------------------------------------------------------------------
 // Session sheets
+
+/** Libellés des caractéristiques, partagés par les feuilles qui les montrent. */
+export const CAR_SPEC_LABELS = {
+  scale: 'Échelle', chassis: 'Châssis', motor: 'Moteur', gearRatio: 'Rapport',
+  tyresFront: 'Pneus avant', tyresRear: 'Pneus arrière', guide: 'Guide',
+  braids: 'Tresses', magnet: 'Aimant', notes: 'Notes',
+  weightGrams: 'Poids (g)', lengthMm: 'Longueur (mm)', widthMm: 'Largeur (mm)',
+  wheelbaseMm: 'Empattement (mm)', frontTrackMm: 'Voie avant (mm)',
+  rearTrackMm: 'Voie arrière (mm)', groundClearanceMm: 'Garde au sol (mm)',
+};
+
+/** Colonnes des caractéristiques réellement renseignées sur au moins une voiture. */
+export function carSpecColumns(cars) {
+  return [...CAR_TEXT_SPECS, ...CAR_NUMBER_SPECS]
+    .filter((field) => field !== 'notes')
+    .filter((field) => cars.some((car) => car?.[field] != null && car[field] !== ''))
+    .map((field) => ({
+      header: CAR_SPEC_LABELS[field] ?? field,
+      value: (car) => car[field] ?? null,
+      width: 14,
+    }));
+}
 
 export const SESSION_TYPE_LABELS = {
   [SessionType.PRACTICE]: 'Essais libres',

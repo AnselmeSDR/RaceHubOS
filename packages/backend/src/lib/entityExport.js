@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { SessionType, toLevel } from '@racehubos/shared';
+import { CAR_NUMBER_SPECS, CAR_TEXT_SPECS, SessionType, toLevel } from '@racehubos/shared';
 import {
   DATE_FORMAT,
   DURATION_FORMAT,
@@ -12,6 +12,7 @@ import {
   newSheet,
   sheetNameOf,
   title,
+  CAR_SPEC_LABELS,
 } from './excelExport.js';
 
 /**
@@ -201,6 +202,10 @@ function addCarSheet(workbook, car, taken) {
   addField(sheet, 'Vitesse', `${toLevel(car.maxSpeed)}/10`);
   addField(sheet, 'Freinage', `${toLevel(car.brakeForce)}/10`);
   addField(sheet, 'Réservoir', `${toLevel(car.fuelCapacity)}/10`);
+  // Ce qui est monté sur la voiture, quand c'est renseigné
+  for (const field of [...CAR_TEXT_SPECS, ...CAR_NUMBER_SPECS]) {
+    addField(sheet, CAR_SPEC_LABELS[field] ?? field, car[field] ?? null);
+  }
   addField(sheet, 'Exporté le', new Date(), DATE_FORMAT);
   addField(sheet, 'Version RaceHubOS', appVersion());
   sheet.addRow([]);

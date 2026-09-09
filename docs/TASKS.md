@@ -49,13 +49,13 @@
 **À trancher**: copie des champs sur `SessionDriver`, ou instantané JSON de la fiche voiture ? Que faire des sessions passées, qui n'ont pas cette information ?
 **Lié à**: RUSH-04 (réglage groupé au lancement), TASK-36 (export), TASK-38 (fiche voiture)
 
-### TASK-38: Compléter la fiche d'une voiture
-**Domaine**: Backend + Frontend
-**Description**: La fiche voiture se limite à marque, modèle, année, couleur, image et aux trois réglages CU. Il manque tout l'équipement réel : pneus montés, type de guide, tresses, moteur, rapport de transmission, aimant, poids, châssis…
-**Action**: inventorier ce qui sert vraiment en course, ajouter les champs au modèle `Car` (migration), les afficher et les éditer sur la fiche.
-**Intérêt**: savoir avec quoi une voiture a couru, et retrouver ce qui marchait.
-**Lié à**: TASK-37 (configuration figée par session), TASK-36 (export)
-
+### TASK-38: ✅ Compléter la fiche d'une voiture
+**Statut**: Terminée le 09/09/2026 (v1.24.0)
+**Fait**: 17 champs facultatifs sur `Car` — équipement (`scale`, `chassis`, `motor`, `gearRatio`, `tyresFront`, `tyresRear`, `guide`, `braids`, `magnet`, `notes`) et mesures (`weightGrams`, `lengthMm`, `widthMm`, `wheelbaseMm`, `frontTrackMm`, `rearTrackMm`, `groundClearanceMm`). Migration `20260909134456_add_car_specs`.
+**Choix**: texte libre plutôt que listes fermées — les pièces changent trop, et une liste incomplète empêche de saisir ce qui est réellement monté. Les champs vides sont stockés `null`, jamais `''`.
+**Interface**: sections repliables dans le formulaire (17 champs de plus ne doivent pas noyer les 3 réglages qu'on change avant une course), carte `CarSpecsCard` sur la fiche, masquée si rien n'est renseigné.
+**⚠️ Rencontré**: le checksum de la migration `init` en base ne correspondait pas au fichier (base héritée du PC de course) — `migrate dev` proposait un **reset de la base**. Réaligner le checksum dans `_prisma_migrations` règle le cas sans toucher aux données.
+**Lié à**: TASK-37 (figer la configuration par session), TASK-36 (export)
 ### TASK-36: ⏳ Export Excel d'une session ou d'un championnat
 **Domaine**: Backend + Frontend
 **Statut**: Livré en v1.23.0, sauf les réglages figés par session (TASK-37) — l'export affiche pour l'instant les réglages actuels de la voiture

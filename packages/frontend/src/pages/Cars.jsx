@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
 import { formatLevel, levelPercent } from '@racehubos/shared'
+import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -337,7 +339,8 @@ export function CarFormModal({ car, onClose }) {
     maxSpeed: car?.maxSpeed || 100,
     brakeForce: car?.brakeForce || 50,
     fuelCapacity: car?.fuelCapacity || 100,
-    img: car?.img || ''
+    img: car?.img || '',
+    ...Object.fromEntries(CAR_SPECS.map((field) => [field, car?.[field] ?? ''])),
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -389,6 +392,41 @@ export function CarFormModal({ car, onClose }) {
       <RangeField label={t('fields.maxSpeed')} value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} color="#22C55E" />
       <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
       <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
+
+      <CollapsibleSection title={t('fields.equipment')}>
+        <div className="grid grid-cols-2 gap-4">
+          {CAR_TEXT_SPECS.filter((field) => field !== 'notes').map((field) => (
+            <TextField
+              key={field}
+              label={t(`fields.${field}`)}
+              value={formData[field]}
+              onChange={(v) => setFormData(f => ({ ...f, [field]: v }))}
+              placeholder={t(`form.${field}Placeholder`, '')}
+            />
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title={t('fields.measurements')}>
+        <div className="grid grid-cols-3 gap-4">
+          {CAR_NUMBER_SPECS.map((field) => (
+            <TextField
+              key={field}
+              label={t(`fields.${field}`)}
+              type="number"
+              value={formData[field]}
+              onChange={(v) => setFormData(f => ({ ...f, [field]: v }))}
+            />
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <TextField
+        label={t('fields.notes')}
+        value={formData.notes}
+        onChange={(v) => setFormData(f => ({ ...f, notes: v }))}
+        multiline
+      />
     </FormModal>
   )
 }
