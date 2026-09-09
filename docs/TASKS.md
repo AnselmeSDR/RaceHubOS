@@ -41,6 +41,66 @@
 **⚠️ À savoir**: un build Vite réussi **ne détecte pas** un symbole utilisé sans import — 15 fichiers auraient planté à l'exécution. Après ce genre de refactoring, vérifier les imports par un contrôle dédié, jamais par le seul build.
 **Lié à**: TASK-04 (autres champs stringly-typed), RUSH-02
 
+### TASK-37: Enregistrer la configuration de la voiture pour chaque session
+**Domaine**: Backend + Frontend
+**Description**: Les réglages vivent aujourd'hui sur `Car` et changent dès qu'on les modifie : une course d'il y a trois mois affiche les réglages d'aujourd'hui. Il faut figer sur l'engagement (`SessionDriver`) la configuration réellement utilisée.
+**À enregistrer**: vitesse, freinage, réservoir (niveaux /10), pneus montés, guide, et le reste de la fiche voiture au moment de la course (cf. TASK-38).
+**Intérêt**: comparer deux courses à réglages différents, retrouver la configuration d'une bonne performance, exporter la vraie valeur (TASK-36).
+**À trancher**: copie des champs sur `SessionDriver`, ou instantané JSON de la fiche voiture ? Que faire des sessions passées, qui n'ont pas cette information ?
+**Lié à**: RUSH-04 (réglage groupé au lancement), TASK-36 (export), TASK-38 (fiche voiture)
+
+### TASK-38: Compléter la fiche d'une voiture
+**Domaine**: Backend + Frontend
+**Description**: La fiche voiture se limite à marque, modèle, année, couleur, image et aux trois réglages CU. Il manque tout l'équipement réel : pneus montés, type de guide, tresses, moteur, rapport de transmission, aimant, poids, châssis…
+**Action**: inventorier ce qui sert vraiment en course, ajouter les champs au modèle `Car` (migration), les afficher et les éditer sur la fiche.
+**Intérêt**: savoir avec quoi une voiture a couru, et retrouver ce qui marchait.
+**Lié à**: TASK-37 (configuration figée par session), TASK-36 (export)
+
+### TASK-36: Export Excel d'une session ou d'un championnat
+**Domaine**: Backend + Frontend
+**Description**: Un bouton sur chaque session et chaque championnat produit un classeur Excel reprenant tout ce qui a été couru.
+
+**Feuilles de référence** (une par modèle, uniquement les entités présentes dans l'export) :
+
+| Feuille | Colonnes |
+|---|---|
+| **Pilotes** | Nom, Pseudo/numéro, Équipe, Couleur, Email, Courses disputées, Victoires, Podiums, Meilleur tour, Pilote de référence |
+| **Voitures** | Marque, Modèle, Année, Couleur, Vitesse (niveau /10), Freinage (/10), Réservoir (/10), Courses disputées, Meilleur tour |
+| **Circuits** | Nom, Tracé, Longueur, Nombre de virages, Couleur, Meilleur tour, Détenteur du record |
+| **Équipes** | Nom, Couleur, Pilotes |
+
+**Feuille « Championnat »** (export d'un championnat uniquement) :
+Nom, Saison, Statut, Circuit, Mode (manuel/auto), Pilotes par qualif, Pilotes par course, Durée/tours de qualif, Durée/tours de course, Participants, Nombre de sessions.
+
+**Une feuille par session** — en-tête puis deux tableaux :
+
+*En-tête* : Nom, Type, Circuit, Championnat, Statut, Durée max, Tours max, Période de grâce, Carburant, Départ, Fin, Version CU.
+
+*Engagements* :
+
+| Colonne | Source |
+|---|---|
+| Manette | `SessionDriver.controller` |
+| Pilote | `Driver.name` |
+| Voiture | `Car.brand` + `model` |
+| Réglage vitesse / freinage / réservoir | niveaux /10 (voir « À trancher ») |
+| Rang de départ | `gridPos` |
+| Position finale | `finalPos` |
+| Tours | `totalLaps` |
+| Temps total | `totalTime` |
+| Meilleur tour | `bestLapTime` |
+| Dernier tour | `lastLapTime` |
+| DNF | `isDNF` |
+
+*Tours* : N° de tour, Manette, Pilote, Voiture, Temps, Secteurs 1/2/3, Horodatage.
+
+**Décidé**:
+- **Bloqué par RUSH-04 / TASK-37** : les réglages doivent d'abord être figés par engagement, sinon l'export affiche ceux d'aujourd'hui.
+- **Temps** : la cellule contient une vraie durée Excel (millisecondes / 86 400 000), donc calculable et triable, avec le format `[m]:ss.000` pour que l'utilisateur lise `1:12.345`. Les crochets évitent le passage aux heures sur un temps total.
+- **Bibliothèque** : `exceljs` — l'équivalent JS de PhpSpreadsheet (plusieurs feuilles, formats de nombre, styles, largeurs). SheetJS est plus rapide mais son formatage est réservé à la version payante.
+- Génération côté serveur, une route qui renvoie le fichier.
+**Lié à**: RUSH-04 et TASK-37 (réglages par session)
+
 ### TASK-35: Trancher le nommage des query params
 **Domaine**: Backend + Frontend
 **Priorité**: Basse
