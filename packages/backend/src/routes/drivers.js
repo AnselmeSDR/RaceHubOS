@@ -4,6 +4,7 @@ import { softDeleteDriver, restoreDriver } from '../lib/softDelete.js';
 import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
 import { uniqueConstraintFields } from '../lib/prismaErrors.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
+import { driverWorkbook, driversWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -110,6 +111,42 @@ router.post('/reference/stig', async (req, res) => {
   } catch (error) {
     console.error('Error creating reference driver:', error);
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/drivers/export?ids=a,b,c
+ * Excel workbook for a hand-picked set of drivers
+ */
+router.get('/export', async (req, res) => {
+  try {
+    const result = await driversWorkbook(prisma, idsFromQuery(req.query.ids));
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'No driver to export' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting drivers:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET drivers :id/export
+ * Excel workbook centred on one driver
+ */
+router.get('/:id/export', async (req, res) => {
+  try {
+    const result = await driverWorkbook(prisma, req.params.id);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Driver not found' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting driver:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

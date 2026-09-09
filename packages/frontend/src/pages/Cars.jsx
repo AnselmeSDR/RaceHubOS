@@ -8,7 +8,7 @@ import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
-import { formatLevel, levelPercent } from '../utils/carSettings'
+import { formatLevel, levelPercent } from '@racehubos/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -221,6 +221,7 @@ export default function Cars() {
         </div>
       )}
       deleteEndpoint="/api/cars"
+      exportEndpoint="/api/cars/export"
       onDeleted={() => loadData(0)}
       hasMore={hasMore}
       loadingMore={loadingMore}

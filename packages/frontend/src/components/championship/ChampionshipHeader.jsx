@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
+import ExportButton from '../ui/ExportButton'
 
 const TYPE_STYLE = {
   [SessionType.PRACTICE]: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
@@ -127,6 +128,7 @@ export default function ChampionshipHeader({
         <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={t('detail.configuration')}>
           <Settings className="size-4" />
         </button>
+        <ExportButton url={`/api/championships/${championship.id}/export`} />
         {onDelete && <DeleteButton variant="outline" onDelete={onDelete} />}
       </div>
     </div>

@@ -2,6 +2,7 @@ import express from 'express';
 import SessionService from '../services/SessionService.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
 import { SessionStatus, SessionType } from '@racehubos/shared';
+import { idsFromQuery, sendWorkbook, sessionWorkbook, sessionsWorkbook } from '../lib/exportQueries.js';
 
 const router = express.Router();
 let sessionService;
@@ -96,6 +97,24 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/sessions/export?ids=a,b,c
+ * Excel workbook for a hand-picked set of sessions
+ */
+router.get('/export', async (req, res) => {
+  try {
+    const result = await sessionsWorkbook(prisma(), idsFromQuery(req.query.ids));
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'No session to export' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting sessions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/sessions/:id
  */
 router.get('/:id', async (req, res) => {
@@ -125,6 +144,24 @@ router.get('/:id', async (req, res) => {
     res.json({ success: true, data: session });
   } catch (error) {
     console.error('Error fetching session:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/sessions/:id/export
+ * Excel workbook for one session
+ */
+router.get('/:id/export', async (req, res) => {
+  try {
+    const result = await sessionWorkbook(prisma(), req.params.id);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting session:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

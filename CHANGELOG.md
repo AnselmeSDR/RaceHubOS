@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-09-09
+
+### Added
+- **Export Excel** (TASK-36) depuis une session, un championnat, un pilote, une voiture, ou une sélection dans les listes.
+  - Session ou championnat : page **Référence** cumulant tout l'export, puis chaque championnat suivi de ses sessions, avec son propre classement. Une feuille par session : engagements (manette, voiture, réglages, rang de départ, résultat) et tous les tours.
+  - Pilote ou voiture : palmarès, ventilation par championnat / circuit / voiture (ou pilote), puis une ligne par session. Les tours ne sont pas chargés.
+  - Temps en vraies durées Excel (triables, calculables) affichées `0:09.356`, horodatage au millième.
+  - Podium coloré, onglets teintés par type, couleurs des pilotes et voitures affichées.
+- ⚠️ Les réglages exportés sont ceux **actuels** de la voiture : ils ne sont pas encore figés par session (TASK-37).
+
 ## [1.22.1] - 2026-09-01
 
 ### Added

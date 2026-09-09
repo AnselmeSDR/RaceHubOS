@@ -2,6 +2,7 @@ import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
+import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -58,6 +59,42 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/cars/:id - Get car by ID
+/**
+ * GET /api/cars/export?ids=a,b,c
+ * Excel workbook for a hand-picked set of cars
+ */
+router.get('/export', async (req, res) => {
+  try {
+    const result = await carsWorkbook(prisma, idsFromQuery(req.query.ids));
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'No car to export' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting cars:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/cars/:id/export
+ * Excel workbook centred on one car
+ */
+router.get('/:id/export', async (req, res) => {
+  try {
+    const result = await carWorkbook(prisma, req.params.id);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Car not found' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting car:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

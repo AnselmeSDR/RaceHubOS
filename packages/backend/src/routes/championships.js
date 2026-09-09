@@ -2,6 +2,7 @@ import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl } from '../utils/imageUrl.js';
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared';
+import { championshipWorkbook, championshipsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -75,6 +76,42 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/championships/:id - Récupère un championnat par ID
+/**
+ * GET /api/championships/export?ids=a,b,c
+ * Excel workbook for a hand-picked set of championships
+ */
+router.get('/export', async (req, res) => {
+  try {
+    const result = await championshipsWorkbook(prisma, idsFromQuery(req.query.ids));
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'No championship to export' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting championships:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/championships/:id/export
+ * Excel workbook for a championship and all its sessions
+ */
+router.get('/:id/export', async (req, res) => {
+  try {
+    const result = await championshipWorkbook(prisma, req.params.id);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Championship not found' });
+    }
+
+    await sendWorkbook(res, result);
+  } catch (error) {
+    console.error('Error exporting championship:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

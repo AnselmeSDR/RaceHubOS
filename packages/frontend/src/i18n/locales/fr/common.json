@@ -74,5 +74,7 @@
     "messagePermanent_one": "{{count}} élément sera supprimé définitivement. Cette action est irréversible.",
     "messagePermanent_other": "{{count}} éléments seront supprimés définitivement. Cette action est irréversible."
   },
-  "edit": "Modifier"
+  "edit": "Modifier",
+  "exportExcel": "Exporter en Excel",
+  "exportSelection": "Exporter ({{count}})"
 }

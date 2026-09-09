@@ -184,6 +184,7 @@ export default function Championships() {
       onRowClick={(row) => !filters.deleted && navigate(`/championships/${row.id}`)}
       rowClassName={() => filters.deleted ? 'opacity-50' : ''}
       deleteEndpoint="/api/championships"
+      exportEndpoint="/api/championships/export"
       onDeleted={() => loadData(0)}
       hasMore={hasMore}
       loadingMore={loadingMore}

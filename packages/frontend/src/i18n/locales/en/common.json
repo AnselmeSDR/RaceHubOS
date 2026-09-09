@@ -74,5 +74,7 @@
     "messagePermanent_one": "{{count}} item will be permanently deleted. This action is irreversible.",
     "messagePermanent_other": "{{count}} items will be permanently deleted. This action is irreversible."
   },
-  "edit": "Edit"
+  "edit": "Edit",
+  "exportExcel": "Export to Excel",
+  "exportSelection": "Export ({{count}})"
 }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSetPageHeader } from '@/context/PageHeaderContext'
+import ExportButton from './ExportButton'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -23,6 +24,7 @@ export function ListPage({
   onAdd,
   onRowClick,
   deleteEndpoint,
+  exportEndpoint,
   onDeleted,
   options,
   rowClassName,
@@ -183,18 +185,26 @@ export function ListPage({
           loadingMore={loadingMore}
           onLoadMore={onLoadMore}
           onSortChange={onSortChange}
-          renderActions={deleteEndpoint ? () => (
+          renderActions={deleteEndpoint || exportEndpoint ? () => (
             <>
+              {exportEndpoint && (
+                <ExportButton
+                  url={`${exportEndpoint}?ids=${selectedIds.join(',')}`}
+                  label={t('exportSelection', { count: selectedIds.length })}
+                />
+              )}
               {isShowingDeleted && (
                 <Button variant="outline" size="sm" onClick={handleRestore}>
                   <RotateCcw className="w-4 h-4" />
                   {t('restore')}
                 </Button>
               )}
-              <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-                <Trash2 className="w-4 h-4" />
-                {isShowingDeleted ? t('deletePermanently') : t('delete')}
-              </Button>
+              {deleteEndpoint && (
+                <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+                  <Trash2 className="w-4 h-4" />
+                  {isShowingDeleted ? t('deletePermanently') : t('delete')}
+                </Button>
+              )}
             </>
           ) : undefined}
         />

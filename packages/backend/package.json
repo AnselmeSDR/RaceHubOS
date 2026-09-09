@@ -25,6 +25,7 @@
     "@racehubos/shared": "*",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "ink": "^7.1.1",
     "ink-text-input": "^6.0.0",
