@@ -478,3 +478,44 @@ describe('classement par championnat', () => {
     expect(rowValues(sheet, findRow(sheet, 'Classement pilotes') + 3)[0]).toBe('Sandrine FRE');
   });
 });
+
+describe('caractéristiques des voitures engagées', () => {
+  const equipped = { ...car('c-1', 'R8 LMS'), motor: 'Mabuchi S-Can', weightGrams: 82 };
+
+  it('ajoute une colonne par caractéristique renseignée', async () => {
+    const withSpecs = session({
+      drivers: [{ ...session().drivers[0], car: equipped }],
+      laps: [],
+    });
+    const workbook = await reread(buildSessionWorkbook(withSpecs));
+    const sheet = workbook.getWorksheet('14h00');
+    const header = rowValues(sheet, findRow(sheet, 'Engagements') + 2);
+
+    expect(header).toContain('Moteur');
+    expect(header).toContain('Poids (g)');
+    expect(header).not.toContain('Châssis');
+  });
+
+  it('donne la valeur de la voiture engagée', async () => {
+    const withSpecs = session({
+      drivers: [{ ...session().drivers[0], car: equipped }],
+      laps: [],
+    });
+    const workbook = await reread(buildSessionWorkbook(withSpecs));
+    const sheet = workbook.getWorksheet('14h00');
+    const header = rowValues(sheet, findRow(sheet, 'Engagements') + 2);
+    const row = rowValues(sheet, findRow(sheet, 'Engagements') + 3);
+
+    expect(row[header.indexOf('Moteur')]).toBe('Mabuchi S-Can');
+    expect(row[header.indexOf('Poids (g)')]).toBe(82);
+  });
+
+  /** Sinon dix-sept colonnes vides sur chaque feuille de session. */
+  it('n\'ajoute aucune colonne quand rien n\'est renseigné', async () => {
+    const workbook = await reread(buildSessionWorkbook(session()));
+    const sheet = workbook.getWorksheet('14h00');
+    const header = rowValues(sheet, findRow(sheet, 'Engagements') + 2);
+
+    expect(header[header.length - 1]).toBe('Abandon');
+  });
+});

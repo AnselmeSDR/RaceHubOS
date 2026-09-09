@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.1] - 2026-09-09
+
+### Fixed
+- **Les fenêtres de formulaire dépassaient de l'écran** sans pouvoir défiler : le titre reste désormais visible et le corps défile. Concernait tous les formulaires de l'app.
+- Fiche voiture : les caractéristiques s'affichent toujours, avec une invitation à les compléter si rien n'est renseigné.
+
+### Changed
+- Formulaire voiture : sections repliables remplacées par des sections simples, tout est visible d'un coup.
+- Bouton d'export réduit à son icône.
+- Les caractéristiques renseignées apparaissent aussi dans les engagements de chaque session exportée.
+
 ## [1.24.0] - 2026-09-09
 
 ### Added

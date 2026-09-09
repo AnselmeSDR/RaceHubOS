@@ -446,6 +446,9 @@ function addSessionSheet(workbook, session, taken) {
     { header: 'Meilleur tour', value: (e) => duration(e.bestLapTime), width: 13, numFmt: DURATION_FORMAT },
     { header: 'Dernier tour', value: (e) => duration(e.lastLapTime), width: 13, numFmt: DURATION_FORMAT },
     { header: 'Abandon', value: (e) => (e.isDNF ? 'oui' : ''), width: 9 },
+    // L'équipement de la voiture engagée, quand il est renseigné
+    ...carSpecColumns(entries.map((e) => e.car).filter(Boolean))
+      .map((column) => ({ ...column, value: (e) => (e.car ? column.value(e.car) : null) })),
   ], entries, { podium: (e) => e.finalPos });
   sheet.addRow([]);
 

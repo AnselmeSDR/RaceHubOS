@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileSpreadsheet, Loader2 } from 'lucide-react'
+import { Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
  * The file name comes from the server's Content-Disposition, so a session and
  * a championship keep the same naming without the page having to know it.
  */
-export default function ExportButton({ url, label, size = 'sm', variant = 'outline' }) {
+export default function ExportButton({ url, label = null, size, variant = 'outline' }) {
   const { t } = useTranslation('common')
   const [busy, setBusy] = useState(false)
 
@@ -45,14 +45,14 @@ export default function ExportButton({ url, label, size = 'sm', variant = 'outli
   return (
     <Button
       variant={variant}
-      size={size}
+      size={size ?? (label ? 'sm' : 'icon-sm')}
       onClick={handleExport}
       disabled={busy}
       data-testid="export-button"
       title={t('exportExcel')}
     >
-      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <FileSpreadsheet className="size-3.5" />}
-      {label ?? t('exportExcel')}
+      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+      {label}
     </Button>
   )
 }

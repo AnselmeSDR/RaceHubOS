@@ -53,5 +53,8 @@
   "profile": {
     "notFound": "Voiture non trouvée",
     "resetStatsMessage": "Remettre à zéro toutes les statistiques de cette voiture ?"
+  },
+  "specs": {
+    "empty": "Aucune caractéristique renseignée. Modifiez la voiture pour indiquer son moteur, ses pneus, son poids…"
   }
 }

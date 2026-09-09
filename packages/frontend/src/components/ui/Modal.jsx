@@ -21,9 +21,11 @@ export default function Modal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className={`bg-card border border-border rounded-xl shadow-xl w-full ${sizeClasses[size]} p-6 mx-4`}>
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {/* Le titre reste visible, seul le corps défile : un formulaire long
+          dépassait de l'écran sans jamais pouvoir être fait défiler */}
+      <div className={`bg-card border border-border rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             {icon}
             {title}
@@ -35,7 +37,9 @@ export default function Modal({
             <X className="size-6 text-muted-foreground" />
           </button>
         </div>
-        {children}
+        <div className="px-6 pb-6 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   )

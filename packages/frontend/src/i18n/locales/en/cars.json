@@ -53,5 +53,8 @@
   "profile": {
     "notFound": "Car not found",
     "resetStatsMessage": "Reset all statistics for this car?"
+  },
+  "specs": {
+    "empty": "No specification filled in yet. Edit the car to record its motor, tyres, weight…"
   }
 }

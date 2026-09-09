@@ -88,6 +88,18 @@ export function FormField({ label, required, error, children }) {
 /**
  * Text input field
  */
+/** A titled group of fields, separated by a rule. */
+export function FormSection({ title, children }) {
+  return (
+    <div className="pt-2">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pb-2 mb-3 border-b border-border">
+        {title}
+      </h3>
+      <div className="space-y-4">{children}</div>
+    </div>
+  )
+}
+
 export function TextField({
   label,
   value,

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
 import { formatLevel, levelPercent } from '@racehubos/shared'
 import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
-import { CollapsibleSection } from '@/components/ui/collapsible-section'
+import { FormSection } from '@/components/crud/FormModal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -393,7 +393,7 @@ export function CarFormModal({ car, onClose }) {
       <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
       <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
 
-      <CollapsibleSection title={t('fields.equipment')}>
+      <FormSection title={t('fields.equipment')}>
         <div className="grid grid-cols-2 gap-4">
           {CAR_TEXT_SPECS.filter((field) => field !== 'notes').map((field) => (
             <TextField
@@ -405,9 +405,9 @@ export function CarFormModal({ car, onClose }) {
             />
           ))}
         </div>
-      </CollapsibleSection>
+      </FormSection>
 
-      <CollapsibleSection title={t('fields.measurements')}>
+      <FormSection title={t('fields.measurements')}>
         <div className="grid grid-cols-3 gap-4">
           {CAR_NUMBER_SPECS.map((field) => (
             <TextField
@@ -419,7 +419,7 @@ export function CarFormModal({ car, onClose }) {
             />
           ))}
         </div>
-      </CollapsibleSection>
+      </FormSection>
 
       <TextField
         label={t('fields.notes')}
