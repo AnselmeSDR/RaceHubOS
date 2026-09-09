@@ -14,7 +14,6 @@ export default function CarSpecsCard({ car }) {
   const equipment = CAR_TEXT_SPECS.filter((field) => field !== 'notes' && car?.[field])
   const measurements = CAR_NUMBER_SPECS.filter((field) => car?.[field] != null)
 
-  if (equipment.length === 0 && measurements.length === 0 && !car?.notes) return null
 
   const section = (title, fields, suffix) => fields.length > 0 && (
     <div>
@@ -32,9 +31,14 @@ export default function CarSpecsCard({ car }) {
     </div>
   )
 
+  const empty = equipment.length === 0 && measurements.length === 0 && !car?.notes
+
   return (
     <Card data-testid="car-specs">
       <CardContent className="p-4 space-y-4">
+        {empty && (
+          <p className="text-sm text-muted-foreground">{t('specs.empty')}</p>
+        )}
         {section(t('fields.equipment'), equipment)}
         {section(t('fields.measurements'), measurements)}
         {car.notes && (
