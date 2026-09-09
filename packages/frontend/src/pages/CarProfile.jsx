@@ -14,6 +14,7 @@ import { CarFormModal } from './Cars'
 import LapTime from '../components/race/LapTime'
 import { getImgUrl } from '../utils/image'
 import { sessionBadgeClass } from '@/lib/colors'
+import CarSpecsCard from '../components/car/CarSpecsCard'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -147,6 +148,8 @@ export default function CarProfile() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
+        <CarSpecsCard car={car} />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
           <RecordsList

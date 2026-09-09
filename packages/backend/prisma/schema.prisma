@@ -40,6 +40,25 @@ model Car {
   maxSpeed          Int                @default(100)
   brakeForce        Int                @default(50)
   fuelCapacity      Int                @default(100)
+  // Équipement : texte libre, les pièces changent trop pour figer une liste
+  scale             String?
+  chassis           String?
+  motor             String?
+  gearRatio         String?
+  tyresFront        String?
+  tyresRear         String?
+  guide             String?
+  braids            String?
+  magnet            String?
+  notes             String?
+  // Mesures, en grammes et en millimètres
+  weightGrams       Int?
+  lengthMm          Float?
+  widthMm           Float?
+  wheelbaseMm       Float?
+  frontTrackMm      Float?
+  rearTrackMm       Float?
+  groundClearanceMm Float?
   totalRaces        Int                @default(0)
   bestLap           Float?
   deletedAt         DateTime?

@@ -3,6 +3,7 @@ import { createPrismaClient } from '../lib/prisma.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
+import { carSpecsFrom } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -209,6 +210,7 @@ router.post('/', async (req, res) => {
         maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
         brakeForce: brakeForce !== undefined ? brakeForce : 50,
         fuelCapacity: fuelCapacity !== undefined ? fuelCapacity : 100,
+        ...carSpecsFrom(req.body),
       },
     });
 
@@ -262,6 +264,7 @@ router.put('/:id', async (req, res) => {
     if (maxSpeed !== undefined) updateData.maxSpeed = maxSpeed;
     if (brakeForce !== undefined) updateData.brakeForce = brakeForce;
     if (fuelCapacity !== undefined) updateData.fuelCapacity = fuelCapacity;
+    Object.assign(updateData, carSpecsFrom(req.body, { partial: true }));
 
     const car = await prisma.car.update({
       where: { id },

@@ -1,3 +1,4 @@
+export * from './carSpecs.js';
 export * from './carSettings.js';
 export * from './championship.js';
 export * from './fuelMode.js';

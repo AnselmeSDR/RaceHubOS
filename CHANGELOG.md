@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2026-09-09
+
+### Added
+- **Fiche voiture complétée** (TASK-38) : équipement (échelle, châssis, moteur, rapport, pneus avant/arrière, guide, tresses, aimant, notes) et mesures (poids, longueur, largeur, empattement, voies, garde au sol). Tout est facultatif, en texte libre — les pièces changent trop pour figer une liste. Repris sur la fiche et dans les exports Excel, où seules les caractéristiques renseignées apparaissent.
+
 ## [1.23.0] - 2026-09-09
 
 ### Added

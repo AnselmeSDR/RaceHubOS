@@ -95,17 +95,28 @@ export function TextField({
   placeholder,
   required,
   type = 'text',
+  multiline = false,
   error
 }) {
   return (
     <FormField label={label} required={required} error={error}>
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-      />
+      {multiline ? (
+        <textarea
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={3}
+          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+        />
+      ) : (
+        <Input
+          type={type}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+        />
+      )}
     </FormField>
   )
 }

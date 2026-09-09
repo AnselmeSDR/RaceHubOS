@@ -189,3 +189,30 @@ describe('sélection de plusieurs pilotes', () => {
     expect(workbook.worksheets.map((s) => s.name)).toEqual(['Audi R8 LMS', 'Audi R8 LMS (2)', 'Sessions']);
   });
 });
+
+describe('caractéristiques dans l\'export', () => {
+  const equipped = {
+    ...car('c-1', 'R8 LMS'),
+    motor: 'Mabuchi S-Can 18k', tyresRear: 'Ortmann 30', weightGrams: 82, wheelbaseMm: 81.5,
+    sessions: [entry({ id: 1 })],
+  };
+
+  it('reprend ce qui est monté sur la voiture', async () => {
+    const workbook = await reread(buildCarWorkbook(equipped));
+    const sheet = workbook.getWorksheet('Audi R8 LMS');
+
+    expect(fieldValue(sheet, 'Moteur')).toBe('Mabuchi S-Can 18k');
+    expect(fieldValue(sheet, 'Pneus arrière')).toBe('Ortmann 30');
+    expect(fieldValue(sheet, 'Poids (g)')).toBe(82);
+    expect(fieldValue(sheet, 'Empattement (mm)')).toBe(81.5);
+  });
+
+  /** Dix-sept lignes vides sur une voiture non documentée n'apprennent rien. */
+  it('n\'affiche pas les caractéristiques non renseignées', async () => {
+    const workbook = await reread(buildCarWorkbook({ ...car('c-1', 'R8 LMS'), sessions: [] }));
+    const sheet = workbook.getWorksheet('Audi R8 LMS');
+
+    expect(findRow(sheet, 'Moteur')).toBeNull();
+    expect(findRow(sheet, 'Poids (g)')).toBeNull();
+  });
+});
