@@ -1,0 +1,242 @@
+{
+  "searchPlaceholder": "Meisterschaft suchen …",
+  "addLabel": "Neue Meisterschaft",
+  "columns": {
+    "name": "Name",
+    "qualifs": "Qualifikationen",
+    "races": "Rennen"
+  },
+  "form": {
+    "createTitle": "Neue Meisterschaft",
+    "autoMode": "Automatischer Ablauf",
+    "name": "Name der Meisterschaft",
+    "namePlaceholder": "Meisterschaft 2024",
+    "selectTrack": "Strecke auswählen …",
+    "saved": "Meisterschaft erstellt",
+    "createError": "Fehler beim Erstellen"
+  },
+  "detail": {
+    "defaultName": "Meisterschaft",
+    "noTrack": "Keine Strecke festgelegt",
+    "resultsTab": "Ergebnisse",
+    "finished": "Beendet",
+    "finishChampionship": "Meisterschaft beenden",
+    "hideBracket": "Turnierplan ausblenden",
+    "showBracket": "Turnierplan anzeigen",
+    "hideStandings": "Gesamtwertung ausblenden",
+    "showStandings": "Gesamtwertung anzeigen",
+    "configuration": "Konfiguration",
+    "generalStandings": "Gesamtwertung"
+  },
+  "sessionSection": {
+    "selectSession": "Sitzung auswählen",
+    "labels": {
+      "practice": "FT"
+    },
+    "copyFromPractice": "Aus Training übernehmen",
+    "table": {
+      "ctrl": "Regler",
+      "driver": "Fahrer",
+      "car": "Auto",
+      "grid": "Startplatz"
+    },
+    "incompleteDriverNoCar": "Regler {{n}}: Fahrer ohne Auto",
+    "incompleteCarNoDriver": "Regler {{n}}: Auto ohne Fahrer",
+    "duration": "Dauer (Min.)",
+    "durationPlaceholder": "0 = unbegrenzt",
+    "maxLaps": "Max. Runden",
+    "maxLapsPlaceholder": "0 = unbegrenzt",
+    "gracePeriod": "Nachlaufzeit (s)",
+    "maxLapTime": "Höchste Rundenzeit (s)",
+    "maxLapTimePlaceholder": "0 = kein Filter",
+    "autoAssignWait": "Die Fahrer werden nach der Qualifikation automatisch zugeordnet",
+    "pause": "Pause",
+    "timeRemaining": "{{time}} verbleibend",
+    "lapsCount": "{{current}} Runden",
+    "lapsCountTotal": "{{current}} / {{total}} Runden",
+    "lapsRemaining": "{{count}} verbleibend",
+    "checkeredFlag": "Zielflagge",
+    "pauseAction": "Pause",
+    "connectionLost": "Verbindung verloren – erneuter Verbindungsaufbau …",
+    "lights": "Startampel {{n}}/5",
+    "racing": "Rennen läuft",
+    "cuStopped": "CU angehalten",
+    "paused": "Pause {{time}}",
+    "connectCu": "Control Unit verbinden",
+    "incompleteConfig": "Zuordnung unvollständig",
+    "starting": "Startet …",
+    "start": "Starten",
+    "resumeCu": "CU fortsetzen",
+    "resume": "Fortsetzen",
+    "finish": "Beenden",
+    "waitingSessionEnd": "Warte auf Sitzungsende",
+    "status": {
+      "active": "Läuft",
+      "paused": "Pausiert",
+      "finishing": "Sitzung wird beendet …",
+      "finished": "Beendet",
+      "draft": "Entwurf"
+    }
+  },
+  "bracket": {
+    "loading": "Wird geladen …",
+    "statusLabels": {
+      "draft": "Wartet",
+      "active": "Läuft",
+      "paused": "Pausiert",
+      "finishing": "Wird beendet",
+      "finished": "Beendet"
+    },
+    "waitingQualifs": "Warte auf Qualifikationen …",
+    "participants_one": "{{count}} Teilnehmer",
+    "participants_other": "{{count}} Teilnehmer",
+    "qualifsCount_one": "{{count}} Qualifikation",
+    "qualifsCount_other": "{{count}} Qualifikationen",
+    "racesCount_one": "{{count}} Rennen",
+    "racesCount_other": "{{count}} Rennen",
+    "qualifications": "Qualifikationen",
+    "races": "Rennen",
+    "qualifRanking": "Qualifikationswertung",
+    "rankingAfterQualifs": "Wertung nach<br/>allen Qualifikationen"
+  },
+  "standings": {
+    "unknownDriver": "Unbekannter Fahrer",
+    "noStandings": "Keine Wertung vorhanden",
+    "lapsCount": "{{count}} Runden",
+    "laps": "Runden",
+    "total": "Gesamt",
+    "gap": "Abstand",
+    "gapLaps_one": "+{{count}} Runde",
+    "gapLaps_other": "+{{count}} Runden",
+    "points": "{{count}} Punkte"
+  },
+  "results": {
+    "loading": "Wird geladen …",
+    "noResults": "Keine Ergebnisse vorhanden. Beende mindestens ein Rennen.",
+    "podium": "Podium",
+    "podiumLabels": {
+      "first": "1.",
+      "second": "2.",
+      "third": "3."
+    },
+    "lapsCount": "{{count}} Runden",
+    "bestMoments": "Höhepunkte",
+    "finalStandings": "Endwertung",
+    "table": {
+      "driver": "Fahrer",
+      "laps": "Runden",
+      "time": "Zeit",
+      "gap": "Abstand"
+    },
+    "gapLaps": "+{{count}} R",
+    "leader": "Führender",
+    "award": {
+      "places_one": "+{{count}} Platz",
+      "places_other": "+{{count}} Plätze",
+      "lapsCount": "{{count}} Runden",
+      "finishedRaces_one": "{{count}} Rennen beendet",
+      "finishedRaces_other": "{{count}} Rennen beendet"
+    }
+  },
+  "configModal": {
+    "title": "Meisterschaft konfigurieren",
+    "name": "Name",
+    "track": "Strecke",
+    "selectTrack": "Strecke auswählen …",
+    "selectPlaceholder": "– Auswählen –",
+    "participants": "Teilnehmer ({{count}})",
+    "addDriver": "Fahrer hinzufügen …",
+    "sessions": "Sitzungen",
+    "addQualif": "Qualifikation",
+    "addRace": "Rennen",
+    "noSessions": "Keine Sitzung. Füge eine Qualifikation oder ein Rennen hinzu.",
+    "create": "Erstellen",
+    "reopenChampionship": "Meisterschaft wieder öffnen",
+    "finishChampionship": "Meisterschaft beenden",
+    "nameRequired": "Ein Name ist erforderlich",
+    "genericError": "Fehler",
+    "sessionTypes": {
+      "qualif": "Qualifikation",
+      "race": "Rennen"
+    },
+    "sessionStatus": {
+      "active": "Läuft",
+      "paused": "Pausiert",
+      "finishing": "Wird beendet",
+      "finished": "Beendet"
+    },
+    "fields": {
+      "minUnit": "Min.",
+      "lapsUnit": "Runden"
+    },
+    "deletedTrack": "{{name}} (gelöscht)",
+    "finishedLocked": "Meisterschaft beendet: Die Konfiguration ist gesperrt. Öffne sie wieder, um Änderungen vorzunehmen."
+  },
+  "sessionConfigModal": {
+    "title": "Sitzung konfigurieren",
+    "name": "Name",
+    "type": "Typ",
+    "duration": "Dauer (Minuten)",
+    "maxLaps": "Max. Runden",
+    "gracePeriod": "Nachlaufzeit (s)",
+    "controllerConfig": "Reglerzuordnung",
+    "copyFromPractice": "Aus Training übernehmen",
+    "table": {
+      "ctrl": "Regler",
+      "driver": "Fahrer",
+      "car": "Auto",
+      "grid": "Startplatz"
+    },
+    "status": "Status",
+    "draft": "Entwurf",
+    "incompleteConfig": "Zuordnung unvollständig",
+    "incompleteDriverNoCar": "Regler {{n}}: Fahrer ohne Auto",
+    "incompleteCarNoDriver": "Regler {{n}}: Auto ohne Fahrer",
+    "completeToReady": "Vervollständige die Zuordnung für den Status „Bereit“",
+    "reset": "Zurücksetzen"
+  },
+  "wizard": {
+    "title": "Neue automatische Meisterschaft",
+    "steps": {
+      "info": "Angaben",
+      "participants": "Fahrer",
+      "config": "Konfiguration",
+      "preview": "Vorschau"
+    },
+    "autoMode": "Automatischer Ablauf",
+    "name": "Name der Meisterschaft",
+    "namePlaceholder": "Meisterschaft 2026",
+    "track": "Strecke",
+    "selectTrack": "Strecke auswählen …",
+    "participantsCount_one": "{{count}} Teilnehmer",
+    "participantsCount_other": "{{count}} Teilnehmer",
+    "driverPlaceholder": "Fahrer …",
+    "driversPerQualif": "Fahrer je Qualifikation",
+    "driversPerRace": "Fahrer je Rennen",
+    "qualifGroups_one": "{{count}} Qualifikationsgruppe",
+    "qualifGroups_other": "{{count}} Qualifikationsgruppen",
+    "raceGroups_one": "{{count}} Rennen",
+    "raceGroups_other": "{{count}} Rennen",
+    "qualifications": "Qualifikationen",
+    "races": "Rennen",
+    "duration": "Dauer",
+    "laps": "Runden",
+    "totalSummary": "Gesamt: {{total}} Sitzungen (1 Training + {{qualifs}} + {{races}})",
+    "groupQualifs_one": "{{count}} Qualifikation",
+    "groupQualifs_other": "{{count}} Qualifikationen",
+    "groupRaces_one": "{{count}} Rennen",
+    "groupRaces_other": "{{count}} Rennen",
+    "groupDrivers_one": "{{count}} Fahrer",
+    "groupDrivers_other": "{{count}} Fahrer",
+    "globalRanking": "Gesamtwertung",
+    "globalRankingHint": "(beste Runde)",
+    "positionsRange": "Plätze {{start}} bis {{end}}",
+    "previewNote1": "Die Fahrer werden nach der Qualifikation automatisch auf die Rennen verteilt.",
+    "previewNote2": "Die Endwertung ergibt sich aus den Rennergebnissen.",
+    "next": "Weiter",
+    "creating": "Wird erstellt …",
+    "createChampionship": "Meisterschaft erstellen",
+    "createError": "Fehler beim Erstellen",
+    "connectionError": "Verbindung zum Server fehlgeschlagen"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "title": "Testkonsole",
+  "status": {
+    "socketOk": "Echtzeitverbindung OK",
+    "socketOff": "Echtzeitverbindung getrennt",
+    "cuConnected": "CU verbunden",
+    "cuOffline": "CU nicht erreichbar",
+    "session": "Sitzung: {{id}}",
+    "noSession": "Keine Sitzung"
+  },
+  "raceState": {
+    "unknown": "Unbekannt",
+    "racing": "Rennen läuft",
+    "lights": "Startampel {{count}}/5",
+    "falseStart": "Fehlstart",
+    "go": "Los!",
+    "stopped": "Angehalten",
+    "state": "Status {{state}}"
+  },
+  "modes": {
+    "fuel": "Tankfunktion",
+    "real": "Real-Modus",
+    "pitLane": "Boxengasse",
+    "lapCounter": "Rundenzähler"
+  },
+  "cu": {
+    "title": "Control Unit",
+    "scanConnect": "Suchen und verbinden",
+    "stop": "STOPP",
+    "start": "START",
+    "esc": "ESC",
+    "resetTimer": "Zeitmessung zurücksetzen",
+    "clearPos": "Positionen löschen",
+    "info": "Informationen",
+    "disconnect": "Trennen",
+    "buttonTitle": "Taste {{id}}: {{name}}",
+    "display": "Anzeige: {{count}} Autos",
+    "fuel": "Tankstand: [{{values}}]"
+  },
+  "config": {
+    "toggle": "Konfiguration",
+    "title": "Reglerzuordnung",
+    "controller": "Regler {{number}}",
+    "driverPlaceholder": "– Fahrer –",
+    "carPlaceholder": "– Auto –",
+    "autoSaved": "Zuordnung automatisch gespeichert. {{driverCount}} Fahrer, {{carCount}} Autos verfügbar."
+  },
+  "logs": {
+    "title": "Protokolle",
+    "grouped": "Gruppiert",
+    "chrono": "Zeitlich",
+    "filterAll": "Alle",
+    "filterLap": "Runden",
+    "filterStatus": "Status",
+    "filterError": "Fehler",
+    "filterSuccess": "Erfolg",
+    "filterInfo": "Informationen",
+    "clearTitle": "Protokolle leeren",
+    "waiting": "Warte auf Ereignisse …",
+    "groupCount": "{{type}} ({{count}})",
+    "logDataTitle": "Protokolldaten in der Konsole ausgeben",
+    "logData": "[Daten]",
+    "typeSuccess": "Erfolg",
+    "typeError": "Fehler",
+    "typeLap": "Runde",
+    "typeStatus": "Status",
+    "typeInfo": "Information"
+  },
+  "leaderboard": {
+    "title": "Live-Rangliste",
+    "clearTitle": "Rangliste leeren",
+    "noData": "Noch keine Rundendaten",
+    "colPos": "Platz",
+    "colCar": "Auto",
+    "colLaps": "Runden",
+    "colBest": "Bestzeit",
+    "colLast": "Letzte Runde",
+    "defaultDriver": "Fahrer {{number}}",
+    "defaultCar": "Auto {{number}}",
+    "totalLaps": "Runden gesamt: {{count}}",
+    "cars": "Autos: {{count}}"
+  }
+}

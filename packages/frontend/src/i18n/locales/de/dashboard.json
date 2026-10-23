@@ -1,0 +1,34 @@
+{
+  "activeSession": {
+    "title": "Laufende Sitzung",
+    "fallbackName": "Laufendes Rennen",
+    "join": "Öffnen"
+  },
+  "records": {
+    "title": "Bisherige Rekorde",
+    "fastestLap": "Schnellste Runde",
+    "mostWins": "Meiste Siege",
+    "mostPodiums": "Meiste Podestplätze"
+  },
+  "driverLeaderboard": {
+    "title": "Fahrerwertung",
+    "seeAll": "Alle anzeigen →",
+    "racesShort": "R",
+    "winsShort": "S",
+    "podiumsShort": "P"
+  },
+  "topLaps": {
+    "title": "Schnellste Runden"
+  },
+  "quickActions": {
+    "title": "Schnellzugriff",
+    "startRace": "Rennen starten"
+  },
+  "system": {
+    "title": "System",
+    "backendApi": "Serververbindung",
+    "database": "Datenbank",
+    "ok": "OK",
+    "off": "Aus"
+  }
+}
