@@ -1,5 +1,10 @@
 import EventEmitter from 'events';
-import noble from '@abandonware/noble';
+import { BluezBLEService } from './bleBluez.js';
+import { selectNobleAdapter } from '../lib/nobleAdapter.js';
+
+const useBluez = process.platform === 'linux' && process.env.RACEHUBOS_BLE_TRANSPORT !== 'noble';
+if (!useBluez) selectNobleAdapter();
+const noble = useBluez ? null : (await import('@abandonware/noble')).default;
 
 // UUIDs du Control Unit Carrera (format Noble: minuscules sans tirets)
 const SERVICE_UUID = '39df7777b1b4b90b57f17144ae4e4a6a';
@@ -12,11 +17,19 @@ const DEVICE_NAME = 'Control_Unit';
  * Gère la découverte, connexion, et communication avec le dispositif
  */
 export class BLEService extends EventEmitter {
-  constructor() {
+  constructor({ adapter, operationTimeout = 10000 } = {}) {
     super();
+    if (!adapter && useBluez) return new BluezBLEService();
+    adapter ??= noble;
+    this.adapter = adapter;
+    this.operationTimeout = operationTimeout;
+    this.connectionGeneration = 0;
+    this.cancelConnection = null;
+    this.manualDisconnect = false;
     this.peripheral = null;
     this.outputCharacteristic = null;
     this.notifyCharacteristic = null;
+    this.onNotification = null;
     this.connected = false;
     this.connecting = false;
     this.reconnectTimer = null;
@@ -30,62 +43,47 @@ export class BLEService extends EventEmitter {
    * @returns {Promise<string>} L'adresse du peripheral trouvé
    */
   async scan(timeout = 10000) {
-    console.log('🔍 Starting BLE scan for Control Unit...');
-    console.log('   Noble state:', noble.state);
+    if (this.connecting) throw new Error('Connection already in progress');
+    const peripheral = await this.discoverPeripheral(null, timeout);
+    this.lastFoundPeripheral = peripheral;
+    this.emit('discovered', peripheral.address || peripheral.uuid || peripheral.id);
+    return peripheral;
+  }
 
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        console.log('⏰ Scan timeout - Control Unit not found');
-        noble.stopScanning();
-        noble.removeAllListeners('discover');
-        reject(new Error('Timeout: Control Unit not found'));
-      }, timeout);
-
-      const onDiscover = (peripheral) => {
-        const name = peripheral.advertisement.localName || 'unknown';
-        const address = peripheral.address || peripheral.uuid || peripheral.id;
-        console.log(`   Found device: ${name} (${address})`);
-
-        if (name === DEVICE_NAME) {
-          console.log('✅ Control Unit found! Address:', address);
-          clearTimeout(timer);
-          noble.stopScanning();
-          noble.removeListener('discover', onDiscover);
-          // Stocker le peripheral pour pouvoir le réutiliser
-          this.lastFoundPeripheral = peripheral;
-          this.emit('discovered', address);
-          resolve(peripheral);
-        }
-      };
-
-      noble.on('discover', onDiscover);
-
-      const startScan = () => {
-        console.log('   Starting noble scan...');
-        noble.startScanning([], false, (err) => {
-          if (err) {
-            console.error('❌ Scan error:', err);
-            clearTimeout(timer);
-            reject(err);
-          }
-        });
-      };
-
-      if (noble.state === 'poweredOn') {
-        startScan();
-      } else {
-        console.log('   Waiting for Bluetooth adapter...');
-        noble.once('stateChange', (state) => {
-          console.log('   Bluetooth state changed:', state);
-          if (state === 'poweredOn') {
-            startScan();
-          } else {
-            clearTimeout(timer);
-            reject(new Error(`Bluetooth adapter not ready: ${state}`));
-          }
-        });
-      }
-    });
+  async discoverPeripheral(address, timeout = this.operationTimeout) {
+    let ready;
+    if (this.adapter.state !== 'poweredOn') {
+      try {
+        await this.waitForConnection(done => {
+          ready = state => { if (state === 'poweredOn') done(); };
+          this.adapter.on('stateChange', ready);
+        }, 'Bluetooth adapter', timeout);
+      } finally { this.adapter.off('stateChange', ready); }
+    }
+    let discover;
+    try {
+      return await this.waitForConnection(done => {
+        discover = peripheral => {
+          const found = peripheral.address || peripheral.uuid || peripheral.id;
+          const matches = address ? String(found).toLowerCase() === String(address).toLowerCase()
+            : peripheral.advertisement?.localName === DEVICE_NAME;
+          if (matches) done(null, peripheral);
+        };
+        this.adapter.on('discover', discover);
+        this.adapter.startScanning([], false, error => { if (error) done(error); });
+      }, 'Bluetooth discovery', timeout);
+    } finally {
+      this.adapter.off('discover', discover);
+      // Connecting before the controller acknowledges scan-stop races the HCI command.
+      let stopped;
+      try {
+        await this.waitForConnection(done => {
+          stopped = () => done();
+          this.adapter.once('scanStop', stopped);
+          this.adapter.stopScanning();
+        }, 'Bluetooth scan stop', timeout);
+      } finally { this.adapter.off('scanStop', stopped); }
+    }
   }
 
   /**
@@ -101,69 +99,37 @@ export class BLEService extends EventEmitter {
       throw new Error('Connection already in progress');
     }
 
+    const generation = ++this.connectionGeneration;
+    const assertCurrent = () => {
+      if (generation !== this.connectionGeneration) throw new Error('CU connection cancelled');
+    };
     try {
       this.connecting = true;
+      this.manualDisconnect = false;
       this.emit('connecting');
 
       // Utiliser le peripheral déjà trouvé si disponible et correspondant
       if (this.lastFoundPeripheral) {
         const lastAddr = this.lastFoundPeripheral.address || this.lastFoundPeripheral.uuid || this.lastFoundPeripheral.id;
-        if (!address || address === lastAddr) {
+        if (!address || String(address).toLowerCase() === String(lastAddr).toLowerCase()) {
           console.log('📱 Using cached peripheral');
           this.peripheral = this.lastFoundPeripheral;
         }
       }
 
-      // Sinon, scanner pour trouver le peripheral
-      if (!this.peripheral) {
-        if (!address) {
-          this.peripheral = await this.scan();
-        } else {
-          // Attendre que le peripheral soit découvert
-          console.log('🔍 Scanning for peripheral with address:', address);
-          this.peripheral = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              noble.stopScanning();
-              noble.removeAllListeners('discover');
-              reject(new Error('Timeout waiting for peripheral'));
-            }, 10000);
+      if (!this.peripheral) this.peripheral = await this.discoverPeripheral(address);
 
-            const onDiscover = (peripheral) => {
-              const pAddr = peripheral.address || peripheral.uuid || peripheral.id;
-              const pName = peripheral.advertisement?.localName || 'unknown';
-              console.log(`   Checking: ${pName} (${pAddr}) vs ${address}`);
-              if (pAddr === address || peripheral.advertisement.localName === DEVICE_NAME) {
-                clearTimeout(timeout);
-                noble.stopScanning();
-                noble.removeListener('discover', onDiscover);
-                resolve(peripheral);
-              }
-            };
+      assertCurrent();
+      const peripheral = this.peripheral;
+      await this.waitForConnection(done => peripheral.connect(done), 'Bluetooth connection');
+      assertCurrent();
 
-            noble.on('discover', onDiscover);
-            noble.startScanning([], false);
-          });
-        }
-      }
-
-      // Se connecter au peripheral
-      await new Promise((resolve, reject) => {
-        this.peripheral.connect((error) => {
-          if (error) reject(error);
-          else resolve();
+      const { services, characteristics } = await this.waitForConnection(done => {
+        peripheral.discoverSomeServicesAndCharacteristics([SERVICE_UUID], [OUTPUT_UUID, NOTIFY_UUID], (error, services, characteristics) => {
+          done(error, { services, characteristics });
         });
-      });
-
-      this.emit('connected');
-
-      // Découvrir TOUS les services et caractéristiques d'abord pour debug
-      console.log('🔎 Discovering services and characteristics...');
-      const { services, characteristics } = await new Promise((resolve, reject) => {
-        this.peripheral.discoverAllServicesAndCharacteristics((error, services, characteristics) => {
-          if (error) reject(error);
-          else resolve({ services, characteristics });
-        });
-      });
+      }, 'AppConnect discovery');
+      assertCurrent();
 
       this._discoveredServices = services.map(s => s.uuid);
       console.log('📋 Found services:', this._discoveredServices);
@@ -186,27 +152,20 @@ export class BLEService extends EventEmitter {
 
       // S'abonner aux notifications
       console.log('🔔 Subscribing to notifications on characteristic:', this.notifyCharacteristic.uuid);
-      await new Promise((resolve, reject) => {
-        this.notifyCharacteristic.subscribe((error) => {
-          if (error) {
-            console.error('❌ Subscribe error:', error);
-            reject(error);
-          } else {
-            console.log('✅ Subscribed to notifications');
-            resolve();
-          }
-        });
-      });
+      await this.waitForConnection(done => this.notifyCharacteristic.subscribe(done), 'AppConnect subscribe');
+      assertCurrent();
 
       // Écouter les données
-      this.notifyCharacteristic.on('data', (data) => {
-        console.log('🔵 BLE Raw data:', data.toString('hex'));
-        this.handleNotification(data);
-      });
+      this.onNotification = data => {
+        if (generation === this.connectionGeneration && this.peripheral === peripheral && this.connected) {
+          this.handleNotification(data);
+        }
+      };
+      this.notifyCharacteristic.on('data', this.onNotification);
 
       // Gérer les déconnexions
-      this.peripheral.once('disconnect', () => {
-        this.handleDisconnect();
+      peripheral.once('disconnect', () => {
+        if (this.peripheral === peripheral) this.handleDisconnect();
       });
 
       this.connected = true;
@@ -216,10 +175,39 @@ export class BLEService extends EventEmitter {
 
       console.log('✅ Connected to Control Unit');
     } catch (error) {
-      this.connecting = false;
-      this.emit('error', error);
+      if (generation === this.connectionGeneration) {
+        const failed = this.peripheral;
+        this.peripheral = null;
+        this.lastFoundPeripheral = null;
+        this.outputCharacteristic = null;
+        if (this.onNotification) this.notifyCharacteristic?.off('data', this.onNotification);
+        this.notifyCharacteristic = null;
+        this.onNotification = null;
+        this.connected = false;
+        this.connecting = false;
+        try { failed?.cancelConnect?.(); failed?.disconnect(() => {}); } catch { /* retry discovers afresh */ }
+        this.emit('error', error);
+      }
       throw error;
     }
+  }
+
+  waitForConnection(start, label, timeout = this.operationTimeout) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (this.cancelConnection === cancel) this.cancelConnection = null;
+        if (error) reject(error);
+        else resolve(value);
+      };
+      const cancel = () => finish(new Error('CU connection cancelled'));
+      const timer = setTimeout(() => finish(new Error(`${label} timed out`)), timeout);
+      this.cancelConnection = cancel;
+      try { start(finish); } catch (error) { finish(error); }
+    });
   }
 
   /**
@@ -299,10 +287,14 @@ export class BLEService extends EventEmitter {
     this.connected = false;
     this.connecting = false;
     this.outputCharacteristic = null;
+    if (this.onNotification) this.notifyCharacteristic?.off('data', this.onNotification);
     this.notifyCharacteristic = null;
+    this.onNotification = null;
     // Keep lastFoundPeripheral but clear peripheral for fresh reconnect
     this.peripheral = null;
     this.emit('disconnect');
+
+    if (this.manualDisconnect || this.externalRecovery) return;
 
     // Tentative de reconnexion automatique
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -329,23 +321,25 @@ export class BLEService extends EventEmitter {
    * Se déconnecter du Control Unit
    */
   async disconnect() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+    this.manualDisconnect = true;
+    this.connectionGeneration += 1;
+    this.cancelConnection?.();
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    const peripheral = this.peripheral;
+    const wasConnected = this.connected;
+    this.peripheral = null;
+    this.lastFoundPeripheral = null;
+    this.connected = false;
+    this.connecting = false;
+    this.outputCharacteristic = null;
+    if (this.onNotification) this.notifyCharacteristic?.off('data', this.onNotification);
+    this.notifyCharacteristic = null;
+    this.onNotification = null;
+    if (wasConnected) this.emit('disconnect');
+    if (peripheral) {
+      await this.waitForConnection(done => peripheral.disconnect(done), 'Bluetooth disconnect');
     }
-
-    if (this.peripheral && this.connected) {
-      await new Promise((resolve) => {
-        this.peripheral.disconnect(() => {
-          this.connected = false;
-          this.outputCharacteristic = null;
-          this.notifyCharacteristic = null;
-          resolve();
-        });
-      });
-    }
-
-    console.log('Disconnected from Control Unit');
   }
 
   /**
