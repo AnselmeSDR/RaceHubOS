@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "groupLabel": "Navigation",
+    "dashboard": "Übersicht",
+    "freeMode": "Freies Fahren",
+    "history": "Verlauf",
+    "stats": "Statistik",
+    "balancing": "Fahrzeugabgleich",
+    "displays": "Anzeigen",
+    "test": "Test",
+    "settings": "Einstellungen"
+  },
+  "theme": {
+    "dayMode": "Tagmodus",
+    "nightMode": "Nachtmodus"
+  },
+  "backend": {
+    "connectedTooltip": "Server verbunden",
+    "disconnectedTooltip": "Server getrennt",
+    "connected": "Verbunden – v{{version}}",
+    "disconnected": "Server getrennt"
+  },
+  "header": {
+    "results_one": "{{count}} Ergebnis",
+    "results_other": "{{count}} Ergebnisse"
+  },
+  "footer": {
+    "mode": "Modus {{mode}}",
+    "lapStart": "Start",
+    "unknown": "Unbekannt"
+  },
+  "cuState": {
+    "racing": "Bahn freigegeben",
+    "lights": "Startampel {{n}}/5",
+    "falseStart": "Fehlstart",
+    "go": "Los!",
+    "stopped": "Angehalten"
+  },
+  "statusPopup": {
+    "title": "Serverstatus",
+    "cuBluetooth": "CU-Bluetooth",
+    "loading": "Wird geladen …",
+    "noLogs": "Keine Protokolle",
+    "logsCount": "Protokolle ({{count}})",
+    "filterAll": "Alle",
+    "logsCleared": "Protokolle geleert",
+    "status": {
+      "backend": "Server"
+    },
+    "logs": {
+      "backendStatus": "Server: {{status}} (v{{version}})",
+      "simulatorMode": "Simulatormodus: {{state}}",
+      "cuConnected": "CU verbunden",
+      "cuNotConnected": "CU nicht verbunden",
+      "cuDisconnected": "CU getrennt",
+      "backendError": "Serververbindung fehlgeschlagen: {{message}}",
+      "wsConnected": "Echtzeitverbindung hergestellt",
+      "wsDisconnected": "Echtzeitverbindung getrennt",
+      "cuStatus": "CU-Status: {{state}}, Modus: {{mode}}",
+      "timer": "{{kind}}: Regler {{controller}} – {{lapTime}} ms",
+      "timerFinish": "Ziel",
+      "timerSector": "Sektor {{sector}}",
+      "lap": "Runde: {{label}} – {{time}} s",
+      "sessionStarted": "Sitzung gestartet: {{id}} …",
+      "sessionStopped": "Sitzung angehalten: {{id}} …"
+    }
+  }
+}

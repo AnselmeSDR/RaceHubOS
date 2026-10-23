@@ -1,0 +1,11 @@
+{
+  "topBar": {
+    "selectTrackPlaceholder": "Strecke auswählen …",
+    "newSession": "Neue Sitzung",
+    "showStandings": "Gesamtwertung anzeigen",
+    "hideStandings": "Gesamtwertung ausblenden"
+  },
+  "standings": {
+    "title": "Gesamtwertung"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "page": {
+    "trackPlaceholder": "Strecke auswählen …",
+    "title": "Fahrzeugabgleich",
+    "newSession": "Neue Sitzung",
+    "showStandings": "Gesamtwertung anzeigen",
+    "hideStandings": "Gesamtwertung ausblenden",
+    "standingsTitle": "Gesamtwertung"
+  },
+  "session": {
+    "defaultName": "Fahrzeugabgleich"
+  },
+  "chart": {
+    "carFallback": "Auto {{number}}",
+    "noLapData": "Keine Rundendaten vorhanden",
+    "title": "Entwicklung der Rundenzeiten",
+    "axisLap": "Runden",
+    "axisTime": "Zeit (s)",
+    "tooltipLapLabel": "Runde {{lap}}",
+    "tooltipValue": "{{value}} s",
+    "lapsCount_one": "{{count}} Runde",
+    "lapsCount_other": "{{count}} Runden",
+    "best": "Bestzeit",
+    "bestMedian5": "Bester Median (5)",
+    "avg60": "Durchschnitt 60 %",
+    "medianPer5": "Median je 5 Runden"
+  },
+  "standings": {
+    "empty": "Keine Wertung vorhanden",
+    "bestPerCar": "Bestzeit je Auto",
+    "lapsAndSessions_one": "{{laps}} Runden · {{count}} Sitzung",
+    "lapsAndSessions_other": "{{laps}} Runden · {{count}} Sitzungen",
+    "best": "Bestzeit",
+    "median": "Median",
+    "avg60": "60 %"
+  },
+  "referenceWarning": {
+    "title": "Kein Referenzfahrer",
+    "message": "Die Abgleichrunden werden keinem Fahrer zugeordnet. Lege einen Referenzfahrer in den Einstellungen fest.",
+    "action": "Einstellungen öffnen"
+  }
+}
