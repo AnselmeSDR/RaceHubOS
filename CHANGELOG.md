@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.2] - 2026-10-23
+
+### Fixed
+- **Bluetooth Linux** : utilise le service système BlueZ plutôt que le pilote Noble Raw-HCI. Sur le banc Linux Mint, ce dernier trouvait la CU mais ne confirmait pas sa connexion. Noble reste disponible sur les autres plateformes ; la sélection explicite de son adaptateur et les transitions scan/connexion sont respectées.
+- **Reconnexion CU** : réessaie après une connexion initiale échouée, une coupure ou l'absence de statuts récents, avec des délais de 5, 15 puis 60 secondes. Une déconnexion volontaire ou le passage au simulateur annule la reprise ; un résultat tardif ne peut pas réactiver le polling CU.
+- Les opérations Bluetooth bloquées expirent et libèrent leur état. Le polling arrêté ne peut plus recréer une seconde boucle après reconnexion.
+
 ## [1.24.1] - 2026-09-09
 
 ### Fixed
