@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 export const LANGUAGES = [
+  { code: 'de', label: 'Deutsch' },
   { code: 'fr', label: 'Français' },
   { code: 'en', label: 'English' },
 ]
