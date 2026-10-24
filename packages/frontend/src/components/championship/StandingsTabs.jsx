@@ -102,7 +102,8 @@ export default function StandingsTabs({
   }
 
   return (
-    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+    // Labels follow the panel's width, not the window's: the panel is a third of the page
+    <div className="@container bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Tabs Header */}
       <div className="flex border-b border-border">
         {tabs.map(tab => {
@@ -118,15 +119,16 @@ export default function StandingsTabs({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex-1 px-3 py-3 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+              title={tab.label}
+              className={`flex-1 min-w-0 px-2 py-3 text-xs font-semibold whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
                 isActive
                   ? `${colorClasses[tab.color]} border-b-2 bg-muted/50`
                   : `${colorClasses[tab.color]} hover:bg-muted`
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden">{tab.shortLabel}</span>
+              <Icon className="hidden @xs:block w-4 h-4 shrink-0" />
+              <span className="hidden @md:inline truncate">{tab.label}</span>
+              <span className="@md:hidden truncate">{tab.shortLabel}</span>
             </button>
           )
         })}
@@ -155,7 +157,7 @@ export default function StandingsTabs({
                   }`}
                 >
                   {/* Position */}
-                  <span className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm ${
+                  <span className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full font-black text-sm ${
                     position === 1 ? 'bg-yellow-400 text-yellow-950' :
                     position === 2 ? 'bg-gray-300 text-gray-800' :
                     position === 3 ? 'bg-orange-400 text-orange-950' :
@@ -196,7 +198,7 @@ export default function StandingsTabs({
                   </div>
 
                   {/* Stats */}
-                  <div className="text-right flex items-center gap-3">
+                  <div className="text-right flex items-center gap-3 shrink-0 whitespace-nowrap">
                     {activeTab === SessionType.PRACTICE && (
                       <>
                         <LapTime time={standing.lapTime || standing.bestTime} size="sm" />

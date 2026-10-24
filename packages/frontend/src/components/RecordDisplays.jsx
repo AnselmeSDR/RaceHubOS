@@ -74,7 +74,7 @@ export function RecordItem({
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0">
+      <div className="@container flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-foreground truncate">
             {driver?.name || t('unknown')}
@@ -83,17 +83,18 @@ export function RecordItem({
             {sessionLabel}
           </Badge>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+        {/* Car and track side by side when there is room, stacked otherwise */}
+        <div className="flex flex-col gap-0.5 @sm:flex-row @sm:items-center @sm:gap-3 text-xs text-muted-foreground mt-0.5">
           {showCar && car && (
-            <span className="flex items-center gap-1 truncate">
+            <span className="flex items-center gap-1 min-w-0">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: car.color || '#6B7280' }} />
-              {car.brand} {car.model}
+              <span className="truncate">{car.brand} {car.model}</span>
             </span>
           )}
           {track && (
-            <span className="flex items-center gap-1 truncate">
+            <span className="flex items-center gap-1 min-w-0">
               <MapPin className="size-3 flex-shrink-0" />
-              {track.name}
+              <span className="truncate">{track.name}</span>
             </span>
           )}
         </div>

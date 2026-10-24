@@ -469,7 +469,7 @@ function StatBox({ icon, label, value, color, highlight }) {
   return (
     <div
       className={`
-        p-3 rounded-lg text-center transition-all
+        px-2 py-3 rounded-lg text-center transition-all
         ${highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm'}
       `}
     >
@@ -479,7 +479,7 @@ function StatBox({ icon, label, value, color, highlight }) {
       >
         {icon}
       </div>
-      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide break-words mb-1">
         {label}
       </div>
       <div
