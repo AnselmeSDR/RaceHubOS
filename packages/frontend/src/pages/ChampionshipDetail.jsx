@@ -305,7 +305,7 @@ export default function ChampionshipDetail() {
       />
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="@container flex-1 overflow-auto p-4">
         {/* Bracket view for auto championships */}
         {showBracket && championship?.mode === ChampionshipMode.AUTO && (
           <div className="mb-4 bg-card border border-border rounded-xl p-4">
@@ -320,9 +320,9 @@ export default function ChampionshipDetail() {
         {showResults ? (
           <ChampionshipResults championshipId={id} />
         ) : (
-        <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
+        <div className={`grid grid-cols-1 ${showStandings ? '@4xl:grid-cols-3' : ''} gap-4`}>
           {/* Left: Session + Leaderboard */}
-          <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>
+          <div className={`${showStandings ? '@4xl:col-span-2' : ''} space-y-4`}>
             <SessionSection
               session={selectedSession}
               sessions={sessions}

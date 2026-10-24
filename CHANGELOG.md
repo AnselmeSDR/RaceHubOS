@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Textes restés en français ou en anglais quelle que soit la langue : onglet `EL`, barre d'état, bouton `START`, noms des sessions créées automatiquement.
 - Podium : nombre de tours écrit en minuscule (« 30 runden » en allemand).
+- Classement coupé sur écran étroit : il passe sous la session quand la place manque. Nom de circuit tronqué proprement.
+- Records des profils : voiture et circuit l'un sous l'autre quand la place manque, au lieu d'être coupés.
 
 ### Changed
 - Une traduction manquante s'affiche en anglais, et non plus en français.

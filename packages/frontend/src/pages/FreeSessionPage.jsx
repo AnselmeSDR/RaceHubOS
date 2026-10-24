@@ -254,8 +254,11 @@ export default function FreeSessionPage() {
       <div className="border-b px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder={t('topBar.selectTrackPlaceholder')} />
+            {/* A long track name ends with an ellipsis instead of being cut mid-letter */}
+            <SelectTrigger className="w-48" title={selectedTrack?.name}>
+              <SelectValue placeholder={t('topBar.selectTrackPlaceholder')}>
+                <span className="min-w-0 truncate">{selectedTrack?.name}</span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {tracks.map(track => (
@@ -302,10 +305,10 @@ export default function FreeSessionPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className={`grid grid-cols-1 ${showStandings ? 'lg:grid-cols-3' : ''} gap-4`}>
+      <div className="@container flex-1 overflow-auto p-4">
+        <div className={`grid grid-cols-1 ${showStandings ? '@4xl:grid-cols-3' : ''} gap-4`}>
           {/* Left: Session + Leaderboard */}
-          <div className={`${showStandings ? 'lg:col-span-2' : ''} space-y-4`}>
+          <div className={`${showStandings ? '@4xl:col-span-2' : ''} space-y-4`}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full size-10 border-b-2 border-primary" />
