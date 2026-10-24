@@ -45,3 +45,8 @@ export function sessionTypeKey(type) {
 export function sessionTypeFullKey(type) {
   return `glossary:sessionTypeFull.${type}`;
 }
+
+/** i18n key holding this type's abbreviation, e.g. "EL" (fr), "FP" (en). Standard types only. */
+export function sessionTypeAbbrKey(type) {
+  return `glossary:sessionTypeAbbr.${type}`;
+}

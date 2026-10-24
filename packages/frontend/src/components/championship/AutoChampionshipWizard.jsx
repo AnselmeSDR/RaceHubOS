@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { FormField } from '../crud/FormModal'
 import ErrorMessage from '../ErrorMessage'
 import { ChampionshipMode } from '@racehubos/shared'
+import { sessionNames } from '../../lib/sessionNames'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -136,6 +137,7 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
         raceMaxDuration: useRaceTime && raceDuration > 0 ? raceDuration * 60000 : null,
         raceMaxLaps: useRaceLaps && raceLaps > 0 ? raceLaps : null,
         participants: completeParticipants.map(p => ({ driverId: p.driverId })),
+        sessionNames: sessionNames(),
       }
       const res = await fetch(`${API_URL}/api/championships`, {
         method: 'POST',

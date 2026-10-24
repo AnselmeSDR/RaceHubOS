@@ -27,7 +27,10 @@
   "footer": {
     "mode": "Mode {{mode}}",
     "lapStart": "start",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "cu": "CU",
+    "simulator": "SIMULATOR",
+    "noCu": "NO CU"
   },
   "cuState": {
     "racing": "Racing",

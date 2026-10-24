@@ -26,7 +26,9 @@
     "lapsGap_other": "+{{count}} Runden",
     "laps": "Runden",
     "duration": "Dauer",
-    "grace": "Nachlaufzeit"
+    "grace": "Nachlaufzeit",
+    "lapsCount_one": "{{count}} Runde",
+    "lapsCount_other": "{{count}} Runden"
   },
   "leaderboard": {
     "empty": "Keine Einträge in der Rangliste",

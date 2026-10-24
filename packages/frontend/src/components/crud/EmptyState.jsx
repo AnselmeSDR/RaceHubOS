@@ -1,13 +1,15 @@
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function EmptyState({
   icon,
-  title = 'Aucun élément',
-  message = "Commencez par en ajouter un",
-  actionLabel = 'Ajouter',
+  title,
+  message,
+  actionLabel,
   onAction,
 }) {
+  const { t } = useTranslation('common')
   return (
     <div className="text-center py-16 bg-muted/50 rounded-2xl border-2 border-dashed border-border">
       {icon && (
@@ -16,13 +18,13 @@ export default function EmptyState({
         </div>
       )}
 
-      <h3 className="text-lg font-medium text-foreground mb-1">{title}</h3>
-      <p className="text-muted-foreground mb-6">{message}</p>
+      <h3 className="text-lg font-medium text-foreground mb-1">{title ?? t('emptyState.title')}</h3>
+      <p className="text-muted-foreground mb-6">{message ?? t('emptyState.message')}</p>
 
       {onAction && (
         <Button onClick={onAction}>
           <Plus className="size-4" />
-          {actionLabel}
+          {actionLabel ?? t('add')}
         </Button>
       )}
     </div>

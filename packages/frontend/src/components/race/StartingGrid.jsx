@@ -64,7 +64,7 @@ export default function StartingGrid({ entries = [] }) {
 
                 // Build driver object for DriverGridPosition
                 const driverData = {
-                  name: driver.name || 'Unknown',
+                  name: driver.name || t('common:unknown'),
                   number: driver.number,
                   color: driver.color || car.color || '#3B82F6',
                   img: driver.img,

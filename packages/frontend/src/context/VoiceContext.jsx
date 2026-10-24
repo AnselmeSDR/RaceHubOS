@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
+import { speechLocale } from '../lib/speech'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -8,7 +11,9 @@ export function VoiceProvider({ children }) {
   const [bestLapEnabled, setBestLapEnabled] = useState(true)
   const [podiumEnabled, setPodiumEnabled] = useState(true)
   const [minLaps, setMinLaps] = useState(3)
-  const [voiceId, setVoiceId] = useState('')
+  // Chosen voice per interface language; a language without one uses its default voice
+  const [voiceIds, setVoiceIds] = useState({})
+  const { i18n: { resolvedLanguage } } = useTranslation()
 
   // Refs for access from socket listeners
   const bestLapEnabledRef = useRef(bestLapEnabled)
@@ -17,8 +22,8 @@ export function VoiceProvider({ children }) {
   podiumEnabledRef.current = podiumEnabled
   const minLapsRef = useRef(minLaps)
   minLapsRef.current = minLaps
-  const voiceIdRef = useRef(voiceId)
-  voiceIdRef.current = voiceId
+  const voiceIdsRef = useRef(voiceIds)
+  voiceIdsRef.current = voiceIds
 
   // Load preferences
   useEffect(() => {
@@ -32,7 +37,9 @@ export function VoiceProvider({ children }) {
       if (d.success && d.data !== null) setMinLaps(d.data)
     }).catch(() => {})
     fetch(`${API_URL}/api/preferences/bestLapVoice:voiceId`).then(r => r.json()).then(d => {
-      if (d.success && d.data !== null) setVoiceId(d.data)
+      if (!d.success || d.data === null) return
+      // Before 1.25.0 a single voice was stored, always a French one
+      setVoiceIds(typeof d.data === 'string' ? { fr: d.data } : d.data)
     }).catch(() => {})
   }, [])
 
@@ -65,8 +72,11 @@ export function VoiceProvider({ children }) {
     }).catch(() => {})
   }, [])
 
-  const saveVoiceId = useCallback((value) => {
-    setVoiceId(value)
+  // Saves the voice for the current interface language only
+  const saveVoiceId = useCallback((voiceURI) => {
+    const value = { ...voiceIdsRef.current, [i18n.resolvedLanguage]: voiceURI }
+    if (!voiceURI) delete value[i18n.resolvedLanguage]
+    setVoiceIds(value)
     fetch(`${API_URL}/api/preferences/bestLapVoice:voiceId`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -74,10 +84,12 @@ export function VoiceProvider({ children }) {
     }).catch(() => {})
   }, [])
 
-  // Get selected voice object
+  // Voice chosen for the interface language; none lets the browser pick its
+  // default voice for that language (utterance.lang)
   const getVoice = useCallback(() => {
-    if (!voiceIdRef.current) return null
-    return speechSynthesis.getVoices().find(v => v.voiceURI === voiceIdRef.current) || null
+    const voiceURI = voiceIdsRef.current[i18n.resolvedLanguage]
+    if (!voiceURI) return null
+    return speechSynthesis.getVoices().find(v => v.voiceURI === voiceURI) || null
   }, [])
 
   // Speak text with current settings
@@ -85,7 +97,7 @@ export function VoiceProvider({ children }) {
     try {
       if (!force && speechSynthesis.speaking) return null
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'fr-FR'
+      utterance.lang = speechLocale(i18n.resolvedLanguage)
       utterance.rate = rate
       utterance.volume = volume
       const voice = getVoice()
@@ -100,13 +112,13 @@ export function VoiceProvider({ children }) {
   // Format time for speech
   const formatTimeVoice = useCallback((ms) => {
     if (!ms) return ''
+    const number = (value) => value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
     const s = ms / 1000
     if (s >= 60) {
       const min = Math.floor(s / 60)
-      const sec = (s % 60).toFixed(3).replace('.', ',')
-      return `${min} minute${min > 1 ? 's' : ''} ${sec}`
+      return i18n.t('voice:minutes', { count: min, seconds: number(s % 60) })
     }
-    return `${s.toFixed(3).replace('.', ',')} secondes`
+    return i18n.t('voice:seconds', { value: number(s) })
   }, [])
 
   return (
@@ -114,8 +126,8 @@ export function VoiceProvider({ children }) {
       bestLapEnabled, saveBestLapEnabled,
       podiumEnabled, savePodiumEnabled,
       minLaps, saveMinLaps,
-      voiceId, saveVoiceId,
-      bestLapEnabledRef, podiumEnabledRef, minLapsRef, voiceIdRef,
+      voiceId: voiceIds[resolvedLanguage] || '', saveVoiceId,
+      bestLapEnabledRef, podiumEnabledRef, minLapsRef,
       speak, getVoice, formatTimeVoice,
     }}>
       {children}

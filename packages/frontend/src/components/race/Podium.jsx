@@ -87,7 +87,7 @@ export default function Podium({ drivers = [], sessionType = SessionType.RACE, s
                       </div>
                     )}
                     <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
-                    {sessionType !== SessionType.PRACTICE && <div className="text-xs text-muted-foreground">{sd.totalLaps || 0} {t('glossary:lap', { count: sd.totalLaps || 0 }).toLowerCase()}</div>}
+                    {sessionType !== SessionType.PRACTICE && <div className="text-xs text-muted-foreground">{t('podium.lapsCount', { count: sd.totalLaps || 0 })}</div>}
                   </div>
                 </div>
               </div>

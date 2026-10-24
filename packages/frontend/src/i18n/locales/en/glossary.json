@@ -46,6 +46,11 @@
     "race": "Race",
     "balancing": "Balancing"
   },
+  "sessionTypeAbbr": {
+    "practice": "FP",
+    "qualif": "Q",
+    "race": "R"
+  },
   "sessionStatus": {
     "draft": "Draft",
     "ready": "Ready",

@@ -46,6 +46,11 @@
     "race": "Course",
     "balancing": "Équilibrage"
   },
+  "sessionTypeAbbr": {
+    "practice": "EL",
+    "qualif": "Q",
+    "race": "R"
+  },
   "sessionStatus": {
     "draft": "Brouillon",
     "ready": "Prêt",

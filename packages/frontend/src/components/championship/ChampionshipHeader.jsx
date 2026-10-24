@@ -4,13 +4,13 @@ import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, T
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
-import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
+import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 import ExportButton from '../ui/ExportButton'
 
 const TYPE_STYLE = {
-  [SessionType.PRACTICE]: { label: 'EL', color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
-  [SessionType.QUALIF]: { label: 'Q', color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
-  [SessionType.RACE]: { label: 'R', color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
+  [SessionType.PRACTICE]: { color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
+  [SessionType.QUALIF]: { color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
+  [SessionType.RACE]: { color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
 }
 
 export default function ChampionshipHeader({
@@ -31,11 +31,11 @@ export default function ChampionshipHeader({
 }) {
   const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
-    if (session.type === SessionType.PRACTICE) return 'EL'
+    if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
     const sameType = sessions.filter(s => s.type === session.type)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const index = sameType.findIndex(s => s.id === session.id) + 1
-    return `${session.type === SessionType.QUALIF ? 'Q' : 'R'}${index}`
+    return `${t(sessionTypeAbbrKey(session.type))}${index}`
   }
 
   const getStatusDot = (session) => STATUS_DOTS[session.status] || null

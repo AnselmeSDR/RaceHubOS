@@ -26,7 +26,9 @@
     "lapsGap_other": "+{{count}} tours",
     "laps": "Tours",
     "duration": "Durée",
-    "grace": "Grace"
+    "grace": "Grace",
+    "lapsCount_one": "{{count}} tour",
+    "lapsCount_other": "{{count}} tours"
   },
   "leaderboard": {
     "empty": "Aucune entrée dans le classement",

@@ -136,7 +136,7 @@ rule('shared-symbols-imported', 'Tout symbole partagé utilisé est importé', (
   // Un build Vite réussi ne détecte pas ce cas : ce n'est pas une erreur de
   // compilation en JS, seulement une ReferenceError a l'execution
   const symbols = ['SessionType', 'SESSION_TYPES', 'STANDARD_SESSION_TYPES',
-    'isSessionType', 'sessionTypeKey', 'sessionTypeFullKey',
+    'isSessionType', 'sessionTypeKey', 'sessionTypeFullKey', 'sessionTypeAbbrKey',
     'SessionStatus', 'SESSION_STATUSES', 'RUNNING_SESSION_STATUSES', 'isSessionStatus',
     'ChampionshipStatus', 'CHAMPIONSHIP_STATUSES', 'isChampionshipStatus',
     'ChampionshipMode', 'CHAMPIONSHIP_MODES', 'isChampionshipMode',
@@ -257,7 +257,7 @@ rule('no-npx-through-execfile', 'Prisma n\'est pas lancé par npx via execFile',
   return offenders;
 });
 
-rule('translations-cover-both-languages', 'Chaque clé existe en français et en anglais', () => {
+rule('translations-cover-all-languages', 'Chaque clé existe dans toutes les langues', () => {
   const localesDir = path.join(rootDir, 'packages/frontend/src/i18n/locales');
   if (!fs.existsSync(localesDir)) return [];
 
@@ -265,18 +265,25 @@ rule('translations-cover-both-languages', 'Chaque clé existe en français et en
     if (value === null || typeof value !== 'object') return [prefix];
     return Object.entries(value).flatMap(([k, v]) => flatten(v, prefix ? `${prefix}.${k}` : k));
   };
+  const keysOf = (lang, name) => new Set(flatten(JSON.parse(fs.readFileSync(path.join(localesDir, lang, name), 'utf-8'))));
 
+  // Le francais sert de reference : chaque autre langue a exactement ses cles
   const offenders = [];
-  for (const name of fs.readdirSync(path.join(localesDir, 'fr'))) {
-    const en = path.join(localesDir, 'en', name);
-    if (!fs.existsSync(en)) {
-      offenders.push(`${name} — absent en anglais`);
-      continue;
+  const languages = fs.readdirSync(localesDir).filter((l) => l !== 'fr' && fs.statSync(path.join(localesDir, l)).isDirectory());
+  for (const lang of languages) {
+    for (const name of fs.readdirSync(path.join(localesDir, 'fr'))) {
+      if (!fs.existsSync(path.join(localesDir, lang, name))) {
+        offenders.push(`${lang}/${name} — fichier absent`);
+        continue;
+      }
+      const keysFr = keysOf('fr', name);
+      const keysLang = keysOf(lang, name);
+      for (const key of keysFr) if (!keysLang.has(key)) offenders.push(`${lang}/${name} — ${key} manque`);
+      for (const key of keysLang) if (!keysFr.has(key)) offenders.push(`fr/${name} — ${key} manque (présent en ${lang})`);
     }
-    const keysFr = new Set(flatten(JSON.parse(fs.readFileSync(path.join(localesDir, 'fr', name), 'utf-8'))));
-    const keysEn = new Set(flatten(JSON.parse(fs.readFileSync(en, 'utf-8'))));
-    for (const key of keysFr) if (!keysEn.has(key)) offenders.push(`${name} — ${key} manque en anglais`);
-    for (const key of keysEn) if (!keysFr.has(key)) offenders.push(`${name} — ${key} manque en français`);
+    for (const name of fs.readdirSync(path.join(localesDir, lang))) {
+      if (!fs.existsSync(path.join(localesDir, 'fr', name))) offenders.push(`fr/${name} — fichier absent (présent en ${lang})`);
+    }
   }
   return offenders;
 });

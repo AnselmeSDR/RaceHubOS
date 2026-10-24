@@ -113,9 +113,13 @@ if (session.status !== SessionStatus.ACTIVE) return null
 
 Les libellés d'une valeur partagée vivent dans `glossary` et nulle part ailleurs. Trois fichiers dupliquaient les libellés de types de session ; deux d'entre eux ignoraient l'équilibrage, qui s'affichait donc en texte brut.
 
-### Chaque clé existe en français et en anglais `[vérifié]`
+### Chaque clé existe dans toutes les langues `[vérifié]`
 
-Une clé ajoutée d'un seul côté s'affiche telle quelle à l'écran — le nom technique, en plein écran de course.
+Une clé ajoutée d'un seul côté s'affiche telle quelle à l'écran — le nom technique, en plein écran de course. Chaque langue (`fr`, `en`, `de`…) a exactement les clés du français. Si une clé manquait malgré tout, elle s'afficherait en anglais (`fallbackLng: 'en'`), jamais en français.
+
+### Aucun texte affiché ou prononcé n'est écrit en dur
+
+L'interface allemande a révélé `EL`, `NO CU`, `START`, « Qualification 1 », « Meilleur tour… » : restés en français ou en anglais quelle que soit la langue choisie. Tout texte visible ou annoncé passe par une clé, y compris les noms des sessions que le serveur crée lui-même : l'interface les lui envoie dans sa langue (`sessionNames`), l'anglais sert de repli.
 
 ---
 

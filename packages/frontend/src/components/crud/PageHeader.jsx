@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Plus, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -5,13 +6,14 @@ export default function PageHeader({
   title,
   icon,
   count = 0,
-  countLabel = 'éléments',
+  countLabel,
   onAdd,
-  addLabel = 'Ajouter',
+  addLabel,
   showViewToggle = false,
   viewMode = 'grid',
   onViewModeChange
 }) {
+  const { t } = useTranslation('common')
   return (
     <div className="flex items-center justify-between mb-8">
       <div>
@@ -20,7 +22,7 @@ export default function PageHeader({
           {title}
         </h1>
         <p className="text-muted-foreground mt-1">
-          {count} {countLabel}
+          {count} {countLabel ?? t('items', { count })}
         </p>
       </div>
 
@@ -30,7 +32,7 @@ export default function PageHeader({
         )}
         <Button onClick={onAdd}>
           <Plus className="size-4" />
-          {addLabel}
+          {addLabel ?? t('add')}
         </Button>
       </div>
     </div>

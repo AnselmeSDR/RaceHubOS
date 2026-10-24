@@ -10,6 +10,7 @@ import {
   STANDARD_SESSION_TYPES,
   SessionType,
   isSessionType,
+  sessionTypeAbbrKey,
   sessionTypeFullKey,
   sessionTypeKey,
 } from '@racehubos/shared';
@@ -60,12 +61,16 @@ describe('session types', () => {
     expect(isSessionType(undefined)).toBe(false);
   });
 
-  it.each(['fr', 'en'])('has a short and a full label in %s for every type', (locale) => {
+  it.each(fs.readdirSync(localesDir))('has a short and a full label in %s for every type', (locale) => {
     const glossary = readJson(path.join(localesDir, locale, 'glossary.json'));
 
     for (const type of SESSION_TYPES) {
       expect(glossary.sessionType?.[type]).toBeTruthy();
       expect(glossary.sessionTypeFull?.[type]).toBeTruthy();
+    }
+    // Tabs and headers abbreviate the standard types: EL / FP / FT, Q, R
+    for (const type of STANDARD_SESSION_TYPES) {
+      expect(glossary.sessionTypeAbbr?.[type]).toBeTruthy();
     }
   });
 
@@ -75,6 +80,7 @@ describe('session types', () => {
     // The helpers prefix with the namespace, which the files themselves do not
     expect(sessionTypeKey(SessionType.RACE)).toBe('glossary:sessionType.race');
     expect(sessionTypeFullKey(SessionType.RACE)).toBe('glossary:sessionTypeFull.race');
+    expect(sessionTypeAbbrKey(SessionType.RACE)).toBe('glossary:sessionTypeAbbr.race');
     expect(glossary.sessionType.race).toBeTruthy();
   });
 });

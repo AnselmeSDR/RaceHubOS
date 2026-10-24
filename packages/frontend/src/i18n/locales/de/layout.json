@@ -27,7 +27,10 @@
   "footer": {
     "mode": "Modus {{mode}}",
     "lapStart": "Start",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "cu": "CU",
+    "simulator": "SIMULATOR",
+    "noCu": "KEINE CU"
   },
   "cuState": {
     "racing": "Bahn freigegeben",

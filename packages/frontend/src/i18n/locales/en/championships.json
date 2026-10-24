@@ -30,9 +30,6 @@
   },
   "sessionSection": {
     "selectSession": "Select a session",
-    "labels": {
-      "practice": "FP"
-    },
     "copyFromPractice": "Copy from FP",
     "table": {
       "ctrl": "Ctrl",
