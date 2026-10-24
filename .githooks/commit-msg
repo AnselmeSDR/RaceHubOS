@@ -1,0 +1,18 @@
+#!/bin/sh
+# Rejects a commit message that is not "type: description" (Conventional
+# Commits, no scope). Installed by "npm install". See CONTRIBUTING.md.
+
+subject=$(grep -v '^#' "$1" | sed '/^[[:space:]]*$/d' | head -n 1)
+
+# Messages written by git itself
+echo "$subject" | grep -qE '^(Merge |Revert "|fixup! |squash! |amend! )' && exit 0
+
+echo "$subject" | grep -qE '^(feat|fix|chore|refactor|docs|style|test|perf|ci|build): [^ ].{2,}' && exit 0
+
+echo ""
+echo "  Commit refused: \"$subject\""
+echo "  Expected \"type: description\", without scope, e.g. \"feat: import Cockpit-XP archives\""
+echo "  Types: feat, fix, chore, refactor, docs, style, test, perf, ci, build"
+echo "  See CONTRIBUTING.md"
+echo ""
+exit 1

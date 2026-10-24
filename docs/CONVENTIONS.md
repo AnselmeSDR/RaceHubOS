@@ -2,7 +2,7 @@
 
 Ce guide n'est pas une liste de préférences. **Chaque règle vient d'un incident réel de ce projet** — un PC de course qui refuse de démarrer un soir de course, des milliers de tours disparus des statistiques, une base réécrite sans prévenir. Le pourquoi compte autant que la règle : c'est lui qui permet de juger un cas que ce guide n'a pas prévu.
 
-Les règles marquées **`[vérifié]`** sont contrôlées mécaniquement par `npm run check`. Les autres relèvent du jugement.
+Les règles marquées **`[vérifié]`** sont contrôlées mécaniquement par `npm run check`, **`[vérifié au commit]`** par le hook `commit-msg`. Les autres relèvent du jugement. Les hooks s'installent à chaque `npm install`.
 
 ```bash
 npm run check        # avant de développer, et pendant
@@ -139,6 +139,8 @@ Ne pas incrémenter ce numéro, c'est laisser chaque poste avec son installeur p
 
 `package.json` à la racine fait foi. Le changelog dit ce qui change **pour l'utilisateur**, et pourquoi — pas la liste des fichiers touchés.
 
+Contrôlé sur `main` uniquement : la version se monte au merge, jamais dans une branche de contribution (voir « Les contributions »).
+
 ---
 
 ## Les tests
@@ -154,6 +156,32 @@ Une règle métier se teste côté serveur, sur base de test. Les sélecteurs s'
 ### Un test doit échouer quand la règle est violée
 
 Un test qui passe avant et après le bug ne protège rien. Après avoir écrit un test de non-régression : casser volontairement le code, vérifier que le test tombe, remettre.
+
+### Une PR arrive avec ses tests
+
+Toute PR qui change du code ajoute ou adapte les tests qui le couvrent : règle métier côté serveur, interface en Playwright. Le mainteneur intègre un code qu'il n'a pas écrit : sans test, rien ne prouve qu'il marche, ni qu'il marchera encore après le changement suivant.
+
+---
+
+## Les contributions
+
+Le guide pour les contributeurs externes est [`CONTRIBUTING.md`](../CONTRIBUTING.md) (en anglais). Il reprend les règles ci-dessous.
+
+### Un commit s'écrit `type: description`, sans scope `[vérifié au commit]`
+
+Types : `feat`, `fix`, `chore`, `refactor`, `docs`, `style`, `test`, `perf`, `ci`, `build`. On écrit `feat: import Cockpit-XP`, pas `feat(cockpit): …`. `Merge`, `Revert` et `fixup!` passent.
+
+Un commit = un changement cohérent qui fonctionne seul. Les six premières PR externes totalisaient 75 commits, la plupart découpés par dossier (`feat(cockpit): packages/frontend/src/pages`, `feat(catalog): .`) : l'historique ne dit plus ce qui a changé, et chaque commit pris seul laisse l'application dans un état qui ne marche pas.
+
+### La version, le changelog et `package-lock.json` reviennent au mainteneur
+
+Ces six PR montaient chacune la version (de 1.24.2 à 1.29.0) depuis le même `main` : chaque merge entrait en conflit avec le précédent sur `package.json`, `package-lock.json` et `CHANGELOG.md`, et les numéros ne correspondaient plus à rien une fois mergés.
+
+Une PR n'y touche pas (sauf `package-lock.json` pour une dépendance ajoutée) et décrit dans sa description ce qui change pour l'utilisateur. Le mainteneur monte la version et écrit le changelog au merge.
+
+### Une PR se merge en local, sans squash
+
+`origin` lit GitLab et pousse sur GitLab et GitHub : le bouton « Merge » de GitHub ferait diverger les deux. On merge en local avec `git merge --no-ff`, qui garde les commits du contributeur à son nom ; GitHub marque la PR mergée dès le push. Squash, rebase et cherry-pick changent les SHA : la PR reste ouverte, et un squash attribue le travail au mainteneur.
 
 ---
 
