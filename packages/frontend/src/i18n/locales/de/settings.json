@@ -1,0 +1,86 @@
+{
+  "update": {
+    "title": "Aktualisierung",
+    "currentVersion": "Installierte Version",
+    "check": "Prüfen",
+    "newVersionAvailable": "Neue Version verfügbar: v{{version}}",
+    "updateButton": "Aktualisieren",
+    "upToDate": "Die Anwendung ist aktuell",
+    "cantCheck": "Prüfung nicht möglich",
+    "starting": "Startet …",
+    "serverRestart": "Server wird neu gestartet …",
+    "restarting": "Neustart …",
+    "connectionError": "Verbindung zum Server fehlgeschlagen",
+    "genericError": "Fehler"
+  },
+  "connection": {
+    "connected": "Verbunden: {{device}}",
+    "noDevice": "Kein Gerät verbunden",
+    "disconnect": "Trennen"
+  },
+  "devices": {
+    "title": "Gerät auswählen",
+    "auto": "Automatisch",
+    "manual": "Manuell",
+    "new": "(neu)",
+    "connecting": "Verbindung wird hergestellt …",
+    "connect": "Verbinden",
+    "scanning": "Suche läuft …",
+    "scan": "Nach einer Control Unit suchen"
+  },
+  "cuStatus": {
+    "title": "Gerätestatus",
+    "start": "Start",
+    "mode": "Modus",
+    "display": "Anzeige",
+    "fuel": "Tankstand"
+  },
+  "appearance": {
+    "themeNight": "Nachtmodus",
+    "themeDay": "Tagmodus",
+    "darkInterface": "Dunkle Oberfläche",
+    "lightInterface": "Helle Oberfläche",
+    "defaultView": "Standardansicht",
+    "bestLapVoice": "Bestzeit ansagen",
+    "bestLapVoiceDesc": "Neue Bestzeit per Sprache ansagen",
+    "minLapsBeforeAnnounce": "Mindestrunden vor einer Ansage",
+    "podiumVoice": "Siegeransage",
+    "podiumVoiceDesc": "Ergebnisse am Ende der Sitzung ansagen",
+    "defaultVoice": "Standardstimme",
+    "testVoice": "Stimme testen",
+    "testVoicePhrase": "Neue Bestzeit für Testfahrer: 8,23 Sekunden.",
+    "adminMode": "Administratormodus",
+    "adminModeDesc": "Anzeigen, Test, Simulator",
+    "language": "Sprache",
+    "languageDesc": "Sprache der Oberfläche"
+  },
+  "logs": {
+    "title": "Protokolle",
+    "empty": "Keine Protokolle",
+    "controllerLap": "Regler {{n}}: {{time}} s",
+    "controllerSector": "Regler {{n}}: Sektor {{sector}}",
+    "connectedTo": "Mit {{device}} verbunden",
+    "errorWith": "Fehler: {{error}}",
+    "scanning": "Suche läuft …",
+    "devicesFound": "{{count}} Gerät(e) gefunden",
+    "deviceDeleted": "Gerät {{name}} gelöscht"
+  },
+  "referenceDriver": {
+    "title": "Referenzfahrer",
+    "description": "Alle Runden beim Fahrzeugabgleich werden diesem Fahrer zugeordnet, unabhängig davon, wer den Regler bedient.",
+    "select": "Fahrer auswählen",
+    "none": "Kein Referenzfahrer",
+    "noneWarning": "Ohne Referenzfahrer werden Abgleichrunden keinem Fahrer zugeordnet.",
+    "createStig": "The STIG anlegen",
+    "creating": "Wird angelegt …",
+    "created": "The STIG wurde angelegt und als Referenzfahrer festgelegt",
+    "migrate": "Bisherige Abgleichrunden zuordnen",
+    "migrateDesc": "Bereits aufgezeichnete Abgleichrunden dem Referenzfahrer zuweisen.",
+    "migrating": "Wird zugeordnet …",
+    "migrated_zero": "Keine Runden zuzuordnen",
+    "migrated_one": "{{count}} Runde {{name}} zugeordnet",
+    "migrated_other": "{{count}} Runden {{name}} zugeordnet",
+    "error": "Fehler: {{message}}",
+    "migrateButton": "Zuordnen"
+  }
+}

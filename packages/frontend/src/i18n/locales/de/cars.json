@@ -1,0 +1,60 @@
+{
+  "searchPlaceholder": "Auto suchen …",
+  "addLabel": "Neues Auto",
+  "emptyTitle": "Keine Autos",
+  "emptyMessage": "Lege dein erstes Auto an",
+  "fields": {
+    "brand": "Marke",
+    "model": "Modell",
+    "year": "Baujahr",
+    "speed": "Geschwindigkeit",
+    "braking": "Bremswirkung",
+    "fuel": "Kraftstoff",
+    "tank": "Tank",
+    "maxSpeed": "Höchstgeschwindigkeit",
+    "brakeForce": "Bremskraft",
+    "fuelCapacity": "Tankgröße",
+    "equipment": "Ausstattung",
+    "measurements": "Maße",
+    "scale": "Maßstab",
+    "chassis": "Chassis",
+    "motor": "Motor",
+    "gearRatio": "Übersetzung",
+    "tyresFront": "Vorderreifen",
+    "tyresRear": "Hinterreifen",
+    "guide": "Leitkiel",
+    "braids": "Schleifer",
+    "magnet": "Magnet",
+    "notes": "Notizen",
+    "weightGrams": "Gewicht (g)",
+    "lengthMm": "Länge (mm)",
+    "widthMm": "Breite (mm)",
+    "wheelbaseMm": "Radstand (mm)",
+    "frontTrackMm": "Spurweite vorn (mm)",
+    "rearTrackMm": "Spurweite hinten (mm)",
+    "groundClearanceMm": "Bodenfreiheit (mm)"
+  },
+  "form": {
+    "createTitle": "Neues Auto",
+    "editTitle": "Auto bearbeiten",
+    "brandPlaceholder": "Ferrari",
+    "modelPlaceholder": "SF-23",
+    "saved": "Auto gespeichert",
+    "scalePlaceholder": "1/32",
+    "chassisPlaceholder": "Original, Slot.it …",
+    "motorPlaceholder": "Mabuchi S-Can 18k",
+    "gearRatioPlaceholder": "9/27",
+    "tyresFrontPlaceholder": "Original",
+    "tyresRearPlaceholder": "Ortmann 30",
+    "guidePlaceholder": "Original",
+    "braidsPlaceholder": "Kupfer",
+    "magnetPlaceholder": "Original, entfernt …"
+  },
+  "profile": {
+    "notFound": "Auto nicht gefunden",
+    "resetStatsMessage": "Alle Statistiken dieses Autos zurücksetzen?"
+  },
+  "specs": {
+    "empty": "Noch keine Fahrzeugdaten eingetragen. Bearbeite das Auto, um Motor, Reifen, Gewicht usw. festzuhalten."
+  }
+}

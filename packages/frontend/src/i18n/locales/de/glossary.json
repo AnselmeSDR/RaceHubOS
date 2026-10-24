@@ -1,0 +1,62 @@
+{
+  "driver_one": "Fahrer",
+  "driver_other": "Fahrer",
+  "car_one": "Auto",
+  "car_other": "Autos",
+  "track_one": "Strecke",
+  "track_other": "Strecken",
+  "team_one": "Team",
+  "team_other": "Teams",
+  "championship_one": "Meisterschaft",
+  "championship_other": "Meisterschaften",
+  "session_one": "Sitzung",
+  "session_other": "Sitzungen",
+  "lap_one": "Runde",
+  "lap_other": "Runden",
+  "win_one": "Sieg",
+  "win_other": "Siege",
+  "podium_one": "Podestplatz",
+  "podium_other": "Podestplätze",
+  "race_one": "Rennen",
+  "race_other": "Rennen",
+  "qualifying_one": "Qualifikation",
+  "qualifying_other": "Qualifikationen",
+  "practice_one": "Training",
+  "practice_other": "Trainings",
+  "simulator": "Simulator",
+  "status": {
+    "connected": "Verbunden",
+    "disconnected": "Getrennt",
+    "running": "Läuft",
+    "stopped": "Angehalten"
+  },
+  "system": {
+    "websocket": "Echtzeitverbindung",
+    "controlUnit": "Control Unit"
+  },
+  "sessionType": {
+    "practice": "Training",
+    "qualif": "Qualifikation",
+    "race": "Rennen",
+    "balancing": "Fahrzeugabgleich"
+  },
+  "sessionTypeFull": {
+    "practice": "Freies Training",
+    "qualif": "Qualifikation",
+    "race": "Rennen",
+    "balancing": "Fahrzeugabgleich"
+  },
+  "sessionStatus": {
+    "draft": "Entwurf",
+    "ready": "Bereit",
+    "active": "Läuft",
+    "paused": "Pausiert",
+    "finishing": "Wird beendet",
+    "finished": "Beendet"
+  },
+  "championshipStatus": {
+    "planned": "Geplant",
+    "active": "Läuft",
+    "finished": "Beendet"
+  }
+}

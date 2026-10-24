@@ -1,0 +1,9 @@
+{
+  "title": "Statistik und Rekorde",
+  "emptyTitle": "Keine Rekorde",
+  "emptyMessage": "Keine Zeiten aufgezeichnet",
+  "options": {
+    "bestPerDriverCar": "Bestzeit je Fahrer/Auto"
+  },
+  "noChampionship": "Außerhalb einer Meisterschaft"
+}

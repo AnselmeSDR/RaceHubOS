@@ -1,0 +1,241 @@
+{
+  "page": {
+    "title": "Anzeigen – Anzeigeelemente",
+    "subtitle": "Sammlung der in der Anwendung verwendeten Anzeigeelemente"
+  },
+  "tabs": {
+    "drivers": "Fahrer",
+    "championship": "Meisterschaft",
+    "race": "Rennen",
+    "crud": "Verwaltung",
+    "config": "Konfiguration",
+    "unused": "Unbenutzt"
+  },
+  "usage": {
+    "unused": "Unbenutzt"
+  },
+  "loading": "Wird geladen …",
+  "noDriversFound": "Keine Fahrer gefunden. Lege Fahrer an, um die Elemente zu sehen.",
+  "drivers": {
+    "profileHeader": {
+      "title": "Profilkopf",
+      "description": "Ausführlicher Profilkopf mit allen Statistiken"
+    },
+    "listItem": {
+      "title": "Listeneintrag",
+      "description": "Kompakte Liste für Auswahlen und kleine Ansichten"
+    },
+    "gridPosition": {
+      "title": "Startplatz",
+      "description": "Startaufstellung im NASCAR-Stil mit Startreihen"
+    },
+    "standing": {
+      "title": "Wertung",
+      "description": "Wertung mit Platzierung, Punkten und Veränderung"
+    },
+    "selectCard": {
+      "title": "Auswahlkarte",
+      "description": "Mehrere Fahrer für eine Sitzung auswählen"
+    },
+    "badge": {
+      "title": "Kennzeichen",
+      "description": "Kompakte Kennzeichen für Menüs, Meldungen usw."
+    },
+    "row": "REIHE",
+    "sizeSmall": "Klein",
+    "sizeMedium": "Mittel (mit Name)",
+    "sizeLarge": "Groß",
+    "sizeExtraLarge": "Sehr groß"
+  },
+  "race": {
+    "lapTime": {
+      "title": "Rundenzeit",
+      "description": "Formatierte Rundenzeit (mm:ss.ms)"
+    },
+    "stateChip": {
+      "title": "Statusanzeige",
+      "description": "Statusanzeige für Sitzung und Control Unit"
+    },
+    "gapDisplay": {
+      "title": "Abstandsanzeige",
+      "description": "Abstand zwischen den Fahrern"
+    },
+    "leaderboard": {
+      "title": "Rangliste",
+      "description": "Rangliste der laufenden Sitzung"
+    },
+    "freePracticeLeaderboard": {
+      "title": "Trainingsrangliste",
+      "description": "Trainingsrangliste mit Runden- und Zeitfilter"
+    },
+    "lapTimeDefault": "Größe „mittel“ (Standard)",
+    "lapTimeIsBest": "Bestzeit hervorgehoben",
+    "lapTimeNull": "leer/ungültig"
+  },
+  "championship": {
+    "sessionTypes": {
+      "title": "Sitzungstypen",
+      "description": "Wähle einen Sitzungstyp, um die verschiedenen Zustände zu sehen"
+    },
+    "statusBadges": {
+      "title": "Statuskennzeichen",
+      "description": "Statusanzeigen der Sitzung"
+    },
+    "leaderboardByType": {
+      "title": "Rangliste – {{type}}",
+      "descriptionPractice": "Wertung nach Rundenzahl, danach Bestzeit",
+      "descriptionQualif": "Wertung nach bester Rundenzeit",
+      "descriptionRace": "Wertung nach gefahrenen Runden mit Abständen"
+    },
+    "freePracticeLeaderboard": {
+      "title": "Trainingsrangliste",
+      "description": "Trainingsrangliste mit Runden- und Zeitfilter"
+    },
+    "standingsPanel": {
+      "title": "Gesamtwertung",
+      "description": "Training, Qualifikation und Rennen mit zusammengefasster Wertung",
+      "heading": "Gesamtwertung"
+    },
+    "activeSession": "Laufende Sitzung:",
+    "statusDraft": "Entwurf",
+    "statusActive": "Läuft",
+    "statusFinishing": "🏁 Sitzung wird beendet …",
+    "statusFinished": "Beendet",
+    "maxLaps": "Höchstens {{count}} Runden",
+    "raceLaps": "{{count}} Runden",
+    "tabFree": "Training",
+    "tabQualif": "Qualifikation",
+    "tabRace": "Rennen"
+  },
+  "crud": {
+    "pageHeader": {
+      "title": "Seitenkopf",
+      "description": "Seitenkopf mit Titel, Suche und Aktionsschaltfläche"
+    },
+    "viewToggleButtons": {
+      "title": "Ansichtsauswahl",
+      "description": "Zwischen Kachel- und Listenansicht wechseln",
+      "currentView": "Aktuelle Ansicht: {{view}}"
+    },
+    "emptyState": {
+      "title": "Leere Ansicht",
+      "description": "Anzeige für Listen ohne Daten",
+      "demoTitle": "Kein Fahrer",
+      "demoMessage": "Lege zuerst deinen ersten Fahrer an"
+    },
+    "entityCard": {
+      "title": "Eintragskarte",
+      "description": "Allgemeine Karte mit Bild und Statistik"
+    },
+    "statBadge": {
+      "title": "Statistikkennzeichen",
+      "description": "Statistikanzeige für Eintragskarten"
+    },
+    "colorPickerField": {
+      "title": "Farbauswahl",
+      "description": "Farbauswahl für Formulare",
+      "label": "Fahrerfarbe"
+    },
+    "rangeField": {
+      "title": "Wertregler",
+      "description": "Schieberegler für Zahlenwerte, z. B. Geschwindigkeit und Beschleunigung",
+      "label": "Höchstgeschwindigkeit"
+    },
+    "errorMessage": {
+      "title": "Fehlermeldung",
+      "description": "Anzeige von Fehlermeldungen",
+      "demoMessage": "Beim Laden der Daten ist ein Fehler aufgetreten."
+    },
+    "addDriver": "Fahrer hinzufügen",
+    "noTeam": "Kein Team",
+    "statRaces": "Rennen",
+    "statLaps": "Runden",
+    "statWins": "Siege",
+    "statPodiums": "Podestplätze",
+    "modalTitle": "Beispielfenster",
+    "modalContent": "Fensterinhalt mit Formularfeld",
+    "modalFieldName": "Name",
+    "modalFieldNamePlaceholder": "Namen eingeben"
+  },
+  "config": {
+    "configStatus": {
+      "title": "Zuordnungsstatus",
+      "description": "Statusanzeige der Reglerzuordnung",
+      "incomplete": "Unvollständige Zuordnung ({{count}} fehlen)",
+      "complete": "Zuordnung vollständig"
+    },
+    "controllerConfigSection": {
+      "title": "Reglerzuordnung",
+      "description": "Reglerzuordnung mit Fahrern und Autos"
+    }
+  },
+  "unused": {
+    "banner": {
+      "title_one": "Unbenutztes Element ({{count}})",
+      "title_other": "Unbenutzte Elemente ({{count}})",
+      "description": "Diese Elemente sind vorhanden, werden aber derzeit nicht eingebunden. Sie können für spätere Funktionen genutzt oder entfernt werden."
+    },
+    "driverBadge": {
+      "title": "Fahrerkennzeichen",
+      "description": "Kompakte Kennzeichen – vorhanden, aber auf keiner Seite verwendet"
+    },
+    "driverGridPosition": {
+      "title": "Startplatzanzeige",
+      "description": "Startaufstellung – vorhanden, aber nicht verwendet"
+    },
+    "driverStanding": {
+      "title": "Fahrerwertung",
+      "description": "Fahrerwertung – vorhanden, aber nicht verwendet"
+    },
+    "driverSelectCard": {
+      "title": "Fahrerauswahlkarte",
+      "description": "Auswahlkarte – vorhanden, aber nicht verwendet"
+    },
+    "entityCard": {
+      "title": "Eintragskarte",
+      "description": "Allgemeine Eintragskarte – vorhanden, aber nicht verwendet",
+      "subtitle": "Beispieleintrag"
+    },
+    "statBadge": {
+      "title": "Statistikkennzeichen",
+      "description": "Statistikkennzeichen – vorhanden, aber nicht verwendet"
+    }
+  },
+  "demo": {
+    "title": "Anzeigeelemente für Fahrer",
+    "subtitle": "Verschiedene Darstellungen nach NASCAR- und Formel-1-Vorbild",
+    "profileHeader": {
+      "title": "1. Profilkopf (ausführliche Profilübersicht)",
+      "description": "Für eine vollständige Profilseite mit allen Statistiken"
+    },
+    "listItem": {
+      "title": "2. Listeneintrag (kompakte Listenansicht)",
+      "description": "Für Listen, Auswahlen und kompakte Ansichten"
+    },
+    "gridPosition": {
+      "title": "3. Startplatz (NASCAR-Startaufstellung)",
+      "description": "Für die Startaufstellung mit Reihe 1, Reihe 2 usw."
+    },
+    "standing": {
+      "title": "4. Wertung (Rangliste mit Punkten)",
+      "description": "Für Meisterschaftswertungen mit Plätzen und Punkten"
+    },
+    "selectCard": {
+      "title": "5. Auswahlkarte (mehrere Fahrer)",
+      "description": "Zum Auswählen der Fahrer einer Sitzung",
+      "selectedCount_one": "{{count}} Fahrer ausgewählt",
+      "selectedCount_other": "{{count}} Fahrer ausgewählt"
+    },
+    "badge": {
+      "title": "6. Kennzeichen (kompakte Anzeige)",
+      "description": "Für kompakte Anzeigen in Menüs, Meldungen usw."
+    },
+    "noDriversFound": "Keine Fahrer gefunden. Lege Fahrer an, um die Vorschau zu sehen."
+  },
+  "driverDisplays": {
+    "races": "Rennen",
+    "wins": "Siege",
+    "bestLap": "Beste Runde",
+    "points": "Punkte"
+  }
+}
