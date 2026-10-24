@@ -46,6 +46,11 @@
     "race": "Rennen",
     "balancing": "Fahrzeugabgleich"
   },
+  "sessionTypeAbbr": {
+    "practice": "FT",
+    "qualif": "Q",
+    "race": "R"
+  },
   "sessionStatus": {
     "draft": "Entwurf",
     "ready": "Bereit",

@@ -1,5 +1,6 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import { ChampionshipMode, SessionStatus, SessionType } from '@racehubos/shared';
+import { sessionName } from '../lib/sessionNames.js';
 
 /**
  * ChampionshipService - Championship-specific operations
@@ -77,8 +78,9 @@ export class ChampionshipService {
 
   /**
    * Generate all qualif and race sessions for an auto championship
+   * @param {object} [sessionNames] - names by session type, in the interface language
    */
-  async generateAutoSessions(championshipId) {
+  async generateAutoSessions(championshipId, sessionNames = {}) {
     const championship = await this.prisma.championship.findUnique({
       where: { id: championshipId, deletedAt: null },
       include: { participants: { where: { deletedAt: null }, orderBy: { order: 'asc' } } },
@@ -107,7 +109,7 @@ export class ChampionshipService {
       const group = qualifGroups[g];
       const session = await this.prisma.session.create({
         data: {
-          name: `Qualification ${g + 1}`,
+          name: `${sessionName(SessionType.QUALIF, sessionNames)} ${g + 1}`,
           type: SessionType.QUALIF,
           status: SessionStatus.DRAFT,
           trackId,
@@ -135,7 +137,7 @@ export class ChampionshipService {
     for (let g = 0; g < raceGroupCount; g++) {
       await this.prisma.session.create({
         data: {
-          name: `Course ${g + 1}`,
+          name: `${sessionName(SessionType.RACE, sessionNames)} ${g + 1}`,
           type: SessionType.RACE,
           status: SessionStatus.DRAFT,
           trackId,

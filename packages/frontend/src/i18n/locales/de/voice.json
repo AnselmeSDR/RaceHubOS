@@ -1,0 +1,13 @@
+{
+  "bestLap": "Schnellste Runde, {{name}}, {{time}}",
+  "podium": "{{rank}}, {{name}}, {{time}}",
+  "ranks": {
+    "first": "Erster",
+    "second": "Zweiter",
+    "third": "Dritter"
+  },
+  "car": "Auto {{number}}",
+  "seconds": "{{value}} Sekunden",
+  "minutes_one": "{{count}} Minute {{seconds}}",
+  "minutes_other": "{{count}} Minuten {{seconds}}"
+}

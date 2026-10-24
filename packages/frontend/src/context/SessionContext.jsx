@@ -3,6 +3,8 @@ import { io } from 'socket.io-client'
 import { useApp } from './AppContext'
 import { useVoice } from './VoiceContext'
 import { SessionStatus, SessionType } from '@racehubos/shared'
+import i18n from '../i18n'
+import { sessionNames } from '../lib/sessionNames'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -142,7 +144,7 @@ export function SessionProvider({ children }) {
               if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
               return (a.totalTime || Infinity) - (b.totalTime || Infinity)
             })
-          const allLabels = ['premier', 'deuxième', 'troisième']
+          const allLabels = ['first', 'second', 'third'].map(rank => i18n.t(`voice:ranks.${rank}`))
           const podium = sorted.slice(0, 3).map((driver, i) => ({ driver, label: allLabels[i] }))
 
           // Announce 3rd, 2nd, 1st
@@ -157,7 +159,7 @@ export function SessionProvider({ children }) {
               const time = isQualif
                 ? v.formatTimeVoice(driver.bestLapTime)
                 : v.formatTimeVoice(driver.totalTime)
-              queue.push(`${label}, ${name}, ${time}`)
+              queue.push(i18n.t('voice:podium', { rank: label, name, time }))
             })
 
             const speakNext = (index) => {
@@ -203,9 +205,8 @@ export function SessionProvider({ children }) {
       if (!v.bestLapEnabledRef.current) return
       if (data.maxLapsCompleted < v.minLapsRef.current) return
 
-      const name = data.driverName || [data.carBrand, data.carModel].filter(Boolean).join(' ') || `Voiture ${data.controller + 1}`
-      const timeInSeconds = (data.lapTime / 1000).toFixed(3).replace('.', ',')
-      v.speak(`Meilleur tour, ${name}, ${timeInSeconds} secondes`)
+      const name = data.driverName || [data.carBrand, data.carModel].filter(Boolean).join(' ') || i18n.t('voice:car', { number: data.controller + 1 })
+      v.speak(i18n.t('voice:bestLap', { name, time: v.formatTimeVoice(data.lapTime) }))
     })
 
     // Championship events
@@ -270,7 +271,7 @@ export function SessionProvider({ children }) {
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, status: SessionStatus.DRAFT })
+        body: JSON.stringify({ trackId, type, name: sessionNames()[type], status: SessionStatus.DRAFT })
       })
       const createData = await createRes.json()
 

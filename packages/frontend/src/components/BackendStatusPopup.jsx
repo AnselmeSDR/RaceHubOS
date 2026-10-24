@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { io } from 'socket.io-client'
 import { Server, Zap, Wifi, WifiOff, Trash2 } from 'lucide-react'
 import {
@@ -118,7 +119,7 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
   }, [logs, autoScroll])
 
   const addLog = (level, message) => {
-    const timestamp = new Date().toLocaleTimeString('fr-FR', { hour12: false })
+    const timestamp = new Date().toLocaleTimeString(i18n.language, { hour12: false })
     setLogs(prev => [...prev, { timestamp, level, message }])
   }
 

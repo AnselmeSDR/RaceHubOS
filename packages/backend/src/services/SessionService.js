@@ -1,6 +1,7 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import EventEmitter from 'events';
 import { SESSION_TYPES, SessionStatus, SessionType, isSessionType } from '@racehubos/shared';
+import { sessionName } from '../lib/sessionNames.js';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
 
@@ -1019,7 +1020,7 @@ export class SessionService extends EventEmitter {
     // Create session
     const session = await this.prisma.session.create({
       data: {
-        name: name || (type === SessionType.QUALIF ? 'Qualifying' : type === SessionType.RACE ? 'Race' : type === SessionType.BALANCING ? 'Balancing' : 'Practice'),
+        name: name || sessionName(type),
         type,
         status: initialStatus || 'draft',
         trackId: finalTrackId,

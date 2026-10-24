@@ -3,6 +3,7 @@ import { createPrismaClient } from '../lib/prisma.js';
 import { withImageUrl } from '../utils/imageUrl.js';
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared';
 import { championshipWorkbook, championshipsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
+import { sessionName } from '../lib/sessionNames.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -177,7 +178,7 @@ router.post('/', async (req, res) => {
       name, season, pointsSystem, status, trackId,
       mode, driversPerQualif, driversPerRace,
       qualifMaxDuration, qualifMaxLaps, raceMaxDuration, raceMaxLaps,
-      participants,
+      participants, sessionNames,
     } = req.body;
 
     // Validation
@@ -256,7 +257,7 @@ router.post('/', async (req, res) => {
     if (trackId) {
       await prisma.session.create({
         data: {
-          name: 'Essais Libres',
+          name: sessionName(SessionType.PRACTICE, sessionNames),
           type: SessionType.PRACTICE,
           status: SessionStatus.DRAFT,
           championshipId: championship.id,
@@ -267,7 +268,7 @@ router.post('/', async (req, res) => {
 
     // Generate auto sessions (qualifs + races)
     if (mode === ChampionshipMode.AUTO) {
-      await championshipService.generateAutoSessions(championship.id);
+      await championshipService.generateAutoSessions(championship.id, sessionNames);
     }
 
     // Refetch with all relations
@@ -655,7 +656,7 @@ router.get('/:id/bracket', async (req, res) => {
 router.put('/:id/participants', async (req, res) => {
   try {
     const { id } = req.params;
-    const { participants } = req.body;
+    const { participants, sessionNames } = req.body;
 
     const championship = await prisma.championship.findUnique({
       where: { id, deletedAt: null },
@@ -724,7 +725,7 @@ router.put('/:id/participants', async (req, res) => {
 
     if (!hasStartedQualif) {
       // No qualif started: regenerate all sessions
-      await championshipService.generateAutoSessions(id);
+      await championshipService.generateAutoSessions(id, sessionNames);
     }
     // If qualifs already started, new participants need a manual qualif session (user adds via UI)
 

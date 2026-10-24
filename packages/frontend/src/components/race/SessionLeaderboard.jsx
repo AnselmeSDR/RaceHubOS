@@ -204,7 +204,7 @@ export default function SessionLeaderboard({
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
                 <div className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}>
-                  {(driver.name || 'Unknown').split(' ').pop()}
+                  {(driver.name || t('common:unknown')).split(' ').pop()}
                 </div>
                 <div className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
                   {car.color && (

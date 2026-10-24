@@ -17,7 +17,7 @@ const SESSION_TYPE_ICONS = {
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
-import { SessionStatus, SessionType } from '@racehubos/shared'
+import { SessionStatus, SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 
 export default function SessionSection({
   session,
@@ -177,10 +177,11 @@ export default function SessionSection({
 
   const sessionLabel = useMemo(() => {
     if (!session) return ''
-    if (session.type === SessionType.PRACTICE) return t('sessionSection.labels.practice')
+    if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
     const sameType = sessions.filter(s => s.type === session.type).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     const index = sameType.findIndex(s => s.id === session.id) + 1
-    return `${session.type === SessionType.QUALIF ? 'Q' : 'R'}${index}`
+    // Outside a championship the session list is empty: no number to show
+    return `${t(sessionTypeAbbrKey(session.type))}${index || ''}`
   }, [session, sessions, t])
 
   const timeProgress = useMemo(() => {
@@ -580,7 +581,7 @@ export default function SessionSection({
               </Button>
             </>
           )}
-          {isLights && <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse"><Play className="size-4" /> START</Button>}
+          {isLights && <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse"><Play className="size-4" /> {t('race:startLights.start')}</Button>}
           {canResumeCu && <Button onClick={onTriggerCuStart} className="bg-orange-500 hover:bg-orange-600"><RefreshCw className="size-4" /> {t('sessionSection.resumeCu')}</Button>}
           {canPause && <Button onClick={onPause} variant="outline" className="border-yellow-500 text-yellow-600"><Pause className="size-4" /> {t('sessionSection.pauseAction')}</Button>}
           {canResumeFromPause && <Button onClick={onResume} className="bg-green-500 hover:bg-green-600"><Play className="size-4" /> {t('sessionSection.resume')}</Button>}

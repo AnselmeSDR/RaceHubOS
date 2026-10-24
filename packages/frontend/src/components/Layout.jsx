@@ -137,7 +137,7 @@ export default function Layout() {
         <footer className="flex h-8 shrink-0 items-center gap-1 border-t px-4 text-xs font-mono text-muted-foreground">
           <div className={`size-1.5 rounded-full ${cuConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className={cuConnected ? (isSimulator ? 'text-purple-400' : 'text-green-500') : 'text-red-500'}>
-            {cuConnected ? (isSimulator ? 'SIMULATOR' : 'CU') : 'NO CU'}
+            {t(cuConnected ? (isSimulator ? 'footer.simulator' : 'footer.cu') : 'footer.noCu')}
           </span>
           <span className="text-muted-foreground/40 mx-1">|</span>
           <span className={cuStatus?.start === 0 ? 'text-green-500' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-500' : 'text-muted-foreground'}>

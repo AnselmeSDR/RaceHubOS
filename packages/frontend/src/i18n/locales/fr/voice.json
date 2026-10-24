@@ -1,0 +1,13 @@
+{
+  "bestLap": "Meilleur tour, {{name}}, {{time}}",
+  "podium": "{{rank}}, {{name}}, {{time}}",
+  "ranks": {
+    "first": "premier",
+    "second": "deuxième",
+    "third": "troisième"
+  },
+  "car": "Voiture {{number}}",
+  "seconds": "{{value}} secondes",
+  "minutes_one": "{{count}} minute {{seconds}}",
+  "minutes_other": "{{count}} minutes {{seconds}}"
+}

@@ -1,6 +1,7 @@
 {
   "close": "Close",
   "cancel": "Cancel",
+  "confirm": "Confirm",
   "save": "Save",
   "saving": "Saving...",
   "delete": "Delete",
@@ -76,5 +77,7 @@
   },
   "edit": "Edit",
   "exportExcel": "Export to Excel",
-  "exportSelection": "Export ({{count}})"
+  "exportSelection": "Export ({{count}})",
+  "items_one": "item",
+  "items_other": "items"
 }

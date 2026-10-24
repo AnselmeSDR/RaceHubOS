@@ -32,7 +32,8 @@ i18n
     ns: NAMESPACES,
     defaultNS: 'common',
     fallbackNS: 'common',
-    fallbackLng: 'fr',
+    // A key missing in any language, or an unsupported browser language, falls back to English
+    fallbackLng: 'en',
     supportedLngs: LANGUAGES.map(l => l.code),
     interpolation: { escapeValue: false },
     detection: {

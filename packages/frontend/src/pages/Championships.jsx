@@ -8,6 +8,7 @@ import { ListPage } from '@/components/ui/list-page'
 import { FilterHeader } from '@/components/ui/filter-header'
 import { Badge } from '@/components/ui/badge'
 import { ChampionshipStatus, SessionType } from '@racehubos/shared'
+import { sessionNames } from '../lib/sessionNames'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -242,7 +243,8 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
           name: formData.name,
           trackId: formData.trackId,
           season: new Date().getFullYear().toString(),
-          pointsSystem: '{}'
+          pointsSystem: '{}',
+          sessionNames: sessionNames(),
         })
       })
       if (res.ok) {

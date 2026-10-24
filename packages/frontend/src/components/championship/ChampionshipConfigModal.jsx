@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
+import { sessionNames } from '../../lib/sessionNames'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -77,7 +78,7 @@ export default function ChampionshipConfigModal({
       const res = await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participants: currentParticipants }),
+        body: JSON.stringify({ participants: currentParticipants, sessionNames: sessionNames() }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       setAddingDriver('')
@@ -93,7 +94,7 @@ export default function ChampionshipConfigModal({
       const res = await fetch(`${API_URL}/api/championships/${championship.id}/participants`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participants: currentParticipants }),
+        body: JSON.stringify({ participants: currentParticipants, sessionNames: sessionNames() }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('configModal.genericError')) }
       onSessionsChange?.()

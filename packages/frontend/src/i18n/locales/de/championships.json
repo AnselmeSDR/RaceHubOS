@@ -30,9 +30,6 @@
   },
   "sessionSection": {
     "selectSession": "Sitzung auswählen",
-    "labels": {
-      "practice": "FT"
-    },
     "copyFromPractice": "Aus Training übernehmen",
     "table": {
       "ctrl": "Regler",

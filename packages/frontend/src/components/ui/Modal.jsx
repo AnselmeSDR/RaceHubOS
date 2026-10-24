@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { X, AlertTriangle } from 'lucide-react'
 import { Button } from './button'
 
@@ -83,12 +84,13 @@ export function ConfirmModal({
   open,
   onClose,
   onConfirm,
-  title = 'Confirmer',
+  title,
   message,
-  confirmLabel = 'Confirmer',
-  cancelLabel = 'Annuler',
+  confirmLabel,
+  cancelLabel,
   variant = 'danger'
 }) {
+  const { t } = useTranslation('common')
   if (!open) return null
 
   return (
@@ -98,19 +100,19 @@ export function ConfirmModal({
           <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-destructive/10' : 'bg-yellow-500/10'}`}>
             <AlertTriangle className={`size-6 ${variant === 'danger' ? 'text-destructive' : 'text-yellow-500'}`} />
           </div>
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          <h2 className="text-lg font-bold text-foreground">{title ?? t('confirm')}</h2>
         </div>
         {message && <p className="text-muted-foreground mb-6">{message}</p>}
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>
-            {cancelLabel}
+            {cancelLabel ?? t('cancel')}
           </Button>
           <Button
             variant={variant === 'danger' ? 'destructive' : 'default'}
             className="flex-1"
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {confirmLabel ?? t('confirm')}
           </Button>
         </div>
       </div>

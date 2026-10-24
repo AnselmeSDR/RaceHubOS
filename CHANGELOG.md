@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Interface en allemand** : ajout de Deutsch au choix de langue et traduction des 17 espaces de noms existants (936 textes). La langue choisie reste mémorisée, avec les traductions française et anglaise disponibles.
+- **Annonces vocales dans la langue de l'interface** : meilleur tour et podium, voix et temps compris.
+
+### Fixed
+- Textes restés en français ou en anglais quelle que soit la langue : onglet `EL`, barre d'état, bouton `START`, noms des sessions créées automatiquement.
+- Podium : nombre de tours écrit en minuscule (« 30 runden » en allemand).
+
+### Changed
+- Une traduction manquante s'affiche en anglais, et non plus en français.
 
 ## [1.24.2] - 2026-10-24
 

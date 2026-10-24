@@ -4,6 +4,7 @@ import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
+import { voicesByLanguage } from '../lib/speech'
 import { LANGUAGES } from '../i18n'
 import {
   Wifi,
@@ -258,10 +259,8 @@ export default function Settings() {
   }
 
   const loadVoices = useCallback(() => {
-    const allVoices = speechSynthesis.getVoices()
-    const frVoices = allVoices.filter(v => v.lang.startsWith('fr'))
-    setVoices(frVoices)
-  }, [])
+    setVoices(voicesByLanguage(i18n.resolvedLanguage))
+  }, [i18n.resolvedLanguage])
 
   useEffect(() => {
     loadVoices()
@@ -615,7 +614,8 @@ export default function Settings() {
 
           {(bestLapEnabled || podiumEnabled) && (
             <div className="flex items-center gap-2 pl-7">
-              <Select value={bestLapVoiceId || '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
+              {/* One voice per interface language, the language's default voice unless chosen */}
+              <Select value={voices.some(v => v.voiceURI === bestLapVoiceId) ? bestLapVoiceId : '_default'} onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder={t('appearance.defaultVoice')} />
                 </SelectTrigger>
@@ -623,7 +623,7 @@ export default function Settings() {
                   <SelectItem value="_default">{t('appearance.defaultVoice')}</SelectItem>
                   {voices.map(v => (
                     <SelectItem key={v.voiceURI} value={v.voiceURI}>
-                      {v.name}
+                      {v.name} ({v.lang})
                     </SelectItem>
                   ))}
                 </SelectContent>

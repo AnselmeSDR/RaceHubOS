@@ -115,7 +115,7 @@ export default function Leaderboard({ leaderboard = [] }) {
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
                 <div className="font-black text-xl text-gray-900 uppercase italic truncate">
-                  {(driver.name || 'Unknown').split(' ').pop()}
+                  {(driver.name || t('common:unknown')).split(' ').pop()}
                 </div>
                 <div className="text-sm text-gray-500 truncate">
                   {car.brand} {car.model || car.name || ''}

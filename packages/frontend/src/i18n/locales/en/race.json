@@ -26,7 +26,9 @@
     "lapsGap_other": "+{{count}} laps",
     "laps": "Laps",
     "duration": "Duration",
-    "grace": "Grace"
+    "grace": "Grace",
+    "lapsCount_one": "{{count}} lap",
+    "lapsCount_other": "{{count}} laps"
   },
   "leaderboard": {
     "empty": "No entries in the leaderboard",

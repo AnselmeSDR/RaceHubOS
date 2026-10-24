@@ -1,0 +1,13 @@
+{
+  "bestLap": "Best lap, {{name}}, {{time}}",
+  "podium": "{{rank}}, {{name}}, {{time}}",
+  "ranks": {
+    "first": "first",
+    "second": "second",
+    "third": "third"
+  },
+  "car": "Car {{number}}",
+  "seconds": "{{value}} seconds",
+  "minutes_one": "{{count}} minute {{seconds}}",
+  "minutes_other": "{{count}} minutes {{seconds}}"
+}
