@@ -146,7 +146,7 @@ RaceHubOS is an active project with a lot of room to grow. Here are some directi
 - 🏗️ **Packaged builds** — Standalone `.exe`, `.AppImage` for easier distribution
 - 🧩 **New features** — Penalties, fuel strategy, team relay races, lap charts, and more
 - **Ideas & bugs** — [Open an issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
-- **Code** — Fork, branch, and submit a pull request
+- **Code** — Fork, branch, and submit a pull request — read [CONTRIBUTING.md](CONTRIBUTING.md) first
 - **Questions** — Reach out at anselme8@icloud.com
 
 All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
@@ -290,7 +290,7 @@ Le projet est en développement actif et ouvert aux contributions :
 - 🏗️ **Builds packagés** — Exécutables standalone
 - 🧩 **Nouvelles features** — Pénalités, stratégie carburant, relais par équipe, graphiques de tours, etc.
 - **Idées et bugs** — [Ouvrir une issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
-- **Code** — Fork, branche, et pull request
+- **Code** — Fork, branche, et pull request — lire d'abord [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Questions** — anselme8@icloud.com
 
 ### Licence

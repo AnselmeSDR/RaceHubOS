@@ -216,6 +216,8 @@ rule('installer-version-bumped', 'Un installeur modifié voit son INSTALLER_VERS
 }, { onlyBeforePush: true });
 
 rule('version-and-changelog', 'Version incrémentée et changelog à jour', () => {
+  // La version se monte sur main, au merge : une branche de contribution n'y touche pas
+  if (git(['rev-parse', '--abbrev-ref', 'HEAD']) !== 'main') return [];
   const base = git(['rev-parse', '--verify', 'origin/main']);
   if (!base) return [];
   const changed = git(['diff', '--name-only', `${base}..HEAD`]);
