@@ -100,8 +100,9 @@ export default function SessionLeaderboard({
     return c
   }
 
+  // Container: below @4xl (896px) the row tightens so the car name stays readable
   return (
-    <div className="space-y-2">
+    <div className="@container space-y-2">
       <AnimatePresence mode="popLayout">
         {entriesWithPositions.map((entry) => {
           const position = entry.position
@@ -130,7 +131,7 @@ export default function SessionLeaderboard({
               }}
             >
               {/* Position */}
-              <div className={`${expanded ? 'w-20' : 'w-16'} flex-shrink-0 flex items-center justify-center gap-1`}>
+              <div className={`${expanded ? 'w-20' : 'w-12 @4xl:w-16'} flex-shrink-0 flex items-center justify-center gap-1`}>
                 <span className={`${expanded ? 'text-3xl' : 'text-2xl'} font-black ${
                   position === 1 ? 'text-yellow-500' :
                   position === 2 ? 'text-gray-400' :
@@ -206,19 +207,20 @@ export default function SessionLeaderboard({
                 <div className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}>
                   {(driver.name || t('common:unknown')).split(' ').pop()}
                 </div>
-                <div className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
+                <div className="text-sm text-muted-foreground flex items-center gap-1.5">
                   {car.color && (
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0 border border-border"
                       style={{ backgroundColor: car.color }}
                     />
                   )}
-                  {car.brand} {car.model || car.name || ''}
+                  {/* Own span: an ellipsis does not apply to bare text in a flex row */}
+                  <span className="truncate">{car.brand} {car.model || car.name || ''}</span>
                 </div>
               </div>
 
               {/* Stats */}
-              <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-6'} flex-shrink-0`}>
+              <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-3 @4xl:gap-6'} flex-shrink-0`}>
                 {/* Laps */}
                 <div className="text-center">
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.laps')}</div>
@@ -240,7 +242,7 @@ export default function SessionLeaderboard({
                 </div>
 
                 {/* Gap / Total */}
-                <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-[80px]'}`}>
+                <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-16 @4xl:min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
                     {sortBy === 'race' && position === 1 && sessionStatus === SessionStatus.FINISHED ? t('leaderboard.total') : t('leaderboard.gap')}
                   </div>
