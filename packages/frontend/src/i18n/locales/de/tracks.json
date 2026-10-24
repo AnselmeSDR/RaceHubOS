@@ -1,0 +1,28 @@
+{
+  "searchPlaceholder": "Strecke suchen …",
+  "addLabel": "Neue Strecke",
+  "emptyTitle": "Keine Strecken",
+  "emptyMessage": "Lege deine erste Strecke an",
+  "fields": {
+    "name": "Name",
+    "length": "Länge",
+    "corners": "Kurven"
+  },
+  "form": {
+    "createTitle": "Neue Strecke",
+    "editTitle": "Strecke bearbeiten",
+    "namePlaceholder": "Meine Carrera-Bahn",
+    "photoLabel": "Streckenfoto",
+    "lengthLabel": "Länge (m)",
+    "lengthPlaceholder": "12,5",
+    "cornersPlaceholder": "18",
+    "saved": "Strecke gespeichert"
+  },
+  "profile": {
+    "notFound": "Strecke nicht gefunden",
+    "resetStatsMessage": "Alle Statistiken dieser Strecke zurücksetzen?",
+    "trackRecord": "Streckenrekord",
+    "cornersCount_one": "{{count}} Kurve",
+    "cornersCount_other": "{{count}} Kurven"
+  }
+}

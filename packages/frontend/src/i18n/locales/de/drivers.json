@@ -1,0 +1,28 @@
+{
+  "searchPlaceholder": "Fahrer suchen …",
+  "addLabel": "Neuer Fahrer",
+  "emptyTitle": "Keine Fahrer",
+  "emptyMessage": "Lege deinen ersten Fahrer an",
+  "columns": {
+    "number": "Nr."
+  },
+  "card": {
+    "bestLap": "Beste Runde"
+  },
+  "form": {
+    "createTitle": "Neuer Fahrer",
+    "editTitle": "Fahrer bearbeiten",
+    "name": "Name",
+    "namePlaceholder": "Lewis Hamilton",
+    "number": "Startnummer",
+    "numberPlaceholder": "44",
+    "email": "E-Mail",
+    "emailPlaceholder": "lewis@example.com",
+    "noTeam": "Kein Team",
+    "saved": "Fahrer gespeichert"
+  },
+  "profile": {
+    "notFound": "Fahrer nicht gefunden",
+    "resetStatsMessage": "Alle Statistiken dieses Fahrers zurücksetzen?"
+  }
+}
