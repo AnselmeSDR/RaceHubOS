@@ -260,8 +260,11 @@ export default function BalancingPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Top bar */}
-      <div className="border-b px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div
+        data-testid="balancing-toolbar"
+        className="border-b px-4 py-2.5 flex flex-wrap gap-3 items-center justify-between"
+      >
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
             {/* A long track name ends with an ellipsis instead of being cut mid-letter */}
             <SelectTrigger className="w-48" title={selectedTrack?.name}>

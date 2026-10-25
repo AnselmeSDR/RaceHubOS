@@ -251,7 +251,7 @@ function TeamCard({ team, onClick, onEdit, onDelete }) {
             <span className="text-xs font-mono font-bold text-muted-foreground">{teamColor}</span>
           </div>
         </div>
-        <h3 className="font-black text-2xl tracking-tight text-foreground uppercase">{team.name}</h3>
+        <h3 className="font-black text-2xl tracking-tight text-foreground uppercase break-words">{team.name}</h3>
         <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: teamColor }} />
       </div>
 

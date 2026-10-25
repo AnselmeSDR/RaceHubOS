@@ -153,7 +153,7 @@ export default function Displays() {
 
       {/* Tabs Navigation */}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-8">
-        <nav className="-mb-px flex space-x-8">
+        <nav data-testid="display-tabs" className="-mb-px flex flex-wrap gap-x-8">
           {tabs.map((tab) => {
             const { Icon } = tab
             return (
@@ -230,15 +230,15 @@ function UsageBadge({ componentName }) {
 // Section header component
 function SectionHeader({ title, description, componentName, code }) {
   return (
-    <div className="flex items-start justify-between mb-4">
-      <div>
+    <div className="flex flex-wrap gap-3 items-start justify-between mb-4">
+      <div className="min-w-0 break-words">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h2>
         <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
         <div className="mt-2">
           <UsageBadge componentName={componentName} />
         </div>
       </div>
-      <code className="text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded whitespace-nowrap">
+      <code className="max-w-full break-words text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">
         {code}
       </code>
     </div>
@@ -623,7 +623,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           code="sessionType: 'practice' | 'qualif' | 'race'"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-          <div className="flex gap-3 mb-4">
+          <div className="flex flex-wrap gap-3 mb-4">
             {Object.entries(sessionTypeLabels).map(([type, { label, icon: Icon, color }]) => (
               <button
                 key={type}

@@ -283,8 +283,11 @@ export default function FreeSessionPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Top bar */}
-      <div className="border-b px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div
+        data-testid="free-session-toolbar"
+        className="border-b px-4 py-2.5 flex flex-wrap gap-3 items-center justify-between"
+      >
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           <Select value={selectedTrackId || ''} onValueChange={setSelectedTrackId}>
             {/* A long track name ends with an ellipsis instead of being cut mid-letter */}
             <SelectTrigger className="w-48" title={selectedTrack?.name}>
@@ -302,7 +305,7 @@ export default function FreeSessionPage() {
           </Select>
 
           <Tabs value={selectedType} onValueChange={setSelectedType}>
-            <TabsList>
+            <TabsList className="h-auto flex-wrap">
               {STANDARD_SESSION_TYPES.map((type) => {
                 const { icon: Icon, color } = TAB_STYLE[type]
                 return (

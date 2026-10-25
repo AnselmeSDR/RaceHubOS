@@ -8,12 +8,12 @@ test.describe('Championship Detailed Tests', () => {
 
     // Click on first championship
     const championshipCard = page.locator('[data-testid="list-row"]').first()
-    if ((await championshipCard.count()) > 0) {
-      await championshipCard.click()
-      // Wait for the detail route: networkidle alone can resolve before it
-      await page.waitForURL(/\/championships\/.+/, { timeout: 10000 })
-      await page.waitForLoadState('networkidle')
-    }
+    // The fixture must be rendered before navigating. A bare count() can be
+    // zero while React is still rendering the completed response.
+    await expect(championshipCard).toBeVisible()
+    await championshipCard.click()
+    await page.waitForURL(/\/championships\/.+/, { timeout: 10000 })
+    await page.waitForLoadState('networkidle')
   })
 
   test('ChampionshipHeader - All elements present', async ({ page }) => {

@@ -45,13 +45,13 @@ export default function FreePracticeLeaderboard({ freePracticeBoard, configs, on
   return (
     <div className="flex-1 bg-gray-50 overflow-y-auto p-6">
       <div className="bg-white rounded-xl shadow-sm border">
-        <div className="px-4 py-3 border-b flex items-center justify-between">
+        <div className="px-4 py-3 border-b flex flex-wrap gap-3 items-center justify-between">
           <h2 className="font-semibold text-gray-800 flex items-center gap-2">
             <Flag className="w-5 h-5 text-green-500" />
             {t('freePracticeLeaderboard.title')}
           </h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Sort filters */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button

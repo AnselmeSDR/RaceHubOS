@@ -15,7 +15,7 @@ export default function Modal({ open, onClose, title, icon, children, size = 'md
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div data-testid="modal" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       {/* Le titre reste visible, seul le corps défile : un formulaire long
           dépassait de l'écran sans jamais pouvoir être fait défiler */}
       <div
@@ -37,7 +37,7 @@ export default function Modal({ open, onClose, title, icon, children, size = 'md
 }
 
 export function ModalFooter({ children, className = '' }) {
-  return <div className={`flex justify-end gap-3 pt-4 ${className}`}>{children}</div>
+  return <div className={`flex flex-wrap justify-end gap-3 pt-4 ${className}`}>{children}</div>
 }
 
 export function ModalButton({ type = 'button', variant = 'primary', disabled = false, onClick, children }) {
