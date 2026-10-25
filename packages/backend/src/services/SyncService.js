@@ -20,6 +20,8 @@ export class SyncService {
     this.cuStatus = null;
     this.pollInterval = 500;
     this.pollTimer = null;
+    this.pollGeneration = 0;
+    this.polling = false;
 
     // Bound handlers for cleanup
     this._onTimer = (event) => this.handleTimerEvent(event);
@@ -159,7 +161,9 @@ export class SyncService {
   }
 
   startPolling() {
-    if (this.pollTimer || !this.source) return;
+    if (this.polling || !this.source) return;
+    this.polling = true;
+    const generation = ++this.pollGeneration;
 
     const poll = async () => {
       try {
@@ -169,13 +173,17 @@ export class SyncService {
       } catch (error) {
         console.warn('[SyncService] Poll error:', error.message);
       }
-      this.pollTimer = setTimeout(poll, this.pollInterval);
+      if (this.polling && generation === this.pollGeneration) {
+        this.pollTimer = setTimeout(poll, this.pollInterval);
+      }
     };
 
     poll();
   }
 
   stopPolling() {
+    this.polling = false;
+    this.pollGeneration += 1;
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
       this.pollTimer = null;
