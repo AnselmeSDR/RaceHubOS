@@ -1,3 +1,4 @@
+import CockpitHistory from '../components/CockpitHistory'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -329,6 +330,7 @@ export default function Stats() {
 
   return (
     <ListPage
+      toolbar={<CockpitHistory />}
       title={t('title')}
       icon={<BarChart3 />}
       color="indigo"
