@@ -1,0 +1,43 @@
+[
+  {
+    "hersteller": "Scalextric",
+    "modell": "K.I.T.T. – Knight Industries Two Thousand (Knight Rider)",
+    "massstab": "1:32",
+    "artikelnummer": "C4226",
+    "beschreibung": "K.I.T.T. aus Knight Rider, auf Basis des Pontiac Firebird Trans Am. Schwarzes Modell mit funktionierendem rotem Lauflicht und Front-/Rücklicht. Ab Werk DPR, Digitaldecoder nicht enthalten.",
+    "quelle": "https://uk.scalextric.com/products/knight-rider-kitt-c4226",
+    "referenz": "C4226",
+    "bild": "/api/img/cars/scalextric-c4226-edc2a0a4cba06507.jpg",
+    "bildquelle": "https://d63oxfkn1m8sf.cloudfront.net/4117/3807/2885/c4226_1.jpg",
+    "bildSha256": "edc2a0a4cba06507e5e8057ca91c431ca28bb197775ec5241efbffc7dcc2e53c",
+    "reifen": {
+      "artikelnummer": "W11695",
+      "hersteller": "Scalextric",
+      "satzgroesse": 4,
+      "beschreibung": "Passender Original-Ersatzreifensatz für Originalfelgen; tatsächlich montierte Reifen nicht geprüft.",
+      "quelle": "https://www.slotcar-union.com/en/tires/24682-scalextric-w11695-tyres-pack-for-knight-rider-kitt-4-pcs.html",
+      "geprueftAm": "2026-10-21"
+    }
+  },
+  {
+    "hersteller": "Scalextric",
+    "modell": "DeLorean DMC-12 – Zurück in die Zukunft II",
+    "massstab": "1:32",
+    "artikelnummer": "H4249",
+    "beschreibung": "Zeitmaschine aus dem zweiten Film mit Mr. Fusion. Superslot-Referenz H4249, entsprechende Scalextric-Referenz C4249. Silber, Fahrer Doc Brown. Ab Werk DPR, Digitaldecoder nicht enthalten.",
+    "quelle": "https://uk.scalextric.com/products/delorean-back-future-part-2-c4249",
+    "referenz": "C4249",
+    "bild": "/api/img/cars/scalextric-c4249-02c75e06ba26a10c.jpg",
+    "bildquelle": "https://d63oxfkn1m8sf.cloudfront.net/9016/1113/7722/c4249_1_bttf2-delorean_product.jpg",
+    "bildSha256": "02c75e06ba26a10cf05b4cec4e1055bc7d0f090eee44fa3a3f3139ac3a494559",
+    "aliasquelle": "https://www.ihobbies.es/delorean-regreso-al-futuro-2--132-superslot-h4249-p-1-50-27605/",
+    "reifen": {
+      "artikelnummer": "W11255",
+      "hersteller": "Scalextric",
+      "satzgroesse": 4,
+      "beschreibung": "Passender Original-Ersatzreifensatz für Originalfelgen; tatsächlich montierte Reifen nicht geprüft.",
+      "quelle": "https://www.slotcar-union.com/en/cars/19158-scalextric-c4249-delorean-back-to-the-future-2-5055286686153.html",
+      "geprueftAm": "2026-10-21"
+    }
+  }
+]
