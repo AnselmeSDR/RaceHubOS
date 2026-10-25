@@ -1,3 +1,5 @@
+import { tx, useExtensions, locale } from '../i18n/raceScreens'
+import { screenTime as formatScreenTime } from '../lib/raceScreen.mjs'
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -27,6 +29,8 @@ function formatDate(date, locale) {
 }
 
 export default function SessionDetail() {
+  useExtensions()
+  const screenTime = (value) => formatScreenTime(value, locale())
   const { t, i18n } = useTranslation('sessions')
   const { id } = useParams()
   const navigate = useNavigate()
@@ -288,6 +292,11 @@ export default function SessionDetail() {
                       <th className="px-4 py-2 font-medium">{t('glossary:driver', { count: 1 })}</th>
                       <th className="px-4 py-2 font-medium">{t('glossary:car', { count: 1 })}</th>
                       <th className="px-4 py-2 font-medium text-right">{t('profile.time')}</th>
+                      {[1, 2, 3].map((n) => (
+                        <th className="px-4 py-2 text-right" key={n}>
+                          {tx('Abschnitt')} {n}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -313,6 +322,11 @@ export default function SessionDetail() {
                           <td className="px-4 py-1.5 text-right">
                             <LapTime time={Math.round(lap.lapTime)} size="sm" highlight={lap.lapTime === fastestLap} />
                           </td>
+                          {[1, 2, 3].map((n) => (
+                            <td className="px-4 py-1.5 text-right font-mono" key={n}>
+                              {screenTime(lap[`sector${n}`])}
+                            </td>
+                          ))}
                         </tr>
                       )
                     })}

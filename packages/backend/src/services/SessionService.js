@@ -57,6 +57,14 @@ export class SessionService extends EventEmitter {
    * Handle lap data from SyncService
    * @param {{ controller: number, timestamp: number, lapTime: number, sector: number }} data
    */
+  handleSector(controller, sectors) {
+    if (!this.isActive()) return;
+    const driver = this.getDriverByController(controller);
+    if (!driver || this.hasDriverFinished(driver)) return;
+    driver.sectors = sectors;
+    this.emitLeaderboard();
+  }
+
   async handleLap(data) {
     const { controller, lapTime, sector } = data;
 
@@ -141,7 +149,8 @@ export class SessionService extends EventEmitter {
     this.recalculatePositions(controller);
 
     // 3. Save to DB
-    await this.saveLap(driver, lapTime);
+    driver.sectors = data.sectors || null;
+    await this.saveLap(driver, lapTime, data.sectors);
     await this.updateSessionDriver(driver);
 
     // 4. Emit leaderboard
@@ -261,6 +270,19 @@ export class SessionService extends EventEmitter {
       crossings: sd.totalLaps || 0, // Track line crossings (first doesn't count as lap)
     }));
 
+    await Promise.all(
+      this.sessionDrivers.map(async (driver) => {
+        const lap = await this.prisma.lap.findFirst({
+          where: { sessionId: session.id, controller: driver.controller, deletedAt: null },
+          orderBy: { lapNumber: 'desc' },
+        });
+        driver.sectors =
+          lap?.sector1 != null
+            ? { sector1: lap.sector1, sector2: lap.sector2, sector3: lap.sector3, completed: true }
+            : null;
+      })
+    );
+
     // Load lap history for balancing sessions (needed for chart data)
     this.lapHistory = new Map();
     if (session.type === SessionType.BALANCING) {
@@ -372,6 +394,7 @@ export class SessionService extends EventEmitter {
 
     const previousStatus = this.sessionStatus;
     this.sessionStatus = 'paused';
+    this.syncService?.resetSectorTiming?.();
 
     // Stop CU/Simulator
     await this.syncService?.stopRace();
@@ -962,7 +985,7 @@ export class SessionService extends EventEmitter {
 
   // ==================== DB Operations ====================
 
-  async saveLap(driver, lapTime) {
+  async saveLap(driver, lapTime, sectors = null) {
     await this.prisma.lap.create({
       data: {
         sessionId: this.activeSessionId,
@@ -973,6 +996,9 @@ export class SessionService extends EventEmitter {
         phase: this.currentPhase,
         lapNumber: driver.totalLaps,
         lapTime: lapTime,
+        sector1: sectors?.completed ? sectors.sector1 : null,
+        sector2: sectors?.completed ? sectors.sector2 : null,
+        sector3: sectors?.completed ? sectors.sector3 : null,
       },
     });
   }

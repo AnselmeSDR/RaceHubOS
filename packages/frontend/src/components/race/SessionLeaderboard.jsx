@@ -1,3 +1,4 @@
+import { TrackExtrasPanel } from './TrackExtras'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -281,6 +282,7 @@ export default function SessionLeaderboard({
           )
         })}
       </AnimatePresence>
+      <TrackExtrasPanel entries={entries} planning={sessionStatus !== 'finished'} />
     </div>
   )
 }

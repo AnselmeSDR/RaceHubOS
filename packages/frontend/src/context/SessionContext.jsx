@@ -381,6 +381,7 @@ export function SessionProvider({ children }) {
 
   // Start session
   const startSession = useCallback(async (sessionId) => {
+    window.dispatchEvent(new Event('race:screen-prepare'))
     try {
       const response = await fetch(`${API_URL}/api/sessions/${sessionId}/start`, {
         method: 'POST',
@@ -389,9 +390,12 @@ export function SessionProvider({ children }) {
 
       if (data.success) {
         setSession(data.data)
+      } else {
+        window.dispatchEvent(new Event('race:screen-failed'))
       }
       return data
     } catch (error) {
+      window.dispatchEvent(new Event('race:screen-failed'))
       console.error('[SessionContext] Error starting session:', error)
       return { success: false, error: error.message }
     }
@@ -532,6 +536,7 @@ export function SessionProvider({ children }) {
           laps: p.totalLaps || 0,
           bestLap: p.bestLapTime || null,
           lastLap: p.lastLapTime || null,
+          sectors: p.sectors || null,
           totalTime: p.totalTime || 0,
           gap: p.gap ?? null,
         },

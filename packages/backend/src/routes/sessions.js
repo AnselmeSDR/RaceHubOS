@@ -621,6 +621,10 @@ router.get('/:id/leaderboard', async (req, res) => {
         totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
         bestLapTime: laps.length > 0 ? Math.min(...laps.map((l) => l.lapTime)) : null,
         lastLapTime: laps.length > 0 ? laps[0].lapTime : null,
+        sectors:
+          laps[0]?.sector1 != null
+            ? { sector1: laps[0].sector1, sector2: laps[0].sector2, sector3: laps[0].sector3, completed: true }
+            : null,
       };
 
       // Include lap history for balancing sessions (needed for chart)
