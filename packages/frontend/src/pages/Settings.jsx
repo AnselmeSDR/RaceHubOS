@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import CockpitImportSettings from '../components/CockpitImportSettings'
 import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
@@ -447,6 +448,8 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <CockpitImportSettings />
 
       {/* Connection Status */}
       <Card className={connected ? 'border-green-500/50' : ''}>

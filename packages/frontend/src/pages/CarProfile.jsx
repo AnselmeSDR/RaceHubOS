@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import CockpitHistory from '../components/CockpitHistory'
 import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -183,6 +184,7 @@ export default function CarProfile() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
+        <CockpitHistory carId={car.id} />
         <CarSpecsCard car={car} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
