@@ -17,7 +17,15 @@ export function setChampionshipService(service) {
 // GET /api/championships - Liste tous les championnats
 router.get('/', async (req, res) => {
   try {
-    const { deleted, trackId, status, limit = '50', offset = '0', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const {
+      deleted,
+      trackId,
+      status,
+      limit = '50',
+      offset = '0',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
     if (status) where.status = status.includes(',') ? { in: status.split(',') } : status;
@@ -53,9 +61,19 @@ router.get('/', async (req, res) => {
       if (sortBy === 'track') {
         sorted = [...allChampionships].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
       } else if (sortBy === 'qualifs') {
-        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0) - (b.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0)));
+        sorted = [...allChampionships].sort(
+          (a, b) =>
+            dir *
+            ((a.sessions?.filter((s) => s.type === SessionType.QUALIF).length || 0) -
+              (b.sessions?.filter((s) => s.type === SessionType.QUALIF).length || 0))
+        );
       } else if (sortBy === 'races') {
-        sorted = [...allChampionships].sort((a, b) => dir * ((a.sessions?.filter(s => s.type === SessionType.RACE).length || 0) - (b.sessions?.filter(s => s.type === SessionType.RACE).length || 0)));
+        sorted = [...allChampionships].sort(
+          (a, b) =>
+            dir *
+            ((a.sessions?.filter((s) => s.type === SessionType.RACE).length || 0) -
+              (b.sessions?.filter((s) => s.type === SessionType.RACE).length || 0))
+        );
       }
     }
 
@@ -175,10 +193,20 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      name, season, pointsSystem, status, trackId,
-      mode, driversPerQualif, driversPerRace,
-      qualifMaxDuration, qualifMaxLaps, raceMaxDuration, raceMaxLaps,
-      participants, sessionNames,
+      name,
+      season,
+      pointsSystem,
+      status,
+      trackId,
+      mode,
+      driversPerQualif,
+      driversPerRace,
+      qualifMaxDuration,
+      qualifMaxLaps,
+      raceMaxDuration,
+      raceMaxLaps,
+      participants,
+      sessionNames,
     } = req.body;
 
     // Validation
@@ -208,11 +236,14 @@ router.post('/', async (req, res) => {
       if (!participants || participants.length < 2) {
         return res.status(400).json({ success: false, error: 'At least 2 participants required' });
       }
-      const driverIds = participants.map(p => p.driverId);
+      const driverIds = participants.map((p) => p.driverId);
       if (new Set(driverIds).size !== driverIds.length) {
         return res.status(400).json({ success: false, error: 'Duplicate drivers in participants' });
       }
-      const existingDrivers = await prisma.driver.findMany({ where: { id: { in: driverIds }, deletedAt: null }, select: { id: true } });
+      const existingDrivers = await prisma.driver.findMany({
+        where: { id: { in: driverIds }, deletedAt: null },
+        select: { id: true },
+      });
       if (existingDrivers.length !== driverIds.length) {
         return res.status(400).json({ success: false, error: 'One or more drivers not found' });
       }
@@ -511,8 +542,12 @@ router.get('/:id/results', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Championship not found' });
     }
 
-    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF && s.status === SessionStatus.FINISHED);
-    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE && s.status === SessionStatus.FINISHED);
+    const qualifSessions = championship.sessions.filter(
+      (s) => s.type === SessionType.QUALIF && s.status === SessionStatus.FINISHED
+    );
+    const raceSessions = championship.sessions.filter(
+      (s) => s.type === SessionType.RACE && s.status === SessionStatus.FINISHED
+    );
 
     // --- Final standings (race-based) ---
     const raceStats = {};
@@ -521,7 +556,14 @@ router.get('/:id/results', async (req, res) => {
         if (!sd.driverId) continue;
         const key = sd.driverId;
         if (!raceStats[key]) {
-          raceStats[key] = { driverId: sd.driverId, driver: withImageUrl(sd.driver), car: withImageUrl(sd.car), totalLaps: 0, totalTime: 0, finishedRaces: 0 };
+          raceStats[key] = {
+            driverId: sd.driverId,
+            driver: withImageUrl(sd.driver),
+            car: withImageUrl(sd.car),
+            totalLaps: 0,
+            totalTime: 0,
+            finishedRaces: 0,
+          };
         }
         raceStats[key].totalLaps += sd.totalLaps || 0;
         raceStats[key].totalTime += sd.totalTime || 0;
@@ -529,7 +571,7 @@ router.get('/:id/results', async (req, res) => {
       }
     }
     const standings = Object.values(raceStats)
-      .sort((a, b) => (b.totalLaps !== a.totalLaps) ? b.totalLaps - a.totalLaps : a.totalTime - b.totalTime)
+      .sort((a, b) => (b.totalLaps !== a.totalLaps ? b.totalLaps - a.totalLaps : a.totalTime - b.totalTime))
       .map((entry, i) => ({ position: i + 1, ...entry }));
 
     const podium = standings.slice(0, 3);
@@ -543,7 +585,13 @@ router.get('/:id/results', async (req, res) => {
       if (session.status !== SessionStatus.FINISHED) continue;
       for (const lap of session.laps) {
         if (!bestLapOverall || lap.lapTime < bestLapOverall.lapTime) {
-          bestLapOverall = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name, sessionType: session.type };
+          bestLapOverall = {
+            lapTime: Math.round(lap.lapTime),
+            driver: withImageUrl(lap.driver),
+            car: withImageUrl(lap.car),
+            sessionName: session.name,
+            sessionType: session.type,
+          };
         }
       }
     }
@@ -554,7 +602,12 @@ router.get('/:id/results', async (req, res) => {
     for (const session of qualifSessions) {
       for (const lap of session.laps) {
         if (!bestQualif || lap.lapTime < bestQualif.lapTime) {
-          bestQualif = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name };
+          bestQualif = {
+            lapTime: Math.round(lap.lapTime),
+            driver: withImageUrl(lap.driver),
+            car: withImageUrl(lap.car),
+            sessionName: session.name,
+          };
         }
       }
     }
@@ -565,7 +618,12 @@ router.get('/:id/results', async (req, res) => {
     for (const session of raceSessions) {
       for (const lap of session.laps) {
         if (!bestRaceLap || lap.lapTime < bestRaceLap.lapTime) {
-          bestRaceLap = { lapTime: Math.round(lap.lapTime), driver: withImageUrl(lap.driver), car: withImageUrl(lap.car), sessionName: session.name };
+          bestRaceLap = {
+            lapTime: Math.round(lap.lapTime),
+            driver: withImageUrl(lap.driver),
+            car: withImageUrl(lap.car),
+            sessionName: session.name,
+          };
         }
       }
     }
@@ -588,7 +646,7 @@ router.get('/:id/results', async (req, res) => {
 
       let bestComeback = null;
       for (const s of standings) {
-        const qp = qualifRanking.find(q => q.driverId === s.driverId);
+        const qp = qualifRanking.find((q) => q.driverId === s.driverId);
         if (!qp) continue;
         const gain = qp.qualifPos - s.position;
         if (!bestComeback || gain > bestComeback.gain) {
@@ -596,10 +654,17 @@ router.get('/:id/results', async (req, res) => {
         }
       }
       if (bestComeback && bestComeback.gain > 0) {
-        awards.push({ id: 'comeback', title: 'Plus gros comeback', icon: 'trending-up', driver: bestComeback.driver, gain: bestComeback.gain, qualifPos: bestComeback.qualifPos, racePos: bestComeback.racePos });
+        awards.push({
+          id: 'comeback',
+          title: 'Plus gros comeback',
+          icon: 'trending-up',
+          driver: bestComeback.driver,
+          gain: bestComeback.gain,
+          qualifPos: bestComeback.qualifPos,
+          racePos: bestComeback.racePos,
+        });
       }
     }
-
 
     // Most consistent: smallest std deviation of lap times in race (min 5 laps)
     let mostConsistent = null;
@@ -623,12 +688,31 @@ router.get('/:id/results', async (req, res) => {
         }
       }
     }
-    if (mostConsistent) awards.push({ id: 'consistent', title: 'Le plus régulier', icon: 'activity', driver: mostConsistent.driver, stdDev: mostConsistent.stdDev, sessionName: mostConsistent.sessionName });
+    if (mostConsistent)
+      awards.push({
+        id: 'consistent',
+        title: 'Le plus régulier',
+        icon: 'activity',
+        driver: mostConsistent.driver,
+        stdDev: mostConsistent.stdDev,
+        sessionName: mostConsistent.sessionName,
+      });
 
     // Iron man: most total laps across all race sessions
     if (standings.length > 0) {
-      const ironMan = standings.reduce((best, entry) => (!best || entry.totalLaps > best.totalLaps) ? entry : best, null);
-      if (ironMan) awards.push({ id: 'iron-man', title: 'Le plus endurant', icon: 'heart', driver: ironMan.driver, totalLaps: ironMan.totalLaps, finishedRaces: ironMan.finishedRaces });
+      const ironMan = standings.reduce(
+        (best, entry) => (!best || entry.totalLaps > best.totalLaps ? entry : best),
+        null
+      );
+      if (ironMan)
+        awards.push({
+          id: 'iron-man',
+          title: 'Le plus endurant',
+          icon: 'heart',
+          driver: ironMan.driver,
+          totalLaps: ironMan.totalLaps,
+          finishedRaces: ironMan.finishedRaces,
+        });
     }
 
     res.json({ success: true, data: { podium, standings, awards } });
@@ -676,30 +760,39 @@ router.put('/:id/participants', async (req, res) => {
       return res.status(400).json({ success: false, error: 'At least 2 participants required' });
     }
 
-    const driverIds = participants.map(p => p.driverId);
+    const driverIds = participants.map((p) => p.driverId);
     if (new Set(driverIds).size !== driverIds.length) {
       return res.status(400).json({ success: false, error: 'Duplicate drivers in participants' });
     }
-    const existingDrivers = await prisma.driver.findMany({ where: { id: { in: driverIds }, deletedAt: null }, select: { id: true } });
+    const existingDrivers = await prisma.driver.findMany({
+      where: { id: { in: driverIds }, deletedAt: null },
+      select: { id: true },
+    });
     if (existingDrivers.length !== driverIds.length) {
       return res.status(400).json({ success: false, error: 'One or more drivers not found' });
     }
 
-    const hasStartedQualif = championship.sessions.some(s => s.type === SessionType.QUALIF && s.status !== SessionStatus.DRAFT);
+    const hasStartedQualif = championship.sessions.some(
+      (s) => s.type === SessionType.QUALIF && s.status !== SessionStatus.DRAFT
+    );
 
     // Cannot remove participants who already raced in a non-draft session
     if (hasStartedQualif) {
-      const newIds = new Set(participants.map(p => p.driverId));
+      const newIds = new Set(participants.map((p) => p.driverId));
       const startedDriverIds = new Set();
       for (const session of championship.sessions) {
         if (session.type === SessionType.QUALIF && session.status !== SessionStatus.DRAFT) {
           const drivers = await prisma.sessionDriver.findMany({ where: { sessionId: session.id, deletedAt: null } });
-          drivers.forEach(d => { if (d.driverId) startedDriverIds.add(d.driverId); });
+          drivers.forEach((d) => {
+            if (d.driverId) startedDriverIds.add(d.driverId);
+          });
         }
       }
       for (const dId of startedDriverIds) {
         if (!newIds.has(dId)) {
-          return res.status(400).json({ success: false, error: `Cannot remove driver who already participated in a qualif` });
+          return res
+            .status(400)
+            .json({ success: false, error: `Cannot remove driver who already participated in a qualif` });
         }
       }
     }
@@ -769,23 +862,28 @@ router.get('/:id/standings', async (req, res) => {
         sessions: {
           where: {
             deletedAt: null,
-            ...(type === SessionType.PRACTICE ? { type: SessionType.PRACTICE } : {
-              type: type === SessionType.QUALIF ? SessionType.QUALIF : SessionType.RACE,
-              status: SessionStatus.FINISHED
-            }),
+            ...(type === SessionType.PRACTICE
+              ? { type: SessionType.PRACTICE }
+              : {
+                  type: type === SessionType.QUALIF ? SessionType.QUALIF : SessionType.RACE,
+                  status: SessionStatus.FINISHED,
+                }),
           },
           include: {
             drivers: {
               where: { deletedAt: null },
-              include: { driver: true, car: true }
+              include: { driver: true, car: true },
             },
-            laps: type !== SessionType.RACE ? {
-              where: type === SessionType.QUALIF ? { deletedAt: null } : undefined,
-              include: { driver: true, car: true }
-            } : undefined
-          }
-        }
-      }
+            laps:
+              type !== SessionType.RACE
+                ? {
+                    where: type === SessionType.QUALIF ? { deletedAt: null } : undefined,
+                    include: { driver: true, car: true },
+                  }
+                : undefined,
+          },
+        },
+      },
     });
 
     if (!championship) {
@@ -801,8 +899,8 @@ router.get('/:id/standings', async (req, res) => {
       // Qualifying standings: MIN(lapTime) grouped by driverId + carId
       const stats = {};
 
-      championship.sessions.forEach(session => {
-        session.laps.forEach(lap => {
+      championship.sessions.forEach((session) => {
+        session.laps.forEach((lap) => {
           const key = `${lap.driverId}-${lap.carId}`;
           const lapTimeMs = Math.round(lap.lapTime);
           if (!stats[key]) {
@@ -812,7 +910,7 @@ router.get('/:id/standings', async (req, res) => {
               driver: withImageUrl(lap.driver),
               car: withImageUrl(lap.car),
               bestTime: Infinity,
-              totalLaps: 0
+              totalLaps: 0,
             };
           }
           stats[key].totalLaps++;
@@ -823,7 +921,7 @@ router.get('/:id/standings', async (req, res) => {
       });
 
       standings = Object.values(stats)
-        .filter(entry => entry.bestTime !== Infinity)
+        .filter((entry) => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
@@ -832,15 +930,14 @@ router.get('/:id/standings', async (req, res) => {
           driver: entry.driver,
           car: entry.car,
           bestTime: entry.bestTime,
-          totalLaps: entry.totalLaps
+          totalLaps: entry.totalLaps,
         }));
-
     } else if (type === SessionType.RACE) {
       // Race standings: SUM(totalLaps), SUM(totalTime) grouped by driverId + carId
       const stats = {};
 
-      championship.sessions.forEach(session => {
-        session.drivers.forEach(sd => {
+      championship.sessions.forEach((session) => {
+        session.drivers.forEach((sd) => {
           const key = `${sd.driverId}-${sd.carId}`;
           if (!stats[key]) {
             stats[key] = {
@@ -850,7 +947,7 @@ router.get('/:id/standings', async (req, res) => {
               car: withImageUrl(sd.car),
               totalLaps: 0,
               totalTime: 0,
-              finishedRaces: 0
+              finishedRaces: 0,
             };
           }
           stats[key].totalLaps += sd.totalLaps || 0;
@@ -876,9 +973,8 @@ router.get('/:id/standings', async (req, res) => {
           car: entry.car,
           totalLaps: entry.totalLaps,
           totalTime: entry.totalTime,
-          finishedRaces: entry.finishedRaces
+          finishedRaces: entry.finishedRaces,
         }));
-
     } else if (type === SessionType.PRACTICE) {
       // Practice standings: MIN(lapTime) grouped by driverId + carId (includes soft-deleted laps)
       const practiceSession = championship.sessions[0];
@@ -888,13 +984,13 @@ router.get('/:id/standings', async (req, res) => {
           success: true,
           type: SessionType.PRACTICE,
           standings: [],
-          count: 0
+          count: 0,
         });
       }
 
       const stats = {};
 
-      practiceSession.laps.forEach(lap => {
+      practiceSession.laps.forEach((lap) => {
         const key = `${lap.driverId}-${lap.carId}`;
         const lapTimeMs = Math.round(lap.lapTime);
         if (!stats[key]) {
@@ -904,7 +1000,7 @@ router.get('/:id/standings', async (req, res) => {
             driver: withImageUrl(lap.driver),
             car: withImageUrl(lap.car),
             bestTime: Infinity,
-            totalLaps: 0
+            totalLaps: 0,
           };
         }
         stats[key].totalLaps++;
@@ -914,7 +1010,7 @@ router.get('/:id/standings', async (req, res) => {
       });
 
       standings = Object.values(stats)
-        .filter(entry => entry.bestTime !== Infinity)
+        .filter((entry) => entry.bestTime !== Infinity)
         .sort((a, b) => a.bestTime - b.bestTime)
         .map((entry, index) => ({
           position: index + 1,
@@ -923,13 +1019,12 @@ router.get('/:id/standings', async (req, res) => {
           driver: entry.driver,
           car: entry.car,
           bestTime: entry.bestTime,
-          totalLaps: entry.totalLaps
+          totalLaps: entry.totalLaps,
         }));
-
     } else {
       return res.status(400).json({
         success: false,
-        error: 'Invalid type. Must be one of: qualif, race, practice'
+        error: 'Invalid type. Must be one of: qualif, race, practice',
       });
     }
 

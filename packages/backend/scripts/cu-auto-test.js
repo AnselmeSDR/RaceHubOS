@@ -47,7 +47,7 @@ function saveLog() {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function main() {
@@ -125,7 +125,7 @@ async function main() {
       await sleep(100);
     }
 
-    const lightStates = statusEvents.map(s => s.startName || s.start);
+    const lightStates = statusEvents.map((s) => s.startName || s.start);
     logTest('start_race', lightStates.length > 0, { states: lightStates });
 
     // TEST 8: Wait for timer events (cars passing)
@@ -135,7 +135,9 @@ async function main() {
 
     // Start continuous polling
     pollTimer = setInterval(async () => {
-      try { await cu.poll(); } catch (e) {}
+      try {
+        await cu.poll();
+      } catch (e) {}
     }, 100);
 
     await sleep(20000);
@@ -144,14 +146,14 @@ async function main() {
     pollTimer = null;
 
     const timersByController = {};
-    timerEvents.forEach(t => {
+    timerEvents.forEach((t) => {
       timersByController[t.controller] = (timersByController[t.controller] || 0) + 1;
     });
 
     logTest('timer_events', timerEvents.length > 0, {
       count: timerEvents.length,
       byController: timersByController,
-      samples: timerEvents.slice(0, 5)
+      samples: timerEvents.slice(0, 5),
     });
 
     // TEST 9: Press ESC (stop)
@@ -166,21 +168,22 @@ async function main() {
     await cu.disconnect();
     await sleep(500);
     logTest('disconnect', !cu.isConnected());
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     logEvent('fatal_error', { message: error.message, stack: error.stack });
     logTest('fatal', false, { error: error.message });
   } finally {
     if (pollTimer) clearInterval(pollTimer);
-    try { await cu.disconnect(); } catch (e) {}
+    try {
+      await cu.disconnect();
+    } catch (e) {}
   }
 
   // Summary
   console.log('\n📊 SUMMARY');
   console.log('==========');
-  const passed = log.tests.filter(t => t.success).length;
-  const failed = log.tests.filter(t => !t.success).length;
+  const passed = log.tests.filter((t) => t.success).length;
+  const failed = log.tests.filter((t) => !t.success).length;
   console.log(`Tests: ${passed} passed, ${failed} failed`);
   console.log(`Events logged: ${log.events.length}`);
   console.log(`Timer events: ${timerEvents.length}`);

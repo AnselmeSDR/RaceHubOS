@@ -27,26 +27,33 @@ function formatTime(seconds) {
 export default function Podium({ drivers = [], sessionType = SessionType.RACE, stats }) {
   const { t } = useTranslation('race')
 
-  const sorted = [...drivers]
-    .sort((a, b) => {
-      if (sessionType === SessionType.PRACTICE) {
-        const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
-        if (lapsB !== lapsA) return lapsB - lapsA
-        return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
-      }
-      if (sessionType === SessionType.QUALIF) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
-      const lapsA = a.totalLaps || 0, lapsB = b.totalLaps || 0
+  const sorted = [...drivers].sort((a, b) => {
+    if (sessionType === SessionType.PRACTICE) {
+      const lapsA = a.totalLaps || 0,
+        lapsB = b.totalLaps || 0
       if (lapsB !== lapsA) return lapsB - lapsA
-      return (a.totalTime || Infinity) - (b.totalTime || Infinity)
-    })
-
+      return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+    }
+    if (sessionType === SessionType.QUALIF) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
+    const lapsA = a.totalLaps || 0,
+      lapsB = b.totalLaps || 0
+    if (lapsB !== lapsA) return lapsB - lapsA
+    return (a.totalTime || Infinity) - (b.totalTime || Infinity)
+  })
 
   const podium = sorted.slice(0, 3)
-  const fastest = sorted.reduce((best, sd) => (!best || (sd.bestLapTime && sd.bestLapTime < best.bestLapTime)) ? sd : best, null)
+  const fastest = sorted.reduce(
+    (best, sd) => (!best || (sd.bestLapTime && sd.bestLapTime < best.bestLapTime) ? sd : best),
+    null
+  )
   const podiumBorder = ['border-yellow-400', 'border-gray-300', 'border-orange-400']
   const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
   const podiumHeight = ['h-44', 'h-32', 'h-28']
-  const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
+  const podiumBg = [
+    'bg-gradient-to-t from-yellow-400/20 to-transparent',
+    'bg-gradient-to-t from-gray-300/20 to-transparent',
+    'bg-gradient-to-t from-orange-400/20 to-transparent',
+  ]
   const podiumLabel = [t('podium.first'), t('podium.second'), t('podium.third')]
   const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
   const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
@@ -62,16 +69,23 @@ export default function Podium({ drivers = [], sessionType = SessionType.RACE, s
               <div key={sd.id} className="flex flex-col items-center flex-1 max-w-[140px]">
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden mb-2 shadow-lg ring-2 ring-offset-2 ring-offset-card"
-                  style={{ '--tw-ring-color': sd.driver?.color || '#6B7280', backgroundColor: sd.driver?.color || '#6B7280' }}
+                  style={{
+                    '--tw-ring-color': sd.driver?.color || '#6B7280',
+                    backgroundColor: sd.driver?.color || '#6B7280',
+                  }}
                 >
-                  {sd.driver?.img
-                    ? <img src={getImgUrl(sd.driver.img)} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-lg">{sd.driver?.name?.charAt(0) || '?'}</span>}
+                  {sd.driver?.img ? (
+                    <img src={getImgUrl(sd.driver.img)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-lg">{sd.driver?.name?.charAt(0) || '?'}</span>
+                  )}
                 </div>
                 <span className="text-xs font-bold text-foreground truncate w-full text-center mb-1">
                   {sd.driver?.name?.split(' ').pop()}
                 </span>
-                <div className={`w-full ${podiumHeight[realIdx]} ${podiumBg[realIdx]} border-t-2 ${podiumBorder[realIdx]} rounded-t-lg flex flex-col items-center justify-between pt-2 pb-2 shadow-md ${podiumGlow[realIdx]}`}>
+                <div
+                  className={`w-full ${podiumHeight[realIdx]} ${podiumBg[realIdx]} border-t-2 ${podiumBorder[realIdx]} rounded-t-lg flex flex-col items-center justify-between pt-2 pb-2 shadow-md ${podiumGlow[realIdx]}`}
+                >
                   <span className="text-2xl font-black text-foreground/80">{podiumLabel[realIdx]}</span>
                   <div className="text-center space-y-0.5">
                     {realIdx === 0 ? (
@@ -82,12 +96,15 @@ export default function Podium({ drivers = [], sessionType = SessionType.RACE, s
                           ? `+${formatLapTime((sd.bestLapTime || 0) - (podium[0]?.bestLapTime || 0))}`
                           : (sd.totalLaps || 0) < (podium[0]?.totalLaps || 0)
                             ? t('podium.lapsGap', { count: (podium[0]?.totalLaps || 0) - (sd.totalLaps || 0) })
-                            : `+${formatLapTime((sd.totalTime || 0) - (podium[0]?.totalTime || 0))}`
-                        }
+                            : `+${formatLapTime((sd.totalTime || 0) - (podium[0]?.totalTime || 0))}`}
                       </div>
                     )}
                     <div className="font-mono text-xs text-purple-400">{formatLapTime(sd.bestLapTime)}</div>
-                    {sessionType !== SessionType.PRACTICE && <div className="text-xs text-muted-foreground">{t('podium.lapsCount', { count: sd.totalLaps || 0 })}</div>}
+                    {sessionType !== SessionType.PRACTICE && (
+                      <div className="text-xs text-muted-foreground">
+                        {t('podium.lapsCount', { count: sd.totalLaps || 0 })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -111,7 +128,9 @@ export default function Podium({ drivers = [], sessionType = SessionType.RACE, s
               <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
                 <Timer className="size-4" />
                 {formatTime(stats.duration)}
-                {stats.maxDuration && <span className="text-muted-foreground">/{formatTime(Math.floor(stats.maxDuration / 1000))}</span>}
+                {stats.maxDuration && (
+                  <span className="text-muted-foreground">/{formatTime(Math.floor(stats.maxDuration / 1000))}</span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground">{t('podium.duration')}</div>
             </div>

@@ -45,11 +45,7 @@ export default function Session({
   const [showResultsModal, setShowResultsModal] = useState(false)
 
   if (!session) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
-        {t('session.noSession')}
-      </div>
-    )
+    return <div className="flex-1 flex items-center justify-center text-gray-500">{t('session.noSession')}</div>
   }
 
   const status = session.status
@@ -66,14 +62,17 @@ export default function Session({
 
   // Progress for timed sessions
   let progress = 0
-  if (remaining != null && elapsed != null && (elapsed + remaining) > 0) {
+  if (remaining != null && elapsed != null && elapsed + remaining > 0) {
     const total = elapsed + remaining
     progress = Math.min(100, Math.max(0, (elapsed / total) * 100))
   }
 
-  const sessionTypeLabel = session.type === SessionType.QUALIF ? t('session.typeQualif')
-    : session.type === SessionType.RACE ? t('session.typeRace')
-    : t('session.typePractice')
+  const sessionTypeLabel =
+    session.type === SessionType.QUALIF
+      ? t('session.typeQualif')
+      : session.type === SessionType.RACE
+        ? t('session.typeRace')
+        : t('session.typePractice')
 
   const handleCancel = async () => {
     setShowCancelConfirm(false)
@@ -98,13 +97,9 @@ export default function Session({
         <div className="flex items-center justify-between">
           {/* Left: Session info */}
           <div>
-            <h1 className="text-xl font-bold text-white">
-              {session.name || sessionTypeLabel}
-            </h1>
+            <h1 className="text-xl font-bold text-white">{session.name || sessionTypeLabel}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-400 uppercase tracking-wide">
-                {sessionTypeLabel}
-              </span>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">{sessionTypeLabel}</span>
               <StateChip status={status} />
             </div>
           </div>
@@ -113,18 +108,18 @@ export default function Session({
           <div className="flex items-center gap-6">
             <div className="text-center">
               <div className="text-xs text-gray-500 uppercase">{t('session.elapsed')}</div>
-              <div className="text-3xl font-mono font-bold text-white tabular-nums">
-                {formatTime(elapsed)}
-              </div>
+              <div className="text-3xl font-mono font-bold text-white tabular-nums">{formatTime(elapsed)}</div>
             </div>
             {remaining !== null && (
               <>
                 <div className="w-px h-10 bg-gray-700" />
                 <div className="text-center">
                   <div className="text-xs text-gray-500 uppercase">{t('session.remaining')}</div>
-                  <div className={`text-3xl font-mono font-bold tabular-nums ${
-                    remaining < 60 ? 'text-red-500 animate-pulse' : 'text-white'
-                  }`}>
+                  <div
+                    className={`text-3xl font-mono font-bold tabular-nums ${
+                      remaining < 60 ? 'text-red-500 animate-pulse' : 'text-white'
+                    }`}
+                  >
                     {formatTime(remaining)}
                   </div>
                 </div>
@@ -133,9 +128,11 @@ export default function Session({
           </div>
 
           {/* Right: CU status */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-            cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
-          }`}>
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+              cuConnected ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'
+            }`}
+          >
             {cuConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
             <span className="text-sm font-medium">{cuConnected ? t('session.cuOk') : t('session.cuOff')}</span>
           </div>
@@ -228,9 +225,7 @@ export default function Session({
 
           {/* Finishing: Just show status */}
           {isFinishing && (
-            <div className="text-orange-400 font-bold animate-pulse">
-              {t('session.lastLapInProgress')}
-            </div>
+            <div className="text-orange-400 font-bold animate-pulse">{t('session.lastLapInProgress')}</div>
           )}
 
           {/* Finished: View results or new session */}
@@ -246,12 +241,7 @@ export default function Session({
       </div>
 
       {/* Modals */}
-      {showCancelConfirm && (
-        <CancelConfirmModal
-          onClose={() => setShowCancelConfirm(false)}
-          onConfirm={handleCancel}
-        />
-      )}
+      {showCancelConfirm && <CancelConfirmModal onClose={() => setShowCancelConfirm(false)} onConfirm={handleCancel} />}
 
       {showResultsModal && isFinished && (
         <ResultsModal

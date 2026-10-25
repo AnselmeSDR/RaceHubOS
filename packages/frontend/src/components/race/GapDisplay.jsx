@@ -15,9 +15,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
       return <FormattedTime time={leaderBestLap} />
     }
     return (
-      <span className={`text-sm font-bold ${GAP_COLORS.leader} uppercase tracking-wide`}>
-        {t('gapDisplay.leader')}
-      </span>
+      <span className={`text-sm font-bold ${GAP_COLORS.leader} uppercase tracking-wide`}>{t('gapDisplay.leader')}</span>
     )
   }
 
@@ -42,11 +40,7 @@ export default function GapDisplay({ gap, position, leaderBestLap }) {
 
   // Handle string gaps (e.g., "+2 tours")
   if (typeof gap === 'string') {
-    return (
-      <span className={`font-mono tabular-nums text-sm font-medium ${GAP_COLORS.laps}`}>
-        {gap}
-      </span>
-    )
+    return <span className={`font-mono tabular-nums text-sm font-medium ${GAP_COLORS.laps}`}>{gap}</span>
   }
 
   // Legacy: plain number = time in ms
@@ -79,8 +73,6 @@ function FormattedGap({ gapMs }) {
   }
 
   return (
-    <span className={`font-mono tabular-nums text-sm font-medium ${getGapColor()}`}>
-      +{gapSeconds.toFixed(3)}s
-    </span>
+    <span className={`font-mono tabular-nums text-sm font-medium ${getGapColor()}`}>+{gapSeconds.toFixed(3)}s</span>
   )
 }

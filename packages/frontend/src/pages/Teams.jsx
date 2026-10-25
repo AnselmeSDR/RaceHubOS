@@ -43,71 +43,84 @@ export default function Teams() {
       const res = await fetch(`${API_URL}/api/teams?${params}`)
       const data = await res.json()
       if (data.success) {
-        setTeams(prev => isFirst ? data.data : [...prev, ...data.data])
+        setTeams((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
       }
     } catch (err) {
       console.error('Failed to load teams:', err)
     } finally {
-      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
-      else setLoadingMore(false)
+      if (isFirst) {
+        setLoading(false)
+        hasLoadedOnce.current = true
+      } else setLoadingMore(false)
     }
   }
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'name',
-      header: t('glossary:team', { count: 1 }),
-      cell: ({ row }) => {
-        const team = row.original
-        return (
-          <div className="flex items-center gap-3">
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'name',
+        header: t('glossary:team', { count: 1 }),
+        cell: ({ row }) => {
+          const team = row.original
+          return (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: team.color || '#F97316' }}
+              >
+                {team.img ? (
+                  <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Users className="w-4 h-4" />
+                )}
+              </div>
+              <span className="font-semibold">{team.name}</span>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'color',
+        accessorKey: 'color',
+        header: t('common:colorLabel'),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: team.color || '#F97316' }}
-            >
-              {team.img ? (
-                <img src={getImgUrl(team.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <Users className="w-4 h-4" />
+              className="w-6 h-6 rounded-md border border-border"
+              style={{ backgroundColor: row.original.color || '#F97316' }}
+            />
+            <span className="text-muted-foreground font-mono text-xs">{row.original.color}</span>
+          </div>
+        ),
+      },
+      {
+        id: 'drivers',
+        accessorFn: (row) => row._count?.drivers || 0,
+        header: t('glossary:driver', { count: 2 }),
+        cell: ({ row }) => {
+          const team = row.original
+          return (
+            <div>
+              <span className="font-medium">{team._count?.drivers || 0}</span>
+              {team.drivers?.length > 0 && (
+                <span className="text-muted-foreground ml-1.5">
+                  (
+                  {team.drivers
+                    .slice(0, 2)
+                    .map((d) => d.name)
+                    .join(', ')}
+                  {team.drivers.length > 2 ? '...' : ''})
+                </span>
               )}
             </div>
-            <span className="font-semibold">{team.name}</span>
-          </div>
-        )
+          )
+        },
       },
-    },
-    {
-      id: 'color',
-      accessorKey: 'color',
-      header: t('common:colorLabel'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md border border-border" style={{ backgroundColor: row.original.color || '#F97316' }} />
-          <span className="text-muted-foreground font-mono text-xs">{row.original.color}</span>
-        </div>
-      ),
-    },
-    {
-      id: 'drivers',
-      accessorFn: (row) => row._count?.drivers || 0,
-      header: t('glossary:driver', { count: 2 }),
-      cell: ({ row }) => {
-        const team = row.original
-        return (
-          <div>
-            <span className="font-medium">{team._count?.drivers || 0}</span>
-            {team.drivers?.length > 0 && (
-              <span className="text-muted-foreground ml-1.5">
-                ({team.drivers.slice(0, 2).map(d => d.name).join(', ')}{team.drivers.length > 2 ? '...' : ''})
-              </span>
-            )}
-          </div>
-        )
-      },
-    },
-  ], [t])
+    ],
+    [t]
+  )
 
   // Deletion is confirmed inside the button itself, then the list reloads
   async function handleDelete(id) {
@@ -130,9 +143,15 @@ export default function Teams() {
       loading={loading}
       searchPlaceholder={t('searchPlaceholder')}
       addLabel={t('addLabel')}
-      onAdd={() => { setEditingTeam(null); setShowForm(true) }}
-      onRowClick={(row) => { setEditingTeam(row); setShowForm(true) }}
-      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      onAdd={() => {
+        setEditingTeam(null)
+        setShowForm(true)
+      }}
+      onRowClick={(row) => {
+        setEditingTeam(row)
+        setShowForm(true)
+      }}
+      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
       deleteEndpoint="/api/teams"
       onDeleted={() => loadData(0)}
       hasMore={hasMore}
@@ -145,7 +164,15 @@ export default function Teams() {
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((team) => (
-            <TeamCard key={team.id} team={team} onClick={() => { setEditingTeam(team); setShowForm(true) }} onDelete={() => handleDelete(team.id)} />
+            <TeamCard
+              key={team.id}
+              team={team}
+              onClick={() => {
+                setEditingTeam(team)
+                setShowForm(true)
+              }}
+              onDelete={() => handleDelete(team.id)}
+            />
           ))}
         </div>
       )}
@@ -154,14 +181,18 @@ export default function Teams() {
           key: 'deleted',
           label: t('common:showDeleted'),
           checked: filters.deleted,
-          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
         },
       ]}
     >
       {showForm && (
         <TeamFormModal
           team={editingTeam}
-          onClose={() => { setShowForm(false); setEditingTeam(null); loadData(0) }}
+          onClose={() => {
+            setShowForm(false)
+            setEditingTeam(null)
+            loadData(0)
+          }}
         />
       )}
     </ListPage>
@@ -183,7 +214,10 @@ function TeamCard({ team, onClick, onEdit, onDelete }) {
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
         {onEdit && (
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
             className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
             aria-label={t('common:edit')}
           >
@@ -210,7 +244,10 @@ function TeamCard({ team, onClick, onEdit, onDelete }) {
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/80 shadow-md">
-            <div className="w-4 h-4 rounded-full border-2 border-white ring-1 ring-border" style={{ backgroundColor: teamColor }} />
+            <div
+              className="w-4 h-4 rounded-full border-2 border-white ring-1 ring-border"
+              style={{ backgroundColor: teamColor }}
+            />
             <span className="text-xs font-mono font-bold text-muted-foreground">{teamColor}</span>
           </div>
         </div>
@@ -223,9 +260,13 @@ function TeamCard({ team, onClick, onEdit, onDelete }) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5" style={{ color: teamColor }} />
-              <span className="text-sm font-bold text-muted-foreground uppercase">{t('glossary:driver', { count: 2 })}</span>
+              <span className="text-sm font-bold text-muted-foreground uppercase">
+                {t('glossary:driver', { count: 2 })}
+              </span>
             </div>
-            <span className="text-2xl font-black" style={{ color: teamColor }}>{team._count?.drivers || 0}</span>
+            <span className="text-2xl font-black" style={{ color: teamColor }}>
+              {team._count?.drivers || 0}
+            </span>
           </div>
           {team.drivers?.length > 0 ? (
             <div className="space-y-1">
@@ -256,7 +297,7 @@ function TeamFormModal({ team, onClose }) {
   const [formData, setFormData] = useState({
     name: team?.name || '',
     color: team?.color || '#F97316',
-    img: team?.img || ''
+    img: team?.img || '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -270,7 +311,7 @@ function TeamFormModal({ team, onClose }) {
       const res = await fetch(url, {
         method: team ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
@@ -298,9 +339,22 @@ function TeamFormModal({ team, onClose }) {
       error={error}
       success={success}
     >
-      <TextField label={t('fields.name')} value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} required />
-      <PhotoUploadField label={t('form.logoLabel')} value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="teams" />
-      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
+      <TextField
+        label={t('fields.name')}
+        value={formData.name}
+        onChange={(v) => setFormData((f) => ({ ...f, name: v }))}
+        placeholder={t('form.namePlaceholder')}
+        required
+      />
+      <PhotoUploadField
+        label={t('form.logoLabel')}
+        value={formData.img}
+        onChange={(img) => setFormData((f) => ({ ...f, img }))}
+        shape="rect"
+        onError={setError}
+        uploadType="teams"
+      />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData((f) => ({ ...f, color }))} />
     </FormModal>
   )
 }

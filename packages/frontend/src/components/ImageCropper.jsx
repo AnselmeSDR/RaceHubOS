@@ -13,18 +13,11 @@ import { X, Check } from 'lucide-react'
  * @param {string} props.cropShape - 'round' ou 'rect' (défaut: 'round')
  * @param {number} props.aspect - Ratio aspect (défaut: 1 pour carré)
  */
-export default function ImageCropper({
-  image,
-  onCropComplete,
-  onCancel,
-  cropShape = 'round',
-  aspect = 1
-}) {
+export default function ImageCropper({ image, onCropComplete, onCancel, cropShape = 'round', aspect = 1 }) {
   const { t } = useTranslation('common')
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
-
 
   const onCropChange = useCallback((crop) => {
     setCrop(crop)
@@ -110,9 +103,7 @@ export default function ImageCropper({
               onChange={(e) => setZoom(Number(e.target.value))}
               className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
             />
-            <span className="text-white text-sm font-medium w-12 text-right">
-              {Math.round(zoom * 100)}%
-            </span>
+            <span className="text-white text-sm font-medium w-12 text-right">{Math.round(zoom * 100)}%</span>
           </div>
           <p className="text-gray-400 text-sm mt-4 text-center">
             Glissez l'image pour la repositionner • Utilisez le zoom pour ajuster la taille
@@ -155,17 +146,21 @@ async function getCroppedImg(imageSrc, pixelCrop) {
 
   // Convert to base64
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        resolve(null)
-        return
-      }
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        resolve(reader.result)
-      }
-      reader.readAsDataURL(blob)
-    }, 'image/jpeg', 0.95)
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          resolve(null)
+          return
+        }
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          resolve(reader.result)
+        }
+        reader.readAsDataURL(blob)
+      },
+      'image/jpeg',
+      0.95
+    )
   })
 }
 

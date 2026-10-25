@@ -8,10 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
  * @returns {object} { connected, status, raceState, modes, loading, error, refetch }
  */
 export function useCuStatus(options = {}) {
-  const {
-    pollingInterval = 2000,
-    enabled = true
-  } = options
+  const { pollingInterval = 2000, enabled = true } = options
 
   const [connected, setConnected] = useState(false)
   const [status, setStatus] = useState(null)
@@ -82,7 +79,7 @@ export function useCuStatus(options = {}) {
     isRacing,
     isInLights,
     isStopped,
-    isReady
+    isReady,
   }
 }
 

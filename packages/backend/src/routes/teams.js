@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: teams.map(t => withNestedImageUrls(t)),
+      data: teams.map((t) => withNestedImageUrls(t)),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });

@@ -8,7 +8,9 @@ import { getDatabasePath, getDatabaseUrl } from '../lib/database-url.js';
  */
 describe('database URL resolution', () => {
   const original = process.env.DATABASE_URL;
-  afterEach(() => { process.env.DATABASE_URL = original; });
+  afterEach(() => {
+    process.env.DATABASE_URL = original;
+  });
 
   it('resolves a relative URL from the prisma directory', () => {
     process.env.DATABASE_URL = 'file:./dev.db';

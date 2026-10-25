@@ -33,15 +33,15 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type, ...sessionFilter }
+          session: { type, ...sessionFilter },
         },
         orderBy: { lapTime: 'asc' },
         distinct: ['driverId', 'carId'],
         include: {
           driver: true,
           car: true,
-          session: { select: { id: true, type: true, name: true } }
-        }
+          session: { select: { id: true, type: true, name: true } },
+        },
       });
 
       // Get lap counts per driver+car
@@ -50,17 +50,17 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type, ...sessionFilter }
+          session: { type, ...sessionFilter },
         },
-        _count: { id: true }
+        _count: { id: true },
       });
 
-      const countMap = new Map(lapCounts.map(c => [`${c.driverId}-${c.carId}`, c._count.id]));
+      const countMap = new Map(lapCounts.map((c) => [`${c.driverId}-${c.carId}`, c._count.id]));
 
       // For race type, get totalTime from SessionDriver
       let raceStatsMap = new Map();
       if (type === SessionType.RACE) {
-        const sessionIds = [...new Set(laps.map(l => l.sessionId))];
+        const sessionIds = [...new Set(laps.map((l) => l.sessionId))];
         const sessionDrivers = await prisma.sessionDriver.findMany({
           where: { sessionId: { in: sessionIds } },
         });
@@ -74,7 +74,7 @@ router.get('/track/:trackId', async (req, res) => {
         }
       }
 
-      return laps.map(lap => {
+      return laps.map((lap) => {
         const key = `${lap.driverId}-${lap.carId}`;
         const raceStats = raceStatsMap.get(key);
         return {
@@ -93,15 +93,15 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type: SessionType.BALANCING, ...sessionFilter }
+          session: { type: SessionType.BALANCING, ...sessionFilter },
         },
         orderBy: { lapTime: 'asc' },
         distinct: ['carId'],
         include: {
           car: true,
           driver: true,
-          session: { select: { id: true, type: true, name: true } }
-        }
+          session: { select: { id: true, type: true, name: true } },
+        },
       });
 
       const lapCounts = await prisma.lap.groupBy({
@@ -109,12 +109,12 @@ router.get('/track/:trackId', async (req, res) => {
         where: {
           trackId,
           deletedAt: null,
-          session: { type: SessionType.BALANCING, ...sessionFilter }
+          session: { type: SessionType.BALANCING, ...sessionFilter },
         },
-        _count: { id: true }
+        _count: { id: true },
       });
 
-      const countMap = new Map(lapCounts.map(c => [c.carId, c._count.id]));
+      const countMap = new Map(lapCounts.map((c) => [c.carId, c._count.id]));
 
       // Get all laps grouped by session+car for median calculations (excluding first lap)
       const allLaps = await prisma.lap.findMany({
@@ -125,15 +125,15 @@ router.get('/track/:trackId', async (req, res) => {
           lapNumber: { gt: 1 },
         },
         select: { carId: true, sessionId: true, lapTime: true },
-        orderBy: { lapTime: 'asc' }
+        orderBy: { lapTime: 'asc' },
       });
 
       // Get session dates for ordering
-      const sessionIds = [...new Set(allLaps.map(l => l.sessionId))];
+      const sessionIds = [...new Set(allLaps.map((l) => l.sessionId))];
       const sessions = await prisma.session.findMany({
         where: { id: { in: sessionIds } },
         select: { id: true, createdAt: true },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'asc' },
       });
       const sessionOrder = new Map(sessions.map((s, i) => [s.id, i]));
 
@@ -186,11 +186,11 @@ router.get('/track/:trackId', async (req, res) => {
             avg60: computeAvg60(times),
             laps: times.length,
           }))
-          .filter(h => h.median !== null);
+          .filter((h) => h.median !== null);
         historyMap.set(carId, history);
       }
 
-      return laps.map(lap => ({
+      return laps.map((lap) => ({
         ...lap,
         car: withImageUrl(lap.car),
         driver: withImageUrl(lap.driver),
@@ -206,7 +206,7 @@ router.get('/track/:trackId', async (req, res) => {
       getBestByType(SessionType.QUALIF),
       getBestByType(SessionType.RACE),
       getBalancingBestByCar(),
-      prisma.track.findUnique({ where: { id: trackId } })
+      prisma.track.findUnique({ where: { id: trackId } }),
     ]);
 
     res.json({
@@ -216,8 +216,8 @@ router.get('/track/:trackId', async (req, res) => {
         practice: practiceLaps,
         qualif: qualifLaps,
         race: raceLaps,
-        balancing: balancingLaps
-      }
+        balancing: balancingLaps,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -238,17 +238,17 @@ router.get('/driver/:driverId', async (req, res) => {
       include: {
         track: true,
         car: true,
-        session: { select: { id: true, type: true, name: true } }
-      }
+        session: { select: { id: true, type: true, name: true } },
+      },
     });
 
     const driver = await prisma.driver.findUnique({
-      where: { id: driverId }
+      where: { id: driverId },
     });
 
     res.json({
       success: true,
-      data: { driver, records, count: records.length }
+      data: { driver, records, count: records.length },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -269,17 +269,17 @@ router.get('/car/:carId', async (req, res) => {
       include: {
         track: true,
         driver: true,
-        session: { select: { id: true, type: true, name: true } }
-      }
+        session: { select: { id: true, type: true, name: true } },
+      },
     });
 
     const car = await prisma.car.findUnique({
-      where: { id: carId }
+      where: { id: carId },
     });
 
     res.json({
       success: true,
-      data: { car, records, count: records.length }
+      data: { car, records, count: records.length },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -300,8 +300,8 @@ router.get('/leaderboard', async (req, res) => {
       include: {
         track: true,
         driver: true,
-        car: true
-      }
+        car: true,
+      },
     });
 
     res.json({ success: true, data: records });

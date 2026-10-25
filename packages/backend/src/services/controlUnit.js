@@ -87,7 +87,12 @@ export class ControlUnit extends EventEmitter {
    * @param {Buffer} data - Données reçues
    */
   handleData(data) {
-    console.log('📨 CU Data received:', data.toString('hex'), '| ASCII:', data.toString('ascii').replace(/[^\x20-\x7E]/g, '.'));
+    console.log(
+      '📨 CU Data received:',
+      data.toString('hex'),
+      '| ASCII:',
+      data.toString('ascii').replace(/[^\x20-\x7E]/g, '.')
+    );
 
     // Si on attend une réponse spécifique
     if (this.waitingForResponse) {
@@ -112,8 +117,10 @@ export class ControlUnit extends EventEmitter {
   processMessage(data) {
     try {
       // Timer event (voiture passe sur la ligne)
-      if (data[0] === 0x3F) { // '?'
-        if (data[1] === 0x3A) { // '?:'
+      if (data[0] === 0x3f) {
+        // '?'
+        if (data[1] === 0x3a) {
+          // '?:'
           // Status message
           const status = this.parseStatus(data);
           this.emit('status', status);
@@ -203,7 +210,7 @@ export class ControlUnit extends EventEmitter {
 
     // Wait for any pending request to finish
     while (this._requestBusy) {
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise((r) => setTimeout(r, 10));
     }
 
     this._requestBusy = true;
@@ -341,14 +348,10 @@ export class ControlUnit extends EventEmitter {
       throw new Error('Repeat count out of range');
     }
 
-    const buffer = protocol.pack(
-      'cBYYC',
-      Buffer.from('J'),
-      word | (address << 5),
-      value,
-      repeat
+    const buffer = protocol.pack('cBYYC', Buffer.from('J'), word | (address << 5), value, repeat);
+    console.log(
+      `🎮 setword: word=${word}, addr=${address}, val=${value}, repeat=${repeat}, msg=${buffer.toString('hex')}`
     );
-    console.log(`🎮 setword: word=${word}, addr=${address}, val=${value}, repeat=${repeat}, msg=${buffer.toString('hex')}`);
     await this.request(buffer);
     return { success: true };
   }

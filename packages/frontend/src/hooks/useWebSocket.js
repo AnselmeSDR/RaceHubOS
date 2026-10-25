@@ -15,7 +15,7 @@ export function useWebSocket(handlers = {}, options = {}) {
     enabled = true,
     reconnection = true,
     reconnectionAttempts = Infinity,
-    reconnectionDelay = 1000
+    reconnectionDelay = 1000,
   } = options
 
   const socketRef = useRef(null)
@@ -35,7 +35,7 @@ export function useWebSocket(handlers = {}, options = {}) {
       transports: ['websocket', 'polling'],
       reconnection,
       reconnectionAttempts,
-      reconnectionDelay
+      reconnectionDelay,
     })
 
     socketRef.current = socket
@@ -58,10 +58,10 @@ export function useWebSocket(handlers = {}, options = {}) {
 
     // Register all event handlers from ref
     const eventNames = Object.keys(handlersRef.current).filter(
-      name => !['onConnect', 'onDisconnect', 'onError'].includes(name)
+      (name) => !['onConnect', 'onDisconnect', 'onError'].includes(name)
     )
 
-    eventNames.forEach(event => {
+    eventNames.forEach((event) => {
       socket.on(event, (...args) => {
         handlersRef.current[event]?.(...args)
       })
@@ -80,7 +80,7 @@ export function useWebSocket(handlers = {}, options = {}) {
     connected,
     error,
     emit,
-    socketRef
+    socketRef,
   }
 }
 

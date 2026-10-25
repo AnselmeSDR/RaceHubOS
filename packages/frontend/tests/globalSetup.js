@@ -23,10 +23,24 @@ export default function globalSetup() {
   }
 
   const sqlFile = path.join(backendDir, 'prisma', '.e2e-schema.sql')
-  execFileSync('npx', ['prisma', 'migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script', '--output', sqlFile], {
-    cwd: backendDir,
-    stdio: 'pipe',
-  })
+  execFileSync(
+    'npx',
+    [
+      'prisma',
+      'migrate',
+      'diff',
+      '--from-empty',
+      '--to-schema',
+      'prisma/schema.prisma',
+      '--script',
+      '--output',
+      sqlFile,
+    ],
+    {
+      cwd: backendDir,
+      stdio: 'pipe',
+    }
+  )
 
   const db = new Database(E2E_DB)
   try {
@@ -46,28 +60,74 @@ function seed(db) {
   const now = Date.now()
   const insert = (sql, ...values) => db.prepare(sql).run(...values)
 
-  insert("INSERT INTO Device (id, address, name, type, createdAt, updatedAt) VALUES ('e2e-sim', 'SIMULATOR', 'Simulateur', 'simulator', ?, ?)", now, now)
-  insert("INSERT INTO Track (id, name, length, color, createdAt, updatedAt) VALUES ('e2e-track', 'Circuit E2E', 23.03, '#478060', ?, ?)", now, now)
+  insert(
+    "INSERT INTO Device (id, address, name, type, createdAt, updatedAt) VALUES ('e2e-sim', 'SIMULATOR', 'Simulateur', 'simulator', ?, ?)",
+    now,
+    now
+  )
+  insert(
+    "INSERT INTO Track (id, name, length, color, createdAt, updatedAt) VALUES ('e2e-track', 'Circuit E2E', 23.03, '#478060', ?, ?)",
+    now,
+    now
+  )
 
   for (const [id, name, number, color] of [
     ['e2e-d1', 'Pilote Un', 11, '#ef4444'],
     ['e2e-d2', 'Pilote Deux', 22, '#3b82f6'],
   ]) {
-    insert("INSERT INTO Driver (id, name, number, color, isReference, createdAt, updatedAt) VALUES (?, ?, ?, ?, 0, ?, ?)", id, name, number, color, now, now)
+    insert(
+      'INSERT INTO Driver (id, name, number, color, isReference, createdAt, updatedAt) VALUES (?, ?, ?, ?, 0, ?, ?)',
+      id,
+      name,
+      number,
+      color,
+      now,
+      now
+    )
   }
 
-  for (const [id, brand, model] of [['e2e-c1', 'BMW', 'M4 GT3'], ['e2e-c2', 'AMG', 'GT3']]) {
-    insert("INSERT INTO Car (id, brand, model, color, maxSpeed, brakeForce, fuelCapacity, totalRaces, createdAt, updatedAt) VALUES (?, ?, ?, '#6b7280', 100, 50, 100, 0, ?, ?)", id, brand, model, now, now)
+  for (const [id, brand, model] of [
+    ['e2e-c1', 'BMW', 'M4 GT3'],
+    ['e2e-c2', 'AMG', 'GT3'],
+  ]) {
+    insert(
+      "INSERT INTO Car (id, brand, model, color, maxSpeed, brakeForce, fuelCapacity, totalRaces, createdAt, updatedAt) VALUES (?, ?, ?, '#6b7280', 100, 50, 100, 0, ?, ?)",
+      id,
+      brand,
+      model,
+      now,
+      now
+    )
   }
 
-  insert("INSERT INTO Championship (id, name, season, status, trackId, mode, createdAt, updatedAt) VALUES ('e2e-champ', 'Championnat E2E', '2026', 'planned', 'e2e-track', 'manual', ?, ?)", now, now)
+  insert(
+    "INSERT INTO Championship (id, name, season, status, trackId, mode, createdAt, updatedAt) VALUES ('e2e-champ', 'Championnat E2E', '2026', 'planned', 'e2e-track', 'manual', ?, ?)",
+    now,
+    now
+  )
 
   for (const [id, name, type, order] of [
     ['e2e-s1', 'Qualifications', 'qualif', 0],
     ['e2e-s2', 'Course', 'race', 1],
   ]) {
-    insert("INSERT INTO Session (id, name, type, status, trackId, championshipId, fuelMode, \"order\", createdAt, updatedAt) VALUES (?, ?, ?, 'draft', 'e2e-track', 'e2e-champ', 'OFF', ?, ?, ?)", id, name, type, order, now, now)
-    insert("INSERT INTO SessionDriver (id, sessionId, driverId, carId, controller, totalLaps, totalTime, isDNF) VALUES (?, ?, 'e2e-d1', 'e2e-c1', 0, 0, 0, 0)", id + '-a', id)
-    insert("INSERT INTO SessionDriver (id, sessionId, driverId, carId, controller, totalLaps, totalTime, isDNF) VALUES (?, ?, 'e2e-d2', 'e2e-c2', 1, 0, 0, 0)", id + '-b', id)
+    insert(
+      "INSERT INTO Session (id, name, type, status, trackId, championshipId, fuelMode, \"order\", createdAt, updatedAt) VALUES (?, ?, ?, 'draft', 'e2e-track', 'e2e-champ', 'OFF', ?, ?, ?)",
+      id,
+      name,
+      type,
+      order,
+      now,
+      now
+    )
+    insert(
+      "INSERT INTO SessionDriver (id, sessionId, driverId, carId, controller, totalLaps, totalTime, isDNF) VALUES (?, ?, 'e2e-d1', 'e2e-c1', 0, 0, 0, 0)",
+      id + '-a',
+      id
+    )
+    insert(
+      "INSERT INTO SessionDriver (id, sessionId, driverId, carId, controller, totalLaps, totalTime, isDNF) VALUES (?, ?, 'e2e-d2', 'e2e-c2', 1, 0, 0, 0)",
+      id + '-b',
+      id
+    )
   }
 }

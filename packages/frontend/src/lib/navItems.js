@@ -34,7 +34,5 @@ export const allNavItems = [
 // Resolves a nav item label. `t` must be a translation function bound to
 // the 'layout' namespace (glossary items are resolved with an explicit ns).
 export function navLabel(t, item) {
-  return item.glossary
-    ? t(item.labelKey, { ns: 'glossary', count: 2 })
-    : t(item.labelKey)
+  return item.glossary ? t(item.labelKey, { ns: 'glossary', count: 2 }) : t(item.labelKey)
 }

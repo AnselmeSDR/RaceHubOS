@@ -12,7 +12,7 @@ export default function EntityCard({
   record,
   onClick,
   badge,
-  footer
+  footer,
 }) {
   const { t } = useTranslation('common')
   return (
@@ -32,7 +32,7 @@ export default function EntityCard({
           className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: `repeating-linear-gradient(45deg, ${color} 0, ${color} 1px, transparent 0, transparent 50%)`,
-            backgroundSize: '10px 10px'
+            backgroundSize: '10px 10px',
           }}
         />
         <div
@@ -71,7 +71,9 @@ export default function EntityCard({
               <LapTime time={record.time} size="sm" />
             </div>
             {record.holder && (
-              <p className="text-xs text-muted-foreground mt-1 truncate">{t('by')} {record.holder}</p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {t('by')} {record.holder}
+              </p>
             )}
           </div>
         )}
@@ -84,10 +86,14 @@ export default function EntityCard({
 
 export function StatBadge({ icon, label, value, highlight }) {
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${highlight ? 'bg-yellow-500/10' : 'bg-muted/50'}`}>
+    <div
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${highlight ? 'bg-yellow-500/10' : 'bg-muted/50'}`}
+    >
       {icon && <span className={highlight ? 'text-yellow-500' : 'text-muted-foreground'}>{icon}</span>}
       <span className="text-muted-foreground">{label}</span>
-      <span className={`font-bold ${highlight ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>{value}</span>
+      <span className={`font-bold ${highlight ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>
+        {value}
+      </span>
     </div>
   )
 }

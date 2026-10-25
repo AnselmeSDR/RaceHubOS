@@ -37,23 +37,26 @@ export function AppProvider({ children }) {
     localStorage.setItem(KEYS.admin, isAdmin)
   }, [isAdmin])
 
-  const toggleTheme = useCallback(() => setIsDark(prev => !prev), [])
-  const toggleAdmin = useCallback(() => setIsAdmin(prev => !prev), [])
+  const toggleTheme = useCallback(() => setIsDark((prev) => !prev), [])
+  const toggleAdmin = useCallback(() => setIsAdmin((prev) => !prev), [])
 
   // Sidebar
   const [sidebarPref, setSidebarPref] = useState(() => loadBool(KEYS.sidebar, true))
 
-  const setSidebarOpen = useCallback((value) => {
-    const next = typeof value === 'function' ? value(sidebarPref) : value
-    setSidebarPref(next)
-    localStorage.setItem(KEYS.sidebar, next)
-  }, [sidebarPref])
+  const setSidebarOpen = useCallback(
+    (value) => {
+      const next = typeof value === 'function' ? value(sidebarPref) : value
+      setSidebarPref(next)
+      localStorage.setItem(KEYS.sidebar, next)
+    },
+    [sidebarPref]
+  )
 
   // Standings
   const [standingsPref, setStandingsPref] = useState(() => loadBool(KEYS.standings, true))
 
   const toggleStandings = useCallback(() => {
-    setStandingsPref(prev => {
+    setStandingsPref((prev) => {
       const next = !prev
       localStorage.setItem(KEYS.standings, next)
       return next
@@ -100,22 +103,31 @@ export function AppProvider({ children }) {
   }, [sessionActive])
 
   return (
-    <AppContext.Provider value={{
-      // Theme
-      isDark, toggleTheme,
-      isAdmin, toggleAdmin,
-      // Sidebar
-      sidebarOpen, setSidebarOpen,
-      // Standings
-      showStandings, toggleStandings,
-      // Free session
-      freeTrack, setFreeTrack,
-      freeType, setFreeType,
-      // Balancing session
-      balancingTrack, setBalancingTrack,
-      // Session active (called by SessionContext)
-      setSessionActive,
-    }}>
+    <AppContext.Provider
+      value={{
+        // Theme
+        isDark,
+        toggleTheme,
+        isAdmin,
+        toggleAdmin,
+        // Sidebar
+        sidebarOpen,
+        setSidebarOpen,
+        // Standings
+        showStandings,
+        toggleStandings,
+        // Free session
+        freeTrack,
+        setFreeTrack,
+        freeType,
+        setFreeType,
+        // Balancing session
+        balancingTrack,
+        setBalancingTrack,
+        // Session active (called by SessionContext)
+        setSessionActive,
+      }}
+    >
       {children}
     </AppContext.Provider>
   )

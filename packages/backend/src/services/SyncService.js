@@ -193,12 +193,12 @@ export class SyncService {
 
     // Stop polling and wait for any in-flight poll to settle
     this.stopPolling();
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
 
     // Send START — CU will respond with 'T' ack
     await this.source.start();
     // Wait for CU to process and discard stale BLE responses
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
 
     // Resume polling — next poll should see L1
     this.startPolling();
@@ -254,14 +254,16 @@ export class SyncService {
   }
 
   getInfo() {
-    return this.source?.getInfo?.() || {
-      version: 'NOT CONNECTED',
-      fuelMode: false,
-      realMode: false,
-      pitLane: false,
-      lapCounter: false,
-      numCars: 0,
-    };
+    return (
+      this.source?.getInfo?.() || {
+        version: 'NOT CONNECTED',
+        fuelMode: false,
+        realMode: false,
+        pitLane: false,
+        lapCounter: false,
+        numCars: 0,
+      }
+    );
   }
 
   getState() {

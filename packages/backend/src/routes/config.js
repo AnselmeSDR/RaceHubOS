@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
@@ -26,13 +26,13 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: configs
+      data: configs,
     });
   } catch (error) {
     console.error('Error fetching configs:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -49,14 +49,14 @@ router.put('/bulk', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
     if (!controllers || !Array.isArray(controllers)) {
       return res.status(400).json({
         success: false,
-        error: 'controllers array is required'
+        error: 'controllers array is required',
       });
     }
 
@@ -64,13 +64,13 @@ router.put('/bulk', async (req, res) => {
 
     res.json({
       success: true,
-      data: configs
+      data: configs,
     });
   } catch (error) {
     console.error('Error bulk updating configs:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -87,7 +87,7 @@ router.get('/validate', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
@@ -95,13 +95,13 @@ router.get('/validate', async (req, res) => {
 
     res.json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     console.error('Error validating configs:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -118,7 +118,7 @@ router.get('/:controller', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
@@ -126,13 +126,13 @@ router.get('/:controller', async (req, res) => {
 
     res.json({
       success: true,
-      data: config
+      data: config,
     });
   } catch (error) {
     console.error('Error fetching config:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -149,7 +149,7 @@ router.put('/:controller', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
@@ -157,13 +157,13 @@ router.put('/:controller', async (req, res) => {
 
     res.json({
       success: true,
-      data: config
+      data: config,
     });
   } catch (error) {
     console.error('Error updating config:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -179,7 +179,7 @@ router.delete('/', async (req, res) => {
     if (!trackId) {
       return res.status(400).json({
         success: false,
-        error: 'trackId is required'
+        error: 'trackId is required',
       });
     }
 
@@ -187,13 +187,13 @@ router.delete('/', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'All configurations cleared'
+      message: 'All configurations cleared',
     });
   } catch (error) {
     console.error('Error clearing configs:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });

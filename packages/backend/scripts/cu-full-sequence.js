@@ -16,12 +16,27 @@ if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 const logFile = path.join(logsDir, `cu-full-sequence-${timestamp}.json`);
 
-const STATES = ['RACING', 'LIGHTS_1', 'LIGHTS_2', 'LIGHTS_3', 'LIGHTS_4', 'LIGHTS_5', 'FALSE_START', 'GO', '?', 'STOPPED'];
+const STATES = [
+  'RACING',
+  'LIGHTS_1',
+  'LIGHTS_2',
+  'LIGHTS_3',
+  'LIGHTS_4',
+  'LIGHTS_5',
+  'FALSE_START',
+  'GO',
+  '?',
+  'STOPPED',
+];
 
 const log = { startTime: new Date().toISOString(), sequence: [], events: [] };
 const startTime = Date.now();
-function elapsed() { return Date.now() - startTime; }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function elapsed() {
+  return Date.now() - startTime;
+}
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function logEvent(type, data) {
   const e = { time: elapsed(), type, ...data };
@@ -66,7 +81,9 @@ async function main() {
 
     // Start polling
     const poll = setInterval(async () => {
-      try { await cu.poll(); } catch (e) {}
+      try {
+        await cu.poll();
+      } catch (e) {}
     }, 100);
 
     await sleep(500);
@@ -126,23 +143,22 @@ async function main() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`Total timer events: ${timerCount}`);
 
-    const timerEvents = log.events.filter(e => e.type === 'timer');
+    const timerEvents = log.events.filter((e) => e.type === 'timer');
     if (timerEvents.length > 0) {
       const byCtrl = {};
-      timerEvents.forEach(t => byCtrl[t.controller] = (byCtrl[t.controller] || 0) + 1);
+      timerEvents.forEach((t) => (byCtrl[t.controller] = (byCtrl[t.controller] || 0) + 1));
       console.log('By controller:', byCtrl);
     }
 
-    const statusEvents = log.events.filter(e => e.type === 'status');
-    const statesSeen = [...new Set(statusEvents.map(e => e.state))];
+    const statusEvents = log.events.filter((e) => e.type === 'status');
+    const statesSeen = [...new Set(statusEvents.map((e) => e.state))];
     console.log('States seen:', statesSeen.join(' → '));
 
     console.log('\nSequence executed:');
-    log.sequence.forEach(s => console.log(`  ${s.step}. ${s.action} at ${s.time}ms`));
+    log.sequence.forEach((s) => console.log(`  ${s.step}. ${s.action} at ${s.time}ms`));
 
     // Keep connection alive - don't disconnect
     console.log('\n✅ Test complete (connection kept alive)');
-
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {

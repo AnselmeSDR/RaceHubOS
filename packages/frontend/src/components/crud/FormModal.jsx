@@ -21,7 +21,7 @@ export default function FormModal({
   success,
   saveLabel,
   deleteLabel,
-  children
+  children,
 }) {
   const { t } = useTranslation('common')
   const handleSubmit = (e) => {
@@ -32,12 +32,7 @@ export default function FormModal({
   return (
     <Modal open={open} onClose={onClose} title={title} icon={icon} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {(error || success) && (
-          <ErrorMessage
-            message={error || success}
-            type={error ? 'error' : 'success'}
-          />
-        )}
+        {(error || success) && <ErrorMessage message={error || success} type={error ? 'error' : 'success'} />}
 
         {children}
 
@@ -59,7 +54,7 @@ export default function FormModal({
             {t('cancel')}
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? t('saving') : (saveLabel || t('save'))}
+            {saving ? t('saving') : saveLabel || t('save')}
           </Button>
         </ModalFooter>
       </form>
@@ -78,9 +73,7 @@ export function FormField({ label, required, error, children }) {
         {required && <span className="text-destructive ml-1">*</span>}
       </label>
       {children}
-      {error && (
-        <p className="text-destructive text-xs mt-1">{error}</p>
-      )}
+      {error && <p className="text-destructive text-xs mt-1">{error}</p>}
     </div>
   )
 }
@@ -100,16 +93,7 @@ export function FormSection({ title, children }) {
   )
 }
 
-export function TextField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required,
-  type = 'text',
-  multiline = false,
-  error
-}) {
+export function TextField({ label, value, onChange, placeholder, required, type = 'text', multiline = false, error }) {
   return (
     <FormField label={label} required={required} error={error}>
       {multiline ? (
@@ -136,15 +120,7 @@ export function TextField({
 /**
  * Select field
  */
-export function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder,
-  required,
-  error
-}) {
+export function SelectField({ label, value, onChange, options, placeholder, required, error }) {
   const { t } = useTranslation('common')
   return (
     <FormField label={label} required={required} error={error}>

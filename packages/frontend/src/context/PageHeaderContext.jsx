@@ -6,18 +6,25 @@ export function PageHeaderProvider({ children }) {
   const [header, setHeader] = useState(null)
   const resetHeader = useCallback(() => setHeader(null), [])
 
-  return (
-    <PageHeaderContext.Provider value={{ header, setHeader, resetHeader }}>
-      {children}
-    </PageHeaderContext.Provider>
-  )
+  return <PageHeaderContext.Provider value={{ header, setHeader, resetHeader }}>{children}</PageHeaderContext.Provider>
 }
 
 export function usePageHeader() {
   return useContext(PageHeaderContext)
 }
 
-export function useSetPageHeader({ title, icon, color, loading, totalCount, viewMode, onViewModeChange, hasGrid, onAdd, addLabel }) {
+export function useSetPageHeader({
+  title,
+  icon,
+  color,
+  loading,
+  totalCount,
+  viewMode,
+  onViewModeChange,
+  hasGrid,
+  onAdd,
+  addLabel,
+}) {
   const { setHeader, resetHeader } = useContext(PageHeaderContext)
 
   useEffect(() => {

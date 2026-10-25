@@ -24,7 +24,8 @@ async function cascadeFor(label, deletedParents, childUpdates) {
   for (const parent of deletedParents) {
     for (const [table, where] of childUpdates(parent)) {
       const count = apply
-        ? (await prisma[table].updateMany({ where: { ...where, ...active }, data: { deletedAt: parent.deletedAt } })).count
+        ? (await prisma[table].updateMany({ where: { ...where, ...active }, data: { deletedAt: parent.deletedAt } }))
+            .count
         : await prisma[table].count({ where: { ...where, ...active } });
       total += count;
       if (count) console.log(`  ${label.padEnd(22)} ${parent.id.slice(0, 8)} → ${count} ${table}`);

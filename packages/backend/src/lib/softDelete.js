@@ -35,35 +35,47 @@ export async function softDeleteTrack(prisma, trackId) {
     const sessionIds = sessions.map((s) => s.id);
 
     const counts = {};
-    counts.laps = (await tx.lap.updateMany({
-      where: { ...active, OR: [{ trackId }, { sessionId: { in: sessionIds } }] },
-      data: { deletedAt },
-    })).count;
+    counts.laps = (
+      await tx.lap.updateMany({
+        where: { ...active, OR: [{ trackId }, { sessionId: { in: sessionIds } }] },
+        data: { deletedAt },
+      })
+    ).count;
 
-    counts.sessionDrivers = (await tx.sessionDriver.updateMany({
-      where: { ...active, sessionId: { in: sessionIds } },
-      data: { deletedAt },
-    })).count;
+    counts.sessionDrivers = (
+      await tx.sessionDriver.updateMany({
+        where: { ...active, sessionId: { in: sessionIds } },
+        data: { deletedAt },
+      })
+    ).count;
 
-    counts.sessions = (await tx.session.updateMany({
-      where: { ...active, ...sessionFilter },
-      data: { deletedAt },
-    })).count;
+    counts.sessions = (
+      await tx.session.updateMany({
+        where: { ...active, ...sessionFilter },
+        data: { deletedAt },
+      })
+    ).count;
 
-    counts.championships = (await tx.championship.updateMany({
-      where: { ...active, trackId },
-      data: { deletedAt },
-    })).count;
+    counts.championships = (
+      await tx.championship.updateMany({
+        where: { ...active, trackId },
+        data: { deletedAt },
+      })
+    ).count;
 
-    counts.trackRecords = (await tx.trackRecord.updateMany({
-      where: { ...active, trackId },
-      data: { deletedAt },
-    })).count;
+    counts.trackRecords = (
+      await tx.trackRecord.updateMany({
+        where: { ...active, trackId },
+        data: { deletedAt },
+      })
+    ).count;
 
-    counts.participations = (await tx.championshipParticipant.updateMany({
-      where: { ...active, championshipId: { in: championshipIds } },
-      data: { deletedAt },
-    })).count;
+    counts.participations = (
+      await tx.championshipParticipant.updateMany({
+        where: { ...active, championshipId: { in: championshipIds } },
+        data: { deletedAt },
+      })
+    ).count;
 
     await tx.track.update({ where: { id: trackId }, data: { deletedAt } });
 
@@ -86,30 +98,42 @@ export async function restoreTrack(prisma, trackId) {
     const ofTrack = { OR: [{ trackId }, { championship: { trackId } }] };
 
     return {
-      laps: (await tx.lap.updateMany({
-        where: { deletedAt, OR: [{ trackId }, { session: ofTrack }] },
-        data: { deletedAt: null },
-      })).count,
-      sessionDrivers: (await tx.sessionDriver.updateMany({
-        where: { deletedAt, session: ofTrack },
-        data: { deletedAt: null },
-      })).count,
-      sessions: (await tx.session.updateMany({
-        where: { deletedAt, ...ofTrack },
-        data: { deletedAt: null },
-      })).count,
-      championships: (await tx.championship.updateMany({
-        where: { deletedAt, trackId },
-        data: { deletedAt: null },
-      })).count,
-      participations: (await tx.championshipParticipant.updateMany({
-        where: { deletedAt, championship: { trackId } },
-        data: { deletedAt: null },
-      })).count,
-      trackRecords: (await tx.trackRecord.updateMany({
-        where: { deletedAt, trackId },
-        data: { deletedAt: null },
-      })).count,
+      laps: (
+        await tx.lap.updateMany({
+          where: { deletedAt, OR: [{ trackId }, { session: ofTrack }] },
+          data: { deletedAt: null },
+        })
+      ).count,
+      sessionDrivers: (
+        await tx.sessionDriver.updateMany({
+          where: { deletedAt, session: ofTrack },
+          data: { deletedAt: null },
+        })
+      ).count,
+      sessions: (
+        await tx.session.updateMany({
+          where: { deletedAt, ...ofTrack },
+          data: { deletedAt: null },
+        })
+      ).count,
+      championships: (
+        await tx.championship.updateMany({
+          where: { deletedAt, trackId },
+          data: { deletedAt: null },
+        })
+      ).count,
+      participations: (
+        await tx.championshipParticipant.updateMany({
+          where: { deletedAt, championship: { trackId } },
+          data: { deletedAt: null },
+        })
+      ).count,
+      trackRecords: (
+        await tx.trackRecord.updateMany({
+          where: { deletedAt, trackId },
+          data: { deletedAt: null },
+        })
+      ).count,
     };
   });
 }
@@ -124,10 +148,19 @@ export async function softDeleteDriver(prisma, driverId) {
     // A record stands for one lap: hiding the lap must hide the record too
     const trackRecords = await tx.trackRecord.updateMany({ where: { ...active, driverId }, data: { deletedAt } });
     // Championship entries are hidden, not erased: the driver stays traceable
-    const participations = await tx.championshipParticipant.updateMany({ where: { ...active, driverId }, data: { deletedAt } });
+    const participations = await tx.championshipParticipant.updateMany({
+      where: { ...active, driverId },
+      data: { deletedAt },
+    });
     await tx.driver.update({ where: { id: driverId }, data: { deletedAt } });
 
-    return { deletedAt, laps: laps.count, sessionDrivers: sessionDrivers.count, trackRecords: trackRecords.count, participations: participations.count };
+    return {
+      deletedAt,
+      laps: laps.count,
+      sessionDrivers: sessionDrivers.count,
+      trackRecords: trackRecords.count,
+      participations: participations.count,
+    };
   });
 }
 
@@ -143,9 +176,13 @@ export async function restoreDriver(prisma, driverId) {
 
     return {
       laps: (await tx.lap.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } })).count,
-      sessionDrivers: (await tx.sessionDriver.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } })).count,
-      trackRecords: (await tx.trackRecord.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } })).count,
-      participations: (await tx.championshipParticipant.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } })).count,
+      sessionDrivers: (await tx.sessionDriver.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } }))
+        .count,
+      trackRecords: (await tx.trackRecord.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } }))
+        .count,
+      participations: (
+        await tx.championshipParticipant.updateMany({ where: { driverId, deletedAt }, data: { deletedAt: null } })
+      ).count,
     };
   });
 }
@@ -177,7 +214,8 @@ export async function restoreCar(prisma, carId) {
 
     return {
       laps: (await tx.lap.updateMany({ where: { carId, deletedAt }, data: { deletedAt: null } })).count,
-      sessionDrivers: (await tx.sessionDriver.updateMany({ where: { carId, deletedAt }, data: { deletedAt: null } })).count,
+      sessionDrivers: (await tx.sessionDriver.updateMany({ where: { carId, deletedAt }, data: { deletedAt: null } }))
+        .count,
       trackRecords: (await tx.trackRecord.updateMany({ where: { carId, deletedAt }, data: { deletedAt: null } })).count,
     };
   });

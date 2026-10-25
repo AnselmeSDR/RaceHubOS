@@ -61,7 +61,7 @@ export function withNestedImageUrls(entity) {
   }
 
   if (result.drivers) {
-    result.drivers = result.drivers.map(d => {
+    result.drivers = result.drivers.map((d) => {
       if (d.driver) {
         return { ...d, driver: withImageUrl(d.driver) };
       }

@@ -14,12 +14,12 @@ export class ConfigService extends EventEmitter {
   async getConfig(controller, trackId) {
     const config = await this.prisma.controllerConfig.findUnique({
       where: {
-        trackId_controller: { trackId, controller: Number(controller) }
+        trackId_controller: { trackId, controller: Number(controller) },
       },
       include: {
         driver: true,
-        car: true
-      }
+        car: true,
+      },
     });
 
     return config;
@@ -42,22 +42,22 @@ export class ConfigService extends EventEmitter {
       where: { trackId },
       include: {
         driver: true,
-        car: true
+        car: true,
       },
-      orderBy: { controller: 'asc' }
+      orderBy: { controller: 'asc' },
     });
 
     // Build full list of 6 slots (0-5, 0-indexed)
     const slots = [];
     for (let i = 0; i < 6; i++) {
-      const existing = configs.find(c => c.controller === i);
+      const existing = configs.find((c) => c.controller === i);
       slots.push({
         controller: i,
         driverId: existing?.driverId || null,
         carId: existing?.carId || null,
         driver: existing?.driver || null,
         car: existing?.car || null,
-        isActive: true
+        isActive: true,
       });
     }
 
@@ -71,22 +71,22 @@ export class ConfigService extends EventEmitter {
     const controllerInt = Number(controller);
     const config = await this.prisma.controllerConfig.upsert({
       where: {
-        trackId_controller: { trackId, controller: controllerInt }
+        trackId_controller: { trackId, controller: controllerInt },
       },
       create: {
         controller: controllerInt,
         trackId,
         driverId: driverId || null,
-        carId: carId || null
+        carId: carId || null,
       },
       update: {
         driverId: driverId || null,
-        carId: carId || null
+        carId: carId || null,
       },
       include: {
         driver: true,
-        car: true
-      }
+        car: true,
+      },
     });
 
     this.emit('config:updated', { controller: controllerInt, config });
@@ -116,7 +116,7 @@ export class ConfigService extends EventEmitter {
    */
   async clearAll(trackId) {
     await this.prisma.controllerConfig.deleteMany({
-      where: { trackId }
+      where: { trackId },
     });
 
     this.io?.emit('config:cleared', { trackId });
@@ -138,7 +138,7 @@ export class ConfigService extends EventEmitter {
       driverId: config.driverId,
       carId: config.carId,
       driver: config.driver,
-      car: config.car
+      car: config.car,
     };
   }
 
@@ -147,11 +147,11 @@ export class ConfigService extends EventEmitter {
    */
   async validateConfiguration(trackId) {
     const configs = await this.getAllConfigs(trackId);
-    const unconfigured = configs.filter(c => c.config && !c.isConfigured);
+    const unconfigured = configs.filter((c) => c.config && !c.isConfigured);
 
     return {
       valid: unconfigured.length === 0,
-      unconfiguredSlots: unconfigured.map(c => c.controller)
+      unconfiguredSlots: unconfigured.map((c) => c.controller),
     };
   }
 }

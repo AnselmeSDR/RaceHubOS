@@ -55,7 +55,14 @@ const championshipInclude = {
 
 /** Ids from a comma-separated query parameter, deduplicated. */
 export function idsFromQuery(raw) {
-  return [...new Set(String(raw ?? '').split(',').map((id) => id.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      String(raw ?? '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 /** One workbook for a hand-picked set of sessions. */

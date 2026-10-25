@@ -139,35 +139,38 @@ export function DeviceProvider({ children }) {
   }, [])
 
   // Connect to a device (persisted to DB on success by backend)
-  const connect = useCallback(async (address) => {
-    setConnecting(true)
-    try {
-      const response = await fetch(`${API_URL}/api/bluetooth/connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
-      })
-      const data = await response.json()
+  const connect = useCallback(
+    async (address) => {
+      setConnecting(true)
+      try {
+        const response = await fetch(`${API_URL}/api/bluetooth/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address }),
+        })
+        const data = await response.json()
 
-      if (data.success) {
-        setConnected(true)
-        setDeviceType(data.deviceType)
-        setDeviceAddress(address)
+        if (data.success) {
+          setConnected(true)
+          setDeviceType(data.deviceType)
+          setDeviceAddress(address)
 
-        // Reload devices (backend persisted the device)
-        await loadDevices()
+          // Reload devices (backend persisted the device)
+          await loadDevices()
 
-        return { success: true, deviceType: data.deviceType }
+          return { success: true, deviceType: data.deviceType }
+        }
+
+        return { success: false, error: data.error }
+      } catch (error) {
+        console.error('[DeviceContext] Connect error:', error)
+        return { success: false, error: error.message }
+      } finally {
+        setConnecting(false)
       }
-
-      return { success: false, error: data.error }
-    } catch (error) {
-      console.error('[DeviceContext] Connect error:', error)
-      return { success: false, error: error.message }
-    } finally {
-      setConnecting(false)
-    }
-  }, [loadDevices])
+    },
+    [loadDevices]
+  )
 
   // Disconnect current device
   const disconnect = useCallback(async () => {
@@ -191,21 +194,24 @@ export function DeviceProvider({ children }) {
   }, [])
 
   // Remove a device from DB
-  const removeDevice = useCallback(async (deviceId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/devices/${deviceId}`, {
-        method: 'DELETE',
-      })
-      const data = await response.json()
-      if (data.success) {
-        await loadDevices()
+  const removeDevice = useCallback(
+    async (deviceId) => {
+      try {
+        const response = await fetch(`${API_URL}/api/devices/${deviceId}`, {
+          method: 'DELETE',
+        })
+        const data = await response.json()
+        if (data.success) {
+          await loadDevices()
+        }
+        return data
+      } catch (error) {
+        console.error('[DeviceContext] Remove device error:', error)
+        return { success: false, error: error.message }
       }
-      return data
-    } catch (error) {
-      console.error('[DeviceContext] Remove device error:', error)
-      return { success: false, error: error.message }
-    }
-  }, [loadDevices])
+    },
+    [loadDevices]
+  )
 
   // Start race
   const startRace = useCallback(async () => {
@@ -281,11 +287,7 @@ export function DeviceProvider({ children }) {
     loadDevices,
   }
 
-  return (
-    <DeviceContext.Provider value={value}>
-      {children}
-    </DeviceContext.Provider>
-  )
+  return <DeviceContext.Provider value={value}>{children}</DeviceContext.Provider>
 }
 
 export function useDevice() {

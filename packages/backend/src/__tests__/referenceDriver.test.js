@@ -1,10 +1,5 @@
 import { prisma } from './setup.js';
-import {
-  getReferenceDriver,
-  setReferenceDriver,
-  createStig,
-  migrateBalancingLaps,
-} from '../lib/referenceDriver.js';
+import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
 
 async function makeLap(sessionId, trackId, carId, { phase, driverId = null, lapNumber = 1 }) {
   return prisma.lap.create({

@@ -4,8 +4,8 @@ import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS, carSpecsFrom } from '@race
  * L'équipement réel d'une voiture : ce qui est monté dessus, et ses mesures.
  * Tout est facultatif — une voiture non documentée reste utilisable.
  */
-describe('caractéristiques d\'une voiture', () => {
-  it('couvre l\'équipement et les mesures', () => {
+describe("caractéristiques d'une voiture", () => {
+  it("couvre l'équipement et les mesures", () => {
     expect(CAR_SPECS).toEqual([...CAR_TEXT_SPECS, ...CAR_NUMBER_SPECS]);
     expect(CAR_TEXT_SPECS).toContain('motor');
     expect(CAR_TEXT_SPECS).toContain('tyresRear');
@@ -29,7 +29,7 @@ describe('caractéristiques d\'une voiture', () => {
     expect(specs.wheelbaseMm).toBe(81.5);
   });
 
-  it('ignore une mesure qui n\'est pas un nombre', () => {
+  it("ignore une mesure qui n'est pas un nombre", () => {
     expect(carSpecsFrom({ weightGrams: 'lourd' }).weightGrams).toBeNull();
   });
 
@@ -40,14 +40,14 @@ describe('caractéristiques d\'une voiture', () => {
   });
 
   /** En modification, un champ non envoyé ne doit pas être effacé. */
-  it('ne touche qu\'aux champs envoyés lors d\'une modification', () => {
+  it("ne touche qu'aux champs envoyés lors d'une modification", () => {
     const specs = carSpecsFrom({ motor: 'Slot.it' }, { partial: true });
 
     expect(specs).toEqual({ motor: 'Slot.it' });
     expect('guide' in specs).toBe(false);
   });
 
-  it('permet d\'effacer un champ en envoyant une valeur vide', () => {
+  it("permet d'effacer un champ en envoyant une valeur vide", () => {
     expect(carSpecsFrom({ motor: '' }, { partial: true })).toEqual({ motor: null });
   });
 });

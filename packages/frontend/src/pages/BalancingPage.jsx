@@ -6,13 +6,7 @@ import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import SessionSection from '../components/championship/SessionSection'
 import BalancingChart from '../components/balancing/BalancingChart'
 import BalancingStandings from '../components/balancing/BalancingStandings'
@@ -42,7 +36,12 @@ export default function BalancingPage() {
   const [tracks, setTracks] = useState([])
   const [referenceDriver, setReferenceDriver] = useState(undefined) // undefined = not loaded yet
   const [loading, setLoading] = useState(false)
-  const { showStandings, toggleStandings, balancingTrack: selectedTrackId, setBalancingTrack: setSelectedTrackId } = useApp()
+  const {
+    showStandings,
+    toggleStandings,
+    balancingTrack: selectedTrackId,
+    setBalancingTrack: setSelectedTrackId,
+  } = useApp()
   const [standings, setStandings] = useState([])
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
@@ -66,7 +65,9 @@ export default function BalancingPage() {
           fetch(`${API_URL}/api/cars`),
         ])
         const [tracksData, driversData, carsData] = await Promise.all([
-          tracksRes.json(), driversRes.json(), carsRes.json(),
+          tracksRes.json(),
+          driversRes.json(),
+          carsRes.json(),
         ])
         if (tracksData.success && tracksData.data?.length > 0) {
           setTracks(tracksData.data)
@@ -104,12 +105,16 @@ export default function BalancingPage() {
   // Balancing laps are credited to the reference driver; warn when none is set
   useEffect(() => {
     fetch(`${API_URL}/api/drivers/reference`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setReferenceDriver(d.data) })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setReferenceDriver(d.data)
+      })
       .catch(() => {})
   }, [])
 
-  useEffect(() => { fetchStandings() }, [selectedTrackId])
+  useEffect(() => {
+    fetchStandings()
+  }, [selectedTrackId])
 
   useEffect(() => {
     const onFinished = () => fetchStandings()
@@ -126,13 +131,15 @@ export default function BalancingPage() {
       if (!foundSession) return
 
       if ((!foundSession.drivers || foundSession.drivers.length === 0) && previousDrivers.length > 0) {
-        const driversConfig = previousDrivers.map(sd => ({
-          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
+        const driversConfig = previousDrivers.map((sd) => ({
+          controller: sd.controller,
+          driverId: sd.driverId,
+          carId: sd.carId,
         }))
         await fetch(`${API_URL}/api/sessions/${foundSession.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: driversConfig })
+          body: JSON.stringify({ drivers: driversConfig }),
         })
       }
       await loadSession(foundSession.id)
@@ -157,13 +164,15 @@ export default function BalancingPage() {
         gracePeriod: session?.gracePeriod || 30000,
       })
       if (result.success && result.data?.id && session?.drivers?.length > 0) {
-        const driversConfig = session.drivers.map(sd => ({
-          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
+        const driversConfig = session.drivers.map((sd) => ({
+          controller: sd.controller,
+          driverId: sd.driverId,
+          carId: sd.carId,
         }))
         await fetch(`${API_URL}/api/sessions/${result.data.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: driversConfig })
+          body: JSON.stringify({ drivers: driversConfig }),
         })
         await loadSession(result.data.id)
       }
@@ -178,8 +187,12 @@ export default function BalancingPage() {
     if (!session?.id) return
     await startSession(session.id)
   }
-  const handlePause = async () => { if (session?.id) await pauseSession(session.id) }
-  const handleResume = async () => { if (session?.id) await resumeSession(session.id) }
+  const handlePause = async () => {
+    if (session?.id) await pauseSession(session.id)
+  }
+  const handleResume = async () => {
+    if (session?.id) await resumeSession(session.id)
+  }
   const handleStop = async () => {
     if (!session?.id) return
     await stopSession(session.id)
@@ -188,25 +201,35 @@ export default function BalancingPage() {
   const handleSaveConfig = async (data) => {
     if (!session?.id) return
     try {
-      if (data.name !== undefined || data.maxDuration !== undefined || data.maxLaps !== undefined || data.gracePeriod !== undefined) {
+      if (
+        data.name !== undefined ||
+        data.maxDuration !== undefined ||
+        data.maxLaps !== undefined ||
+        data.gracePeriod !== undefined
+      ) {
         await fetch(`${API_URL}/api/sessions/${session.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
+          body: JSON.stringify({
+            name: data.name,
+            maxDuration: data.maxDuration,
+            maxLaps: data.maxLaps,
+            gracePeriod: data.gracePeriod,
+          }),
         })
       }
       if (data.status !== undefined && data.status !== session.status) {
         await fetch(`${API_URL}/api/sessions/${session.id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: data.status })
+          body: JSON.stringify({ status: data.status }),
         })
       }
       if (data.drivers?.length > 0) {
         await fetch(`${API_URL}/api/sessions/${session.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: data.drivers })
+          body: JSON.stringify({ drivers: data.drivers }),
         })
       }
       await loadSession(session.id)
@@ -230,8 +253,9 @@ export default function BalancingPage() {
     if (result.success) await fetchStandings()
   }
 
-  const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === SessionType.BALANCING
-  const selectedTrack = tracks.find(track => track.id === selectedTrackId)
+  const isSessionActive =
+    session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === SessionType.BALANCING
+  const selectedTrack = tracks.find((track) => track.id === selectedTrackId)
 
   return (
     <div className="h-full flex flex-col">
@@ -246,8 +270,10 @@ export default function BalancingPage() {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {tracks.map(track => (
-                <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>
+              {tracks.map((track) => (
+                <SelectItem key={track.id} value={track.id}>
+                  {track.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -316,9 +342,7 @@ export default function BalancingPage() {
                   onMaxLapTimeChange={handleMaxLapTimeChange}
                 />
 
-                {session && maxLapsCompleted > 0 && (
-                  <BalancingChart entries={entries} maxLapTime={maxLapTime} />
-                )}
+                {session && maxLapsCompleted > 0 && <BalancingChart entries={entries} maxLapTime={maxLapTime} />}
               </>
             )}
           </div>

@@ -32,8 +32,7 @@ describe('déroulé de course', () => {
     isDNF: false,
   });
 
-  const passage = (controller, lapTime = 10_000) =>
-    service.handleLap({ controller, lapTime, sector: 1 });
+  const passage = (controller, lapTime = 10_000) => service.handleLap({ controller, lapTime, sector: 1 });
 
   /** Fige lapsAtFinishing comme le fait startFinishingPhase. */
   const drapeau = () => {
@@ -96,7 +95,7 @@ describe('déroulé de course', () => {
       expect(service.saveLap).not.toHaveBeenCalled();
     });
 
-    it('ne ralentit pas celui qui n\'a pas encore fini son tour', async () => {
+    it("ne ralentit pas celui qui n'a pas encore fini son tour", async () => {
       drapeau();
 
       await passage(1);
@@ -106,7 +105,7 @@ describe('déroulé de course', () => {
       expect(service.sessionDrivers[1]._throttled).toBeUndefined();
     });
 
-    it('ne réduit la vitesse qu\'une fois', async () => {
+    it("ne réduit la vitesse qu'une fois", async () => {
       drapeau();
 
       await passage(1);
@@ -123,9 +122,11 @@ describe('déroulé de course', () => {
 
       service.prisma = {
         sessionDriver: {
-          findUnique: jest.fn(({ where }) => Promise.resolve({
-            lapsAtFinishing: service.sessionDrivers.find((d) => d.id === where.id).lapsAtFinishing,
-          })),
+          findUnique: jest.fn(({ where }) =>
+            Promise.resolve({
+              lapsAtFinishing: service.sessionDrivers.find((d) => d.id === where.id).lapsAtFinishing,
+            })
+          ),
           update: jest.fn().mockResolvedValue({}),
         },
         $disconnect: jest.fn(),
@@ -134,7 +135,7 @@ describe('déroulé de course', () => {
       return service.sessionDrivers.map((d) => d.isDNF === true);
     };
 
-    it('classe qui a franchi la ligne, marque DNF qui ne l\'a pas fait', async () => {
+    it("classe qui a franchi la ligne, marque DNF qui ne l'a pas fait", async () => {
       expect(await dnfApres([1])).toEqual([false, true]);
     });
 
@@ -142,7 +143,7 @@ describe('déroulé de course', () => {
       expect(await dnfApres([1, 2])).toEqual([false, false]);
     });
 
-    it('marque tout le monde quand personne ne l\'a franchie', async () => {
+    it("marque tout le monde quand personne ne l'a franchie", async () => {
       expect(await dnfApres([])).toEqual([true, true]);
     });
   });
@@ -169,7 +170,7 @@ describe('déroulé de course', () => {
       expect(service.saveLap).not.toHaveBeenCalled();
     });
 
-    it('marque DNF qui n\'a pas atteint la limite', async () => {
+    it("marque DNF qui n'a pas atteint la limite", async () => {
       drapeau();
       service.prisma = {
         sessionDriver: {

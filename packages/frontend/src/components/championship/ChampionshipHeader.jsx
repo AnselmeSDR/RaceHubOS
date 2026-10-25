@@ -1,6 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import DeleteButton from '@/components/ui/DeleteButton'
-import { Settings, Clock, Flag, FlaskConical, PanelRightClose, PanelRightOpen, Trophy, GitBranch, Zap, Award } from 'lucide-react'
+import {
+  Settings,
+  Clock,
+  Flag,
+  FlaskConical,
+  PanelRightClose,
+  PanelRightOpen,
+  Trophy,
+  GitBranch,
+  Zap,
+  Award,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
@@ -8,9 +19,12 @@ import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType, sessi
 import ExportButton from '../ui/ExportButton'
 
 const TYPE_STYLE = {
-  [SessionType.PRACTICE]: { color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`, icon: FlaskConical },
+  [SessionType.PRACTICE]: {
+    color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`,
+    icon: FlaskConical,
+  },
   [SessionType.QUALIF]: { color: `${SESSION_COLORS.qualif.bg} ${SESSION_COLORS.qualif.text}`, icon: Clock },
-  [SessionType.RACE]: { color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag }
+  [SessionType.RACE]: { color: `${SESSION_COLORS.race.bg} ${SESSION_COLORS.race.text}`, icon: Flag },
 }
 
 export default function ChampionshipHeader({
@@ -32,17 +46,18 @@ export default function ChampionshipHeader({
   const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
     if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
-    const sameType = sessions.filter(s => s.type === session.type)
+    const sameType = sessions
+      .filter((s) => s.type === session.type)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    const index = sameType.findIndex(s => s.id === session.id) + 1
+    const index = sameType.findIndex((s) => s.id === session.id) + 1
     return `${t(sessionTypeAbbrKey(session.type))}${index}`
   }
 
   const getStatusDot = (session) => STATUS_DOTS[session.status] || null
 
   const isFinished = championship?.status === ChampionshipStatus.FINISHED
-  const qrSessions = sessions.filter(s => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
-  const allSessionsFinished = qrSessions.length > 0 && qrSessions.every(s => s.status === SessionStatus.FINISHED)
+  const qrSessions = sessions.filter((s) => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
+  const allSessionsFinished = qrSessions.length > 0 && qrSessions.every((s) => s.status === SessionStatus.FINISHED)
   const canFinish = allSessionsFinished && !isFinished
 
   const sortedSessions = [...sessions].sort((a, b) => {
@@ -69,7 +84,7 @@ export default function ChampionshipHeader({
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {sortedSessions.map(session => {
+          {sortedSessions.map((session) => {
             const config = TYPE_STYLE[session.type]
             const isSelected = selectedSession?.id === session.id
             const Icon = config.icon
@@ -108,9 +123,7 @@ export default function ChampionshipHeader({
       </div>
 
       <div className="flex items-center gap-1.5">
-        {isFinished && (
-          <Badge className="bg-muted text-muted-foreground">{t('detail.finished')}</Badge>
-        )}
+        {isFinished && <Badge className="bg-muted text-muted-foreground">{t('detail.finished')}</Badge>}
         {canFinish && (
           <Button size="sm" onClick={onFinish} className="bg-yellow-500 hover:bg-yellow-600 text-white">
             <Trophy className="size-3.5" />
@@ -118,14 +131,26 @@ export default function ChampionshipHeader({
           </Button>
         )}
         {championship?.mode === ChampionshipMode.AUTO && (
-          <button onClick={onToggleBracket} className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showBracket ? t('detail.hideBracket') : t('detail.showBracket')}>
+          <button
+            onClick={onToggleBracket}
+            className={`p-1.5 rounded transition-colors ${showBracket ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+            title={showBracket ? t('detail.hideBracket') : t('detail.showBracket')}
+          >
             <GitBranch className="size-4" />
           </button>
         )}
-        <button onClick={onToggleStandings} className={`p-1.5 rounded transition-colors ${showStandings ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={showStandings ? t('detail.hideStandings') : t('detail.showStandings')}>
+        <button
+          onClick={onToggleStandings}
+          className={`p-1.5 rounded transition-colors ${showStandings ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+          title={showStandings ? t('detail.hideStandings') : t('detail.showStandings')}
+        >
           {showStandings ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
         </button>
-        <button onClick={onConfig} className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} title={t('detail.configuration')}>
+        <button
+          onClick={onConfig}
+          className={`p-1.5 rounded transition-colors ${showConfig ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+          title={t('detail.configuration')}
+        >
           <Settings className="size-4" />
         </button>
         <ExportButton url={`/api/championships/${championship.id}/export`} />

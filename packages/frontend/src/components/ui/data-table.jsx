@@ -7,14 +7,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
@@ -55,7 +48,10 @@ function mergeColumnOrder(savedOrder, columns) {
     let anchor = -1
     for (let i = index - 1; i >= 0; i--) {
       const position = merged.indexOf(natural[i])
-      if (position !== -1) { anchor = position; break }
+      if (position !== -1) {
+        anchor = position
+        break
+      }
     }
     merged.splice(anchor + 1, 0, id)
   })
@@ -118,13 +114,12 @@ export function DataTable({
   }, [hasMore, loadingMore, onLoadMore])
 
   function handleVisibilityChange(updater) {
-    setColumnVisibility(prev => {
+    setColumnVisibility((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       savePref(`columns:${preferenceKey}`, next)
       return next
     })
   }
-
 
   // Drag & drop reorder
   function handleDragStart(e, colId) {
@@ -135,8 +130,8 @@ export function DataTable({
   function handleDragEnter(e, colId) {
     e.preventDefault()
     if (!dragCol.current || colId === dragCol.current || colId === 'actions' || e.currentTarget !== e.target) return
-    setColumnOrder(prev => {
-      const order = prev.length ? [...prev] : table.getAllLeafColumns().map(c => c.id)
+    setColumnOrder((prev) => {
+      const order = prev.length ? [...prev] : table.getAllLeafColumns().map((c) => c.id)
       const fromIdx = order.indexOf(dragCol.current)
       const toIdx = order.indexOf(colId)
       if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev
@@ -158,7 +153,7 @@ export function DataTable({
   }
 
   function handleDragEnd() {
-    setColumnOrder(current => {
+    setColumnOrder((current) => {
       savePref(`order:${preferenceKey}`, current)
       return current
     })
@@ -166,7 +161,7 @@ export function DataTable({
   }
 
   function handleSortingChange(updater) {
-    setSorting(prev => {
+    setSorting((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       if (onSortChange) {
         const sort = next[0]
@@ -204,9 +199,9 @@ export function DataTable({
     onSelectionChange?.(selectedRows)
   }, [rowSelection])
 
-  const toggleableColumns = table.getAllColumns().filter(
-    col => col.getCanHide() && col.id !== 'select' && col.id !== 'actions'
-  )
+  const toggleableColumns = table
+    .getAllColumns()
+    .filter((col) => col.getCanHide() && col.id !== 'select' && col.id !== 'actions')
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-lg">
@@ -238,8 +233,8 @@ export function DataTable({
                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    {column.columnDef.meta?.label
-                      || (typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id)}
+                    {column.columnDef.meta?.label ||
+                      (typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id)}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -250,11 +245,7 @@ export function DataTable({
           <div className="flex items-center gap-4 mt-2 pl-2">
             {options.map((option) => (
               <label key={option.key} className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={option.checked}
-                  onCheckedChange={option.onChange}
-                  className="h-3.5 w-3.5"
-                />
+                <Checkbox checked={option.checked} onCheckedChange={option.onChange} className="h-3.5 w-3.5" />
                 <span className="text-xs text-muted-foreground">{option.label}</span>
               </label>
             ))}
@@ -265,12 +256,8 @@ export function DataTable({
       {/* Selection actions */}
       {selectedRows.length > 0 && (
         <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border sticky top-[57px] z-10">
-          <span className="text-sm text-muted-foreground">
-            {t('selectedCount', { count: selectedRows.length })}
-          </span>
-          <div className="flex gap-2">
-            {renderActions?.(selectedRows)}
-          </div>
+          <span className="text-sm text-muted-foreground">{t('selectedCount', { count: selectedRows.length })}</span>
+          <div className="flex gap-2">{renderActions?.(selectedRows)}</div>
         </div>
       )}
 
@@ -289,8 +276,12 @@ export function DataTable({
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-head"
                     className={cn(
-                      "relative group h-12 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0",
-                      header.column.id === 'actions' ? 'px-1 w-8 text-center' : header.column.id === 'select' ? 'p-2 w-8 text-center' : 'px-4',
+                      'relative group h-12 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0',
+                      header.column.id === 'actions'
+                        ? 'px-1 w-8 text-center'
+                        : header.column.id === 'select'
+                          ? 'p-2 w-8 text-center'
+                          : 'px-4',
                       header.column.columnDef.meta?.className
                     )}
                     onDragEnter={(e) => canDrag && handleDragEnter(e, header.column.id)}
@@ -313,21 +304,22 @@ export function DataTable({
                         return (
                           <div
                             className={cn(
-                              "flex-1 flex items-center gap-2",
-                              canSort && "cursor-pointer select-none hover:text-foreground"
+                              'flex-1 flex items-center gap-2',
+                              canSort && 'cursor-pointer select-none hover:text-foreground'
                             )}
                             onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                           >
                             {header.isPlaceholder
                               ? null
                               : flexRender(header.column.columnDef.header, header.getContext())}
-                            {canSort && (
-                              header.column.getIsSorted() === 'asc'
-                                ? <ChevronUp className="w-4 h-4 text-black dark:text-white" />
-                                : header.column.getIsSorted() === 'desc'
-                                  ? <ChevronDown className="w-4 h-4 text-black dark:text-white" />
-                                  : <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
-                            )}
+                            {canSort &&
+                              (header.column.getIsSorted() === 'asc' ? (
+                                <ChevronUp className="w-4 h-4 text-black dark:text-white" />
+                              ) : header.column.getIsSorted() === 'desc' ? (
+                                <ChevronDown className="w-4 h-4 text-black dark:text-white" />
+                              ) : (
+                                <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
+                              ))}
                           </div>
                         )
                       })()}
@@ -346,10 +338,7 @@ export function DataTable({
                 data-testid="list-row"
                 data-entity-id={row.original?.id}
                 data-state={row.getIsSelected() && 'selected'}
-                className={cn(
-                  onRowClick && 'cursor-pointer',
-                  rowClassName?.(row.original),
-                )}
+                className={cn(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
                 onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -359,8 +348,12 @@ export function DataTable({
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-cell"
                     className={cn(
-                      "align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-                      cell.column.id === 'actions' ? 'px-1 py-1 text-center' : cell.column.id === 'select' ? 'p-2 text-center' : 'px-4 py-3',
+                      'align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0',
+                      cell.column.id === 'actions'
+                        ? 'px-1 py-1 text-center'
+                        : cell.column.id === 'select'
+                          ? 'p-2 text-center'
+                          : 'px-4 py-3',
                       cell.column.columnDef.meta?.className
                     )}
                   >
@@ -404,10 +397,7 @@ export function createSelectColumn(t) {
     id: 'select',
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label={t('selectAll')}
         className="h-4 w-4"

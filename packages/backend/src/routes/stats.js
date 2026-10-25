@@ -22,9 +22,11 @@ router.get('/drivers', async (req, res) => {
     // Base query for drivers with their stats
     const drivers = await prisma.driver.findMany({
       include: {
-        laps: hasFilter ? {
-          where: { session: sessionFilter },
-        } : true,
+        laps: hasFilter
+          ? {
+              where: { session: sessionFilter },
+            }
+          : true,
         sessions: {
           where: hasFilter ? { session: sessionFilter } : undefined,
           include: { session: true },
@@ -34,25 +36,22 @@ router.get('/drivers', async (req, res) => {
     });
 
     // Calculate statistics for each driver
-    const stats = drivers.map(driver => {
+    const stats = drivers.map((driver) => {
       const allLaps = driver.laps || [];
-      const validLaps = allLaps.filter(lap => !lap.deletedAt);
+      const validLaps = allLaps.filter((lap) => !lap.deletedAt);
 
       // Calculate best lap
-      const bestLap = validLaps.length > 0
-        ? Math.min(...validLaps.map(lap => lap.lapTime))
-        : null;
+      const bestLap = validLaps.length > 0 ? Math.min(...validLaps.map((lap) => lap.lapTime)) : null;
 
       // Calculate average lap time
-      const avgLapTime = validLaps.length > 0
-        ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length
-        : null;
+      const avgLapTime =
+        validLaps.length > 0 ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length : null;
 
       // Count races, wins, podiums
       const sessions = driver.sessions || [];
-      const races = sessions.filter(sd => sd.session.type === SessionType.RACE);
-      const wins = races.filter(sd => sd.finalPos === 1).length;
-      const podiums = races.filter(sd => sd.finalPos && sd.finalPos <= 3).length;
+      const races = sessions.filter((sd) => sd.session.type === SessionType.RACE);
+      const wins = races.filter((sd) => sd.finalPos === 1).length;
+      const podiums = races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
 
       return {
         id: driver.id,
@@ -68,8 +67,8 @@ router.get('/drivers', async (req, res) => {
           podiums,
           bestLap,
           avgLapTime,
-          dnf: races.filter(sd => !sd.finalPos).length,
-          polePositions: races.filter(sd => sd.gridPos === 1).length,
+          dnf: races.filter((sd) => !sd.finalPos).length,
+          polePositions: races.filter((sd) => sd.gridPos === 1).length,
         },
       };
     });
@@ -106,47 +105,50 @@ router.get('/cars', async (req, res) => {
 
     const cars = await prisma.car.findMany({
       include: {
-        laps: championshipId || trackId ? {
-          where: {
-            session: {
-              ...(championshipId && { championshipId }),
-              ...(trackId && { trackId }),
-            },
-          },
-        } : true,
-        sessions: championshipId || trackId ? {
-          where: {
-            session: {
-              ...(championshipId && { championshipId }),
-              ...(trackId && { trackId }),
-            },
-          },
-          include: {
-            session: true,
-          },
-        } : {
-          include: {
-            session: true,
-          },
-        },
+        laps:
+          championshipId || trackId
+            ? {
+                where: {
+                  session: {
+                    ...(championshipId && { championshipId }),
+                    ...(trackId && { trackId }),
+                  },
+                },
+              }
+            : true,
+        sessions:
+          championshipId || trackId
+            ? {
+                where: {
+                  session: {
+                    ...(championshipId && { championshipId }),
+                    ...(trackId && { trackId }),
+                  },
+                },
+                include: {
+                  session: true,
+                },
+              }
+            : {
+                include: {
+                  session: true,
+                },
+              },
       },
     });
 
-    const stats = cars.map(car => {
+    const stats = cars.map((car) => {
       const allLaps = car.laps || [];
-      const validLaps = allLaps.filter(lap => !lap.deletedAt);
+      const validLaps = allLaps.filter((lap) => !lap.deletedAt);
 
-      const bestLap = validLaps.length > 0
-        ? Math.min(...validLaps.map(lap => lap.lapTime))
-        : null;
+      const bestLap = validLaps.length > 0 ? Math.min(...validLaps.map((lap) => lap.lapTime)) : null;
 
-      const avgLapTime = validLaps.length > 0
-        ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length
-        : null;
+      const avgLapTime =
+        validLaps.length > 0 ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length : null;
 
       const sessions = car.sessions || [];
-      const races = sessions.filter(sd => sd.session.type === SessionType.RACE);
-      const wins = races.filter(sd => sd.finalPos === 1).length;
+      const races = sessions.filter((sd) => sd.session.type === SessionType.RACE);
+      const wins = races.filter((sd) => sd.finalPos === 1).length;
 
       return {
         id: car.id,
@@ -161,9 +163,7 @@ router.get('/cars', async (req, res) => {
           wins,
           bestLap,
           avgLapTime,
-          reliability: races.length > 0
-            ? (races.filter(sd => sd.finalPos).length / races.length) * 100
-            : 0,
+          reliability: races.length > 0 ? (races.filter((sd) => sd.finalPos).length / races.length) * 100 : 0,
         },
       };
     });
@@ -207,12 +207,10 @@ router.get('/tracks', async (req, res) => {
       },
     });
 
-    const stats = tracks.map(track => {
+    const stats = tracks.map((track) => {
       const sessions = track.sessions || [];
-      const allLaps = sessions.flatMap(s => s.laps || []);
-      const bestLap = allLaps.length > 0
-        ? Math.min(...allLaps.map(lap => lap.lapTime))
-        : track.bestLap;
+      const allLaps = sessions.flatMap((s) => s.laps || []);
+      const bestLap = allLaps.length > 0 ? Math.min(...allLaps.map((lap) => lap.lapTime)) : track.bestLap;
 
       return {
         id: track.id,
@@ -226,14 +224,17 @@ router.get('/tracks', async (req, res) => {
           totalLaps: sessions.reduce((sum, s) => sum + s._count.laps, 0),
           bestLap,
           bestLapBy: track.bestLapBy,
-          avgSessionDuration: sessions.length > 0
-            ? sessions.reduce((sum, s) => {
-                if (s.startedAt && s.finishedAt) {
-                  return sum + (new Date(s.finishedAt) - new Date(s.startedAt));
-                }
-                return sum;
-              }, 0) / sessions.length / 60000 // Convert to minutes
-            : null,
+          avgSessionDuration:
+            sessions.length > 0
+              ? sessions.reduce((sum, s) => {
+                  if (s.startedAt && s.finishedAt) {
+                    return sum + (new Date(s.finishedAt) - new Date(s.startedAt));
+                  }
+                  return sum;
+                }, 0) /
+                sessions.length /
+                60000 // Convert to minutes
+              : null,
         },
       };
     });
@@ -272,23 +273,18 @@ router.get('/leaderboard/drivers', async (req, res) => {
               laps: {
                 where: {
                   sessionId,
-                  ...(phase && { phase })
+                  ...(phase && { phase }),
                 },
               },
             },
           },
         },
-        orderBy: [
-          { finalPos: 'asc' },
-          { position: 'asc' },
-        ],
+        orderBy: [{ finalPos: 'asc' }, { position: 'asc' }],
       });
 
-      leaderboard = sessionDrivers.map(sd => {
-        const driverLaps = sd.session.laps.filter(lap => lap.driverId === sd.driverId);
-        const bestLap = driverLaps.length > 0
-          ? Math.min(...driverLaps.map(lap => lap.lapTime))
-          : null;
+      leaderboard = sessionDrivers.map((sd) => {
+        const driverLaps = sd.session.laps.filter((lap) => lap.driverId === sd.driverId);
+        const bestLap = driverLaps.length > 0 ? Math.min(...driverLaps.map((lap) => lap.lapTime)) : null;
 
         return {
           position: sd.finalPos || sd.position || null,
@@ -296,9 +292,7 @@ router.get('/leaderboard/drivers', async (req, res) => {
           car: withImageUrl(sd.car),
           laps: driverLaps.length,
           bestLap,
-          lastLap: driverLaps.length > 0
-            ? driverLaps[driverLaps.length - 1].lapTime
-            : null,
+          lastLap: driverLaps.length > 0 ? driverLaps[driverLaps.length - 1].lapTime : null,
           gap: null, // Calculate gap to leader if needed
         };
       });
@@ -306,7 +300,7 @@ router.get('/leaderboard/drivers', async (req, res) => {
       // Sort by best lap for practice/qualif, by laps and best lap for race
       if (phase === SessionType.PRACTICE || phase === SessionType.QUALIF) {
         leaderboard = leaderboard
-          .filter(entry => entry.bestLap !== null)
+          .filter((entry) => entry.bestLap !== null)
           .sort((a, b) => a.bestLap - b.bestLap)
           .map((entry, index) => ({ ...entry, position: index + 1 }));
       } else if (phase === SessionType.RACE) {
@@ -338,10 +332,10 @@ router.get('/leaderboard/drivers', async (req, res) => {
         take: parseInt(limit),
       });
 
-      const driverStats = drivers.map(driver => {
+      const driverStats = drivers.map((driver) => {
         const races = driver.sessions || [];
-        const wins = races.filter(sd => sd.finalPos === 1).length;
-        const podiums = races.filter(sd => sd.finalPos && sd.finalPos <= 3).length;
+        const wins = races.filter((sd) => sd.finalPos === 1).length;
+        const podiums = races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
 
         return {
           driver,
@@ -389,39 +383,41 @@ router.get('/leaderboard/teams', async (req, res) => {
       include: {
         drivers: {
           include: {
-            sessions: championshipId ? {
-              where: {
-                session: {
-                  championshipId,
-                  type: SessionType.RACE,
+            sessions: championshipId
+              ? {
+                  where: {
+                    session: {
+                      championshipId,
+                      type: SessionType.RACE,
+                    },
+                  },
+                }
+              : {
+                  where: {
+                    session: {
+                      type: SessionType.RACE,
+                    },
+                  },
                 },
-              },
-            } : {
-              where: {
-                session: {
-                  type: SessionType.RACE,
-                },
-              },
-            },
           },
         },
       },
     });
 
-    const teamStats = teams.map(team => {
+    const teamStats = teams.map((team) => {
       let totalPoints = 0;
       let totalWins = 0;
       let totalPodiums = 0;
       let totalRaces = 0;
 
-      team.drivers.forEach(driver => {
+      team.drivers.forEach((driver) => {
         const races = driver.sessions || [];
         totalRaces += races.length;
-        totalWins += races.filter(sd => sd.finalPos === 1).length;
-        totalPodiums += races.filter(sd => sd.finalPos && sd.finalPos <= 3).length;
+        totalWins += races.filter((sd) => sd.finalPos === 1).length;
+        totalPodiums += races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
 
         // Simple point calculation (can be improved with actual championship points)
-        races.forEach(sd => {
+        races.forEach((sd) => {
           if (sd.finalPos === 1) totalPoints += 25;
           else if (sd.finalPos === 2) totalPoints += 18;
           else if (sd.finalPos === 3) totalPoints += 15;
@@ -477,15 +473,23 @@ router.get('/leaderboard/teams', async (req, res) => {
 // GET /api/stats/laptimes - Get all lap times with filters
 router.get('/laptimes', async (req, res) => {
   try {
-    const { driverId, carId, trackId, sessionType, limit = 50, offset = 0, sortBy = 'lapTime', sortOrder = 'asc', unique = 'true' } = req.query;
+    const {
+      driverId,
+      carId,
+      trackId,
+      sessionType,
+      limit = 50,
+      offset = 0,
+      sortBy = 'lapTime',
+      sortOrder = 'asc',
+      unique = 'true',
+    } = req.query;
 
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
     // Build where clause
-    const where = req.query.deleted === 'true'
-      ? { deletedAt: { not: null } }
-      : { deletedAt: null };
+    const where = req.query.deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
 
     if (driverId) where.driverId = driverId.includes(',') ? { in: driverId.split(',') } : driverId;
     if (carId) where.carId = carId.includes(',') ? { in: carId.split(',') } : carId;
@@ -576,7 +580,7 @@ router.get('/laptimes', async (req, res) => {
         lapTime: (a, b) => a.lapTime - b.lapTime,
         timestamp: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
         driver: (a, b) => (a.driver?.name || '').localeCompare(b.driver?.name || ''),
-        car: (a, b) => (`${a.car?.brand} ${a.car?.model}`).localeCompare(`${b.car?.brand} ${b.car?.model}`),
+        car: (a, b) => `${a.car?.brand} ${a.car?.model}`.localeCompare(`${b.car?.brand} ${b.car?.model}`),
         track: (a, b) => (a.session.track?.name || '').localeCompare(b.session.track?.name || ''),
         sessionType: (a, b) => (a.session.type || '').localeCompare(b.session.type || ''),
         championship: (a, b) => (a.session.championship?.name || '').localeCompare(b.session.championship?.name || ''),
@@ -584,8 +588,7 @@ router.get('/laptimes', async (req, res) => {
       };
       const compareFn = sortFns[sortBy] || sortFns.lapTime;
       const dir = sortOrder === 'asc' ? 1 : -1;
-      const allUnique = Array.from(bestLapsMap.values())
-        .sort((a, b) => dir * compareFn(a, b));
+      const allUnique = Array.from(bestLapsMap.values()).sort((a, b) => dir * compareFn(a, b));
 
       total = allUnique.length;
       bestLaps = allUnique.slice(parsedOffset, parsedOffset + parsedLimit);
@@ -607,7 +610,7 @@ router.get('/laptimes', async (req, res) => {
       total = count;
     }
 
-    const result = bestLaps.map(lap => ({
+    const result = bestLaps.map((lap) => ({
       id: lap.id,
       lapTime: lap.lapTime,
       timestamp: lap.timestamp,
@@ -727,25 +730,33 @@ router.get('/records', async (req, res) => {
     res.json({
       success: true,
       data: {
-        fastestLap: fastestLap ? {
-          time: fastestLap.lapTime,
-          driver: withImageUrl(fastestLap.driver),
-          car: withImageUrl(fastestLap.car),
-          track: withImageUrl(fastestLap.session.track),
-          date: fastestLap.timestamp,
-        } : null,
-        mostWins: mostWinsDriver ? {
-          driver: withImageUrl(mostWinsDriver.driver),
-          count: mostWinsDriver.wins,
-        } : null,
-        mostPodiums: mostPodiumsDriver ? {
-          driver: withImageUrl(mostPodiumsDriver.driver),
-          count: mostPodiumsDriver.podiums,
-        } : null,
-        mostPolePositions: mostPolesDriver ? {
-          driver: withImageUrl(mostPolesDriver.driver),
-          count: mostPolesDriver.poles,
-        } : null,
+        fastestLap: fastestLap
+          ? {
+              time: fastestLap.lapTime,
+              driver: withImageUrl(fastestLap.driver),
+              car: withImageUrl(fastestLap.car),
+              track: withImageUrl(fastestLap.session.track),
+              date: fastestLap.timestamp,
+            }
+          : null,
+        mostWins: mostWinsDriver
+          ? {
+              driver: withImageUrl(mostWinsDriver.driver),
+              count: mostWinsDriver.wins,
+            }
+          : null,
+        mostPodiums: mostPodiumsDriver
+          ? {
+              driver: withImageUrl(mostPodiumsDriver.driver),
+              count: mostPodiumsDriver.podiums,
+            }
+          : null,
+        mostPolePositions: mostPolesDriver
+          ? {
+              driver: withImageUrl(mostPolesDriver.driver),
+              count: mostPolesDriver.poles,
+            }
+          : null,
       },
     });
   } catch (error) {

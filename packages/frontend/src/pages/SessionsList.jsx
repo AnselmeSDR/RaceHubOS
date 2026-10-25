@@ -38,12 +38,14 @@ export default function SessionsList() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/api/tracks`).then(r => r.json()),
-      fetch(`${API_URL}/api/championships`).then(r => r.json()),
-    ]).then(([tracksData, champsData]) => {
-      if (tracksData.success) setTracks(tracksData.data || [])
-      if (champsData.success) setChampionships(champsData.data || [])
-    }).catch(() => {})
+      fetch(`${API_URL}/api/tracks`).then((r) => r.json()),
+      fetch(`${API_URL}/api/championships`).then((r) => r.json()),
+    ])
+      .then(([tracksData, champsData]) => {
+        if (tracksData.success) setTracks(tracksData.data || [])
+        if (champsData.success) setChampionships(champsData.data || [])
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -72,32 +74,41 @@ export default function SessionsList() {
       const res = await fetch(`${API_URL}/api/sessions?${params}`)
       const data = await res.json()
       if (data.success) {
-        setSessions(prev => isFirst ? data.data : [...prev, ...data.data])
+        setSessions((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
       }
     } catch (err) {
       console.error('Failed to load sessions:', err)
     } finally {
-      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
-      else setLoadingMore(false)
+      if (isFirst) {
+        setLoading(false)
+        hasLoadedOnce.current = true
+      } else setLoadingMore(false)
     }
   }
 
   function getStatusIcon(status) {
     switch (status) {
-      case 'draft': return <Clock className="h-4 w-4 text-gray-500" />
-      case 'active': return <Play className="h-4 w-4 text-green-500 animate-pulse" />
-      case 'finished': return <CheckCircle className="h-4 w-4 text-blue-500" />
-      default: return null
+      case 'draft':
+        return <Clock className="h-4 w-4 text-gray-500" />
+      case 'active':
+        return <Play className="h-4 w-4 text-green-500 animate-pulse" />
+      case 'finished':
+        return <CheckCircle className="h-4 w-4 text-blue-500" />
+      default:
+        return null
     }
   }
 
   function formatDate(date) {
     if (!date) return '-'
     return new Date(date).toLocaleDateString(i18n.language, {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 
@@ -107,160 +118,160 @@ export default function SessionsList() {
     return `${Math.floor(d / 60000)}:${String(Math.floor((d % 60000) / 1000)).padStart(2, '0')}`
   }
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'name',
-      header: t('columns.name'),
-      cell: ({ row }) => (
-        <div>
-          <span className="font-semibold">
-            {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'name',
+        header: t('columns.name'),
+        cell: ({ row }) => (
+          <div>
+            <span className="font-semibold">
+              {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
+            </span>
+            {row.original.championship && (
+              <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                <Trophy className="h-3 w-3 text-yellow-500" />
+                {row.original.championship.name}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: 'type',
+        accessorFn: (row) => row.type,
+        meta: { label: t('columns.type') },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('columns.type')}
+            active={filtersRef.current.type.length > 0}
+            value={filtersRef.current.type}
+            options={sessionTypeOptions(t)}
+            onChange={(v) => setFilters((f) => ({ ...f, type: v }))}
+          />
+        ),
+        cell: ({ row }) => (
+          <Badge className={sessionBadgeClass(row.original.type)}>
+            {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
+          </Badge>
+        ),
+      },
+      {
+        id: 'track',
+        accessorFn: (row) => row.track?.name || '',
+        meta: { label: t('glossary:track', { count: 1 }) },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('glossary:track', { count: 1 })}
+            active={filtersRef.current.trackId.length > 0}
+            value={filtersRef.current.trackId}
+            options={tracks.map((track) => ({ value: track.id, label: track.name }))}
+            onChange={(v) => setFilters((f) => ({ ...f, trackId: v }))}
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            {row.original.track?.name || t('common:notDefined')}
           </span>
-          {row.original.championship && (
-            <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-              <Trophy className="h-3 w-3 text-yellow-500" />
-              {row.original.championship.name}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: 'type',
-      accessorFn: (row) => row.type,
-      meta: { label: t('columns.type') },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('columns.type')}
-          active={filtersRef.current.type.length > 0}
-          value={filtersRef.current.type}
-          options={sessionTypeOptions(t)}
-          onChange={(v) => setFilters(f => ({ ...f, type: v }))}
-        />
-      ),
-      cell: ({ row }) => (
-        <Badge className={sessionBadgeClass(row.original.type)}>
-          {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
-        </Badge>
-      ),
-    },
-    {
-      id: 'track',
-      accessorFn: (row) => row.track?.name || '',
-      meta: { label: t('glossary:track', { count: 1 }) },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('glossary:track', { count: 1 })}
-          active={filtersRef.current.trackId.length > 0}
-          value={filtersRef.current.trackId}
-          options={tracks.map(track => ({ value: track.id, label: track.name }))}
-          onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <MapPin className="w-4 h-4" />
-          {row.original.track?.name || t('common:notDefined')}
-        </span>
-      ),
-    },
-    {
-      id: 'status',
-      accessorFn: (row) => row.status,
-      meta: { label: t('columns.status') },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('columns.status')}
-          active={filtersRef.current.status.length > 0}
-          value={filtersRef.current.status}
-          options={[
-            { value: 'draft', label: t('glossary:sessionStatus.draft') },
-            { value: 'active', label: t('glossary:sessionStatus.active') },
-            { value: 'finished', label: t('glossary:sessionStatus.finished') },
-          ]}
-          onChange={(v) => setFilters(f => ({ ...f, status: v }))}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5">
-          {getStatusIcon(row.original.status)}
+        ),
+      },
+      {
+        id: 'status',
+        accessorFn: (row) => row.status,
+        meta: { label: t('columns.status') },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('columns.status')}
+            active={filtersRef.current.status.length > 0}
+            value={filtersRef.current.status}
+            options={[
+              { value: 'draft', label: t('glossary:sessionStatus.draft') },
+              { value: 'active', label: t('glossary:sessionStatus.active') },
+              { value: 'finished', label: t('glossary:sessionStatus.finished') },
+            ]}
+            onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5">
+            {getStatusIcon(row.original.status)}
+            <span className="text-muted-foreground">
+              {t(`glossary:sessionStatus.${row.original.status}`, { defaultValue: row.original.status })}
+            </span>
+          </span>
+        ),
+      },
+      {
+        id: 'championship',
+        accessorFn: (row) => row.championship?.name || '',
+        meta: { label: t('glossary:championship', { count: 1 }) },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('glossary:championship', { count: 1 })}
+            active={filtersRef.current.championshipId.length > 0}
+            value={filtersRef.current.championshipId}
+            options={[
+              { value: 'null', label: t('filters.noChampionship') },
+              ...championships.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            onChange={(v) => setFilters((f) => ({ ...f, championshipId: v }))}
+          />
+        ),
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.championship?.name || '-'}</span>,
+      },
+      {
+        id: 'drivers',
+        accessorFn: (row) => row.drivers?.length || 0,
+        header: t('glossary:driver', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Users2 className="w-4 h-4" />
+            {row.original.drivers?.length || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'laps',
+        accessorFn: (row) => row._count?.laps || 0,
+        header: t('glossary:lap', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Flag className="w-4 h-4" />
+            {row.original._count?.laps || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'duration',
+        accessorFn: (row) => (row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0),
+        header: t('columns.duration'),
+        cell: ({ row }) => (
           <span className="text-muted-foreground">
-            {t(`glossary:sessionStatus.${row.original.status}`, { defaultValue: row.original.status })}
+            {formatDuration(row.original.startedAt, row.original.finishedAt)}
           </span>
-        </span>
-      ),
-    },
-    {
-      id: 'championship',
-      accessorFn: (row) => row.championship?.name || '',
-      meta: { label: t('glossary:championship', { count: 1 }) },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('glossary:championship', { count: 1 })}
-          active={filtersRef.current.championshipId.length > 0}
-          value={filtersRef.current.championshipId}
-          options={[
-            { value: 'null', label: t('filters.noChampionship') },
-            ...championships.map(c => ({ value: c.id, label: c.name })),
-          ]}
-          onChange={(v) => setFilters(f => ({ ...f, championshipId: v }))}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.original.championship?.name || '-'}
-        </span>
-      ),
-    },
-    {
-      id: 'drivers',
-      accessorFn: (row) => row.drivers?.length || 0,
-      header: t('glossary:driver', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Users2 className="w-4 h-4" />
-          {row.original.drivers?.length || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'laps',
-      accessorFn: (row) => row._count?.laps || 0,
-      header: t('glossary:lap', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {row.original._count?.laps || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'duration',
-      accessorFn: (row) => row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0,
-      header: t('columns.duration'),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {formatDuration(row.original.startedAt, row.original.finishedAt)}
-        </span>
-      ),
-    },
-    {
-      id: 'date',
-      accessorFn: (row) => row.updatedAt,
-      header: t('columns.date'),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {formatDate(row.original.updatedAt)}
-        </span>
-      ),
-    },
-  ], [tracks, championships, t])
+        ),
+      },
+      {
+        id: 'date',
+        accessorFn: (row) => row.updatedAt,
+        header: t('columns.date'),
+        cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.updatedAt)}</span>,
+      },
+    ],
+    [tracks, championships, t]
+  )
 
-  const hasActiveFilters = filters.status.length > 0 || filters.trackId.length > 0 || filters.type.length > 0 || filters.championshipId.length > 0 || filters.deleted
+  const hasActiveFilters =
+    filters.status.length > 0 ||
+    filters.trackId.length > 0 ||
+    filters.type.length > 0 ||
+    filters.championshipId.length > 0 ||
+    filters.deleted
 
   return (
     <ListPage
@@ -276,7 +287,7 @@ export default function SessionsList() {
       addLabel={t('addLabel')}
       onAdd={() => setShowForm(true)}
       onRowClick={(row) => !filters.deleted && navigate(`/sessions/${row.id}`)}
-      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
       deleteEndpoint="/api/sessions"
       exportEndpoint="/api/sessions/export"
       onDeleted={() => loadData(0)}
@@ -292,14 +303,17 @@ export default function SessionsList() {
           key: 'deleted',
           label: t('common:showDeleted'),
           checked: filters.deleted,
-          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
         },
       ]}
     >
       {showForm && (
         <SessionForm
           onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); loadData(0) }}
+          onSaved={() => {
+            setShowForm(false)
+            loadData(0)
+          }}
         />
       )}
     </ListPage>

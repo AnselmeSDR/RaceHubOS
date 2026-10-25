@@ -48,7 +48,7 @@ export async function createStig(prisma) {
     where: { name: STIG_DEFAULTS.name, deletedAt: null },
   });
 
-  const driver = existing ?? await prisma.driver.create({ data: STIG_DEFAULTS });
+  const driver = existing ?? (await prisma.driver.create({ data: STIG_DEFAULTS }));
   return setReferenceDriver(prisma, driver.id);
 }
 

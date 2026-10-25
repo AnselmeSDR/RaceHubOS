@@ -16,7 +16,7 @@ const autoAssignControllers = (drivers, cars, currentConfig) => {
     if (controller <= 8) {
       newConfig[controller] = {
         driverId: driver.id,
-        carId: cars[index]?.id || null
+        carId: cars[index]?.id || null,
       }
     }
   })
@@ -58,7 +58,7 @@ export default function Test() {
         const createRes = await fetch(`${API_URL}/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: SessionType.PRACTICE, name: 'Test Session' })
+          body: JSON.stringify({ type: SessionType.PRACTICE, name: 'Test Session' }),
         })
         const createData = await createRes.json()
         if (createData.success) session = createData.data
@@ -78,27 +78,29 @@ export default function Test() {
   // Load drivers and cars from API
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/drivers`).then(res => res.json()),
-      fetch(`${API_URL}/cars`).then(res => res.json())
-    ]).then(([driversData, carsData]) => {
-      const loadedDrivers = driversData.data || []
-      const loadedCars = carsData.data || []
-      setDrivers(loadedDrivers)
-      setCars(loadedCars)
+      fetch(`${API_URL}/drivers`).then((res) => res.json()),
+      fetch(`${API_URL}/cars`).then((res) => res.json()),
+    ])
+      .then(([driversData, carsData]) => {
+        const loadedDrivers = driversData.data || []
+        const loadedCars = carsData.data || []
+        setDrivers(loadedDrivers)
+        setCars(loadedCars)
 
-      // Auto-assign if config is empty
-      if (loadedDrivers.length > 0) {
-        setControllerConfig(prev => {
-          const newConfig = autoAssignControllers(loadedDrivers, loadedCars, prev)
-          return newConfig
-        })
-      }
-    }).catch(() => {})
+        // Auto-assign if config is empty
+        if (loadedDrivers.length > 0) {
+          setControllerConfig((prev) => {
+            const newConfig = autoAssignControllers(loadedDrivers, loadedCars, prev)
+            return newConfig
+          })
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const addLog = (type, source, message, data = null) => {
     const timestamp = new Date().toISOString()
-    setLogs(prev => [...prev, { timestamp, type, source, message, data }])
+    setLogs((prev) => [...prev, { timestamp, type, source, message, data }])
   }
 
   // Get driver/car name from config or default
@@ -106,31 +108,31 @@ export default function Test() {
     const config = controllerConfig[controller]
     if (config) {
       // Find driver and car from loaded data
-      const driver = config.driverId ? drivers.find(d => d.id === config.driverId) : null
-      const car = config.carId ? cars.find(c => c.id === config.carId) : null
+      const driver = config.driverId ? drivers.find((d) => d.id === config.driverId) : null
+      const car = config.carId ? cars.find((c) => c.id === config.carId) : null
       return {
         driverName: driver?.name || config.driverName || t('leaderboard.defaultDriver', { number: controller }),
-        carName: car ? `${car.brand} ${car.model}` : config.carName || t('leaderboard.defaultCar', { number: controller }),
-        color: car?.color || driver?.color || config.color || CONTROLLER_COLORS[controller] || '#888'
+        carName: car
+          ? `${car.brand} ${car.model}`
+          : config.carName || t('leaderboard.defaultCar', { number: controller }),
+        color: car?.color || driver?.color || config.color || CONTROLLER_COLORS[controller] || '#888',
       }
     }
     return {
       driverName: t('leaderboard.defaultDriver', { number: controller }),
       carName: t('leaderboard.defaultCar', { number: controller }),
-      color: CONTROLLER_COLORS[controller] || '#888'
+      color: CONTROLLER_COLORS[controller] || '#888',
     }
   }
 
   const updateLeaderboard = (lapData) => {
-    setLeaderboard(prev => {
+    setLeaderboard((prev) => {
       const key = lapData.controller || lapData.carId || 'unknown'
       const existing = prev[key] || { laps: 0, bestLap: null, lastLap: null, totalTime: 0 }
 
       const lapTime = lapData.lapTime || lapData.time
-      const newLaps = (lapData.lapNumber || existing.laps + 1)
-      const newBestLap = existing.bestLap === null
-        ? lapTime
-        : Math.min(existing.bestLap, lapTime)
+      const newLaps = lapData.lapNumber || existing.laps + 1
+      const newBestLap = existing.bestLap === null ? lapTime : Math.min(existing.bestLap, lapTime)
 
       return {
         ...prev,
@@ -141,28 +143,30 @@ export default function Test() {
           lastLap: lapTime,
           bestLap: newBestLap,
           totalTime: existing.totalTime + lapTime,
-          lastUpdate: Date.now()
-        }
+          lastUpdate: Date.now(),
+        },
       }
     })
   }
 
   // Update controller config
   const updateControllerConfig = (controller, field, value) => {
-    setControllerConfig(prev => {
+    setControllerConfig((prev) => {
       const newConfig = {
         ...prev,
         [controller]: {
           ...prev[controller],
-          [field]: value
-        }
+          [field]: value,
+        },
       }
       return newConfig
     })
   }
 
   // Load test session on mount
-  useEffect(() => { ensureTestSession() }, [])
+  useEffect(() => {
+    ensureTestSession()
+  }, [])
 
   useEffect(() => {
     addLog('info', 'APP', 'Page Test initialized')
@@ -253,13 +257,24 @@ export default function Test() {
 
     // Catch-all for unknown events
     const originalOnevent = socket.onevent
-    socket.onevent = function(packet) {
+    socket.onevent = function (packet) {
       const eventName = packet.data[0]
       const knownEvents = [
-        'connect', 'disconnect', 'connect_error',
-        'lap:completed', 'lap_completed',
-        'race:status', 'cu:connected', 'cu:disconnected', 'cu:status', 'cu:timer', 'cu:reconnect-failed',
-        'session:started', 'session:stopped', 'phase:started', 'positions:updated'
+        'connect',
+        'disconnect',
+        'connect_error',
+        'lap:completed',
+        'lap_completed',
+        'race:status',
+        'cu:connected',
+        'cu:disconnected',
+        'cu:status',
+        'cu:timer',
+        'cu:reconnect-failed',
+        'session:started',
+        'session:stopped',
+        'phase:started',
+        'positions:updated',
       ]
       if (!knownEvents.includes(eventName)) {
         addLog('info', 'UNKNOWN', `Event: ${eventName}`, packet.data[1])
@@ -293,7 +308,9 @@ export default function Test() {
       const data = await res.json()
       setCuConnected(data.connected)
       if (data.lastStatus) setCuStatus(data.lastStatus)
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   // CU Control functions
@@ -339,11 +356,16 @@ export default function Test() {
 
   const getLogColor = (type) => {
     switch (type) {
-      case 'success': return 'text-green-400'
-      case 'error': return 'text-red-400'
-      case 'lap': return 'text-yellow-400'
-      case 'status': return 'text-blue-400'
-      default: return 'text-gray-300'
+      case 'success':
+        return 'text-green-400'
+      case 'error':
+        return 'text-red-400'
+      case 'lap':
+        return 'text-yellow-400'
+      case 'status':
+        return 'text-blue-400'
+      default:
+        return 'text-gray-300'
     }
   }
 
@@ -353,7 +375,7 @@ export default function Test() {
       error: t('logs.typeError'),
       lap: t('logs.typeLap'),
       status: t('logs.typeStatus'),
-      info: t('logs.typeInfo')
+      info: t('logs.typeInfo'),
     }
     return labels[type] || type
   }
@@ -368,14 +390,13 @@ export default function Test() {
       SESSION: 'bg-orange-600',
       PHASE: 'bg-pink-600',
       POS: 'bg-cyan-600',
-      UNKNOWN: 'bg-red-600'
+      UNKNOWN: 'bg-red-600',
     }
     return colors[source] || 'bg-gray-600'
   }
 
-  const filteredLogs = filter === 'all'
-    ? logs
-    : logs.filter(log => log.type === filter || log.source.toLowerCase() === filter)
+  const filteredLogs =
+    filter === 'all' ? logs : logs.filter((log) => log.type === filter || log.source.toLowerCase() === filter)
 
   // Group logs by type for grouped view
   const groupedLogs = groupByType
@@ -428,36 +449,53 @@ export default function Test() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('title')}</h1>
           {/* Socket status */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            connected ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-          }`}>
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+              connected
+                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+            }`}
+          >
             {connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
             {connected ? t('status.socketOk') : t('status.socketOff')}
           </div>
           {/* CU status */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            cuConnected ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-          }`}>
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+              cuConnected
+                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            }`}
+          >
             <Zap className="w-4 h-4" />
             {cuConnected ? t('status.cuConnected') : t('status.cuOffline')}
           </div>
           {/* Race state */}
           {cuConnected && (
-            <div className={`px-3 py-1 rounded-full text-sm font-bold bg-${raceState.color}-100 text-${raceState.color}-700`}>
+            <div
+              className={`px-3 py-1 rounded-full text-sm font-bold bg-${raceState.color}-100 text-${raceState.color}-700`}
+            >
               {raceState.text}
             </div>
           )}
           {/* Session */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            testSession ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-          }`}>
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+              testSession
+                ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+            }`}
+          >
             {testSession ? t('status.session', { id: testSession.id.substring(0, 8) }) : t('status.noSession')}
           </div>
           {/* Modes */}
           {modes.length > 0 && (
             <div className="flex gap-1">
-              {modes.map(m => (
-                <span key={m} className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded">
+              {modes.map((m) => (
+                <span
+                  key={m}
+                  className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
+                >
                   {m}
                 </span>
               ))}
@@ -604,17 +642,22 @@ export default function Test() {
             {t('config.title')}
           </h3>
           <div className="grid grid-cols-4 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(controller => {
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((controller) => {
               const config = controllerConfig[controller] || {}
               const color = CONTROLLER_COLORS[controller]
               return (
-                <div key={controller} className="border dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
+                <div
+                  key={controller}
+                  className="border dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <div
                       className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">{t('config.controller', { number: controller })}</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">
+                      {t('config.controller', { number: controller })}
+                    </span>
                   </div>
                   <div className="space-y-2">
                     <select
@@ -623,7 +666,7 @@ export default function Test() {
                       className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
                       <option value="">{t('config.driverPlaceholder')}</option>
-                      {drivers.map(d => (
+                      {drivers.map((d) => (
                         <option key={d.id} value={d.id}>
                           #{d.number} {d.name}
                         </option>
@@ -635,7 +678,7 @@ export default function Test() {
                       className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
                     >
                       <option value="">{t('config.carPlaceholder')}</option>
-                      {cars.map(c => (
+                      {cars.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.brand} {c.model}
                         </option>
@@ -693,18 +736,18 @@ export default function Test() {
 
           <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
             {filteredLogs.length === 0 ? (
-              <div className="text-gray-500 text-center py-8">
-                {t('logs.waiting')}
-              </div>
+              <div className="text-gray-500 text-center py-8">{t('logs.waiting')}</div>
             ) : groupByType ? (
               // Grouped view by type
               <div className="space-y-4">
-                {logTypes.map(type => {
+                {logTypes.map((type) => {
                   const typeLogs = groupedLogs[type] || []
                   if (typeLogs.length === 0) return null
                   return (
                     <div key={type}>
-                      <div className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(type)} bg-gray-800`}>
+                      <div
+                        className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(type)} bg-gray-800`}
+                      >
                         {t('logs.groupCount', { type: getLogTypeLabel(type), count: typeLogs.length })}
                       </div>
                       <div className="space-y-1 pl-2 border-l-2 border-gray-700">
@@ -713,7 +756,9 @@ export default function Test() {
                             <span className="text-gray-500 flex-shrink-0">
                               {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
                             </span>
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}
+                            >
                               {log.source}
                             </span>
                             <span className="flex-1">{log.message}</span>
@@ -741,7 +786,9 @@ export default function Test() {
                     <span className="text-gray-500 flex-shrink-0">
                       {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
                     </span>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}
+                    >
                       {log.source}
                     </span>
                     <span className="flex-1">{log.message}</span>
@@ -777,9 +824,7 @@ export default function Test() {
 
           <div className="flex-1 overflow-y-auto">
             {sortedLeaderboard.length === 0 ? (
-              <div className="text-gray-400 text-center py-8 text-sm">
-                {t('leaderboard.noData')}
-              </div>
+              <div className="text-gray-400 text-center py-8 text-sm">{t('leaderboard.noData')}</div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">

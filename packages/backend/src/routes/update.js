@@ -40,12 +40,14 @@ router.get('/check', async (req, res) => {
   try {
     const currentVersion = getLocalVersion();
 
-    const response = await fetch(
-      'https://api.github.com/repos/AnselmeSDR/RaceHubOS/contents/package.json',
-      { headers: { 'Accept': 'application/vnd.github.raw', 'User-Agent': 'RaceHubOS' } }
-    );
+    const response = await fetch('https://api.github.com/repos/AnselmeSDR/RaceHubOS/contents/package.json', {
+      headers: { 'Accept': 'application/vnd.github.raw', 'User-Agent': 'RaceHubOS' },
+    });
     if (!response.ok) {
-      return res.json({ success: true, data: { currentVersion, latestVersion: null, updateAvailable: false, error: 'Impossible de contacter GitHub' } });
+      return res.json({
+        success: true,
+        data: { currentVersion, latestVersion: null, updateAvailable: false, error: 'Impossible de contacter GitHub' },
+      });
     }
 
     const remotePkg = await response.json();
@@ -55,12 +57,12 @@ router.get('/check', async (req, res) => {
 
     res.json({
       success: true,
-      data: { currentVersion, latestVersion, updateAvailable }
+      data: { currentVersion, latestVersion, updateAvailable },
     });
   } catch (error) {
     res.json({
       success: true,
-      data: { currentVersion: getLocalVersion(), latestVersion: null, updateAvailable: false, error: error.message }
+      data: { currentVersion: getLocalVersion(), latestVersion: null, updateAvailable: false, error: error.message },
     });
   }
 });
@@ -133,10 +135,14 @@ router.post('/apply', async (req, res) => {
     // Schema migration comes last, once the code is installed and built:
     // it is the only irreversible step, and startup.js retries it on restart.
     emitProgress(5, 'Migration de la base de données...');
-    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(() => {});
+    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(
+      () => {}
+    );
     // scripts/migrate.js baselines a database predating migrations, which plain
     // `migrate deploy` refuses to touch (P3005)
-    await execAsync('node scripts/migrate.js', { cwd: path.join(rootDir, 'packages/backend'), timeout: 120000 }).catch(() => {});
+    await execAsync('node scripts/migrate.js', { cwd: path.join(rootDir, 'packages/backend'), timeout: 120000 }).catch(
+      () => {}
+    );
 
     const newVersion = getLocalVersion();
 
@@ -144,10 +150,11 @@ router.post('/apply', async (req, res) => {
     const templatePath = path.join(rootDir, 'RaceHubOS.bat.template');
     if (fs.existsSync(templatePath)) {
       emitProgress(6, 'Mise à jour du lanceur...');
-      const batContent = fs.readFileSync(templatePath, 'utf-8')
+      const batContent = fs
+        .readFileSync(templatePath, 'utf-8')
         .replace(/__VERSION__/g, `v${newVersion}`)
         .replace(/__TARGET_DIR__/g, rootDir.replace(/\//g, '\\'));
-      const batFiles = fs.readdirSync(rootDir).filter(f => /^RaceHubOS-v.*\.bat$/.test(f));
+      const batFiles = fs.readdirSync(rootDir).filter((f) => /^RaceHubOS-v.*\.bat$/.test(f));
       for (const batFile of batFiles) {
         fs.writeFileSync(path.join(rootDir, batFile), batContent);
       }

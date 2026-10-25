@@ -5,14 +5,7 @@ import { FormField } from './FormModal'
  * Stepping by 10 keeps the familiar percentage while making every position
  * match one real level: 70 % is level 7, and nothing in between exists.
  */
-export default function RangeField({
-  label,
-  value,
-  onChange,
-  min = 10,
-  max = 100,
-  step = 10,
-}) {
+export default function RangeField({ label, value, onChange, min = 10, max = 100, step = 10 }) {
   // The filled part follows the thumb, so the track reads as a gauge
   const filled = ((value - min) / (max - min)) * 100
 
@@ -32,7 +25,8 @@ export default function RangeField({
           }}
         />
         <span className="text-sm font-bold w-12 text-right text-foreground tabular-nums">
-          {Math.round(value / 10)}<span className="text-muted-foreground">/10</span>
+          {Math.round(value / 10)}
+          <span className="text-muted-foreground">/10</span>
         </span>
       </div>
     </FormField>

@@ -7,7 +7,10 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.
 
 const read = (name) => fs.readFileSync(path.join(rootDir, name), 'utf-8');
 const declaredVersion = (text, prefix) =>
-  text.split('\n').find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`))?.split(/\s+/)[2];
+  text
+    .split('\n')
+    .find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`))
+    ?.split(/\s+/)[2];
 
 /**
  * The installer sitting on the desktop is a frozen copy. The one on the race PC
@@ -36,8 +39,9 @@ describe('installers', () => {
   });
 
   it('the macOS installer is valid bash', () => {
-    expect(() => execFileSync('bash', ['-n', path.join(rootDir, 'RaceHubOS-install-mac.command')],
-      { stdio: 'pipe' })).not.toThrow();
+    expect(() =>
+      execFileSync('bash', ['-n', path.join(rootDir, 'RaceHubOS-install-mac.command')], { stdio: 'pipe' })
+    ).not.toThrow();
   });
 
   /**

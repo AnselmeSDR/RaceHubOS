@@ -36,7 +36,7 @@ function saveLog() {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function main() {
@@ -62,7 +62,9 @@ async function main() {
 
     // Start polling in background
     pollTimer = setInterval(async () => {
-      try { await cu.poll(); } catch (e) {}
+      try {
+        await cu.poll();
+      } catch (e) {}
     }, 200);
 
     // Get initial status
@@ -111,8 +113,8 @@ async function main() {
     console.log('\n✅ === SEQUENCE COMPLETE ===\n');
 
     // Summary
-    const timers = log.events.filter(e => e.type === 'TIMER');
-    const statuses = log.events.filter(e => e.type === 'STATUS');
+    const timers = log.events.filter((e) => e.type === 'TIMER');
+    const statuses = log.events.filter((e) => e.type === 'STATUS');
 
     console.log('📊 Summary:');
     console.log(`   Timer events: ${timers.length}`);
@@ -120,23 +122,35 @@ async function main() {
 
     if (timers.length > 0) {
       const byCtrl = {};
-      timers.forEach(t => {
+      timers.forEach((t) => {
         byCtrl[t.data.ctrl] = (byCtrl[t.data.ctrl] || 0) + 1;
       });
       console.log('   Timers by controller:', byCtrl);
     }
 
     // Show status changes
-    const startStates = ['RACING', 'LIGHTS_1', 'LIGHTS_2', 'LIGHTS_3', 'LIGHTS_4', 'LIGHTS_5', 'FALSE_START', 'GO', '?', 'STOPPED'];
-    const uniqueStates = [...new Set(statuses.map(s => startStates[s.data.start] || s.data.start))];
+    const startStates = [
+      'RACING',
+      'LIGHTS_1',
+      'LIGHTS_2',
+      'LIGHTS_3',
+      'LIGHTS_4',
+      'LIGHTS_5',
+      'FALSE_START',
+      'GO',
+      '?',
+      'STOPPED',
+    ];
+    const uniqueStates = [...new Set(statuses.map((s) => startStates[s.data.start] || s.data.start))];
     console.log('   Status states seen:', uniqueStates);
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     logEvent('FATAL', error.message);
   } finally {
     if (pollTimer) clearInterval(pollTimer);
-    try { await cu.disconnect(); } catch (e) {}
+    try {
+      await cu.disconnect();
+    } catch (e) {}
     saveLog();
   }
 }

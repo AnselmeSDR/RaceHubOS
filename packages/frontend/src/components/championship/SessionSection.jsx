@@ -1,6 +1,20 @@
 import { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Play, Pause, Square, Clock, RefreshCw, Flag, FlaskConical, Scale, AlertTriangle, Trash2, Copy, Trophy, Timer } from 'lucide-react'
+import {
+  Play,
+  Pause,
+  Square,
+  Clock,
+  RefreshCw,
+  Flag,
+  FlaskConical,
+  Scale,
+  AlertTriangle,
+  Trash2,
+  Copy,
+  Trophy,
+  Timer,
+} from 'lucide-react'
 import Podium from '../race/Podium'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +27,7 @@ const SESSION_TYPE_ICONS = {
   practice: FlaskConical,
   qualif: Clock,
   race: Flag,
-  balancing: Scale
+  balancing: Scale,
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
@@ -57,11 +71,21 @@ export default function SessionSection({
   const controllerConfigs = useMemo(() => {
     const configs = {}
     for (let i = 0; i < 6; i++) {
-      const sd = (session?.drivers || []).find(d => Number(d.controller) === i)
+      const sd = (session?.drivers || []).find((d) => Number(d.controller) === i)
       configs[i] = { driverId: sd?.driverId || null, carId: sd?.carId || null, gridPos: sd?.gridPos || null }
     }
     return configs
-  }, [JSON.stringify(session?.drivers?.map(d => ({ id: d.id, controller: d.controller, driverId: d.driverId, carId: d.carId, gridPos: d.gridPos })))])
+  }, [
+    JSON.stringify(
+      session?.drivers?.map((d) => ({
+        id: d.id,
+        controller: d.controller,
+        driverId: d.driverId,
+        carId: d.carId,
+        gridPos: d.gridPos,
+      }))
+    ),
+  ])
 
   const gracePeriodTotal = finishingSession?.gracePeriodMs ? finishingSession.gracePeriodMs / 1000 : 30
 
@@ -96,24 +120,40 @@ export default function SessionSection({
     }
   }
 
-
-  const usedDriverIds = useMemo(() => Object.values(controllerConfigs).map(c => c.driverId).filter(Boolean), [controllerConfigs])
-  const usedCarIds = useMemo(() => Object.values(controllerConfigs).map(c => c.carId).filter(Boolean), [controllerConfigs])
+  const usedDriverIds = useMemo(
+    () =>
+      Object.values(controllerConfigs)
+        .map((c) => c.driverId)
+        .filter(Boolean),
+    [controllerConfigs]
+  )
+  const usedCarIds = useMemo(
+    () =>
+      Object.values(controllerConfigs)
+        .map((c) => c.carId)
+        .filter(Boolean),
+    [controllerConfigs]
+  )
 
   const getAvailableDrivers = (controller) => {
     const currentId = controllerConfigs[controller]?.driverId
-    return drivers.filter(d => d.id === currentId || !usedDriverIds.includes(d.id))
+    return drivers.filter((d) => d.id === currentId || !usedDriverIds.includes(d.id))
   }
   const getAvailableCars = (controller) => {
     const currentId = controllerConfigs[controller]?.carId
-    return cars.filter(c => c.id === currentId || !usedCarIds.includes(c.id))
+    return cars.filter((c) => c.id === currentId || !usedCarIds.includes(c.id))
   }
 
   const handleControllerChange = async (controller, field, value) => {
     const updated = { ...controllerConfigs, [controller]: { ...controllerConfigs[controller], [field]: value || null } }
     const driversPayload = Object.entries(updated)
       .filter(([, c]) => c.driverId || c.carId)
-      .map(([ctrl, c]) => ({ controller: Number(ctrl), driverId: c.driverId || null, carId: c.carId || null, gridPos: c.gridPos || null }))
+      .map(([ctrl, c]) => ({
+        controller: Number(ctrl),
+        driverId: c.driverId || null,
+        carId: c.carId || null,
+        gridPos: c.gridPos || null,
+      }))
     try {
       await onSaveConfig({ drivers: driversPayload })
     } catch (err) {
@@ -133,16 +173,21 @@ export default function SessionSection({
 
   const practiceSession = useMemo(() => {
     if (session?.type === SessionType.PRACTICE || !session?.championshipId) return null
-    return sessions.find(s => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
+    return sessions.find((s) => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
   }, [sessions, session])
 
   const handleCopyFromPractice = async () => {
     if (!practiceSession?.drivers) return
     const driversPayload = []
     for (let i = 0; i < 6; i++) {
-      const sd = practiceSession.drivers.find(d => Number(d.controller) === i)
+      const sd = practiceSession.drivers.find((d) => Number(d.controller) === i)
       if (sd?.driverId || sd?.carId) {
-        driversPayload.push({ controller: i, driverId: sd?.driverId || null, carId: sd?.carId || null, gridPos: sd?.gridPos || null })
+        driversPayload.push({
+          controller: i,
+          driverId: sd?.driverId || null,
+          carId: sd?.carId || null,
+          gridPos: sd?.gridPos || null,
+        })
       }
     }
     try {
@@ -178,8 +223,10 @@ export default function SessionSection({
   const sessionLabel = useMemo(() => {
     if (!session) return ''
     if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
-    const sameType = sessions.filter(s => s.type === session.type).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    const index = sameType.findIndex(s => s.id === session.id) + 1
+    const sameType = sessions
+      .filter((s) => s.type === session.type)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    const index = sameType.findIndex((s) => s.id === session.id) + 1
     // Outside a championship the session list is empty: no number to show
     return `${t(sessionTypeAbbrKey(session.type))}${index || ''}`
   }, [session, sessions, t])
@@ -192,29 +239,59 @@ export default function SessionSection({
     const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
     if (!session.maxDuration || session.maxDuration <= 0) {
       if ((isRunning && currentElapsed >= 0) || (session.status === SessionStatus.FINISHED && currentElapsed > 0))
-        return { type: 'time', current: currentElapsed, pauseTime: totalPauseDuration, total: null, remaining: null, isComplete: session.status === SessionStatus.FINISHED }
+        return {
+          type: 'time',
+          current: currentElapsed,
+          pauseTime: totalPauseDuration,
+          total: null,
+          remaining: null,
+          isComplete: session.status === SessionStatus.FINISHED,
+        }
       return null
     }
     const totalSeconds = session.maxDuration / 1000
-    return { type: 'time', current: currentElapsed, pauseTime: totalPauseDuration, total: totalSeconds, remaining: Math.max(totalSeconds - currentElapsed, 0), isComplete: currentElapsed >= totalSeconds }
+    return {
+      type: 'time',
+      current: currentElapsed,
+      pauseTime: totalPauseDuration,
+      total: totalSeconds,
+      remaining: Math.max(totalSeconds - currentElapsed, 0),
+      isComplete: currentElapsed >= totalSeconds,
+    }
   }, [session, elapsedTime, totalPauseDuration])
 
   const lapsProgress = useMemo(() => {
     if (!session) return null
     let currentLaps = maxLapsCompleted
     if (session.status === SessionStatus.FINISHED && session.drivers?.length > 0)
-      currentLaps = Math.max(...session.drivers.map(d => d.totalLaps || 0))
+      currentLaps = Math.max(...session.drivers.map((d) => d.totalLaps || 0))
     const isRunning = ['active', 'paused', 'finishing'].includes(session.status)
     if (!session.maxLaps || session.maxLaps <= 0) {
       if ((isRunning && currentLaps >= 0) || (session.status === SessionStatus.FINISHED && currentLaps > 0))
-        return { type: 'laps', percentage: session.status === SessionStatus.FINISHED ? 100 : 0, current: currentLaps, total: null, remaining: null, isComplete: session.status === SessionStatus.FINISHED }
+        return {
+          type: 'laps',
+          percentage: session.status === SessionStatus.FINISHED ? 100 : 0,
+          current: currentLaps,
+          total: null,
+          remaining: null,
+          isComplete: session.status === SessionStatus.FINISHED,
+        }
       return null
     }
     const percentage = Math.min((currentLaps / session.maxLaps) * 100, 100)
-    return { type: 'laps', percentage, current: currentLaps, total: session.maxLaps, remaining: Math.max(session.maxLaps - currentLaps, 0), isComplete: currentLaps >= session.maxLaps }
+    return {
+      type: 'laps',
+      percentage,
+      current: currentLaps,
+      total: session.maxLaps,
+      remaining: Math.max(session.maxLaps - currentLaps, 0),
+      isComplete: currentLaps >= session.maxLaps,
+    }
   }, [session, maxLapsCompleted])
 
-  const hasProgress = session?.status !== SessionStatus.FINISHED && (timeProgress || lapsProgress || (session?.status === SessionStatus.FINISHING && gracePeriodRemaining !== null))
+  const hasProgress =
+    session?.status !== SessionStatus.FINISHED &&
+    (timeProgress || lapsProgress || (session?.status === SessionStatus.FINISHING && gracePeriodRemaining !== null))
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60)
@@ -224,16 +301,25 @@ export default function SessionSection({
 
   const sessionDrivers = useMemo(() => {
     if (!session?.drivers) return []
-    return session.drivers.map(sd => ({ ...sd, driver: drivers.find(d => d.id === sd.driverId), car: cars.find(c => c.id === sd.carId) }))
+    return session.drivers.map((sd) => ({
+      ...sd,
+      driver: drivers.find((d) => d.id === sd.driverId),
+      car: cars.find((c) => c.id === sd.carId),
+    }))
   }, [session, drivers, cars])
 
   const getStatusConfig = (st) => {
     switch (st) {
-      case 'active': return { label: t('sessionSection.status.active'), color: 'bg-green-100 text-green-700', pulse: true }
-      case 'paused': return { label: t('sessionSection.status.paused'), color: 'bg-yellow-100 text-yellow-700' }
-      case 'finishing': return { label: t('sessionSection.status.finishing'), color: 'bg-orange-100 text-orange-700', pulse: true }
-      case 'finished': return { label: t('sessionSection.status.finished'), color: 'bg-muted text-muted-foreground' }
-      default: return { label: t('sessionSection.status.draft'), color: 'bg-yellow-100 text-yellow-700' }
+      case 'active':
+        return { label: t('sessionSection.status.active'), color: 'bg-green-100 text-green-700', pulse: true }
+      case 'paused':
+        return { label: t('sessionSection.status.paused'), color: 'bg-yellow-100 text-yellow-700' }
+      case 'finishing':
+        return { label: t('sessionSection.status.finishing'), color: 'bg-orange-100 text-orange-700', pulse: true }
+      case 'finished':
+        return { label: t('sessionSection.status.finished'), color: 'bg-muted text-muted-foreground' }
+      default:
+        return { label: t('sessionSection.status.draft'), color: 'bg-yellow-100 text-yellow-700' }
     }
   }
 
@@ -278,8 +364,14 @@ export default function SessionSection({
                 suppressContentEditableWarning
                 onBlur={(e) => saveInlineName(e.target.textContent)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); e.target.blur() }
-                  if (e.key === 'Escape') { e.target.textContent = session?.name || t(`glossary:sessionTypeFull.${session.type}`); setEditingName(false) }
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    e.target.blur()
+                  }
+                  if (e.key === 'Escape') {
+                    e.target.textContent = session?.name || t(`glossary:sessionTypeFull.${session.type}`)
+                    setEditingName(false)
+                  }
                 }}
                 className="outline-none cursor-text"
               >
@@ -294,11 +386,12 @@ export default function SessionSection({
               </span>
             )}
           </h2>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.pulse ? 'animate-pulse' : ''}`}>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.pulse ? 'animate-pulse' : ''}`}
+          >
             {statusConfig.label}
           </span>
         </div>
-
       </div>
 
       {/* Session config + Controllers table */}
@@ -306,7 +399,10 @@ export default function SessionSection({
         <div className="p-4 border-b border-border space-y-3">
           {practiceSession && (
             <div className="flex justify-end">
-              <button onClick={handleCopyFromPractice} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600">
+              <button
+                onClick={handleCopyFromPractice}
+                className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600"
+              >
                 <Copy className="size-3" /> {t('sessionSection.copyFromPractice')}
               </button>
             </div>
@@ -315,40 +411,62 @@ export default function SessionSection({
             <thead>
               <tr className="text-left text-muted-foreground text-xs uppercase">
                 <th className="px-2 pb-2 font-medium w-12">{t('sessionSection.table.ctrl')}</th>
-                {session.type !== SessionType.BALANCING && <th className="px-2 pb-2 font-medium">{t('sessionSection.table.driver')}</th>}
+                {session.type !== SessionType.BALANCING && (
+                  <th className="px-2 pb-2 font-medium">{t('sessionSection.table.driver')}</th>
+                )}
                 <th className="px-2 pb-2 font-medium">{t('sessionSection.table.car')}</th>
-                {session.type !== SessionType.BALANCING && <th className="px-2 pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>}
+                {session.type !== SessionType.BALANCING && (
+                  <th className="px-2 pb-2 font-medium w-16">{t('sessionSection.table.grid')}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {[0, 1, 2, 3, 4, 5].map(ctrl => {
-                const sd = sessionDrivers.find(d => Number(d.controller) === ctrl)
+              {[0, 1, 2, 3, 4, 5].map((ctrl) => {
+                const sd = sessionDrivers.find((d) => Number(d.controller) === ctrl)
                 return (
                   <tr key={ctrl} className="text-foreground">
                     <td className="px-2 py-2">
-                      <span className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}>{ctrl + 1}</span>
+                      <span
+                        className={`inline-flex items-center justify-center size-6 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[ctrl]}`}
+                      >
+                        {ctrl + 1}
+                      </span>
                     </td>
                     {session.type !== SessionType.BALANCING && (
                       <td className="px-2 py-2">
-                        <Select value={controllerConfigs[ctrl]?.driverId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}>
+                        <Select
+                          value={controllerConfigs[ctrl]?.driverId || '_none'}
+                          onValueChange={(v) => handleControllerChange(ctrl, 'driverId', v === '_none' ? '' : v)}
+                        >
                           <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
                             <SelectValue placeholder="---" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="_none">---</SelectItem>
-                            {getAvailableDrivers(ctrl).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                            {getAvailableDrivers(ctrl).map((d) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </td>
                     )}
                     <td className="px-2 py-2">
-                      <Select value={controllerConfigs[ctrl]?.carId || '_none'} onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}>
+                      <Select
+                        value={controllerConfigs[ctrl]?.carId || '_none'}
+                        onValueChange={(v) => handleControllerChange(ctrl, 'carId', v === '_none' ? '' : v)}
+                      >
                         <SelectTrigger className="w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors">
                           <SelectValue placeholder="---" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="_none">---</SelectItem>
-                          {getAvailableCars(ctrl).map(c => <SelectItem key={c.id} value={c.id}>{c.brand} {c.model}</SelectItem>)}
+                          {getAvailableCars(ctrl).map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.brand} {c.model}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </td>
@@ -356,9 +474,13 @@ export default function SessionSection({
                       <td className="px-2 py-2">
                         <Input
                           key={`grid-${ctrl}-${controllerConfigs[ctrl]?.gridPos}`}
-                          type="number" min="1" max="6"
+                          type="number"
+                          min="1"
+                          max="6"
                           defaultValue={controllerConfigs[ctrl]?.gridPos || ''}
-                          onBlur={(e) => handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)}
+                          onBlur={(e) =>
+                            handleControllerChange(ctrl, 'gridPos', e.target.value ? Number(e.target.value) : null)
+                          }
                           placeholder="-"
                           className="text-center h-8 w-16 border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
                         />
@@ -374,14 +496,22 @@ export default function SessionSection({
             <div className="p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-start gap-2">
               <AlertTriangle className="size-4 text-orange-500 shrink-0 mt-0.5" />
               <p className="text-xs text-orange-600">
-                {incompleteControllers.map(ic => ic.hasDriver ? t('sessionSection.incompleteDriverNoCar', { n: ic.controller + 1 }) : t('sessionSection.incompleteCarNoDriver', { n: ic.controller + 1 })).join(' · ')}
+                {incompleteControllers
+                  .map((ic) =>
+                    ic.hasDriver
+                      ? t('sessionSection.incompleteDriverNoCar', { n: ic.controller + 1 })
+                      : t('sessionSection.incompleteCarNoDriver', { n: ic.controller + 1 })
+                  )
+                  .join(' · ')}
               </p>
             </div>
           )}
           {session.type !== SessionType.PRACTICE && (
             <div className={`grid gap-3 ${session.type === SessionType.BALANCING ? 'grid-cols-3' : 'grid-cols-3'}`}>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.duration')}</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {t('sessionSection.duration')}
+                </label>
                 <Input
                   key={`dur-${session.id}-${session.maxDuration}`}
                   type="number"
@@ -396,7 +526,9 @@ export default function SessionSection({
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.maxLaps')}</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {t('sessionSection.maxLaps')}
+                </label>
                 <Input
                   key={`laps-${session.id}-${session.maxLaps}`}
                   type="number"
@@ -412,7 +544,9 @@ export default function SessionSection({
               </div>
               {session.type !== SessionType.BALANCING && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.gracePeriod')}</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {t('sessionSection.gracePeriod')}
+                  </label>
                   <Input
                     key={`grace-${session.id}-${session.gracePeriod}`}
                     type="number"
@@ -421,14 +555,17 @@ export default function SessionSection({
                       const val = parseInt(e.target.value) || 30
                       onSaveConfig({ gracePeriod: Math.max(5, Math.min(300, val)) * 1000 })
                     }}
-                    min="5" max="300"
+                    min="5"
+                    max="300"
                     className="h-7 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors"
                   />
                 </div>
               )}
               {session.type === SessionType.BALANCING && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('sessionSection.maxLapTime')}</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {t('sessionSection.maxLapTime')}
+                  </label>
                   <Input
                     key={`maxlap-${session.id}-${maxLapTime}`}
                     type="number"
@@ -453,10 +590,20 @@ export default function SessionSection({
       {isAutoSession && !canEdit && sessionDrivers.length > 0 && (
         <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2 flex-wrap">
-            {sessionDrivers.map(sd => (
+            {sessionDrivers.map((sd) => (
               <div key={sd.id} className="flex items-center gap-1.5 text-xs bg-muted/50 rounded-full px-2.5 py-1">
-                <span className={`inline-flex items-center justify-center size-4 rounded-full text-white text-[10px] font-bold ${CONTROLLER_COLORS[sd.controller]}`}>{sd.controller + 1}</span>
-                {sd.driver?.img && <img src={`${import.meta.env.VITE_API_URL || ''}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />}
+                <span
+                  className={`inline-flex items-center justify-center size-4 rounded-full text-white text-[10px] font-bold ${CONTROLLER_COLORS[sd.controller]}`}
+                >
+                  {sd.controller + 1}
+                </span>
+                {sd.driver?.img && (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL || ''}${sd.driver.img}`}
+                    className="w-4 h-4 rounded-full object-cover"
+                    alt=""
+                  />
+                )}
                 <span className="font-medium">{sd.driver?.name || '?'}</span>
               </div>
             ))}
@@ -467,9 +614,7 @@ export default function SessionSection({
       {/* Auto mode: waiting for qualif results */}
       {isAutoSession && session.type === SessionType.RACE && sessionDrivers.length === 0 && (
         <div className="px-4 py-4 border-b border-border text-center">
-          <p className="text-sm text-muted-foreground italic">
-            {t('sessionSection.autoAssignWait')}
-          </p>
+          <p className="text-sm text-muted-foreground italic">{t('sessionSection.autoAssignWait')}</p>
         </div>
       )}
 
@@ -482,9 +627,17 @@ export default function SessionSection({
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   {formatTime(timeProgress.current)}
-                  {timeProgress.pauseTime > 0 && <span className="text-yellow-600">(+{formatTime(timeProgress.pauseTime)} {t('sessionSection.pause')})</span>}
+                  {timeProgress.pauseTime > 0 && (
+                    <span className="text-yellow-600">
+                      (+{formatTime(timeProgress.pauseTime)} {t('sessionSection.pause')})
+                    </span>
+                  )}
                   {timeProgress.total && ` / ${formatTime(timeProgress.total)}`}
-                  {isFinished && timeProgress.total && timeProgress.current > timeProgress.total && <span className="text-orange-600 ml-1">(+{formatTime(timeProgress.current - timeProgress.total)})</span>}
+                  {isFinished && timeProgress.total && timeProgress.current > timeProgress.total && (
+                    <span className="text-orange-600 ml-1">
+                      (+{formatTime(timeProgress.current - timeProgress.total)})
+                    </span>
+                  )}
                 </span>
                 {isActive && timeProgress.total && (
                   <span className={`font-bold ${timeProgress.isComplete ? 'text-red-600' : 'text-foreground'}`}>
@@ -494,7 +647,11 @@ export default function SessionSection({
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden flex">
                 {timelineSegments.map((seg, i) => (
-                  <div key={i} className={`h-full transition-all duration-300 ${seg.type === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} style={{ width: `${totalWallTime > 0 ? (seg.duration / totalWallTime) * 100 : 0}%` }} />
+                  <div
+                    key={i}
+                    className={`h-full transition-all duration-300 ${seg.type === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`}
+                    style={{ width: `${totalWallTime > 0 ? (seg.duration / totalWallTime) * 100 : 0}%` }}
+                  />
                 ))}
               </div>
             </div>
@@ -507,7 +664,9 @@ export default function SessionSection({
                   {lapsProgress.total
                     ? t('sessionSection.lapsCountTotal', { current: lapsProgress.current, total: lapsProgress.total })
                     : t('sessionSection.lapsCount', { current: lapsProgress.current })}
-                  {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && <span className="text-orange-600 ml-1">(+{lapsProgress.current - lapsProgress.total})</span>}
+                  {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
+                    <span className="text-orange-600 ml-1">(+{lapsProgress.current - lapsProgress.total})</span>
+                  )}
                 </span>
                 {isActive && lapsProgress.total && (
                   <span className={`font-bold ${lapsProgress.isComplete ? 'text-red-600' : 'text-foreground'}`}>
@@ -516,9 +675,17 @@ export default function SessionSection({
                 )}
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden flex">
-                <div className={`h-full transition-all duration-500 ${lapsProgress.isComplete ? 'bg-green-500' : isActive || isPaused ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(lapsProgress.percentage, 100)}%` }} />
+                <div
+                  className={`h-full transition-all duration-500 ${lapsProgress.isComplete ? 'bg-green-500' : isActive || isPaused ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${Math.min(lapsProgress.percentage, 100)}%` }}
+                />
                 {isFinished && lapsProgress.total && lapsProgress.current > lapsProgress.total && (
-                  <div className="h-full bg-orange-400" style={{ width: `${Math.min(((lapsProgress.current - lapsProgress.total) / lapsProgress.total) * 100, 20)}%` }} />
+                  <div
+                    className="h-full bg-orange-400"
+                    style={{
+                      width: `${Math.min(((lapsProgress.current - lapsProgress.total) / lapsProgress.total) * 100, 20)}%`,
+                    }}
+                  />
                 )}
               </div>
             </div>
@@ -526,17 +693,21 @@ export default function SessionSection({
           {isFinishing && gracePeriodRemaining !== null && (
             <div>
               <div className="flex items-center justify-between mb-1 text-sm">
-                <span className="flex items-center gap-1 text-orange-600 font-medium"><Flag className="w-4 h-4" /> {t('sessionSection.checkeredFlag')}</span>
+                <span className="flex items-center gap-1 text-orange-600 font-medium">
+                  <Flag className="w-4 h-4" /> {t('sessionSection.checkeredFlag')}
+                </span>
                 <span className="font-bold text-orange-700 animate-pulse">{formatTime(gracePeriodRemaining)}</span>
               </div>
               <div className="h-2 bg-orange-200 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500 transition-all duration-1000" style={{ width: `${Math.max(0, (gracePeriodRemaining / gracePeriodTotal) * 100)}%` }} />
+                <div
+                  className="h-full bg-orange-500 transition-all duration-1000"
+                  style={{ width: `${Math.max(0, (gracePeriodRemaining / gracePeriodTotal) * 100)}%` }}
+                />
               </div>
             </div>
           )}
         </div>
       )}
-
 
       {/* Finished summary (skip for balancing) */}
       {isFinished && session.type !== SessionType.BALANCING && sessionDrivers.length > 0 && (
@@ -566,29 +737,97 @@ export default function SessionSection({
       {/* Action buttons */}
       <div className="px-4 py-3 bg-muted/50 border-t border-border flex items-center justify-between gap-2">
         <div className="text-sm">
-          {isLights && <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium animate-pulse">{t('sessionSection.lights', { n: cuStatus.start })}</span>}
-          {isRacing && <span className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-700 rounded font-medium">{t('sessionSection.racing')}</span>}
-          {isCuStopped && <span className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded font-medium"><AlertTriangle className="w-4 h-4" /> {t('sessionSection.cuStopped')}</span>}
-          {isPaused && <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium">{t('sessionSection.paused', { time: pauseDuration !== null ? formatTime(pauseDuration) : '' })}</span>}
+          {isLights && (
+            <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium animate-pulse">
+              {t('sessionSection.lights', { n: cuStatus.start })}
+            </span>
+          )}
+          {isRacing && (
+            <span className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
+              {t('sessionSection.racing')}
+            </span>
+          )}
+          {isCuStopped && (
+            <span className="flex items-center gap-1.5 px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
+              <AlertTriangle className="w-4 h-4" /> {t('sessionSection.cuStopped')}
+            </span>
+          )}
+          {isPaused && (
+            <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-medium">
+              {t('sessionSection.paused', { time: pauseDuration !== null ? formatTime(pauseDuration) : '' })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {canStart && (
             <>
-              {!deviceConnected && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> {t('sessionSection.connectCu')}</span>}
-              {hasIncompleteConfig && <span className="text-sm text-orange-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> {t('sessionSection.incompleteConfig')}</span>}
-              <Button onClick={async () => { setStarting(true); try { await onStart() } finally { setStarting(false) } }} disabled={!deviceConnected || hasIncompleteConfig || starting}>
-                {starting ? <><RefreshCw className="size-4 animate-spin" /> {t('sessionSection.starting')}</> : <><Play className="size-4" /> {t('sessionSection.start')}</>}
+              {!deviceConnected && (
+                <span className="text-sm text-orange-600 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" /> {t('sessionSection.connectCu')}
+                </span>
+              )}
+              {hasIncompleteConfig && (
+                <span className="text-sm text-orange-600 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" /> {t('sessionSection.incompleteConfig')}
+                </span>
+              )}
+              <Button
+                onClick={async () => {
+                  setStarting(true)
+                  try {
+                    await onStart()
+                  } finally {
+                    setStarting(false)
+                  }
+                }}
+                disabled={!deviceConnected || hasIncompleteConfig || starting}
+              >
+                {starting ? (
+                  <>
+                    <RefreshCw className="size-4 animate-spin" /> {t('sessionSection.starting')}
+                  </>
+                ) : (
+                  <>
+                    <Play className="size-4" /> {t('sessionSection.start')}
+                  </>
+                )}
               </Button>
             </>
           )}
-          {isLights && <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse"><Play className="size-4" /> {t('race:startLights.start')}</Button>}
-          {canResumeCu && <Button onClick={onTriggerCuStart} className="bg-orange-500 hover:bg-orange-600"><RefreshCw className="size-4" /> {t('sessionSection.resumeCu')}</Button>}
-          {canPause && <Button onClick={onPause} variant="outline" className="border-yellow-500 text-yellow-600"><Pause className="size-4" /> {t('sessionSection.pauseAction')}</Button>}
-          {canResumeFromPause && <Button onClick={onResume} className="bg-green-500 hover:bg-green-600"><Play className="size-4" /> {t('sessionSection.resume')}</Button>}
-          {canStop && <Button onClick={onStop} variant="destructive"><Flag className="size-4" /> {t('sessionSection.finish')}</Button>}
-          {isFinishing && <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg whitespace-nowrap flex-shrink-0"><Flag className="w-4 h-4" /> {t('sessionSection.waitingSessionEnd')}</span>}
+          {isLights && (
+            <Button onClick={onTriggerCuStart} className="bg-green-500 hover:bg-green-600 animate-pulse">
+              <Play className="size-4" /> {t('race:startLights.start')}
+            </Button>
+          )}
+          {canResumeCu && (
+            <Button onClick={onTriggerCuStart} className="bg-orange-500 hover:bg-orange-600">
+              <RefreshCw className="size-4" /> {t('sessionSection.resumeCu')}
+            </Button>
+          )}
+          {canPause && (
+            <Button onClick={onPause} variant="outline" className="border-yellow-500 text-yellow-600">
+              <Pause className="size-4" /> {t('sessionSection.pauseAction')}
+            </Button>
+          )}
+          {canResumeFromPause && (
+            <Button onClick={onResume} className="bg-green-500 hover:bg-green-600">
+              <Play className="size-4" /> {t('sessionSection.resume')}
+            </Button>
+          )}
+          {canStop && (
+            <Button onClick={onStop} variant="destructive">
+              <Flag className="size-4" /> {t('sessionSection.finish')}
+            </Button>
+          )}
+          {isFinishing && (
+            <span className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg whitespace-nowrap flex-shrink-0">
+              <Flag className="w-4 h-4" /> {t('sessionSection.waitingSessionEnd')}
+            </span>
+          )}
           {isFinished && onReset && (
-            <Button variant="ghost" size="sm" onClick={() => onReset(session.id)} className="text-orange-500"><RefreshCw className="size-3.5" /> {t('common:reset')}</Button>
+            <Button variant="ghost" size="sm" onClick={() => onReset(session.id)} className="text-orange-500">
+              <RefreshCw className="size-3.5" /> {t('common:reset')}
+            </Button>
           )}
         </div>
       </div>

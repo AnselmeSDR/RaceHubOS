@@ -13,7 +13,9 @@ export function VoiceProvider({ children }) {
   const [minLaps, setMinLaps] = useState(3)
   // Chosen voice per interface language; a language without one uses its default voice
   const [voiceIds, setVoiceIds] = useState({})
-  const { i18n: { resolvedLanguage } } = useTranslation()
+  const {
+    i18n: { resolvedLanguage },
+  } = useTranslation()
 
   // Refs for access from socket listeners
   const bestLapEnabledRef = useRef(bestLapEnabled)
@@ -27,20 +29,32 @@ export function VoiceProvider({ children }) {
 
   // Load preferences
   useEffect(() => {
-    fetch(`${API_URL}/api/preferences/bestLapVoice:enabled`).then(r => r.json()).then(d => {
-      if (d.success && d.data !== null) setBestLapEnabled(d.data)
-    }).catch(() => {})
-    fetch(`${API_URL}/api/preferences/podiumVoice:enabled`).then(r => r.json()).then(d => {
-      if (d.success && d.data !== null) setPodiumEnabled(d.data)
-    }).catch(() => {})
-    fetch(`${API_URL}/api/preferences/bestLapVoice:minLaps`).then(r => r.json()).then(d => {
-      if (d.success && d.data !== null) setMinLaps(d.data)
-    }).catch(() => {})
-    fetch(`${API_URL}/api/preferences/bestLapVoice:voiceId`).then(r => r.json()).then(d => {
-      if (!d.success || d.data === null) return
-      // Before 1.25.0 a single voice was stored, always a French one
-      setVoiceIds(typeof d.data === 'string' ? { fr: d.data } : d.data)
-    }).catch(() => {})
+    fetch(`${API_URL}/api/preferences/bestLapVoice:enabled`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data !== null) setBestLapEnabled(d.data)
+      })
+      .catch(() => {})
+    fetch(`${API_URL}/api/preferences/podiumVoice:enabled`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data !== null) setPodiumEnabled(d.data)
+      })
+      .catch(() => {})
+    fetch(`${API_URL}/api/preferences/bestLapVoice:minLaps`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data !== null) setMinLaps(d.data)
+      })
+      .catch(() => {})
+    fetch(`${API_URL}/api/preferences/bestLapVoice:voiceId`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.success || d.data === null) return
+        // Before 1.25.0 a single voice was stored, always a French one
+        setVoiceIds(typeof d.data === 'string' ? { fr: d.data } : d.data)
+      })
+      .catch(() => {})
   }, [])
 
   // Save helpers
@@ -89,30 +103,34 @@ export function VoiceProvider({ children }) {
   const getVoice = useCallback(() => {
     const voiceURI = voiceIdsRef.current[i18n.resolvedLanguage]
     if (!voiceURI) return null
-    return speechSynthesis.getVoices().find(v => v.voiceURI === voiceURI) || null
+    return speechSynthesis.getVoices().find((v) => v.voiceURI === voiceURI) || null
   }, [])
 
   // Speak text with current settings
-  const speak = useCallback((text, { rate = 1.1, volume = 0.9, force = false } = {}) => {
-    try {
-      if (!force && speechSynthesis.speaking) return null
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = speechLocale(i18n.resolvedLanguage)
-      utterance.rate = rate
-      utterance.volume = volume
-      const voice = getVoice()
-      if (voice) utterance.voice = voice
-      speechSynthesis.speak(utterance)
-      return utterance
-    } catch {
-      return null
-    }
-  }, [getVoice])
+  const speak = useCallback(
+    (text, { rate = 1.1, volume = 0.9, force = false } = {}) => {
+      try {
+        if (!force && speechSynthesis.speaking) return null
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = speechLocale(i18n.resolvedLanguage)
+        utterance.rate = rate
+        utterance.volume = volume
+        const voice = getVoice()
+        if (voice) utterance.voice = voice
+        speechSynthesis.speak(utterance)
+        return utterance
+      } catch {
+        return null
+      }
+    },
+    [getVoice]
+  )
 
   // Format time for speech
   const formatTimeVoice = useCallback((ms) => {
     if (!ms) return ''
-    const number = (value) => value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+    const number = (value) =>
+      value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
     const s = ms / 1000
     if (s >= 60) {
       const min = Math.floor(s / 60)
@@ -122,14 +140,24 @@ export function VoiceProvider({ children }) {
   }, [])
 
   return (
-    <VoiceContext.Provider value={{
-      bestLapEnabled, saveBestLapEnabled,
-      podiumEnabled, savePodiumEnabled,
-      minLaps, saveMinLaps,
-      voiceId: voiceIds[resolvedLanguage] || '', saveVoiceId,
-      bestLapEnabledRef, podiumEnabledRef, minLapsRef,
-      speak, getVoice, formatTimeVoice,
-    }}>
+    <VoiceContext.Provider
+      value={{
+        bestLapEnabled,
+        saveBestLapEnabled,
+        podiumEnabled,
+        savePodiumEnabled,
+        minLaps,
+        saveMinLaps,
+        voiceId: voiceIds[resolvedLanguage] || '',
+        saveVoiceId,
+        bestLapEnabledRef,
+        podiumEnabledRef,
+        minLapsRef,
+        speak,
+        getVoice,
+        formatTimeVoice,
+      }}
+    >
       {children}
     </VoiceContext.Provider>
   )

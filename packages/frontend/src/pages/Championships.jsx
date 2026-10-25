@@ -35,9 +35,12 @@ export default function Championships() {
   filtersRef.current = filters
 
   useEffect(() => {
-    fetch(`${API_URL}/api/tracks`).then(r => r.json()).then(d => {
-      if (d.success) setTracks(d.data || [])
-    }).catch(() => {})
+    fetch(`${API_URL}/api/tracks`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setTracks(d.data || [])
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -64,110 +67,111 @@ export default function Championships() {
       const res = await fetch(`${API_URL}/api/championships?${params}`)
       const data = await res.json()
       if (data.success) {
-        setChampionships(prev => isFirst ? data.data : [...prev, ...data.data])
+        setChampionships((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
       }
     } catch (err) {
       console.error('Failed to load championships:', err)
     } finally {
-      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
-      else setLoadingMore(false)
+      if (isFirst) {
+        setLoading(false)
+        hasLoadedOnce.current = true
+      } else setLoadingMore(false)
     }
   }
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'name',
-      header: t('columns.name'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'name',
+        header: t('columns.name'),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <span className="font-semibold">{row.original.name}</span>
           </div>
-          <span className="font-semibold">{row.original.name}</span>
-        </div>
-      ),
-    },
-    {
-      id: 'track',
-      accessorFn: (row) => tracks.find(tr => tr.id === row.trackId)?.name || '',
-      meta: { label: t('glossary:track', { count: 1 }) },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('glossary:track', { count: 1 })}
-          active={filtersRef.current.trackId.length > 0}
-          value={filtersRef.current.trackId}
-          options={tracks.map(tr => ({ value: tr.id, label: tr.name }))}
-          onChange={(v) => setFilters(f => ({ ...f, trackId: v }))}
-        />
-      ),
-      cell: ({ row }) => {
-        const track = tracks.find(tr => tr.id === row.original.trackId)
-        return (
+        ),
+      },
+      {
+        id: 'track',
+        accessorFn: (row) => tracks.find((tr) => tr.id === row.trackId)?.name || '',
+        meta: { label: t('glossary:track', { count: 1 }) },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('glossary:track', { count: 1 })}
+            active={filtersRef.current.trackId.length > 0}
+            value={filtersRef.current.trackId}
+            options={tracks.map((tr) => ({ value: tr.id, label: tr.name }))}
+            onChange={(v) => setFilters((f) => ({ ...f, trackId: v }))}
+          />
+        ),
+        cell: ({ row }) => {
+          const track = tracks.find((tr) => tr.id === row.original.trackId)
+          return (
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin className="w-4 h-4" />
+              {track?.name || t('common:notDefined')}
+            </span>
+          )
+        },
+      },
+      {
+        id: 'qualifs',
+        accessorFn: (row) => row.sessions?.filter((s) => s.type === SessionType.QUALIF).length || 0,
+        header: t('columns.qualifs'),
+        cell: ({ row }) => (
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            {track?.name || t('common:notDefined')}
+            <Clock className="w-4 h-4 text-blue-500" />
+            {row.original.sessions?.filter((s) => s.type === SessionType.QUALIF).length || 0}
           </span>
-        )
+        ),
       },
-    },
-    {
-      id: 'qualifs',
-      accessorFn: (row) => row.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0,
-      header: t('columns.qualifs'),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Clock className="w-4 h-4 text-blue-500" />
-          {row.original.sessions?.filter(s => s.type === SessionType.QUALIF).length || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'races',
-      accessorFn: (row) => row.sessions?.filter(s => s.type === SessionType.RACE).length || 0,
-      header: t('columns.races'),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4 text-green-500" />
-          {row.original.sessions?.filter(s => s.type === SessionType.RACE).length || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'status',
-      accessorFn: (row) => row.status || ChampionshipStatus.PLANNED,
-      meta: { label: t('common:status') },
-      header: ({ column }) => (
-        <FilterHeader
-          column={column}
-          label={t('common:status')}
-          active={filtersRef.current.status.length > 0}
-          value={filtersRef.current.status}
-          options={[
-            { value: ChampionshipStatus.PLANNED, label: t('glossary:championshipStatus.planned') },
-            { value: 'active', label: t('glossary:championshipStatus.active') },
-            { value: 'finished', label: t('glossary:championshipStatus.finished') },
-          ]}
-          onChange={(v) => setFilters(f => ({ ...f, status: v }))}
-        />
-      ),
-      cell: ({ row }) => {
-        const styles = {
-          active: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300',
-          finished: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
-          planned: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
-        }
-        const key = row.original.status || ChampionshipStatus.PLANNED
-        return (
-          <Badge className={styles[key] || styles.planned}>
-            {t(`glossary:championshipStatus.${key}`)}
-          </Badge>
-        )
+      {
+        id: 'races',
+        accessorFn: (row) => row.sessions?.filter((s) => s.type === SessionType.RACE).length || 0,
+        header: t('columns.races'),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Flag className="w-4 h-4 text-green-500" />
+            {row.original.sessions?.filter((s) => s.type === SessionType.RACE).length || 0}
+          </span>
+        ),
       },
-    },
-  ], [tracks, t])
+      {
+        id: 'status',
+        accessorFn: (row) => row.status || ChampionshipStatus.PLANNED,
+        meta: { label: t('common:status') },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('common:status')}
+            active={filtersRef.current.status.length > 0}
+            value={filtersRef.current.status}
+            options={[
+              { value: ChampionshipStatus.PLANNED, label: t('glossary:championshipStatus.planned') },
+              { value: 'active', label: t('glossary:championshipStatus.active') },
+              { value: 'finished', label: t('glossary:championshipStatus.finished') },
+            ]}
+            onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+          />
+        ),
+        cell: ({ row }) => {
+          const styles = {
+            active: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300',
+            finished: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+            planned: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300',
+          }
+          const key = row.original.status || ChampionshipStatus.PLANNED
+          return <Badge className={styles[key] || styles.planned}>{t(`glossary:championshipStatus.${key}`)}</Badge>
+        },
+      },
+    ],
+    [tracks, t]
+  )
 
   return (
     <ListPage
@@ -183,7 +187,7 @@ export default function Championships() {
       addLabel={t('addLabel')}
       onAdd={() => setShowAutoWizard(true)}
       onRowClick={(row) => !filters.deleted && navigate(`/championships/${row.id}`)}
-      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
       deleteEndpoint="/api/championships"
       exportEndpoint="/api/championships/export"
       onDeleted={() => loadData(0)}
@@ -197,7 +201,7 @@ export default function Championships() {
           key: 'deleted',
           label: t('common:showDeleted'),
           checked: filters.deleted,
-          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
         },
       ]}
     >
@@ -206,8 +210,15 @@ export default function Championships() {
           tracks={tracks}
           initialData={sharedForm}
           onFormChange={setSharedForm}
-          onClose={() => { setShowForm(false); setSharedForm({ name: '', trackId: '' }); loadData(0) }}
-          onSwitchAuto={() => { setShowForm(false); setShowAutoWizard(true) }}
+          onClose={() => {
+            setShowForm(false)
+            setSharedForm({ name: '', trackId: '' })
+            loadData(0)
+          }}
+          onSwitchAuto={() => {
+            setShowForm(false)
+            setShowAutoWizard(true)
+          }}
         />
       )}
       {showAutoWizard && (
@@ -216,9 +227,16 @@ export default function Championships() {
           initialName={sharedForm.name}
           initialTrackId={sharedForm.trackId}
           onFormChange={setSharedForm}
-          onClose={() => { setShowAutoWizard(false); setSharedForm({ name: '', trackId: '' }); loadData(0) }}
+          onClose={() => {
+            setShowAutoWizard(false)
+            setSharedForm({ name: '', trackId: '' })
+            loadData(0)
+          }}
           onCreated={() => loadData(0)}
-          onSwitchManual={() => { setShowAutoWizard(false); setShowForm(true) }}
+          onSwitchManual={() => {
+            setShowAutoWizard(false)
+            setShowForm(true)
+          }}
         />
       )}
     </ListPage>
@@ -245,7 +263,7 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
           season: new Date().getFullYear().toString(),
           pointsSystem: '{}',
           sessionNames: sessionNames(),
-        })
+        }),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
@@ -285,15 +303,23 @@ function ChampionshipFormModal({ tracks, initialData, onFormChange, onClose, onS
       <TextField
         label={t('form.name')}
         value={formData.name}
-        onChange={(v) => { const next = { ...formData, name: v }; setFormData(next); onFormChange?.(next) }}
+        onChange={(v) => {
+          const next = { ...formData, name: v }
+          setFormData(next)
+          onFormChange?.(next)
+        }}
         placeholder={t('form.namePlaceholder')}
         required
       />
       <SelectField
         label={t('glossary:track', { count: 1 })}
         value={formData.trackId}
-        onChange={(v) => { const next = { ...formData, trackId: v }; setFormData(next); onFormChange?.(next) }}
-        options={tracks.map(tr => ({ value: tr.id, label: tr.name }))}
+        onChange={(v) => {
+          const next = { ...formData, trackId: v }
+          setFormData(next)
+          onFormChange?.(next)
+        }}
+        options={tracks.map((tr) => ({ value: tr.id, label: tr.name }))}
         placeholder={t('form.selectTrack')}
         required
       />

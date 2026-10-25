@@ -12,17 +12,19 @@ const migrationsDir = path.join(backendDir, 'prisma', 'migrations');
 
 // The URL is passed explicitly: prisma.config.js loads .env, and a stale entry
 // there would otherwise decide which database gets migrated
-const run = (args) => execFileSync(process.execPath, [prismaCli(), ...args.slice(1)], {
-  cwd: backendDir,
-  encoding: 'utf-8',
-  stdio: 'pipe',
-  env: { ...process.env, DATABASE_URL: getDatabaseUrl() },
-});
+const run = (args) =>
+  execFileSync(process.execPath, [prismaCli(), ...args.slice(1)], {
+    cwd: backendDir,
+    encoding: 'utf-8',
+    stdio: 'pipe',
+    env: { ...process.env, DATABASE_URL: getDatabaseUrl() },
+  });
 
 /** Migrations present on disk, oldest first. */
 function migrationsOnDisk() {
   if (!fs.existsSync(migrationsDir)) return [];
-  return fs.readdirSync(migrationsDir)
+  return fs
+    .readdirSync(migrationsDir)
     .filter((name) => fs.existsSync(path.join(migrationsDir, name, 'migration.sql')))
     .sort();
 }
@@ -37,8 +39,10 @@ function migrationsApplied() {
     const Database = createRequire(import.meta.url)('better-sqlite3');
     const db = new Database(dbPath, { readonly: true });
     try {
-      return db.prepare('SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL')
-        .all().map((r) => r.migration_name);
+      return db
+        .prepare('SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL')
+        .all()
+        .map((r) => r.migration_name);
     } finally {
       db.close();
     }

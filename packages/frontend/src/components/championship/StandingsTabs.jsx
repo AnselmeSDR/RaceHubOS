@@ -12,12 +12,7 @@ import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey, sessionTypeKey
  * Qualif tab: sorted by qualifBestTime
  * Race tab: sorted by raceTotalLaps desc, then raceTotalTime asc
  */
-export default function StandingsTabs({
-  standings = {},
-  drivers = [],
-  activeTab = SessionType.PRACTICE,
-  onTabChange
-}) {
+export default function StandingsTabs({ standings = {}, drivers = [], activeTab = SessionType.PRACTICE, onTabChange }) {
   const { t } = useTranslation('championships')
   const TAB_STYLE = {
     [SessionType.PRACTICE]: { icon: FlaskConical, color: 'purple' },
@@ -33,7 +28,7 @@ export default function StandingsTabs({
 
   // Get driver info by ID
   const getDriver = (driverId) => {
-    return drivers.find(d => d.id === driverId) || { name: t('standings.unknownDriver'), color: '#6B7280' }
+    return drivers.find((d) => d.id === driverId) || { name: t('standings.unknownDriver'), color: '#6B7280' }
   }
 
   // Get sorted standings for current tab
@@ -50,13 +45,13 @@ export default function StandingsTabs({
       // Qualif standings from championship standings
       const qualifData = standings.qualif || []
       return [...qualifData]
-        .filter(s => s.bestTime !== null && s.bestTime > 0)
+        .filter((s) => s.bestTime !== null && s.bestTime > 0)
         .sort((a, b) => a.bestTime - b.bestTime)
     } else {
       // Race standings from championship standings
       const raceData = standings.race || []
       return [...raceData]
-        .filter(s => (s.totalLaps || s.raceTotalLaps) > 0 || s.points > 0)
+        .filter((s) => (s.totalLaps || s.raceTotalLaps) > 0 || s.points > 0)
         .sort((a, b) => {
           const aLaps = a.totalLaps || a.raceTotalLaps || 0
           const bLaps = b.totalLaps || b.raceTotalLaps || 0
@@ -106,13 +101,13 @@ export default function StandingsTabs({
     <div className="@container bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Tabs Header */}
       <div className="flex border-b border-border">
-        {tabs.map(tab => {
+        {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
           const colorClasses = {
             purple: isActive ? 'text-purple-600 border-purple-600' : 'text-muted-foreground hover:text-purple-600',
             blue: isActive ? 'text-blue-600 border-blue-600' : 'text-muted-foreground hover:text-blue-600',
-            green: isActive ? 'text-green-600 border-green-600' : 'text-muted-foreground hover:text-green-600'
+            green: isActive ? 'text-green-600 border-green-600' : 'text-muted-foreground hover:text-green-600',
           }
 
           return (
@@ -137,9 +132,7 @@ export default function StandingsTabs({
       {/* Standings List */}
       <div>
         {sortedStandings.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            {t('standings.noStandings')}
-          </div>
+          <div className="text-center py-12 text-muted-foreground text-sm">{t('standings.noStandings')}</div>
         ) : (
           <div className="divide-y divide-border">
             {sortedStandings.map((standing, index) => {
@@ -151,18 +144,27 @@ export default function StandingsTabs({
                 <div
                   key={`${activeTab}-${standing.driverId}-${standing.carId || index}`}
                   className={`flex items-center gap-3 px-4 py-3 hover:bg-muted ${
-                    position === 1 ? 'bg-gradient-to-r from-yellow-500/40 to-transparent border-l-4 border-yellow-400' :
-                    position === 2 ? 'bg-gradient-to-r from-gray-400/30 to-transparent border-l-4 border-gray-300' :
-                    position === 3 ? 'bg-gradient-to-r from-orange-500/30 to-transparent border-l-4 border-orange-400' : ''
+                    position === 1
+                      ? 'bg-gradient-to-r from-yellow-500/40 to-transparent border-l-4 border-yellow-400'
+                      : position === 2
+                        ? 'bg-gradient-to-r from-gray-400/30 to-transparent border-l-4 border-gray-300'
+                        : position === 3
+                          ? 'bg-gradient-to-r from-orange-500/30 to-transparent border-l-4 border-orange-400'
+                          : ''
                   }`}
                 >
                   {/* Position */}
-                  <span className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full font-black text-sm ${
-                    position === 1 ? 'bg-yellow-400 text-yellow-950' :
-                    position === 2 ? 'bg-gray-300 text-gray-800' :
-                    position === 3 ? 'bg-orange-400 text-orange-950' :
-                    'text-muted-foreground'
-                  }`}>
+                  <span
+                    className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full font-black text-sm ${
+                      position === 1
+                        ? 'bg-yellow-400 text-yellow-950'
+                        : position === 2
+                          ? 'bg-gray-300 text-gray-800'
+                          : position === 3
+                            ? 'bg-orange-400 text-orange-950'
+                            : 'text-muted-foreground'
+                    }`}
+                  >
                     {position}
                   </span>
 
@@ -172,11 +174,7 @@ export default function StandingsTabs({
                     style={{ backgroundColor: driver.color || '#6B7280' }}
                   >
                     {driver.img ? (
-                      <img
-                        src={getImgUrl(driver.img)}
-                        alt={driver.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
                     ) : (
                       driver.name?.charAt(0) || '?'
                     )}
@@ -184,16 +182,22 @@ export default function StandingsTabs({
 
                   {/* Driver info */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground text-sm truncate">
-                      {driver.name}
-                    </div>
+                    <div className="font-medium text-foreground text-sm truncate">{driver.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                       {standing.car && (
-                        <span className="truncate">{standing.car.brand} {standing.car.model}</span>
+                        <span className="truncate">
+                          {standing.car.brand} {standing.car.model}
+                        </span>
                       )}
-                      {activeTab !== SessionType.RACE && (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
-                        <span>• {t('standings.lapsCount', { count: standing.totalLaps || standing.raceTotalLaps || standing.laps })}</span>
-                      )}
+                      {activeTab !== SessionType.RACE &&
+                        (standing.totalLaps || standing.raceTotalLaps || standing.laps) > 0 && (
+                          <span>
+                            •{' '}
+                            {t('standings.lapsCount', {
+                              count: standing.totalLaps || standing.raceTotalLaps || standing.laps,
+                            })}
+                          </span>
+                        )}
                     </div>
                   </div>
 
@@ -240,11 +244,12 @@ export default function StandingsTabs({
                             <LapTime time={standing.totalTime || standing.raceTotalTime} size="sm" />
                           ) : gap !== null ? (
                             <>
-                              <span className={`font-mono text-sm font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-foreground'}`}>
+                              <span
+                                className={`font-mono text-sm font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-foreground'}`}
+                              >
                                 {gap.type === 'laps'
                                   ? t('standings.gapLaps', { count: gap.value })
-                                  : `+${(gap.value / 1000).toFixed(3)}`
-                                }
+                                  : `+${(gap.value / 1000).toFixed(3)}`}
                               </span>
                               <div className="font-mono text-[10px] text-muted-foreground">
                                 <LapTime time={standing.totalTime || standing.raceTotalTime} size="xs" />

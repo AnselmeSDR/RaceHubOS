@@ -14,10 +14,15 @@ const API_URL = 'http://localhost:3101'
 const stamp = () => `E2E-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
 const ENTITIES = [
-  { label: 'pilote',  path: '/drivers', endpoint: '/api/drivers', create: () => ({ name: stamp(), number: 700 + Math.floor(Math.random() * 299) }) },
-  { label: 'voiture', path: '/cars',    endpoint: '/api/cars',    create: () => ({ brand: 'E2E', model: stamp() }) },
-  { label: 'circuit', path: '/tracks',  endpoint: '/api/tracks',  create: () => ({ name: stamp(), length: 20 }) },
-  { label: 'équipe',  path: '/teams',   endpoint: '/api/teams',   create: () => ({ name: stamp() }) },
+  {
+    label: 'pilote',
+    path: '/drivers',
+    endpoint: '/api/drivers',
+    create: () => ({ name: stamp(), number: 700 + Math.floor(Math.random() * 299) }),
+  },
+  { label: 'voiture', path: '/cars', endpoint: '/api/cars', create: () => ({ brand: 'E2E', model: stamp() }) },
+  { label: 'circuit', path: '/tracks', endpoint: '/api/tracks', create: () => ({ name: stamp(), length: 20 }) },
+  { label: 'équipe', path: '/teams', endpoint: '/api/teams', create: () => ({ name: stamp() }) },
 ]
 
 async function apiCreate(request, endpoint, body) {

@@ -202,8 +202,7 @@ export class ChampionshipService {
     }
 
     // Sort by best time ascending
-    const ranking = Array.from(driverBests.values())
-      .sort((a, b) => a.bestTime - b.bestTime);
+    const ranking = Array.from(driverBests.values()).sort((a, b) => a.bestTime - b.bestTime);
 
     // Get race sessions sorted by autoGroup
     const raceSessions = await this.prisma.session.findMany({
@@ -275,10 +274,10 @@ export class ChampionshipService {
       orderBy: { order: 'asc' },
     });
 
-    const qualifSessions = sessions.filter(s => s.type === SessionType.QUALIF);
-    const raceSessions = sessions.filter(s => s.type === SessionType.RACE);
-    const allQualifsFinished = qualifSessions.length > 0
-      && qualifSessions.every(s => s.status === SessionStatus.FINISHED);
+    const qualifSessions = sessions.filter((s) => s.type === SessionType.QUALIF);
+    const raceSessions = sessions.filter((s) => s.type === SessionType.RACE);
+    const allQualifsFinished =
+      qualifSessions.length > 0 && qualifSessions.every((s) => s.status === SessionStatus.FINISHED);
 
     // Build merged qualif ranking if all qualifs are done
     let mergedRanking = [];
@@ -308,7 +307,7 @@ export class ChampionshipService {
       driversPerQualif: championship.driversPerQualif,
       driversPerRace: championship.driversPerRace,
       participants: championship.participants,
-      qualifGroups: qualifSessions.map(s => ({
+      qualifGroups: qualifSessions.map((s) => ({
         sessionId: s.id,
         group: s.autoGroup,
         label: `Q${(s.autoGroup ?? 0) + 1}`,
@@ -318,7 +317,7 @@ export class ChampionshipService {
       })),
       allQualifsFinished,
       mergedRanking,
-      raceGroups: raceSessions.map(s => ({
+      raceGroups: raceSessions.map((s) => ({
         sessionId: s.id,
         group: s.autoGroup,
         label: `R${(s.autoGroup ?? 0) + 1}`,
@@ -354,11 +353,11 @@ export class ChampionshipService {
 
     if (championship?.mode !== ChampionshipMode.AUTO) return;
 
-    const finishedSession = championship.sessions.find(s => s.id === sessionId);
+    const finishedSession = championship.sessions.find((s) => s.id === sessionId);
     if (finishedSession?.type !== SessionType.QUALIF) return;
 
-    const qualifSessions = championship.sessions.filter(s => s.type === SessionType.QUALIF);
-    const allFinished = qualifSessions.every(s => s.status === SessionStatus.FINISHED);
+    const qualifSessions = championship.sessions.filter((s) => s.type === SessionType.QUALIF);
+    const allFinished = qualifSessions.every((s) => s.status === SessionStatus.FINISHED);
 
     if (allFinished) {
       await this.assignDriversToRaces(championshipId);
@@ -388,11 +387,11 @@ export class ChampionshipService {
 
     if (championship?.mode !== ChampionshipMode.AUTO) return;
 
-    const resetSession = championship.sessions.find(s => s.id === sessionId);
+    const resetSession = championship.sessions.find((s) => s.id === sessionId);
     if (resetSession?.type !== SessionType.QUALIF) return;
 
     // Clear race session drivers since qualif results changed
-    const raceSessions = championship.sessions.filter(s => s.type === SessionType.RACE);
+    const raceSessions = championship.sessions.filter((s) => s.type === SessionType.RACE);
     for (const race of raceSessions) {
       await this.prisma.sessionDriver.deleteMany({ where: { sessionId: race.id } });
     }

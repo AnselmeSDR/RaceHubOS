@@ -4,16 +4,16 @@
  */
 
 // Service and Characteristic UUIDs
-export const CARRERA_SERVICE_UUID = '39df7777-b1b4-b90b-57f1-7144ae4e4a6a';
-export const CARRERA_WRITE_UUID = '39df8888-b1b4-b90b-57f1-7144ae4e4a6a';
-export const CARRERA_READ_UUID = '39df9999-b1b4-b90b-57f1-7144ae4e4a6a';
+export const CARRERA_SERVICE_UUID = '39df7777-b1b4-b90b-57f1-7144ae4e4a6a'
+export const CARRERA_WRITE_UUID = '39df8888-b1b4-b90b-57f1-7144ae4e4a6a'
+export const CARRERA_READ_UUID = '39df9999-b1b4-b90b-57f1-7144ae4e4a6a'
 
 /**
  * Convert ArrayBuffer to string for debugging
  */
 export function bufferToString(buffer) {
-  const array = new Uint8Array(buffer);
-  return String.fromCharCode(...array);
+  const array = new Uint8Array(buffer)
+  return String.fromCharCode(...array)
 }
 
 /**
@@ -21,7 +21,7 @@ export function bufferToString(buffer) {
  * Carrera uses ASCII nibbles (0x30-0x3f for 0-15)
  */
 function parseNibble(value) {
-  return value & 0x0f;
+  return value & 0x0f
 }
 
 /**
@@ -30,12 +30,12 @@ function parseNibble(value) {
  * Where each nibble is 4 bits
  */
 function parseTimestamp(buffer, offset) {
-  let time = 0;
+  let time = 0
   for (let i = 0; i < 8; i++) {
-    const nibble = parseNibble(buffer[offset + i]);
-    time |= (nibble << (i * 4));
+    const nibble = parseNibble(buffer[offset + i])
+    time |= nibble << (i * 4)
   }
-  return time;
+  return time
 }
 
 /**
@@ -43,22 +43,22 @@ function parseTimestamp(buffer, offset) {
  * Format: '?' carId timestamp[8] sector
  */
 export function parseTimerEvent(buffer) {
-  const data = new Uint8Array(buffer);
+  const data = new Uint8Array(buffer)
 
   if (data.length < 11 || String.fromCharCode(data[0]) !== '?') {
-    return null;
+    return null
   }
 
-  const carId = parseNibble(data[1]);
-  const timestamp = parseTimestamp(data, 2);
-  const sector = parseNibble(data[10]);
+  const carId = parseNibble(data[1])
+  const timestamp = parseTimestamp(data, 2)
+  const sector = parseNibble(data[10])
 
   return {
     type: 'timer',
     carId,
     timestamp,
     sector,
-  };
+  }
 }
 
 /**
@@ -66,29 +66,29 @@ export function parseTimerEvent(buffer) {
  * Format: '?' 10 fuel[8] startSeq mode pitMask[2] display
  */
 export function parseStatusEvent(buffer) {
-  const data = new Uint8Array(buffer);
+  const data = new Uint8Array(buffer)
 
   if (data.length < 14 || String.fromCharCode(data[0]) !== '?' || parseNibble(data[1]) !== 10) {
-    return null;
+    return null
   }
 
-  const fuel = [];
+  const fuel = []
   for (let i = 0; i < 8; i++) {
-    fuel.push(parseNibble(data[2 + i]));
+    fuel.push(parseNibble(data[2 + i]))
   }
 
-  const startSequence = parseNibble(data[10]);
-  const mode = parseNibble(data[11]);
-  const pitMask1 = parseNibble(data[12]);
-  const pitMask2 = parseNibble(data[13]);
+  const startSequence = parseNibble(data[10])
+  const mode = parseNibble(data[11])
+  const pitMask1 = parseNibble(data[12])
+  const pitMask2 = parseNibble(data[13])
 
   // Decode pit lane status from masks
-  const pitLanes = [];
+  const pitLanes = []
   for (let i = 0; i < 4; i++) {
-    pitLanes.push(Boolean(pitMask1 & (1 << i)));
+    pitLanes.push(Boolean(pitMask1 & (1 << i)))
   }
   for (let i = 0; i < 4; i++) {
-    pitLanes.push(Boolean(pitMask2 & (1 << i)));
+    pitLanes.push(Boolean(pitMask2 & (1 << i)))
   }
 
   return {
@@ -97,31 +97,31 @@ export function parseStatusEvent(buffer) {
     startSequence,
     mode,
     pitLanes,
-  };
+  }
 }
 
 /**
  * Parse any incoming message from Control Unit
  */
 export function parseMessage(buffer) {
-  const data = new Uint8Array(buffer);
+  const data = new Uint8Array(buffer)
 
   if (data.length === 0) {
-    return null;
+    return null
   }
 
   // Check message type by second byte
   if (data.length >= 2) {
-    const messageType = parseNibble(data[1]);
+    const messageType = parseNibble(data[1])
 
     if (messageType === 10) {
-      return parseStatusEvent(buffer);
+      return parseStatusEvent(buffer)
     } else if (messageType >= 1 && messageType <= 8) {
-      return parseTimerEvent(buffer);
+      return parseTimerEvent(buffer)
     }
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -129,7 +129,7 @@ export function parseMessage(buffer) {
  * Sends '?' to request next event from Control Unit
  */
 export function createPollRequest() {
-  return new TextEncoder().encode('?');
+  return new TextEncoder().encode('?')
 }
 
 /**
@@ -137,7 +137,7 @@ export function createPollRequest() {
  * Sends '0' to request firmware version
  */
 export function createVersionRequest() {
-  return new TextEncoder().encode('0');
+  return new TextEncoder().encode('0')
 }
 
 /**
@@ -146,77 +146,77 @@ export function createVersionRequest() {
  */
 export class CarreraConnection {
   constructor() {
-    this.device = null;
-    this.server = null;
-    this.service = null;
-    this.writeChar = null;
-    this.readChar = null;
-    this.pollInterval = null;
-    this.onEvent = null;
+    this.device = null
+    this.server = null
+    this.service = null
+    this.writeChar = null
+    this.readChar = null
+    this.pollInterval = null
+    this.onEvent = null
   }
 
   async connect() {
     // Request device
     this.device = await navigator.bluetooth.requestDevice({
       filters: [{ name: 'Control_Unit' }],
-      optionalServices: [CARRERA_SERVICE_UUID]
-    });
+      optionalServices: [CARRERA_SERVICE_UUID],
+    })
 
     // Connect to GATT server
-    this.server = await this.device.gatt.connect();
+    this.server = await this.device.gatt.connect()
 
     // Get service
-    this.service = await this.server.getPrimaryService(CARRERA_SERVICE_UUID);
+    this.service = await this.server.getPrimaryService(CARRERA_SERVICE_UUID)
 
     // Get characteristics
-    this.writeChar = await this.service.getCharacteristic(CARRERA_WRITE_UUID);
-    this.readChar = await this.service.getCharacteristic(CARRERA_READ_UUID);
+    this.writeChar = await this.service.getCharacteristic(CARRERA_WRITE_UUID)
+    this.readChar = await this.service.getCharacteristic(CARRERA_READ_UUID)
 
     // Start notifications
-    await this.readChar.startNotifications();
+    await this.readChar.startNotifications()
     this.readChar.addEventListener('characteristicvaluechanged', (event) => {
-      const value = event.target.value;
-      const message = parseMessage(value.buffer);
+      const value = event.target.value
+      const message = parseMessage(value.buffer)
       if (message && this.onEvent) {
-        this.onEvent(message);
+        this.onEvent(message)
       }
-    });
+    })
 
     // Start polling (Control Unit uses request/response pattern)
-    this.startPolling();
+    this.startPolling()
 
-    return this.device;
+    return this.device
   }
 
   startPolling() {
     // Poll every 100ms for new events
     this.pollInterval = setInterval(async () => {
       try {
-        await this.writeChar.writeValue(createPollRequest());
+        await this.writeChar.writeValue(createPollRequest())
       } catch (error) {
-        console.error('Poll error:', error);
+        console.error('Poll error:', error)
       }
-    }, 100);
+    }, 100)
   }
 
   async disconnect() {
     if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
+      clearInterval(this.pollInterval)
+      this.pollInterval = null
     }
 
     if (this.server && this.server.connected) {
-      await this.server.disconnect();
+      await this.server.disconnect()
     }
 
-    this.device = null;
-    this.server = null;
-    this.service = null;
-    this.writeChar = null;
-    this.readChar = null;
+    this.device = null
+    this.server = null
+    this.service = null
+    this.writeChar = null
+    this.readChar = null
   }
 
   isConnected() {
-    return this.server && this.server.connected;
+    return this.server && this.server.connected
   }
 }

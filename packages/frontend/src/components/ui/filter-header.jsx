@@ -10,16 +10,14 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
   const sorted = column?.getIsSorted?.()
   const canSort = column?.getCanSort?.()
 
-  const selected = Array.isArray(value) ? value : (value ? [value] : [])
+  const selected = Array.isArray(value) ? value : value ? [value] : []
 
   function toggleValue(optValue) {
     if (!optValue) {
       onChange([])
       return
     }
-    const next = selected.includes(optValue)
-      ? selected.filter(v => v !== optValue)
-      : [...selected, optValue]
+    const next = selected.includes(optValue) ? selected.filter((v) => v !== optValue) : [...selected, optValue]
     onChange(next)
   }
 
@@ -31,21 +29,23 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
           onClick={column?.getToggleSortingHandler?.()}
         >
           {label}
-          {canSort && (
-            sorted === 'asc'
-              ? <ChevronUp className="w-4 h-4 text-black dark:text-white" />
-              : sorted === 'desc'
-                ? <ChevronDown className="w-4 h-4 text-black dark:text-white" />
-                : <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
-          )}
+          {canSort &&
+            (sorted === 'asc' ? (
+              <ChevronUp className="w-4 h-4 text-black dark:text-white" />
+            ) : sorted === 'desc' ? (
+              <ChevronDown className="w-4 h-4 text-black dark:text-white" />
+            ) : (
+              <ChevronsUpDown className="w-4 h-4 text-black/40 dark:text-white/40" />
+            ))}
         </span>
         <span className="flex-1" />
         <DropdownMenuTrigger asChild>
           <button className="p-1 rounded hover:bg-muted transition-colors">
-            {active
-              ? <Filter className="w-4 h-4 text-primary" />
-              : <Filter className="w-4 h-4 text-muted-foreground" />
-            }
+            {active ? (
+              <Filter className="w-4 h-4 text-primary" />
+            ) : (
+              <Filter className="w-4 h-4 text-muted-foreground" />
+            )}
           </button>
         </DropdownMenuTrigger>
       </div>
@@ -57,16 +57,18 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
         >
           Tous
         </DropdownMenuCheckboxItem>
-        {options.filter(o => o.value).map((opt) => (
-          <DropdownMenuCheckboxItem
-            key={opt.value}
-            checked={selected.includes(opt.value)}
-            onCheckedChange={() => toggleValue(opt.value)}
-            onSelect={(e) => e.preventDefault()}
-          >
-            {opt.label}
-          </DropdownMenuCheckboxItem>
-        ))}
+        {options
+          .filter((o) => o.value)
+          .map((opt) => (
+            <DropdownMenuCheckboxItem
+              key={opt.value}
+              checked={selected.includes(opt.value)}
+              onCheckedChange={() => toggleValue(opt.value)}
+              onSelect={(e) => e.preventDefault()}
+            >
+              {opt.label}
+            </DropdownMenuCheckboxItem>
+          ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )

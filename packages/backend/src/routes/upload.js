@@ -11,7 +11,7 @@ const router = express.Router();
 
 // Ensure upload directories exist
 const uploadDirs = ['drivers', 'cars', 'tracks', 'teams'];
-uploadDirs.forEach(dir => {
+uploadDirs.forEach((dir) => {
   const dirPath = path.join(__dirname, '../../public/uploads', dir);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -33,10 +33,10 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, uniqueSuffix + ext);
-  }
+  },
 });
 
 // File filter for images only
@@ -53,8 +53,8 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
 });
 
 /**
@@ -67,7 +67,7 @@ router.post('/:type', upload.single('img'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        error: 'No file uploaded'
+        error: 'No file uploaded',
       });
     }
 
@@ -80,14 +80,14 @@ router.post('/:type', upload.single('img'), (req, res) => {
         url: photoUrl,
         filename: req.file.filename,
         originalName: req.file.originalname,
-        size: req.file.size
-      }
+        size: req.file.size,
+      },
     });
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -104,7 +104,7 @@ router.delete('/:type/:filename', (req, res) => {
     if (!validTypes.includes(type)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid type'
+        error: 'Invalid type',
       });
     }
 
@@ -114,19 +114,19 @@ router.delete('/:type/:filename', (req, res) => {
       fs.unlinkSync(filePath);
       res.json({
         success: true,
-        message: 'File deleted'
+        message: 'File deleted',
       });
     } else {
       res.status(404).json({
         success: false,
-        error: 'File not found'
+        error: 'File not found',
       });
     }
   } catch (error) {
     console.error('Delete error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -137,13 +137,13 @@ router.use((error, req, res, next) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        error: 'File too large. Maximum size is 5MB'
+        error: 'File too large. Maximum size is 5MB',
       });
     }
   }
   res.status(500).json({
     success: false,
-    error: error.message
+    error: error.message,
   });
 });
 

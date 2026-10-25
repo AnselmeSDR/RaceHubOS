@@ -21,7 +21,7 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
   const { isDark, toggleTheme, isAdmin } = useApp()
   const location = useLocation()
 
-  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin)
+  const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin)
 
   const isActive = (to) => {
     if (to === '/') return location.pathname === '/'
@@ -35,7 +35,11 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="!p-0 group-data-[collapsible=icon]:!size-auto" asChild>
               <Link to="/">
-                <img src="/logo.png" alt="RaceHubOS" className="size-10 shrink-0 object-contain group-data-[collapsible=icon]:size-full" />
+                <img
+                  src="/logo.png"
+                  alt="RaceHubOS"
+                  className="size-10 shrink-0 object-contain group-data-[collapsible=icon]:size-full"
+                />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-bold">RaceHubOS</span>
                   <span className="truncate text-xs text-muted-foreground">Carrera Digital 132/124</span>
@@ -78,8 +82,13 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onStatusClick} tooltip={backendConnected ? t('backend.connectedTooltip') : t('backend.disconnectedTooltip')}>
-              <div className={`size-2 rounded-full shrink-0 ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+            <SidebarMenuButton
+              onClick={onStatusClick}
+              tooltip={backendConnected ? t('backend.connectedTooltip') : t('backend.disconnectedTooltip')}
+            >
+              <div
+                className={`size-2 rounded-full shrink-0 ${backendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
+              />
               <span className="text-xs truncate">
                 {backendConnected ? t('backend.connected', { version: backendVersion }) : t('backend.disconnected')}
               </span>
@@ -87,7 +96,6 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
     </Sidebar>
   )
 }

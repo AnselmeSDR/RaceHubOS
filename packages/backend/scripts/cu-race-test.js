@@ -36,7 +36,9 @@ function logEvent(type, data) {
   }
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 async function main() {
   console.log('🏎️  CU Race Test - Reset & Start');
@@ -70,7 +72,9 @@ async function main() {
 
     // Start fast polling
     pollTimer = setInterval(async () => {
-      try { await cu.poll(); } catch (e) {}
+      try {
+        await cu.poll();
+      } catch (e) {}
     }, 100);
 
     // 1. RESET
@@ -104,24 +108,28 @@ async function main() {
     console.log(`Timer events: ${timers.length}`);
     if (timers.length > 0) {
       const byCtrl = {};
-      timers.forEach(t => byCtrl[t.controller] = (byCtrl[t.controller] || 0) + 1);
+      timers.forEach((t) => (byCtrl[t.controller] = (byCtrl[t.controller] || 0) + 1));
       console.log('By controller:', byCtrl);
-      console.log('First 5 timers:', timers.slice(0, 5).map(t => `ctrl${t.controller}:${t.timestamp}`));
+      console.log(
+        'First 5 timers:',
+        timers.slice(0, 5).map((t) => `ctrl${t.controller}:${t.timestamp}`)
+      );
     }
 
     const states = ['RACING', 'LIGHTS_1', 'LIGHTS_2', 'LIGHTS_3', 'LIGHTS_4', 'LIGHTS_5', 'FALSE_START', 'GO'];
-    const seenStates = [...new Set(statuses.map(s => states[s.start] || s.start))];
+    const seenStates = [...new Set(statuses.map((s) => states[s.start] || s.start))];
     console.log('Status states seen:', seenStates);
-
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {
     if (pollTimer) clearInterval(pollTimer);
-    try { await cu.disconnect(); } catch (e) {}
+    try {
+      await cu.disconnect();
+    } catch (e) {}
 
     log.endTime = new Date().toISOString();
     log.timers = timers;
-    log.summary = { timerCount: timers.length, states: statuses.map(s => s.start) };
+    log.summary = { timerCount: timers.length, states: statuses.map((s) => s.start) };
     fs.writeFileSync(logFile, JSON.stringify(log, null, 2));
     console.log(`\n📝 Log: ${logFile}`);
   }

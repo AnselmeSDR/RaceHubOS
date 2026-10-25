@@ -29,7 +29,7 @@ export const CU_BUTTONS = {
   SPEED: 5,
   BRAKE: 6,
   FUEL: 7,
-  CODE: 8
+  CODE: 8,
 }
 
 // Mode flags
@@ -37,7 +37,7 @@ export const MODE_FLAGS = {
   FUEL: 0x1,
   REAL: 0x2,
   PIT_LANE: 0x4,
-  LAP_COUNTER: 0x8
+  LAP_COUNTER: 0x8,
 }
 
 // API URL - uses Vite proxy in development

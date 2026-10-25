@@ -15,9 +15,12 @@ router.get('/', async (req, res) => {
     const parsedOffset = parseInt(offset);
 
     const isComputedSort = sortBy === 'bestLap';
-    const dbOrderBy = sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
-      : isComputedSort ? undefined
-      : { [sortBy]: sortOrder };
+    const dbOrderBy =
+      sortBy === 'sessions'
+        ? { sessions: { _count: sortOrder } }
+        : isComputedSort
+          ? undefined
+          : { [sortBy]: sortOrder };
 
     const [allTracks, total] = await Promise.all([
       prisma.track.findMany({
@@ -44,7 +47,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: tracks.map(t => withImageUrl(t)),
+      data: tracks.map((t) => withImageUrl(t)),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -135,14 +138,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/tracks - Create new track
 router.post('/', async (req, res) => {
   try {
-    const {
-      name,
-      img,
-      layout,
-      length,
-      corners,
-      color,
-    } = req.body;
+    const { name, img, layout, length, corners, color } = req.body;
 
     // Validation
     if (!name || name.trim().length === 0) {
@@ -180,16 +176,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      name,
-      img,
-      layout,
-      length,
-      corners,
-      color,
-      bestLap,
-      bestLapBy,
-    } = req.body;
+    const { name, img, layout, length, corners, color, bestLap, bestLapBy } = req.body;
 
     // Check if track exists
     const exists = await prisma.track.findUnique({

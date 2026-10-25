@@ -2,13 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function EmptyState({
-  icon,
-  title,
-  message,
-  actionLabel,
-  onAction,
-}) {
+export default function EmptyState({ icon, title, message, actionLabel, onAction }) {
   const { t } = useTranslation('common')
   return (
     <div className="text-center py-16 bg-muted/50 rounded-2xl border-2 border-dashed border-border">

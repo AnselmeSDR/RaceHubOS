@@ -40,13 +40,14 @@ export default function SessionForm({ session, onClose, onSaved }) {
         duration: session.duration || null,
         maxLaps: session.maxLaps || null,
         fuelMode: session.fuelMode || 'OFF',
-        drivers: session.drivers?.map(sd => ({
-          driverId: sd.driverId,
-          carId: sd.carId,
-          controller: sd.controller || '',
-          gridPos: sd.gridPos || null,
-          position: sd.position || null,
-        })) || [],
+        drivers:
+          session.drivers?.map((sd) => ({
+            driverId: sd.driverId,
+            carId: sd.carId,
+            controller: sd.controller || '',
+            gridPos: sd.gridPos || null,
+            position: sd.position || null,
+          })) || [],
       })
     }
   }, [session])
@@ -101,9 +102,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
       }
 
       // Valider les drivers - filtrer les drivers incomplets
-      const validDrivers = formData.drivers.filter(
-        d => d.driverId && d.carId && d.controller
-      )
+      const validDrivers = formData.drivers.filter((d) => d.driverId && d.carId && d.controller)
 
       if (formData.drivers.length > 0 && validDrivers.length === 0) {
         setError(t('form.driverRequired'))
@@ -140,9 +139,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
   function addDriver() {
     // Trouver le prochain contrôleur disponible
-    const usedControllers = formData.drivers.map(d => d.controller)
-    const nextController = Array.from({ length: availableSlots }, (_, i) => String(i + 1))
-      .find(c => !usedControllers.includes(c)) || ''
+    const usedControllers = formData.drivers.map((d) => d.controller)
+    const nextController =
+      Array.from({ length: availableSlots }, (_, i) => String(i + 1)).find((c) => !usedControllers.includes(c)) || ''
 
     setFormData({
       ...formData,
@@ -208,7 +207,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
             <h3 className="font-semibold text-gray-900 dark:text-white">{t('form.generalInfo')}</h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.name')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('form.name')}
+              </label>
               <input
                 type="text"
                 value={formData.name}
@@ -220,20 +221,26 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.type')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('form.type')}
+                </label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   {STANDARD_SESSION_TYPES.map((type) => (
-                    <option key={type} value={type}>{t(sessionTypeFullKey(type))}</option>
+                    <option key={type} value={type}>
+                      {t(sessionTypeFullKey(type))}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('glossary:track', { count: 1 })}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('glossary:track', { count: 1 })}
+                </label>
                 <select
                   required
                   value={formData.trackId}
@@ -252,7 +259,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.championshipOptional')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('form.championshipOptional')}
+                </label>
                 <select
                   value={formData.championshipId}
                   onChange={(e) => setFormData({ ...formData, championshipId: e.target.value })}
@@ -268,7 +277,9 @@ export default function SessionForm({ session, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.fuel')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('form.fuel')}
+                </label>
                 <select
                   value={formData.fuelMode}
                   onChange={(e) => setFormData({ ...formData, fuelMode: e.target.value })}
@@ -282,22 +293,30 @@ export default function SessionForm({ session, onClose, onSaved }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.duration')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('form.duration')}
+                </label>
                 <input
                   type="number"
                   value={formData.duration || ''}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : null })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : null })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder={t('form.durationPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('form.maxLaps')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('form.maxLaps')}
+                </label>
                 <input
                   type="number"
                   value={formData.maxLaps || ''}
-                  onChange={(e) => setFormData({ ...formData, maxLaps: e.target.value ? parseInt(e.target.value) : null })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maxLaps: e.target.value ? parseInt(e.target.value) : null })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder={t('form.maxLapsPlaceholder')}
                 />
@@ -363,11 +382,7 @@ export default function SessionForm({ session, onClose, onSaved }) {
                     {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
                       const isUsed = formData.drivers.some((d, idx) => idx !== index && d.controller === String(slot))
                       return (
-                        <option
-                          key={slot}
-                          value={slot}
-                          disabled={isUsed}
-                        >
+                        <option key={slot} value={slot} disabled={isUsed}>
                           {slot} {isUsed ? t('form.controllerUsed') : ''}
                         </option>
                       )
@@ -397,7 +412,6 @@ export default function SessionForm({ session, onClose, onSaved }) {
               )}
             </div>
           </div>
-
         </form>
 
         {/* Actions Footer */}

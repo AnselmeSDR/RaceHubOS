@@ -90,7 +90,7 @@ export function SessionProvider({ children }) {
     // Session status changes
     socket.on('session:status_changed', (data) => {
       if (data.sessionId && data.status) {
-        setSession(prev => prev?.id === data.sessionId ? { ...prev, status: data.status } : prev)
+        setSession((prev) => (prev?.id === data.sessionId ? { ...prev, status: data.status } : prev))
       }
       if (data.timestamp) setLastServerTime(data.timestamp)
       window.dispatchEvent(new CustomEvent('session:status_changed', { detail: data }))
@@ -108,7 +108,7 @@ export function SessionProvider({ children }) {
 
     // Session finished
     socket.on('session:finished', (data) => {
-      setSession(prev => {
+      setSession((prev) => {
         if (prev?.id !== data.sessionId) return prev
         const drivers = data.leaderboard?.length > 0 ? data.leaderboard : prev.drivers
         return { ...prev, status: SessionStatus.FINISHED, drivers }
@@ -138,13 +138,13 @@ export function SessionProvider({ children }) {
         if (v.podiumEnabledRef.current && data.leaderboard?.length > 0) {
           const isQualif = data.sessionType === SessionType.QUALIF
           const sorted = [...data.leaderboard]
-            .filter(d => d.driver && (d.totalLaps > 0 || d.bestLapTime))
+            .filter((d) => d.driver && (d.totalLaps > 0 || d.bestLapTime))
             .sort((a, b) => {
               if (isQualif) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
               if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
               return (a.totalTime || Infinity) - (b.totalTime || Infinity)
             })
-          const allLabels = ['first', 'second', 'third'].map(rank => i18n.t(`voice:ranks.${rank}`))
+          const allLabels = ['first', 'second', 'third'].map((rank) => i18n.t(`voice:ranks.${rank}`))
           const podium = sorted.slice(0, 3).map((driver, i) => ({ driver, label: allLabels[i] }))
 
           // Announce 3rd, 2nd, 1st
@@ -156,9 +156,7 @@ export function SessionProvider({ children }) {
             announceOrder.forEach(({ driver, label }) => {
               if (!driver.driver) return
               const name = driver.driver.name
-              const time = isQualif
-                ? v.formatTimeVoice(driver.bestLapTime)
-                : v.formatTimeVoice(driver.totalTime)
+              const time = isQualif ? v.formatTimeVoice(driver.bestLapTime) : v.formatTimeVoice(driver.totalTime)
               queue.push(i18n.t('voice:podium', { rank: label, name, time }))
             })
 
@@ -205,7 +203,10 @@ export function SessionProvider({ children }) {
       if (!v.bestLapEnabledRef.current) return
       if (data.maxLapsCompleted < v.minLapsRef.current) return
 
-      const name = data.driverName || [data.carBrand, data.carModel].filter(Boolean).join(' ') || i18n.t('voice:car', { number: data.controller + 1 })
+      const name =
+        data.driverName ||
+        [data.carBrand, data.carModel].filter(Boolean).join(' ') ||
+        i18n.t('voice:car', { number: data.controller + 1 })
       v.speak(i18n.t('voice:bestLap', { name, time: v.formatTimeVoice(data.lapTime) }))
     })
 
@@ -247,16 +248,14 @@ export function SessionProvider({ children }) {
       const searchParams = new URLSearchParams({
         trackId,
         type,
-        championshipId: 'null'
+        championshipId: 'null',
       })
       const searchRes = await fetch(`${API_URL}/api/sessions?${searchParams}`)
       const searchData = await searchRes.json()
 
       if (searchData.success && searchData.data?.length > 0) {
         // Return most recent session (sorted by createdAt desc)
-        const sorted = [...searchData.data].sort((a, b) =>
-          new Date(b.createdAt) - new Date(a.createdAt)
-        )
+        const sorted = [...searchData.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         const latestSession = sorted[0]
         setSession(latestSession)
         return latestSession
@@ -271,7 +270,7 @@ export function SessionProvider({ children }) {
       const createRes = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, name: sessionNames()[type], status: SessionStatus.DRAFT })
+        body: JSON.stringify({ trackId, type, name: sessionNames()[type], status: SessionStatus.DRAFT }),
       })
       const createData = await createRes.json()
 
@@ -291,9 +290,7 @@ export function SessionProvider({ children }) {
   const createSession = useCallback(async (params) => {
     try {
       const { championshipId, ...sessionParams } = params
-      const url = championshipId
-        ? `${API_URL}/api/championships/${championshipId}/sessions`
-        : `${API_URL}/api/sessions`
+      const url = championshipId ? `${API_URL}/api/championships/${championshipId}/sessions` : `${API_URL}/api/sessions`
 
       const response = await fetch(url, {
         method: 'POST',
@@ -317,7 +314,7 @@ export function SessionProvider({ children }) {
     if (!sessionId) return { success: false, error: 'No session ID' }
 
     // Only clear data when switching to a different session
-    setSession(prev => {
+    setSession((prev) => {
       if (prev?.id !== sessionId) {
         setLeaderboard([])
         setElapsed(0)
@@ -507,7 +504,9 @@ export function SessionProvider({ children }) {
 
   // Notify AppContext of session active state
   useEffect(() => {
-    setSessionActive(['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== SessionType.BALANCING)
+    setSessionActive(
+      ['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== SessionType.BALANCING
+    )
   }, [session?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ==================== Computed Data ====================
@@ -515,42 +514,44 @@ export function SessionProvider({ children }) {
   // Transform leaderboard to entries with computed fields
   // Falls back to session drivers if leaderboard is empty
   const entries = useMemo(() => {
-    const source = leaderboard.length > 0 ? leaderboard : (session?.drivers || [])
+    const source = leaderboard.length > 0 ? leaderboard : session?.drivers || []
     if (source.length === 0) return []
 
     // Find fastest lap
-    const allBestLaps = source.map(p => p.bestLapTime).filter(t => t && t > 0)
+    const allBestLaps = source.map((p) => p.bestLapTime).filter((t) => t && t > 0)
     const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
 
-    return source.map(p => ({
-      id: p.id,
-      controller: p.controller,
-      driver: p.driver,
-      car: p.car,
-      gridPos: p.gridPos ?? null,
-      stats: {
-        laps: p.totalLaps || 0,
-        bestLap: p.bestLapTime || null,
-        lastLap: p.lastLapTime || null,
-        totalTime: p.totalTime || 0,
-        gap: p.gap ?? null
-      },
-      position: p.position || 0,
-      positionDelta: p.positionDelta || 0, // From backend
-      hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
-      isDNF: p.isDNF || false,
-      laps: p.laps || [], // Lap history for balancing chart
-    })).sort((a, b) => (a.position || 99) - (b.position || 99))
+    return source
+      .map((p) => ({
+        id: p.id,
+        controller: p.controller,
+        driver: p.driver,
+        car: p.car,
+        gridPos: p.gridPos ?? null,
+        stats: {
+          laps: p.totalLaps || 0,
+          bestLap: p.bestLapTime || null,
+          lastLap: p.lastLapTime || null,
+          totalTime: p.totalTime || 0,
+          gap: p.gap ?? null,
+        },
+        position: p.position || 0,
+        positionDelta: p.positionDelta || 0, // From backend
+        hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
+        isDNF: p.isDNF || false,
+        laps: p.laps || [], // Lap history for balancing chart
+      }))
+      .sort((a, b) => (a.position || 99) - (b.position || 99))
   }, [leaderboard, session])
 
   // Max laps completed
   const maxLapsCompleted = useMemo(() => {
-    return Math.max(0, ...leaderboard.map(p => p.totalLaps || 0))
+    return Math.max(0, ...leaderboard.map((p) => p.totalLaps || 0))
   }, [leaderboard])
 
   // Fastest lap time
   const fastestLap = useMemo(() => {
-    const times = leaderboard.map(p => p.bestLapTime).filter(t => t && t > 0)
+    const times = leaderboard.map((p) => p.bestLapTime).filter((t) => t && t > 0)
     return times.length > 0 ? Math.min(...times) : null
   }, [leaderboard])
 
@@ -598,11 +599,7 @@ export function SessionProvider({ children }) {
     SESSION_STATUS,
   }
 
-  return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
-  )
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }
 
 export function useSession() {

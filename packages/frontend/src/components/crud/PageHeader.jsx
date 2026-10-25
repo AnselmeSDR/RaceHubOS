@@ -11,7 +11,7 @@ export default function PageHeader({
   addLabel,
   showViewToggle = false,
   viewMode = 'grid',
-  onViewModeChange
+  onViewModeChange,
 }) {
   const { t } = useTranslation('common')
   return (
@@ -27,9 +27,7 @@ export default function PageHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        {showViewToggle && onViewModeChange && (
-          <ViewToggleButtons mode={viewMode} onChange={onViewModeChange} />
-        )}
+        {showViewToggle && onViewModeChange && <ViewToggleButtons mode={viewMode} onChange={onViewModeChange} />}
         <Button onClick={onAdd}>
           <Plus className="size-4" />
           {addLabel ?? t('add')}
@@ -45,9 +43,7 @@ export function ViewToggleButtons({ mode, onChange }) {
       <button
         onClick={() => onChange('grid')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          mode === 'grid'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          mode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         <LayoutGrid className="size-4" />
@@ -56,9 +52,7 @@ export function ViewToggleButtons({ mode, onChange }) {
       <button
         onClick={() => onChange('list')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          mode === 'list'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          mode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         <List className="size-4" />

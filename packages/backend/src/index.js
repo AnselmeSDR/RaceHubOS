@@ -136,7 +136,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: APP_VERSION
+    version: APP_VERSION,
   });
 });
 
@@ -273,13 +273,13 @@ io.on('connection', (socket) => {
       active: simulator.raceActive,
       raceTime: simulator.raceTime,
       carCount: simulator.cars.length,
-      deviceType: 'simulator'
+      deviceType: 'simulator',
     });
   } else if (currentDevice === controlUnit && controlUnit.isConnected()) {
     socket.emit('cu:connected');
     socket.emit('cu:status', {
       connected: true,
-      deviceType: 'controlUnit'
+      deviceType: 'controlUnit',
     });
   } else {
     socket.emit('cu:status', { connected: false, deviceType: null });

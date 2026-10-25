@@ -20,9 +20,22 @@ const logFile = path.join(logsDir, `cu-live-${timestamp}.json`);
 const log = { startTime: new Date().toISOString(), events: [] };
 const startTime = Date.now();
 
-function elapsed() { return Date.now() - startTime; }
+function elapsed() {
+  return Date.now() - startTime;
+}
 
-const STATES = ['RACING', 'LIGHTS_1', 'LIGHTS_2', 'LIGHTS_3', 'LIGHTS_4', 'LIGHTS_5', 'FALSE_START', 'GO', '?', 'STOPPED'];
+const STATES = [
+  'RACING',
+  'LIGHTS_1',
+  'LIGHTS_2',
+  'LIGHTS_3',
+  'LIGHTS_4',
+  'LIGHTS_5',
+  'FALSE_START',
+  'GO',
+  '?',
+  'STOPPED',
+];
 
 let lastStart = -1;
 
@@ -63,7 +76,9 @@ async function main() {
 
     // Start polling
     const pollTimer = setInterval(async () => {
-      try { await cu.poll(); } catch (e) {}
+      try {
+        await cu.poll();
+      } catch (e) {}
     }, 100);
 
     console.log('Commands:');
@@ -111,7 +126,6 @@ async function main() {
       console.log(`📝 Log: ${logFile}`);
       process.exit(0);
     });
-
   } catch (error) {
     console.error('❌ Failed:', error.message);
     process.exit(1);

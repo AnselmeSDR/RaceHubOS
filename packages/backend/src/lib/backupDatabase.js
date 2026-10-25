@@ -9,8 +9,10 @@ const DEFAULT_KEEP = 10;
 /** 2026-08-26_18-42-07 — sortable, filesystem-safe on Windows. */
 function timestamp(date = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}_` +
-    `${p(date.getHours())}-${p(date.getMinutes())}-${p(date.getSeconds())}`;
+  return (
+    `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}_` +
+    `${p(date.getHours())}-${p(date.getMinutes())}-${p(date.getSeconds())}`
+  );
 }
 
 /**
@@ -47,7 +49,8 @@ export function backupDatabase({ reason = 'backup', keep = DEFAULT_KEEP } = {}) 
 function pruneBackups(backupDir, keep) {
   if (!keep || keep < 1) return;
 
-  const backups = fs.readdirSync(backupDir)
+  const backups = fs
+    .readdirSync(backupDir)
     .filter((f) => f.endsWith('.db'))
     .sort()
     .reverse();

@@ -40,7 +40,9 @@ if (lastVersion !== currentVersion) {
   try {
     const { baselined } = migrateSchema();
     if (baselined.length) {
-      console.log(`   ${baselined.length} migration(s) marquée(s) comme déjà appliquées (base antérieure aux migrations)`);
+      console.log(
+        `   ${baselined.length} migration(s) marquée(s) comme déjà appliquées (base antérieure aux migrations)`
+      );
     }
     fs.writeFileSync(versionFile, currentVersion);
   } catch (err) {

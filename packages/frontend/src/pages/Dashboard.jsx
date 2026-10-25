@@ -1,18 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  Users,
-  Car,
-  Map,
-  Flag,
-  Trophy,
-  Timer,
-  ArrowRight,
-  Crown,
-  Medal,
-  Zap,
-} from 'lucide-react'
+import { Users, Car, Map, Flag, Trophy, Timer, ArrowRight, Crown, Medal, Zap } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
@@ -53,32 +42,67 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/drivers`).then(r => r.ok ? r.json() : { count: 0 }),
-      fetch(`${API_URL}/cars`).then(r => r.ok ? r.json() : { count: 0 }),
-      fetch(`${API_URL}/tracks`).then(r => r.ok ? r.json() : { count: 0 }),
-      fetch(`${API_URL}/sessions?has_championship=true`).then(r => r.ok ? r.json() : { count: 0 }),
-    ]).then(([d, c, t, s]) => {
-      setStats({ drivers: d.count || d.total || 0, cars: c.count || c.total || 0, tracks: t.count || t.total || 0, sessions: s.count || s.total || 0, loading: false })
-    }).catch(() => setStats(p => ({ ...p, loading: false })))
+      fetch(`${API_URL}/drivers`).then((r) => (r.ok ? r.json() : { count: 0 })),
+      fetch(`${API_URL}/cars`).then((r) => (r.ok ? r.json() : { count: 0 })),
+      fetch(`${API_URL}/tracks`).then((r) => (r.ok ? r.json() : { count: 0 })),
+      fetch(`${API_URL}/sessions?has_championship=true`).then((r) => (r.ok ? r.json() : { count: 0 })),
+    ])
+      .then(([d, c, t, s]) => {
+        setStats({
+          drivers: d.count || d.total || 0,
+          cars: c.count || c.total || 0,
+          tracks: t.count || t.total || 0,
+          sessions: s.count || s.total || 0,
+          loading: false,
+        })
+      })
+      .catch(() => setStats((p) => ({ ...p, loading: false })))
 
-    fetch(`${API_URL}/stats/records?has_championship=true`).then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.success) setRecords(d.data)
-    }).catch(() => {})
+    fetch(`${API_URL}/stats/records?has_championship=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success) setRecords(d.data)
+      })
+      .catch(() => {})
 
-    fetch(`${API_URL}/stats/drivers?has_championship=true`).then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.success) setTopDrivers((d.data || []).slice(0, 10))
-    }).catch(() => {})
+    fetch(`${API_URL}/stats/drivers?has_championship=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success) setTopDrivers((d.data || []).slice(0, 10))
+      })
+      .catch(() => {})
 
-    fetch(`${API_URL}/stats/laptimes?limit=10&sortBy=lapTime&sortOrder=asc&unique=true&has_championship=true`).then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.success) setTopLaps(d.data || [])
-    }).catch(() => {})
+    fetch(`${API_URL}/stats/laptimes?limit=10&sortBy=lapTime&sortOrder=asc&unique=true&has_championship=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success) setTopLaps(d.data || [])
+      })
+      .catch(() => {})
   }, [])
 
   const statCards = [
-    { to: '/drivers', icon: Users, label: t('glossary:driver', { count: 2 }), value: stats.drivers, color: 'text-blue-500' },
+    {
+      to: '/drivers',
+      icon: Users,
+      label: t('glossary:driver', { count: 2 }),
+      value: stats.drivers,
+      color: 'text-blue-500',
+    },
     { to: '/cars', icon: Car, label: t('glossary:car', { count: 2 }), value: stats.cars, color: 'text-green-500' },
-    { to: '/tracks', icon: Map, label: t('glossary:track', { count: 2 }), value: stats.tracks, color: 'text-purple-500' },
-    { to: '/history', icon: Flag, label: t('glossary:session', { count: 2 }), value: stats.sessions, color: 'text-red-500' },
+    {
+      to: '/tracks',
+      icon: Map,
+      label: t('glossary:track', { count: 2 }),
+      value: stats.tracks,
+      color: 'text-purple-500',
+    },
+    {
+      to: '/history',
+      icon: Flag,
+      label: t('glossary:session', { count: 2 }),
+      value: stats.sessions,
+      color: 'text-red-500',
+    },
   ]
 
   const podiumColors = ['text-yellow-500', 'text-zinc-400', 'text-amber-700']
@@ -92,7 +116,13 @@ export default function Dashboard() {
           className="relative overflow-hidden bg-gradient-to-r from-green-600 to-emerald-500 rounded-xl p-5 text-white cursor-pointer hover:shadow-xl transition-all group"
           onClick={() => navigate('/race')}
         >
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, white, white 10px, transparent 10px, transparent 20px)' }} />
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(45deg, white, white 10px, transparent 10px, transparent 20px)',
+            }}
+          />
           <div className="relative flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="size-12 rounded-full bg-white/20 flex items-center justify-center">
@@ -146,7 +176,9 @@ export default function Dashboard() {
                       <p className="text-sm font-medium truncate">{records.fastestLap.driver?.name || '?'}</p>
                     </div>
                   </div>
-                  <span className="font-mono font-bold text-green-500 shrink-0">{formatLap(records.fastestLap.time)}</span>
+                  <span className="font-mono font-bold text-green-500 shrink-0">
+                    {formatLap(records.fastestLap.time)}
+                  </span>
                 </div>
               )}
               {records.mostWins && (
@@ -189,23 +221,48 @@ export default function Dashboard() {
                   <Crown className="size-4 text-yellow-500" />
                   <h2 className="font-semibold text-sm">{t('driverLeaderboard.title')}</h2>
                 </div>
-                <Link to="/stats" className="text-xs text-muted-foreground hover:text-foreground">{t('driverLeaderboard.seeAll')}</Link>
+                <Link to="/stats" className="text-xs text-muted-foreground hover:text-foreground">
+                  {t('driverLeaderboard.seeAll')}
+                </Link>
               </div>
               <div className="space-y-2">
                 {topDrivers.map((d, i) => {
                   const PodiumIcon = podiumIcons[i] || null
                   return (
-                    <Link key={d.id} to={`/drivers/${d.id}`} className="flex items-center gap-3 p-1.5 -mx-1.5 rounded-lg hover:bg-muted transition-colors">
-                      <span className={`w-5 text-center font-bold text-xs ${i < 3 ? podiumColors[i] : 'text-muted-foreground'}`}>
+                    <Link
+                      key={d.id}
+                      to={`/drivers/${d.id}`}
+                      className="flex items-center gap-3 p-1.5 -mx-1.5 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      <span
+                        className={`w-5 text-center font-bold text-xs ${i < 3 ? podiumColors[i] : 'text-muted-foreground'}`}
+                      >
                         {PodiumIcon ? <PodiumIcon className="size-4 mx-auto" /> : i + 1}
                       </span>
                       <DriverAvatar driver={d} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{d.name}</p>
-                        <p className="text-xs"><span className="text-blue-500 font-medium">{d.statistics?.totalRaces || 0}{t('driverLeaderboard.racesShort')}</span> · <span className="text-yellow-500 font-medium">{d.statistics?.wins || 0}{t('driverLeaderboard.winsShort')}</span> · <span className="text-orange-400 font-medium">{d.statistics?.podiums || 0}{t('driverLeaderboard.podiumsShort')}</span></p>
+                        <p className="text-xs">
+                          <span className="text-blue-500 font-medium">
+                            {d.statistics?.totalRaces || 0}
+                            {t('driverLeaderboard.racesShort')}
+                          </span>{' '}
+                          ·{' '}
+                          <span className="text-yellow-500 font-medium">
+                            {d.statistics?.wins || 0}
+                            {t('driverLeaderboard.winsShort')}
+                          </span>{' '}
+                          ·{' '}
+                          <span className="text-orange-400 font-medium">
+                            {d.statistics?.podiums || 0}
+                            {t('driverLeaderboard.podiumsShort')}
+                          </span>
+                        </p>
                       </div>
                       {d.statistics?.bestLap && (
-                        <span className="text-xs font-mono text-purple-500 font-bold">{formatLap(d.statistics.bestLap)}</span>
+                        <span className="text-xs font-mono text-purple-500 font-bold">
+                          {formatLap(d.statistics.bestLap)}
+                        </span>
                       )}
                     </Link>
                   )
@@ -226,11 +283,17 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {topLaps.map((lap, i) => (
                   <div key={i} className="flex items-center gap-3 p-1.5 -mx-1.5 rounded-lg">
-                    <span className={`w-5 text-center font-bold text-xs ${i < 3 ? podiumColors[i] : 'text-muted-foreground'}`}>{i + 1}</span>
+                    <span
+                      className={`w-5 text-center font-bold text-xs ${i < 3 ? podiumColors[i] : 'text-muted-foreground'}`}
+                    >
+                      {i + 1}
+                    </span>
                     {lap.driver && <DriverAvatar driver={lap.driver} />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{lap.driver?.name || '?'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{lap.car?.brand} {lap.car?.model} · {lap.track?.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {lap.car?.brand} {lap.car?.model} · {lap.track?.name}
+                      </p>
                     </div>
                     <span className="font-mono font-bold text-purple-500 text-xs">{formatLap(lap.lapTime)}</span>
                   </div>
@@ -249,10 +312,19 @@ export default function Dashboard() {
             <div className="space-y-1.5">
               {[
                 { to: '/race', icon: Flag, label: t('quickActions.startRace'), color: 'text-green-500' },
-                { to: '/championships', icon: Trophy, label: t('glossary:championship', { count: 2 }), color: 'text-yellow-500' },
+                {
+                  to: '/championships',
+                  icon: Trophy,
+                  label: t('glossary:championship', { count: 2 }),
+                  color: 'text-yellow-500',
+                },
                 { to: '/stats', icon: Timer, label: t('layout:nav.stats'), color: 'text-blue-500' },
               ].map((a) => (
-                <Link key={a.to} to={a.to} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted transition-colors">
+                <Link
+                  key={a.to}
+                  to={a.to}
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <a.icon className={`size-4 ${a.color}`} />
                     <span className="text-sm">{a.label}</span>

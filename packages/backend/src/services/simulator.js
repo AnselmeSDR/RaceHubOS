@@ -135,7 +135,6 @@ export class CarreraSimulator extends EventEmitter {
       // Distance from start line (ms): varies by grid position
       startDistance: 200 + i * 80 + Math.random() * 50,
     }));
-
   }
 
   /**
@@ -270,7 +269,6 @@ export class CarreraSimulator extends EventEmitter {
       timestamp: car.totalTime,
       sector: 1,
     });
-
   }
 
   /**
@@ -324,7 +322,6 @@ export class CarreraSimulator extends EventEmitter {
         duration: pitDuration,
         timestamp: Date.now(),
       });
-
     }
   }
 
@@ -389,7 +386,7 @@ export class CarreraSimulator extends EventEmitter {
       active: this.raceActive,
       raceTime: this.raceTime,
       carCount: this.cars.length,
-      isMockDevice: true
+      isMockDevice: true,
     });
   }
 
@@ -425,7 +422,7 @@ export class CarreraSimulator extends EventEmitter {
       start: this.cuState,
       mode: this.cuMode,
       display: this.cuDisplay,
-      fuel: this.cars.map(c => Math.round(c.fuel)),
+      fuel: this.cars.map((c) => Math.round(c.fuel)),
     };
   }
 
@@ -606,7 +603,7 @@ export class CarreraSimulator extends EventEmitter {
    * Set fuel for a controller
    */
   setFuel(controller, value) {
-    const car = this.cars.find(c => c.id === controller);
+    const car = this.cars.find((c) => c.id === controller);
     if (car) {
       car.fuel = Math.max(0, Math.min(15, value));
       this.emitCuStatus();
@@ -617,7 +614,7 @@ export class CarreraSimulator extends EventEmitter {
    * Helper delay function
    */
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

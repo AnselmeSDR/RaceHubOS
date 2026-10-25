@@ -112,12 +112,16 @@ export default function StartLights({ onCancel }) {
         </button>
       )}
       {/* Ambient glow effect */}
-      <div className={`absolute inset-0 transition-opacity duration-500 ${
-        showGo ? 'opacity-30' : isLightsOn ? 'opacity-20' : 'opacity-0'
-      }`}>
-        <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-3xl ${
-          showGo ? 'bg-green-500' : isFalseStart ? 'bg-orange-500' : 'bg-red-500'
-        }`} />
+      <div
+        className={`absolute inset-0 transition-opacity duration-500 ${
+          showGo ? 'opacity-30' : isLightsOn ? 'opacity-20' : 'opacity-0'
+        }`}
+      >
+        <div
+          className={`absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-3xl ${
+            showGo ? 'bg-green-500' : isFalseStart ? 'bg-orange-500' : 'bg-red-500'
+          }`}
+        />
       </div>
 
       <div className="relative flex flex-col items-center gap-10">
@@ -182,7 +186,6 @@ export default function StartLights({ onCancel }) {
               <span className="relative tracking-widest">{t('startLights.start')}</span>
             </button>
           )}
-
         </div>
       </div>
     </div>
@@ -196,18 +199,18 @@ function LightColumn({ active, isFalseStart, isGo, index }) {
   const baseColor = isGo
     ? 'from-green-400 to-green-600'
     : isFalseStart
-    ? 'from-orange-400 to-orange-600'
-    : active
-    ? 'from-red-500 to-red-700'
-    : 'from-zinc-800 to-zinc-900'
+      ? 'from-orange-400 to-orange-600'
+      : active
+        ? 'from-red-500 to-red-700'
+        : 'from-zinc-800 to-zinc-900'
 
   const glowColor = isGo
     ? 'shadow-[0_0_30px_10px_rgba(74,222,128,0.6)]'
     : isFalseStart
-    ? 'shadow-[0_0_30px_10px_rgba(249,115,22,0.6)]'
-    : active
-    ? 'shadow-[0_0_30px_10px_rgba(239,68,68,0.6)]'
-    : 'shadow-none'
+      ? 'shadow-[0_0_30px_10px_rgba(249,115,22,0.6)]'
+      : active
+        ? 'shadow-[0_0_30px_10px_rgba(239,68,68,0.6)]'
+        : 'shadow-none'
 
   const isLit = active || isGo || isFalseStart
 
@@ -218,7 +221,7 @@ function LightColumn({ active, isFalseStart, isGo, index }) {
           key={i}
           className={`relative w-14 h-14 rounded-full transition-all duration-300 ${glowColor}`}
           style={{
-            transitionDelay: isLit ? `${index * 50}ms` : '0ms'
+            transitionDelay: isLit ? `${index * 50}ms` : '0ms',
           }}
         >
           {/* Light base */}
@@ -229,9 +232,11 @@ function LightColumn({ active, isFalseStart, isGo, index }) {
 
           {/* Inner glow */}
           {isLit && (
-            <div className={`absolute inset-2 rounded-full bg-gradient-to-b ${
-              isGo ? 'from-green-300' : isFalseStart ? 'from-orange-300' : 'from-red-400'
-            } to-transparent opacity-60 animate-pulse`} />
+            <div
+              className={`absolute inset-2 rounded-full bg-gradient-to-b ${
+                isGo ? 'from-green-300' : isFalseStart ? 'from-orange-300' : 'from-red-400'
+              } to-transparent opacity-60 animate-pulse`}
+            />
           )}
 
           {/* Center bright spot */}

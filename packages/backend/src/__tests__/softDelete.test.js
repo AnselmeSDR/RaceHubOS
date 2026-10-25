@@ -1,8 +1,11 @@
 import { prisma } from './setup.js';
 import {
-  softDeleteTrack, restoreTrack,
-  softDeleteDriver, restoreDriver,
-  softDeleteCar, restoreCar,
+  softDeleteTrack,
+  restoreTrack,
+  softDeleteDriver,
+  restoreDriver,
+  softDeleteCar,
+  restoreCar,
 } from '../lib/softDelete.js';
 
 /** Build a track with a championship, a session, drivers, cars, laps and a record. */
@@ -21,15 +24,29 @@ async function buildFixture() {
   const loneSession = await prisma.session.create({ data: { type: 'practice', trackId: track.id } });
   const elsewhere = await prisma.session.create({ data: { type: 'race', trackId: other.id } });
 
-  const lap = (sessionId, trackId) => prisma.lap.create({
-    data: { sessionId, trackId, carId: car.id, driverId: driver.id, controller: 0, phase: 'race', lapNumber: 1, lapTime: 8000 },
-  });
+  const lap = (sessionId, trackId) =>
+    prisma.lap.create({
+      data: {
+        sessionId,
+        trackId,
+        carId: car.id,
+        driverId: driver.id,
+        controller: 0,
+        phase: 'race',
+        lapNumber: 1,
+        lapTime: 8000,
+      },
+    });
   await lap(session.id, track.id);
   await lap(loneSession.id, track.id);
   await lap(elsewhere.id, other.id);
 
-  await prisma.sessionDriver.create({ data: { sessionId: session.id, driverId: driver.id, carId: car.id, controller: 0 } });
-  await prisma.sessionDriver.create({ data: { sessionId: elsewhere.id, driverId: driver.id, carId: car.id, controller: 0 } });
+  await prisma.sessionDriver.create({
+    data: { sessionId: session.id, driverId: driver.id, carId: car.id, controller: 0 },
+  });
+  await prisma.sessionDriver.create({
+    data: { sessionId: elsewhere.id, driverId: driver.id, carId: car.id, controller: 0 },
+  });
   await prisma.trackRecord.create({ data: { trackId: track.id, driverId: driver.id, carId: car.id, lapTime: 8000 } });
   await prisma.championshipParticipant.create({ data: { championshipId: championship.id, driverId: driver.id } });
 
@@ -65,7 +82,14 @@ describe('deleting a track', () => {
 
     const counts = await softDeleteTrack(prisma, f.track.id);
 
-    expect(counts).toMatchObject({ championships: 1, sessions: 2, sessionDrivers: 1, laps: 2, trackRecords: 1, participations: 1 });
+    expect(counts).toMatchObject({
+      championships: 1,
+      sessions: 2,
+      sessionDrivers: 1,
+      laps: 2,
+      trackRecords: 1,
+      participations: 1,
+    });
     const after = await activeCounts();
     expect(after).toMatchObject({ laps: 1, sessions: 1, championships: 0, trackRecords: 0 });
     // drivers and cars are deliberately spared

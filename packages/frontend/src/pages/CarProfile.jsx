@@ -28,7 +28,9 @@ export default function CarProfile() {
   const [showEdit, setShowEdit] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
-  useEffect(() => { loadCar() }, [id])
+  useEffect(() => {
+    loadCar()
+  }, [id])
 
   async function loadCar() {
     try {
@@ -95,26 +97,47 @@ export default function CarProfile() {
             <ArrowLeft className="size-4" />
           </Button>
           {car.img ? (
-            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background" style={{ '--tw-ring-color': carColor }}>
+            <div
+              className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
+              style={{ '--tw-ring-color': carColor }}
+            >
               <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0" style={{ backgroundColor: carColor }}>
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
+              style={{ backgroundColor: carColor }}
+            >
               {car.brand.charAt(0)}
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-black text-lg" style={{ color: carColor }}>{car.brand} {car.model}</h1>
+              <h1 className="font-black text-lg" style={{ color: carColor }}>
+                {car.brand} {car.model}
+              </h1>
               {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-3">
-              <span className="flex items-center gap-1"><Zap className="size-3 text-green-500" />{formatLevel(car.maxSpeed)}</span>
-              <span className="flex items-center gap-1"><Flame className="size-3 text-red-500" />{formatLevel(car.brakeForce)}</span>
-              <span className="flex items-center gap-1"><FlaskConical className="size-3 text-blue-500" />{formatLevel(car.fuelCapacity)}</span>
-              <span>{car._count?.sessions || 0} {t('glossary:session', { count: car._count?.sessions || 0 })}</span>
+              <span className="flex items-center gap-1">
+                <Zap className="size-3 text-green-500" />
+                {formatLevel(car.maxSpeed)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Flame className="size-3 text-red-500" />
+                {formatLevel(car.brakeForce)}
+              </span>
+              <span className="flex items-center gap-1">
+                <FlaskConical className="size-3 text-blue-500" />
+                {formatLevel(car.fuelCapacity)}
+              </span>
+              <span>
+                {car._count?.sessions || 0} {t('glossary:session', { count: car._count?.sessions || 0 })}
+              </span>
               {car.bestLap && (
-                <span className="flex items-center gap-1">{t('common:record')} <LapTime time={car.bestLap} size="sm" /></span>
+                <span className="flex items-center gap-1">
+                  {t('common:record')} <LapTime time={car.bestLap} size="sm" />
+                </span>
               )}
             </div>
           </div>
@@ -123,7 +146,13 @@ export default function CarProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowResetConfirm(true)}
+            disabled={resetting}
+            className="text-orange-600 dark:text-orange-400"
+          >
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
           <div className="flex items-center gap-2">
@@ -134,7 +163,13 @@ export default function CarProfile() {
       </div>
 
       {showEdit && (
-        <CarFormModal car={car} onClose={() => { setShowEdit(false); loadCar() }} />
+        <CarFormModal
+          car={car}
+          onClose={() => {
+            setShowEdit(false)
+            loadCar()
+          }}
+        />
       )}
 
       <ConfirmModal
@@ -176,7 +211,10 @@ export default function CarProfile() {
                       className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}
+                        >
                           {sd.session?.type
                             ? t(`glossary:sessionType.${sd.session.type}`, { defaultValue: sd.session.type })
                             : ''}
@@ -187,7 +225,9 @@ export default function CarProfile() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {sd.finalPos && (
-                          <span className="font-black text-base" style={{ color: carColor }}>P{sd.finalPos}</span>
+                          <span className="font-black text-base" style={{ color: carColor }}>
+                            P{sd.finalPos}
+                          </span>
                         )}
                         {sd.bestLapTime && <LapTime time={sd.bestLapTime} size="sm" />}
                       </div>
@@ -195,9 +235,7 @@ export default function CarProfile() {
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  {t('common:noSessions')}
-                </div>
+                <div className="py-8 text-center text-sm text-muted-foreground">{t('common:noSessions')}</div>
               )}
             </CardContent>
           </Card>
