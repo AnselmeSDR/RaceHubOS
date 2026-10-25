@@ -91,6 +91,20 @@ execFileSync(process.execPath, [prismaCli(), 'migrate', 'deploy'])
 
 `execSync` et `exec` passent par un shell et n'ont pas ce problème ; seule la famille `execFile` / `spawn` est concernée.
 
+### Le code est formaté par Prettier `[vérifié]`
+
+La PR #2 apportait un fichier écrit à plusieurs instructions par ligne : rien ne le signalait, la relecture devait s'en charger. Prettier décide de la forme (`.prettierrc.json` : 120 colonnes, guillemets simples, `;` partout sauf dans l'interface) ; la relecture ne porte plus que sur le fond.
+
+```bash
+npm run format   # avant de commiter
+```
+
+Restent hors de Prettier : les installeurs, les migrations (Prisma vérifie leur empreinte), le Markdown et `package.json`, écrit par npm.
+
+### Aucune nouvelle erreur ESLint `[vérifié]`
+
+ESLint couvre tout le dépôt : une config à la racine pour le backend, `shared` et `scripts`, celle de `packages/frontend` pour l'interface. Le code existant porte une dette (~130 erreurs) : un fichier modifié ne doit pas en compter plus qu'avant, sans obligation de rembourser celles qu'il porte déjà.
+
 ### Les validations sortent tôt
 
 ```js

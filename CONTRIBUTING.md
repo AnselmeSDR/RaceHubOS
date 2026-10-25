@@ -21,6 +21,13 @@ feat: packages/frontend/src/pages           ✗ says nothing about the change
 
 One commit = one coherent change that works on its own. Don't split a feature by folder.
 
+## Formatting and lint
+
+- `npm run format` before committing. [Prettier](https://prettier.io) decides the layout (`.prettierrc.json`), so reviews only discuss the code.
+- ESLint must not report more problems than before in the files you change. Some files carry old problems: you don't have to fix them, just don't add new ones.
+
+Both are checked by `npm run check`.
+
 ## Tests
 
 Every PR that changes code comes with tests covering the change:
@@ -48,4 +55,5 @@ npm test -w @racehubos/backend
 ```
 
 - One PR = one topic, based on the latest `main`.
-- Every translation key exists at least in French and English.
+- Every translation key exists in every language (`fr`, `en`, `de`…), checked by `npm run check`.
+- Enable **Allow edits by maintainers**, so small fixes can be made directly on your branch.
