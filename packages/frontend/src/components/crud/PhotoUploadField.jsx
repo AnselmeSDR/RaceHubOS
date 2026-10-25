@@ -14,7 +14,7 @@ export default function PhotoUploadField({
   shape = 'round',
   aspect = 1,
   onError,
-  uploadType = 'drivers'
+  uploadType = 'drivers',
 }) {
   const { t } = useTranslation('common')
   const [showCropper, setShowCropper] = useState(false)
@@ -50,7 +50,7 @@ export default function PhotoUploadField({
       formData.append('img', blob, 'image.jpg')
       const uploadRes = await fetch(`${API_URL}/api/upload/${uploadType}`, {
         method: 'POST',
-        body: formData
+        body: formData,
       })
       const data = await uploadRes.json()
       if (data.success) {
@@ -110,15 +110,9 @@ export default function PhotoUploadField({
             id={inputId}
             disabled={uploading}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            asChild
-            disabled={uploading}
-          >
+          <Button type="button" variant="outline" size="sm" asChild disabled={uploading}>
             <label htmlFor={inputId} className={uploading ? 'cursor-wait' : 'cursor-pointer'}>
-              {uploading ? t('photo.uploading') : (value ? t('change') : t('photo.choose'))}
+              {uploading ? t('photo.uploading') : value ? t('change') : t('photo.choose')}
             </label>
           </Button>
           <p className="text-xs text-muted-foreground mt-1">{t('photo.hint')}</p>
@@ -129,7 +123,10 @@ export default function PhotoUploadField({
         <ImageCropper
           image={imageToCrop}
           onCropComplete={handleCropComplete}
-          onCancel={() => { setShowCropper(false); setImageToCrop(null) }}
+          onCancel={() => {
+            setShowCropper(false)
+            setImageToCrop(null)
+          }}
           cropShape={shape}
           aspect={aspect}
         />

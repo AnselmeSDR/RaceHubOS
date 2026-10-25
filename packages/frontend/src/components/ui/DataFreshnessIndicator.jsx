@@ -13,18 +13,18 @@ export default function DataFreshnessIndicator({ lastServerTime, showLabel = tru
     live: {
       dot: 'bg-green-500',
       text: 'text-green-600',
-      pulse: true
+      pulse: true,
     },
     delayed: {
       dot: 'bg-yellow-500',
       text: 'text-yellow-600',
-      pulse: false
+      pulse: false,
     },
     offline: {
       dot: 'bg-red-500',
       text: 'text-red-600',
-      pulse: false
-    }
+      pulse: false,
+    },
   }
 
   const { dot, text, pulse } = config[status]
@@ -32,16 +32,10 @@ export default function DataFreshnessIndicator({ lastServerTime, showLabel = tru
   return (
     <div className="inline-flex items-center gap-1.5">
       <span className="relative flex h-2 w-2">
-        {pulse && (
-          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dot} opacity-75`} />
-        )}
+        {pulse && <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dot} opacity-75`} />}
         <span className={`relative inline-flex h-2 w-2 rounded-full ${dot}`} />
       </span>
-      {showLabel && (
-        <span className={`text-xs font-medium ${text}`}>
-          {label}
-        </span>
-      )}
+      {showLabel && <span className={`text-xs font-medium ${text}`}>{label}</span>}
     </div>
   )
 }

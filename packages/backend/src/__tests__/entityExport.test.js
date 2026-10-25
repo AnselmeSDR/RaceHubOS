@@ -3,7 +3,16 @@ import { SessionType } from '@racehubos/shared';
 import { buildCarWorkbook, buildCarsWorkbook, buildDriverWorkbook, buildDriversWorkbook } from '../lib/entityExport.js';
 
 const track = (id, name) => ({ id, name });
-const car = (id, model) => ({ id, brand: 'Audi', model, year: 2024, color: '#0f0', maxSpeed: 70, brakeForce: 60, fuelCapacity: 100 });
+const car = (id, model) => ({
+  id,
+  brand: 'Audi',
+  model,
+  year: 2024,
+  color: '#0f0',
+  maxSpeed: 70,
+  brakeForce: 60,
+  fuelCapacity: 100,
+});
 
 /** One entry: a driver in a session, with the result already summarised. */
 const entry = (over = {}) => ({
@@ -33,7 +42,13 @@ const entry = (over = {}) => ({
   ...over,
 });
 
-const driver = (entries) => ({ id: 'd-1', name: 'Anselme SDR', number: 42, team: { name: 'SILVER' }, sessions: entries });
+const driver = (entries) => ({
+  id: 'd-1',
+  name: 'Anselme SDR',
+  number: 42,
+  team: { name: 'SILVER' },
+  sessions: entries,
+});
 
 async function reread(workbook) {
   const buffer = await workbook.xlsx.writeBuffer();
@@ -56,7 +71,7 @@ const fieldValue = (sheet, label) => rowValues(sheet, findRow(sheet, label))[1];
  * Un pilote peut compter cent sessions : le classeur donne son palmarès, puis
  * une ligne par session — jamais le détail de chacune.
  */
-describe('export d\'un pilote', () => {
+describe("export d'un pilote", () => {
   const entries = [
     entry({ id: 1 }),
     entry({ id: 2, finalPos: 3, bestLapTime: 9_900, session: { ...entry().session, id: 's-2', name: '14h10' } }),
@@ -118,7 +133,10 @@ describe('export d\'un pilote', () => {
   });
 
   it('sépare les sessions hors championnat', async () => {
-    const orphan = entry({ id: 4, session: { ...entry().session, id: 's-4', championshipId: null, championship: null } });
+    const orphan = entry({
+      id: 4,
+      session: { ...entry().session, id: 's-4', championshipId: null, championship: null },
+    });
     const solo = await reread(buildDriverWorkbook(driver([...entries, orphan])));
     const sheet = solo.getWorksheet('Anselme SDR');
     const rows = [];
@@ -132,7 +150,7 @@ describe('export d\'un pilote', () => {
   });
 });
 
-describe('export d\'une voiture', () => {
+describe("export d'une voiture", () => {
   const carEntries = [entry({ id: 1 }), entry({ id: 2, driverId: 'd-2', driver: { id: 'd-2', name: 'Romain DAN' } })];
 
   it('ventile par pilote plutôt que par voiture', async () => {
@@ -153,27 +171,31 @@ describe('export d\'une voiture', () => {
 
 describe('sélection de plusieurs pilotes', () => {
   it('donne une feuille à chacun et une seule liste', async () => {
-    const workbook = await reread(buildDriversWorkbook([
-      driver([entry({ id: 1 })]),
-      { id: 'd-2', name: 'Romain DAN', sessions: [entry({ id: 2, driverId: 'd-2' })] },
-    ]));
+    const workbook = await reread(
+      buildDriversWorkbook([
+        driver([entry({ id: 1 })]),
+        { id: 'd-2', name: 'Romain DAN', sessions: [entry({ id: 2, driverId: 'd-2' })] },
+      ])
+    );
 
     expect(workbook.worksheets.map((s) => s.name)).toEqual(['Anselme SDR', 'Romain DAN', 'Sessions']);
   });
 
   /** Sans cette colonne, on ne saurait pas de qui vient chaque ligne. */
   it('ajoute une colonne disant à qui appartient chaque session', async () => {
-    const workbook = await reread(buildDriversWorkbook([
-      driver([entry({ id: 1 })]),
-      { id: 'd-2', name: 'Romain DAN', sessions: [entry({ id: 2, driverId: 'd-2' })] },
-    ]));
+    const workbook = await reread(
+      buildDriversWorkbook([
+        driver([entry({ id: 1 })]),
+        { id: 'd-2', name: 'Romain DAN', sessions: [entry({ id: 2, driverId: 'd-2' })] },
+      ])
+    );
     const sheet = workbook.getWorksheet('Sessions');
 
     expect(rowValues(sheet, 3)[0]).toBe('Pilote');
     expect(rowValues(sheet, 4)[0]).toBe('Anselme SDR');
   });
 
-  it('n\'ajoute pas cette colonne pour un seul pilote', async () => {
+  it("n'ajoute pas cette colonne pour un seul pilote", async () => {
     const workbook = await reread(buildDriverWorkbook(driver([entry({ id: 1 })])));
     const sheet = workbook.getWorksheet('Sessions');
 
@@ -181,19 +203,24 @@ describe('sélection de plusieurs pilotes', () => {
   });
 
   it('distingue deux voitures de même nom', async () => {
-    const workbook = await reread(buildCarsWorkbook([
-      { ...car('c-1', 'R8 LMS'), sessions: [] },
-      { ...car('c-2', 'R8 LMS'), sessions: [] },
-    ]));
+    const workbook = await reread(
+      buildCarsWorkbook([
+        { ...car('c-1', 'R8 LMS'), sessions: [] },
+        { ...car('c-2', 'R8 LMS'), sessions: [] },
+      ])
+    );
 
     expect(workbook.worksheets.map((s) => s.name)).toEqual(['Audi R8 LMS', 'Audi R8 LMS (2)', 'Sessions']);
   });
 });
 
-describe('caractéristiques dans l\'export', () => {
+describe("caractéristiques dans l'export", () => {
   const equipped = {
     ...car('c-1', 'R8 LMS'),
-    motor: 'Mabuchi S-Can 18k', tyresRear: 'Ortmann 30', weightGrams: 82, wheelbaseMm: 81.5,
+    motor: 'Mabuchi S-Can 18k',
+    tyresRear: 'Ortmann 30',
+    weightGrams: 82,
+    wheelbaseMm: 81.5,
     sessions: [entry({ id: 1 })],
   };
 
@@ -208,7 +235,7 @@ describe('caractéristiques dans l\'export', () => {
   });
 
   /** Dix-sept lignes vides sur une voiture non documentée n'apprennent rien. */
-  it('n\'affiche pas les caractéristiques non renseignées', async () => {
+  it("n'affiche pas les caractéristiques non renseignées", async () => {
     const workbook = await reread(buildCarWorkbook({ ...car('c-1', 'R8 LMS'), sessions: [] }));
     const sheet = workbook.getWorksheet('Audi R8 LMS');
 

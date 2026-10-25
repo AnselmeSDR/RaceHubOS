@@ -9,7 +9,7 @@ import {
   DriverGridPosition,
   DriverProfileHeader,
   DriverStanding,
-  DriverSelectCard
+  DriverSelectCard,
 } from '../components/DriverDisplays'
 
 // Race components
@@ -50,7 +50,15 @@ const COMPONENT_USAGE = {
 
   // Race components
   Leaderboard: ['RaceControl.jsx', 'RacePage.jsx', 'ChampionshipDetail.jsx'],
-  LapTime: ['RaceControl.jsx', 'FreePractice.jsx', 'ChampionshipDetail.jsx', 'StandingsTabs.jsx', 'ResultsModal.jsx', 'TrackRecordsPanel.jsx', 'FreePracticeEntry.jsx'],
+  LapTime: [
+    'RaceControl.jsx',
+    'FreePractice.jsx',
+    'ChampionshipDetail.jsx',
+    'StandingsTabs.jsx',
+    'ResultsModal.jsx',
+    'TrackRecordsPanel.jsx',
+    'FreePracticeEntry.jsx',
+  ],
   StateChip: ['RaceControl.jsx', 'FreePractice.jsx', 'SessionHeader.jsx', 'FreePracticeHeader.jsx'],
   GapDisplay: ['Leaderboard.jsx'],
   FreePracticeLeaderboard: ['RacePage.jsx', 'ChampionshipDetail.jsx'],
@@ -75,7 +83,16 @@ const COMPONENT_USAGE = {
 
   // UI components
   Modal: ['FormModal.jsx', 'SessionModal.jsx'],
-  ErrorMessage: ['Tracks.jsx', 'Drivers.jsx', 'Teams.jsx', 'SessionDetail.jsx', 'SessionsList.jsx', 'Sessions.jsx', 'Cars.jsx', 'Stats.jsx'],
+  ErrorMessage: [
+    'Tracks.jsx',
+    'Drivers.jsx',
+    'Teams.jsx',
+    'SessionDetail.jsx',
+    'SessionsList.jsx',
+    'Sessions.jsx',
+    'Cars.jsx',
+    'Stats.jsx',
+  ],
 }
 
 export default function Displays() {
@@ -123,23 +140,15 @@ export default function Displays() {
   }
 
   function toggleDriver(driverId) {
-    setSelectedDrivers(prev =>
-      prev.includes(driverId)
-        ? prev.filter(id => id !== driverId)
-        : [...prev, driverId]
-    )
+    setSelectedDrivers((prev) => (prev.includes(driverId) ? prev.filter((id) => id !== driverId) : [...prev, driverId]))
   }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          {t('page.title')}
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          {t('page.subtitle')}
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('page.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('page.subtitle')}</p>
       </div>
 
       {/* Tabs Navigation */}
@@ -153,9 +162,10 @@ export default function Displays() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                   }
                 `}
               >
@@ -178,46 +188,15 @@ export default function Displays() {
           />
         )}
 
-        {activeTab === 'championship' && (
-          <ChampionshipDisplays
-            drivers={drivers}
-            cars={cars}
-            loading={loading}
-          />
-        )}
+        {activeTab === 'championship' && <ChampionshipDisplays drivers={drivers} cars={cars} loading={loading} />}
 
-        {activeTab === SessionType.RACE && (
-          <RaceDisplays
-            drivers={drivers}
-            cars={cars}
-            loading={loading}
-          />
-        )}
+        {activeTab === SessionType.RACE && <RaceDisplays drivers={drivers} cars={cars} loading={loading} />}
 
-        {activeTab === 'crud' && (
-          <CRUDDisplays
-            drivers={drivers}
-            cars={cars}
-            tracks={tracks}
-            loading={loading}
-          />
-        )}
+        {activeTab === 'crud' && <CRUDDisplays drivers={drivers} cars={cars} tracks={tracks} loading={loading} />}
 
-        {activeTab === 'config' && (
-          <ConfigDisplays
-            drivers={drivers}
-            cars={cars}
-            loading={loading}
-          />
-        )}
+        {activeTab === 'config' && <ConfigDisplays drivers={drivers} cars={cars} loading={loading} />}
 
-        {activeTab === 'unused' && (
-          <UnusedDisplays
-            drivers={drivers}
-            cars={cars}
-            loading={loading}
-          />
-        )}
+        {activeTab === 'unused' && <UnusedDisplays drivers={drivers} cars={cars} loading={loading} />}
       </div>
     </div>
   )
@@ -236,8 +215,11 @@ function UsageBadge({ componentName }) {
   }
   return (
     <div className="flex flex-wrap gap-1">
-      {usage.map(page => (
-        <span key={page} className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+      {usage.map((page) => (
+        <span
+          key={page}
+          className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full"
+        >
           {page}
         </span>
       ))}
@@ -274,9 +256,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
   if (drivers.length === 0) {
     return (
       <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <p className="text-gray-500 dark:text-gray-400">
-          {t('noDriversFound')}
-        </p>
+        <p className="text-gray-500 dark:text-gray-400">{t('noDriversFound')}</p>
       </div>
     )
   }
@@ -306,12 +286,7 @@ function DriversDisplays({ drivers, selectedDrivers, toggleDriver, loading }) {
         />
         <div className="space-y-3 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           {drivers.slice(0, 4).map((driver, index) => (
-            <DriverListItem
-              key={driver.id}
-              driver={driver}
-              position={index + 1}
-              showStats={true}
-            />
+            <DriverListItem key={driver.id} driver={driver} position={index + 1} showStats={true} />
           ))}
         </div>
       </section>
@@ -555,14 +530,9 @@ function RaceDisplays({ drivers, cars, loading }) {
           code="<FreePracticeLeaderboard />"
         />
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
-          <FreePracticeLeaderboard
-            freePracticeBoard={demoFreePracticeBoard}
-            configs={demoConfigs}
-            onReset={() => {}}
-          />
+          <FreePracticeLeaderboard freePracticeBoard={demoFreePracticeBoard} configs={demoConfigs} onReset={() => {}} />
         </div>
       </section>
-
     </>
   )
 }
@@ -630,7 +600,11 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
   }))
 
   const sessionTypeLabels = {
-    [SessionType.PRACTICE]: { label: t(sessionTypeFullKey(SessionType.PRACTICE)), icon: FlaskConical, color: 'bg-gray-500' },
+    [SessionType.PRACTICE]: {
+      label: t(sessionTypeFullKey(SessionType.PRACTICE)),
+      icon: FlaskConical,
+      color: 'bg-gray-500',
+    },
     [SessionType.QUALIF]: { label: t(sessionTypeFullKey(SessionType.QUALIF)), icon: Clock, color: 'bg-purple-500' },
     [SessionType.RACE]: { label: t(sessionTypeFullKey(SessionType.RACE)), icon: Flag, color: 'bg-green-500' },
   }
@@ -667,7 +641,9 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>{t('championship.activeSession')}</span>
-            <span className={`inline-flex items-center gap-1 px-2 py-1 ${currentSession.color} text-white rounded-full text-xs font-medium`}>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 ${currentSession.color} text-white rounded-full text-xs font-medium`}
+            >
               <SessionIcon className="w-3 h-3" />
               {currentSession.label}
             </span>
@@ -704,20 +680,26 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
         <SectionHeader
           title={t('championship.leaderboardByType.title', { type: currentSession.label })}
           description={
-            sessionType === SessionType.PRACTICE ? t('championship.leaderboardByType.descriptionPractice') :
-            sessionType === SessionType.QUALIF ? t('championship.leaderboardByType.descriptionQualif') :
-            t('championship.leaderboardByType.descriptionRace')
+            sessionType === SessionType.PRACTICE
+              ? t('championship.leaderboardByType.descriptionPractice')
+              : sessionType === SessionType.QUALIF
+                ? t('championship.leaderboardByType.descriptionQualif')
+                : t('championship.leaderboardByType.descriptionRace')
           }
           componentName="Leaderboard"
           code={`<Leaderboard sessionType="${sessionType}" />`}
         />
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden p-4">
           <div className="flex items-center gap-2 mb-4">
-            <SessionIcon className={`w-5 h-5 ${
-              sessionType === SessionType.PRACTICE ? 'text-gray-500' :
-              sessionType === SessionType.QUALIF ? 'text-purple-500' :
-              'text-green-500'
-            }`} />
+            <SessionIcon
+              className={`w-5 h-5 ${
+                sessionType === SessionType.PRACTICE
+                  ? 'text-gray-500'
+                  : sessionType === SessionType.QUALIF
+                    ? 'text-purple-500'
+                    : 'text-green-500'
+              }`}
+            />
             <span className="font-semibold text-gray-700 dark:text-gray-200">{currentSession.label}</span>
             {sessionType === SessionType.QUALIF && (
               <span className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
@@ -745,11 +727,7 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
           code="<FreePracticeLeaderboard />"
         />
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
-          <FreePracticeLeaderboard
-            freePracticeBoard={demoFreePracticeBoard}
-            configs={demoConfigs}
-            onReset={() => {}}
-          />
+          <FreePracticeLeaderboard freePracticeBoard={demoFreePracticeBoard} configs={demoConfigs} onReset={() => {}} />
         </div>
       </section>
 
@@ -787,18 +765,26 @@ function ChampionshipDisplays({ drivers, cars, loading }) {
               <div
                 key={driver.id}
                 className={`flex items-center gap-3 p-2 rounded-lg ${
-                  idx === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700' :
-                  idx === 1 ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600' :
-                  idx === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700' :
-                  'bg-gray-50 dark:bg-gray-700/50'
+                  idx === 0
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700'
+                    : idx === 1
+                      ? 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600'
+                      : idx === 2
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700'
+                        : 'bg-gray-50 dark:bg-gray-700/50'
                 }`}
               >
-                <span className={`w-6 text-center font-bold ${
-                  idx === 0 ? 'text-yellow-600 dark:text-yellow-400' :
-                  idx === 1 ? 'text-gray-500 dark:text-gray-400' :
-                  idx === 2 ? 'text-orange-600 dark:text-orange-400' :
-                  'text-gray-700 dark:text-gray-300'
-                }`}>
+                <span
+                  className={`w-6 text-center font-bold ${
+                    idx === 0
+                      ? 'text-yellow-600 dark:text-yellow-400'
+                      : idx === 1
+                        ? 'text-gray-500 dark:text-gray-400'
+                        : idx === 2
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
                   {idx + 1}
                 </span>
                 <div
@@ -865,7 +851,9 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <ViewToggleButtons mode={view} onChange={setView} />
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('crud.viewToggleButtons.currentView', { view })}</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {t('crud.viewToggleButtons.currentView', { view })}
+          </p>
         </div>
       </section>
 
@@ -897,7 +885,7 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
           code="<EntityCard />"
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {drivers.slice(0, 3).map(driver => (
+          {drivers.slice(0, 3).map((driver) => (
             <EntityCard
               key={driver.id}
               image={driver.img}
@@ -957,13 +945,7 @@ function CRUDDisplays({ drivers, cars, tracks, loading }) {
           code="<RangeField />"
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-md">
-          <RangeField
-            label={t('crud.rangeField.label')}
-            value={80}
-            onChange={() => {}}
-            min={0}
-            max={100}
-          />
+          <RangeField label={t('crud.rangeField.label')} value={80} onChange={() => {}} min={0} max={100} />
         </div>
       </section>
 
@@ -1027,20 +1009,14 @@ function ConfigDisplays({ drivers, cars, loading }) {
         />
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('config.configStatus.incomplete', { count: 3 })}</p>
-            <ConfigStatus
-              unconfiguredCount={3}
-              unconfiguredSlots={[4, 5, 6]}
-              isComplete={false}
-            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              {t('config.configStatus.incomplete', { count: 3 })}
+            </p>
+            <ConfigStatus unconfiguredCount={3} unconfiguredSlots={[4, 5, 6]} isComplete={false} />
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('config.configStatus.complete')}</p>
-            <ConfigStatus
-              unconfiguredCount={0}
-              unconfiguredSlots={[]}
-              isComplete={true}
-            />
+            <ConfigStatus unconfiguredCount={0} unconfiguredSlots={[]} isComplete={true} />
           </div>
         </div>
       </section>
@@ -1086,12 +1062,13 @@ function UnusedDisplays({ drivers, cars, loading }) {
         <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-300 mb-2">
           {t('unused.banner.title', { count: unusedComponents.length })}
         </h2>
-        <p className="text-orange-700 dark:text-orange-400 text-sm mb-4">
-          {t('unused.banner.description')}
-        </p>
+        <p className="text-orange-700 dark:text-orange-400 text-sm mb-4">{t('unused.banner.description')}</p>
         <div className="flex flex-wrap gap-2">
-          {unusedComponents.map(name => (
-            <span key={name} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300 rounded-full text-sm font-medium">
+          {unusedComponents.map((name) => (
+            <span
+              key={name}
+              className="px-3 py-1 bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300 rounded-full text-sm font-medium"
+            >
               {name}
             </span>
           ))}
@@ -1161,12 +1138,7 @@ function UnusedDisplays({ drivers, cars, loading }) {
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {drivers.slice(0, 3).map((driver) => (
-            <DriverSelectCard
-              key={driver.id}
-              driver={driver}
-              selected={false}
-              onToggle={() => {}}
-            />
+            <DriverSelectCard key={driver.id} driver={driver} selected={false} onToggle={() => {}} />
           ))}
         </div>
       </section>
@@ -1180,7 +1152,7 @@ function UnusedDisplays({ drivers, cars, loading }) {
           code="<EntityCard />"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {drivers.slice(0, 2).map(driver => (
+          {drivers.slice(0, 2).map((driver) => (
             <EntityCard
               key={driver.id}
               image={driver.img}

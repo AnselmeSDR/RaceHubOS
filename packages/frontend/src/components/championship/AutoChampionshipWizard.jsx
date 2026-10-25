@@ -18,7 +18,15 @@ const STEPS = [
   { key: 'preview', labelKey: 'wizard.steps.preview', icon: Eye },
 ]
 
-export default function AutoChampionshipWizard({ tracks, initialName = '', initialTrackId = '', onFormChange, onClose, onCreated, onSwitchManual }) {
+export default function AutoChampionshipWizard({
+  tracks,
+  initialName = '',
+  initialTrackId = '',
+  onFormChange,
+  onClose,
+  onCreated,
+  onSwitchManual,
+}) {
   const { t } = useTranslation('championships')
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -30,8 +38,14 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
   const [name, setNameLocal] = useState(initialName)
   const [trackId, setTrackIdLocal] = useState(initialTrackId)
 
-  const setName = (v) => { setNameLocal(v); onFormChange?.({ name: v, trackId }) }
-  const setTrackId = (v) => { setTrackIdLocal(v); onFormChange?.({ name, trackId: v }) }
+  const setName = (v) => {
+    setNameLocal(v)
+    onFormChange?.({ name: v, trackId })
+  }
+  const setTrackId = (v) => {
+    setTrackIdLocal(v)
+    onFormChange?.({ name, trackId: v })
+  }
 
   // Step 2: Participants
   const [participants, setParticipants] = useState([])
@@ -49,30 +63,38 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
   const [useRaceLaps, setUseRaceLaps] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_URL}/api/drivers`).then(r => r.json()).then(d => {
-      if (d.success) setDrivers(d.data || [])
-    }).catch(() => {})
+    fetch(`${API_URL}/api/drivers`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setDrivers(d.data || [])
+      })
+      .catch(() => {})
   }, [])
 
   // Available drivers/cars for a given row (exclude used by other rows)
   function getAvailableDrivers(currentIndex) {
-    const usedIds = new Set(participants.filter((_, i) => i !== currentIndex).map(p => p.driverId).filter(Boolean))
-    return drivers.filter(d => !usedIds.has(d.id))
+    const usedIds = new Set(
+      participants
+        .filter((_, i) => i !== currentIndex)
+        .map((p) => p.driverId)
+        .filter(Boolean)
+    )
+    return drivers.filter((d) => !usedIds.has(d.id))
   }
 
   function updateParticipant(index, value) {
-    setParticipants(prev => {
+    setParticipants((prev) => {
       const next = [...prev]
       next[index] = {
         driverId: value || null,
-        driver: drivers.find(d => d.id === value) || null,
+        driver: drivers.find((d) => d.id === value) || null,
       }
       return next
     })
   }
 
   function removeParticipant(index) {
-    setParticipants(prev => prev.filter((_, i) => i !== index))
+    setParticipants((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Auto-add empty row at the end when last row is filled
@@ -84,7 +106,7 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
   }, [participants])
 
   // Complete participants only (for preview and submission)
-  const completeParticipants = useMemo(() => participants.filter(p => p.driverId), [participants])
+  const completeParticipants = useMemo(() => participants.filter((p) => p.driverId), [participants])
 
   // Preview calculations
   const numQualifGroups = Math.ceil(completeParticipants.length / driversPerQualif) || 0
@@ -136,7 +158,7 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
         qualifMaxLaps: useQualifLaps && qualifLaps > 0 ? qualifLaps : null,
         raceMaxDuration: useRaceTime && raceDuration > 0 ? raceDuration * 60000 : null,
         raceMaxLaps: useRaceLaps && raceLaps > 0 ? raceLaps : null,
-        participants: completeParticipants.map(p => ({ driverId: p.driverId })),
+        participants: completeParticipants.map((p) => ({ driverId: p.driverId })),
         sessionNames: sessionNames(),
       }
       const res = await fetch(`${API_URL}/api/championships`, {
@@ -159,7 +181,13 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
   }
 
   return (
-    <Modal open onClose={onClose} title={t('wizard.title')} icon={<Trophy className="w-5 h-5 text-primary" />} size="2xl">
+    <Modal
+      open
+      onClose={onClose}
+      title={t('wizard.title')}
+      icon={<Trophy className="w-5 h-5 text-primary" />}
+      size="2xl"
+    >
       {/* Step indicators */}
       <div className="flex items-center gap-2 mb-6">
         {STEPS.map((s, i) => {
@@ -172,9 +200,11 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
               onClick={() => i < step && setStep(i)}
               disabled={i > step}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                isActive ? 'bg-yellow-500 text-white' :
-                isDone ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 cursor-pointer' :
-                'bg-muted text-muted-foreground'
+                isActive
+                  ? 'bg-yellow-500 text-white'
+                  : isDone
+                    ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 cursor-pointer'
+                    : 'bg-muted text-muted-foreground'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -200,16 +230,20 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
             </button>
           </div>
           <FormField label={t('wizard.name')} required>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder={t('wizard.namePlaceholder')} />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('wizard.namePlaceholder')} />
           </FormField>
           <FormField label={t('wizard.track')} required>
             <select
               value={trackId}
-              onChange={e => setTrackId(e.target.value)}
+              onChange={(e) => setTrackId(e.target.value)}
               className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             >
               <option value="">{t('wizard.selectTrack')}</option>
-              {tracks.map(track => <option key={track.id} value={track.id}>{track.name}</option>)}
+              {tracks.map((track) => (
+                <option key={track.id} value={track.id}>
+                  {track.name}
+                </option>
+              ))}
             </select>
           </FormField>
         </div>
@@ -241,16 +275,23 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
                       <td className="px-3 py-1.5">
                         <select
                           value={p.driverId || ''}
-                          onChange={e => updateParticipant(i, e.target.value)}
+                          onChange={(e) => updateParticipant(i, e.target.value)}
                           className="w-full px-2 py-1 border-none bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-ring rounded"
                         >
                           <option value="">{t('wizard.driverPlaceholder')}</option>
-                          {getAvailableDrivers(i).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                          {getAvailableDrivers(i).map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td className="px-3 py-1.5">
                         {!isEmptyRow && (
-                          <button onClick={() => removeParticipant(i)} className="p-0.5 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive">
+                          <button
+                            onClick={() => removeParticipant(i)}
+                            className="p-0.5 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive"
+                          >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
@@ -274,9 +315,11 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
                 min={2}
                 max={6}
                 value={driversPerQualif}
-                onChange={e => setDriversPerQualif(Math.max(2, Math.min(6, parseInt(e.target.value) || 2)))}
+                onChange={(e) => setDriversPerQualif(Math.max(2, Math.min(6, parseInt(e.target.value) || 2)))}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t('wizard.qualifGroups', { count: numQualifGroups })}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('wizard.qualifGroups', { count: numQualifGroups })}
+              </p>
             </FormField>
             <FormField label={t('wizard.driversPerRace')}>
               <Input
@@ -284,7 +327,7 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
                 min={2}
                 max={6}
                 value={driversPerRace}
-                onChange={e => setDriversPerRace(Math.max(2, Math.min(6, parseInt(e.target.value) || 2)))}
+                onChange={(e) => setDriversPerRace(Math.max(2, Math.min(6, parseInt(e.target.value) || 2)))}
               />
               <p className="text-xs text-muted-foreground mt-1">{t('wizard.raceGroups', { count: numRaceGroups })}</p>
             </FormField>
@@ -296,23 +339,45 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
               <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('wizard.qualifications')}</h3>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={useQualifTime} onChange={e => setUseQualifTime(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={useQualifTime}
+                    onChange={(e) => setUseQualifTime(e.target.checked)}
+                    className="rounded"
+                  />
                   {t('wizard.duration')}
                 </label>
                 {useQualifTime && (
                   <div className="flex items-center gap-1">
-                    <Input type="number" min={1} value={qualifDuration} onChange={e => setQualifDuration(parseInt(e.target.value) || 1)} className="w-16 h-7" />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={qualifDuration}
+                      onChange={(e) => setQualifDuration(parseInt(e.target.value) || 1)}
+                      className="w-16 h-7"
+                    />
                     <span className="text-xs text-muted-foreground">{t('configModal.fields.minUnit')}</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={useQualifLaps} onChange={e => setUseQualifLaps(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={useQualifLaps}
+                    onChange={(e) => setUseQualifLaps(e.target.checked)}
+                    className="rounded"
+                  />
                   {t('wizard.laps')}
                 </label>
                 {useQualifLaps && (
-                  <Input type="number" min={1} value={qualifLaps} onChange={e => setQualifLaps(parseInt(e.target.value) || 1)} className="w-16 h-7" />
+                  <Input
+                    type="number"
+                    min={1}
+                    value={qualifLaps}
+                    onChange={(e) => setQualifLaps(parseInt(e.target.value) || 1)}
+                    className="w-16 h-7"
+                  />
                 )}
               </div>
             </div>
@@ -322,23 +387,45 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
               <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">{t('wizard.races')}</h3>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={useRaceTime} onChange={e => setUseRaceTime(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={useRaceTime}
+                    onChange={(e) => setUseRaceTime(e.target.checked)}
+                    className="rounded"
+                  />
                   {t('wizard.duration')}
                 </label>
                 {useRaceTime && (
                   <div className="flex items-center gap-1">
-                    <Input type="number" min={1} value={raceDuration} onChange={e => setRaceDuration(parseInt(e.target.value) || 1)} className="w-16 h-7" />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={raceDuration}
+                      onChange={(e) => setRaceDuration(parseInt(e.target.value) || 1)}
+                      className="w-16 h-7"
+                    />
                     <span className="text-xs text-muted-foreground">{t('configModal.fields.minUnit')}</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={useRaceLaps} onChange={e => setUseRaceLaps(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={useRaceLaps}
+                    onChange={(e) => setUseRaceLaps(e.target.checked)}
+                    className="rounded"
+                  />
                   {t('wizard.laps')}
                 </label>
                 {useRaceLaps && (
-                  <Input type="number" min={1} value={raceLaps} onChange={e => setRaceLaps(parseInt(e.target.value) || 1)} className="w-16 h-7" />
+                  <Input
+                    type="number"
+                    min={1}
+                    value={raceLaps}
+                    onChange={(e) => setRaceLaps(parseInt(e.target.value) || 1)}
+                    className="w-16 h-7"
+                  />
                 )}
               </div>
             </div>
@@ -362,8 +449,13 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
             <div>
               <h3 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">{t('wizard.qualifications')}</h3>
               {previewQualifGroups.map((group, g) => (
-                <div key={g} className="mb-3 border border-blue-200 dark:border-blue-800 rounded-lg p-2 bg-blue-50/50 dark:bg-blue-950/30">
-                  <div className="font-medium text-xs mb-1">Q{g + 1} ({t('wizard.groupDrivers', { count: group.length })})</div>
+                <div
+                  key={g}
+                  className="mb-3 border border-blue-200 dark:border-blue-800 rounded-lg p-2 bg-blue-50/50 dark:bg-blue-950/30"
+                >
+                  <div className="font-medium text-xs mb-1">
+                    Q{g + 1} ({t('wizard.groupDrivers', { count: group.length })})
+                  </div>
                   {group.map((p, i) => (
                     <div key={i} className="text-xs text-muted-foreground truncate">
                       {p.driver.name}
@@ -384,8 +476,13 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
             <div>
               <h3 className="font-semibold mb-2 text-green-600 dark:text-green-400">{t('wizard.races')}</h3>
               {previewRaceGroups.map((group, g) => (
-                <div key={g} className="mb-3 border border-green-200 dark:border-green-800 rounded-lg p-2 bg-green-50/50 dark:bg-green-950/30">
-                  <div className="font-medium text-xs mb-1">R{g + 1} ({t('wizard.groupDrivers', { count: group.count })})</div>
+                <div
+                  key={g}
+                  className="mb-3 border border-green-200 dark:border-green-800 rounded-lg p-2 bg-green-50/50 dark:bg-green-950/30"
+                >
+                  <div className="font-medium text-xs mb-1">
+                    R{g + 1} ({t('wizard.groupDrivers', { count: group.count })})
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {t('wizard.positionsRange', { start: group.start, end: group.end })}
                   </div>
@@ -403,20 +500,32 @@ export default function AutoChampionshipWizard({ tracks, initialName = '', initi
 
       {/* Footer */}
       <ModalFooter className="border-t mt-6 pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>{t('common:cancel')}</Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {t('common:cancel')}
+        </Button>
         {step > 0 && (
-          <Button type="button" variant="outline" onClick={() => setStep(s => s - 1)}>
+          <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
             <ChevronLeft className="w-4 h-4 mr-1" />
             {t('common:back')}
           </Button>
         )}
         {step < STEPS.length - 1 ? (
-          <Button type="button" onClick={() => setStep(s => s + 1)} disabled={!canNext()} className="bg-yellow-500 hover:bg-yellow-600 text-white">
+          <Button
+            type="button"
+            onClick={() => setStep((s) => s + 1)}
+            disabled={!canNext()}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+          >
             {t('wizard.next')}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
-          <Button type="button" onClick={handleCreate} disabled={saving || !canNext()} className="bg-yellow-500 hover:bg-yellow-600 text-white">
+          <Button
+            type="button"
+            onClick={handleCreate}
+            disabled={saving || !canNext()}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+          >
             {saving ? t('wizard.creating') : t('wizard.createChampionship')}
           </Button>
         )}

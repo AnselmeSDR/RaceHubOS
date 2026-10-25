@@ -8,7 +8,7 @@ const prisma = createPrismaClient();
 let connectionState = {
   useMockDevice: process.env.USE_MOCK_DEVICE === 'true',
   connectedDevice: null,
-  connectionStatus: 'disconnected'
+  connectionStatus: 'disconnected',
 };
 
 // Store io instance for emitting events
@@ -24,7 +24,7 @@ export function updateConnectionState(updates) {
   if (ioInstance && updates.connectionStatus) {
     ioInstance.emit('cu:connection', {
       status: connectionState.connectionStatus,
-      device: connectionState.connectedDevice
+      device: connectionState.connectedDevice,
     });
   }
 }
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
   try {
     res.json({
       success: true,
-      data: connectionState
+      data: connectionState,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to get settings' });
@@ -60,7 +60,7 @@ router.post('/mock-device', async (req, res) => {
         active: false,
         raceTime: 0,
         carCount: enabled ? 6 : 0,
-        isMockDevice: enabled
+        isMockDevice: enabled,
       });
     }
 
@@ -77,8 +77,8 @@ router.get('/bluetooth-device', async (req, res) => {
       success: true,
       data: {
         device: connectionState.connectedDevice,
-        status: connectionState.connectionStatus
-      }
+        status: connectionState.connectionStatus,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to get bluetooth device' });
@@ -102,8 +102,8 @@ router.post('/bluetooth-device', async (req, res) => {
       success: true,
       data: {
         device: connectionState.connectedDevice,
-        status: connectionState.connectionStatus
-      }
+        status: connectionState.connectionStatus,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to update bluetooth device' });

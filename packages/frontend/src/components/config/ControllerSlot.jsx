@@ -19,20 +19,16 @@ export default function ControllerSlot({
   onChange,
   disabled,
   usedDriverIds = [],
-  usedCarIds = []
+  usedCarIds = [],
 }) {
   const { t } = useTranslation('race')
   const isConfigured = config?.driverId && config?.carId
-  const selectedDriver = drivers?.find(d => d.id === config?.driverId)
-  const selectedCar = cars?.find(c => c.id === config?.carId)
+  const selectedDriver = drivers?.find((d) => d.id === config?.driverId)
+  const selectedCar = cars?.find((c) => c.id === config?.carId)
 
   // Filter out drivers/cars already used by other controllers
-  const availableDrivers = drivers?.filter(d =>
-    d.id === config?.driverId || !usedDriverIds.includes(d.id)
-  ) || []
-  const availableCars = cars?.filter(c =>
-    c.id === config?.carId || !usedCarIds.includes(c.id)
-  ) || []
+  const availableDrivers = drivers?.filter((d) => d.id === config?.driverId || !usedDriverIds.includes(d.id)) || []
+  const availableCars = cars?.filter((c) => c.id === config?.carId || !usedCarIds.includes(c.id)) || []
 
   function handleDriverChange(e) {
     onChange(controller, {
@@ -51,9 +47,7 @@ export default function ControllerSlot({
   return (
     <div
       className={`p-4 rounded-lg border-2 transition-all ${
-        isConfigured
-          ? 'bg-white border-gray-200'
-          : 'bg-yellow-50 border-yellow-300'
+        isConfigured ? 'bg-white border-gray-200' : 'bg-yellow-50 border-yellow-300'
       }`}
     >
       {/* Header with controller number */}
@@ -68,9 +62,7 @@ export default function ControllerSlot({
           </div>
           <span className="font-medium text-gray-700">{t('controllerSlot.controller', { number: controller })}</span>
         </div>
-        {!isConfigured && (
-          <AlertTriangle className="w-5 h-5 text-yellow-500" />
-        )}
+        {!isConfigured && <AlertTriangle className="w-5 h-5 text-yellow-500" />}
       </div>
 
       {/* Photos row */}
@@ -95,9 +87,7 @@ export default function ControllerSlot({
 
       {/* Driver select */}
       <div className="mb-2">
-        <label className="block text-xs font-medium text-gray-500 mb-1">
-          {t('controllerSlot.driverLabel')}
-        </label>
+        <label className="block text-xs font-medium text-gray-500 mb-1">{t('controllerSlot.driverLabel')}</label>
         <select
           value={config?.driverId || ''}
           onChange={handleDriverChange}
@@ -115,9 +105,7 @@ export default function ControllerSlot({
 
       {/* Car select */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">
-          {t('controllerSlot.carLabel')}
-        </label>
+        <label className="block text-xs font-medium text-gray-500 mb-1">{t('controllerSlot.carLabel')}</label>
         <select
           value={config?.carId || ''}
           onChange={handleCarChange}

@@ -9,6 +9,7 @@ export function speechLocale(language) {
 /** Every browser voice, those speaking this interface language first. */
 export function voicesByLanguage(language) {
   const other = (v) => (v.lang.startsWith(language) ? 0 : 1)
-  return [...speechSynthesis.getVoices()]
-    .sort((a, b) => other(a) - other(b) || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name))
+  return [...speechSynthesis.getVoices()].sort(
+    (a, b) => other(a) - other(b) || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name)
+  )
 }

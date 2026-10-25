@@ -29,7 +29,7 @@ export function checksum(buffer, offset = 0, size = null) {
     sum += buffer[i];
   }
 
-  return sum & 0x0F;
+  return sum & 0x0f;
 }
 
 /**
@@ -64,10 +64,10 @@ export function pack(format, ...args) {
       case 'B': // Byte (8 bits) -> 2 nibbles encodés
         for (let j = 0; j < count; j++) {
           const val = args[argIndex++];
-          if (val < 0 || val > 0xFF) {
+          if (val < 0 || val > 0xff) {
             throw new Error("'B' format argument out of range");
           }
-          buffer.push(base + (val & 0x0F));
+          buffer.push(base + (val & 0x0f));
           buffer.push(base + (val >> 4));
         }
         break;
@@ -75,24 +75,24 @@ export function pack(format, ...args) {
       case 'I': // Integer 32 bits -> 8 nibbles encodés
         for (let j = 0; j < count; j++) {
           const val = args[argIndex++];
-          if (val < 0 || val > 0xFFFFFFFF) {
+          if (val < 0 || val > 0xffffffff) {
             throw new Error("'I' format argument out of range");
           }
-          buffer.push(base + ((val >> 24) & 0x0F));
-          buffer.push(base + ((val >> 28) & 0x0F));
-          buffer.push(base + ((val >> 16) & 0x0F));
-          buffer.push(base + ((val >> 20) & 0x0F));
-          buffer.push(base + ((val >> 8) & 0x0F));
-          buffer.push(base + ((val >> 12) & 0x0F));
-          buffer.push(base + ((val >> 0) & 0x0F));
-          buffer.push(base + ((val >> 4) & 0x0F));
+          buffer.push(base + ((val >> 24) & 0x0f));
+          buffer.push(base + ((val >> 28) & 0x0f));
+          buffer.push(base + ((val >> 16) & 0x0f));
+          buffer.push(base + ((val >> 20) & 0x0f));
+          buffer.push(base + ((val >> 8) & 0x0f));
+          buffer.push(base + ((val >> 12) & 0x0f));
+          buffer.push(base + ((val >> 0) & 0x0f));
+          buffer.push(base + ((val >> 4) & 0x0f));
         }
         break;
 
       case 'Y': // Nibble (4 bits)
         for (let j = 0; j < count; j++) {
           const val = args[argIndex++];
-          if (val < 0 || val > 0x0F) {
+          if (val < 0 || val > 0x0f) {
             throw new Error("'Y' format argument out of range");
           }
           buffer.push(base + val);
@@ -112,7 +112,7 @@ export function pack(format, ...args) {
       case 'r': // Raw byte
         for (let j = 0; j < count; j++) {
           const val = args[argIndex++];
-          if (val < 0 || val > 0xFF) {
+          if (val < 0 || val > 0xff) {
             throw new Error("'r' format argument out of range");
           }
           buffer.push(val);
@@ -186,8 +186,8 @@ export function unpack(format, buffer) {
     switch (conv) {
       case 'B': // Byte (8 bits) <- 2 nibbles
         for (let j = 0; j < count; j++) {
-          let b = buffer[offset] & 0x0F;
-          b |= (buffer[offset + 1] & 0x0F) << 4;
+          let b = buffer[offset] & 0x0f;
+          b |= (buffer[offset + 1] & 0x0f) << 4;
           result.push(b);
           offset += 2;
         }
@@ -195,14 +195,14 @@ export function unpack(format, buffer) {
 
       case 'I': // Integer 32 bits <- 8 nibbles
         for (let j = 0; j < count; j++) {
-          let n = (buffer[offset + 0] & 0x0F) << 24;
-          n |= (buffer[offset + 1] & 0x0F) << 28;
-          n |= (buffer[offset + 2] & 0x0F) << 16;
-          n |= (buffer[offset + 3] & 0x0F) << 20;
-          n |= (buffer[offset + 4] & 0x0F) << 8;
-          n |= (buffer[offset + 5] & 0x0F) << 12;
-          n |= (buffer[offset + 6] & 0x0F) << 0;
-          n |= (buffer[offset + 7] & 0x0F) << 4;
+          let n = (buffer[offset + 0] & 0x0f) << 24;
+          n |= (buffer[offset + 1] & 0x0f) << 28;
+          n |= (buffer[offset + 2] & 0x0f) << 16;
+          n |= (buffer[offset + 3] & 0x0f) << 20;
+          n |= (buffer[offset + 4] & 0x0f) << 8;
+          n |= (buffer[offset + 5] & 0x0f) << 12;
+          n |= (buffer[offset + 6] & 0x0f) << 0;
+          n |= (buffer[offset + 7] & 0x0f) << 4;
           result.push(n >>> 0); // Unsigned
           offset += 8;
         }
@@ -210,7 +210,7 @@ export function unpack(format, buffer) {
 
       case 'Y': // Nibble (4 bits)
         for (let j = 0; j < count; j++) {
-          result.push(buffer[offset] & 0x0F);
+          result.push(buffer[offset] & 0x0f);
           offset++;
         }
         break;
@@ -240,7 +240,7 @@ export function unpack(format, buffer) {
 
       case 'C': // Checksum
         {
-          const expectedChk = buffer[offset] & 0x0F;
+          const expectedChk = buffer[offset] & 0x0f;
           const actualChk = checksum(buffer, count, offset - count);
           if (expectedChk !== actualChk) {
             throw new Error(`Checksum error: expected ${expectedChk}, got ${actualChk}`);

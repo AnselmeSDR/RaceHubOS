@@ -26,11 +26,7 @@ export const SESSION_TYPES = Object.freeze(Object.values(SessionType));
  * belongs to no championship and it produces no standings, so it never appears
  * in these lists even though it is a session type like the others.
  */
-export const STANDARD_SESSION_TYPES = Object.freeze([
-  SessionType.PRACTICE,
-  SessionType.QUALIF,
-  SessionType.RACE,
-]);
+export const STANDARD_SESSION_TYPES = Object.freeze([SessionType.PRACTICE, SessionType.QUALIF, SessionType.RACE]);
 
 export function isSessionType(value) {
   return SESSION_TYPES.includes(value);

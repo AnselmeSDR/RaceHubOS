@@ -15,13 +15,7 @@ import { SessionType } from '@racehubos/shared'
  * @param {'qualif' | 'race'} props.type - Session type
  * @param {object} props.initialValues - Initial form values
  */
-export default function SessionModal({
-  open,
-  onClose,
-  onStart,
-  type = SessionType.QUALIF,
-  initialValues = {}
-}) {
+export default function SessionModal({ open, onClose, onStart, type = SessionType.QUALIF, initialValues = {} }) {
   const { t } = useTranslation('race')
   const isQualifying = type === SessionType.QUALIF
 
@@ -29,7 +23,7 @@ export default function SessionModal({
     name: initialValues.name || '',
     duration: initialValues.duration ?? (isQualifying ? 10 : 0),
     maxLaps: initialValues.maxLaps ?? (isQualifying ? 0 : 20),
-    useQualifyingGrid: initialValues.useQualifyingGrid ?? false
+    useQualifyingGrid: initialValues.useQualifyingGrid ?? false,
   })
 
   const handleSubmit = (e) => {
@@ -38,7 +32,7 @@ export default function SessionModal({
       name: form.name,
       duration: form.duration > 0 ? form.duration : null,
       maxLaps: form.maxLaps > 0 ? form.maxLaps : null,
-      useQualifyingGrid: !isQualifying && form.useQualifyingGrid
+      useQualifyingGrid: !isQualifying && form.useQualifyingGrid,
     })
   }
 
@@ -56,13 +50,11 @@ export default function SessionModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Session name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('sessionModal.nameLabel')}
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('sessionModal.nameLabel')}</label>
           <input
             type="text"
             value={form.name}
-            onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder={isQualifying ? t('glossary:qualifying_other') : t('glossary:race_one')}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -78,7 +70,7 @@ export default function SessionModal({
             <input
               type="number"
               value={form.duration}
-              onChange={(e) => setForm(f => ({ ...f, duration: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) || 0 }))}
               min="0"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -92,7 +84,7 @@ export default function SessionModal({
             <input
               type="number"
               value={form.maxLaps}
-              onChange={(e) => setForm(f => ({ ...f, maxLaps: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setForm((f) => ({ ...f, maxLaps: parseInt(e.target.value) || 0 }))}
               min="0"
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -106,12 +98,10 @@ export default function SessionModal({
             <input
               type="checkbox"
               checked={form.useQualifyingGrid}
-              onChange={(e) => setForm(f => ({ ...f, useQualifyingGrid: e.target.checked }))}
+              onChange={(e) => setForm((f) => ({ ...f, useQualifyingGrid: e.target.checked }))}
               className="w-4 h-4 text-green-500 rounded focus:ring-green-500"
             />
-            <span className="text-sm text-gray-700">
-              {t('sessionModal.useQualifyingGrid')}
-            </span>
+            <span className="text-sm text-gray-700">{t('sessionModal.useQualifyingGrid')}</span>
           </label>
         )}
 

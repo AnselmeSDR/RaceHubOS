@@ -80,16 +80,12 @@ export default function SessionLeaderboard({
       ...entry,
       position,
       displayGap,
-      leaderTotalTime: null
+      leaderTotalTime: null,
     }
   })
 
   if (!entries || entries.length === 0) {
-    return (
-      <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
-        {t('leaderboard.empty')}
-      </div>
-    )
+    return <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">{t('leaderboard.empty')}</div>
   }
 
   const fixColor = (c) => {
@@ -121,7 +117,7 @@ export default function SessionLeaderboard({
               exit={{ opacity: 0, x: 50 }}
               transition={{
                 layout: { type: 'spring', stiffness: 200, damping: 30, mass: 1 },
-                opacity: { duration: 0.3 }
+                opacity: { duration: 0.3 },
               }}
               className={`flex items-center gap-3 rounded-lg shadow-md dark:shadow-none ${expanded ? 'p-4' : 'p-3'}`}
               style={{
@@ -131,13 +127,20 @@ export default function SessionLeaderboard({
               }}
             >
               {/* Position */}
-              <div className={`${expanded ? 'w-20' : 'w-12 @4xl:w-16'} flex-shrink-0 flex items-center justify-center gap-1`}>
-                <span className={`${expanded ? 'text-3xl' : 'text-2xl'} font-black ${
-                  position === 1 ? 'text-yellow-500' :
-                  position === 2 ? 'text-gray-400' :
-                  position === 3 ? 'text-orange-500' :
-                  'text-muted-foreground'
-                }`}>
+              <div
+                className={`${expanded ? 'w-20' : 'w-12 @4xl:w-16'} flex-shrink-0 flex items-center justify-center gap-1`}
+              >
+                <span
+                  className={`${expanded ? 'text-3xl' : 'text-2xl'} font-black ${
+                    position === 1
+                      ? 'text-yellow-500'
+                      : position === 2
+                        ? 'text-gray-400'
+                        : position === 3
+                          ? 'text-orange-500'
+                          : 'text-muted-foreground'
+                  }`}
+                >
                   {position}
                 </span>
                 {/* Position delta arrow */}
@@ -150,11 +153,7 @@ export default function SessionLeaderboard({
                       entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
                     }`}
                   >
-                    {entry.positionDelta > 0 ? (
-                      <ArrowUp className="w-3 h-3" />
-                    ) : (
-                      <ArrowDown className="w-3 h-3" />
-                    )}
+                    {entry.positionDelta > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                     <span>{Math.abs(entry.positionDelta)}</span>
                   </motion.div>
                 )}
@@ -180,10 +179,13 @@ export default function SessionLeaderboard({
               {driver.number && (
                 <div className={`flex-shrink-0 w-20 ${expanded ? 'mr-6' : 'mr-2'}`}>
                   <span
-                    className={`font-black italic ${expanded ? (String(driver.number).length >= 3 ? 'text-5xl' : 'text-6xl') : (String(driver.number).length >= 3 ? 'text-4xl' : 'text-5xl')}`}
+                    className={`font-black italic ${expanded ? (String(driver.number).length >= 3 ? 'text-5xl' : 'text-6xl') : String(driver.number).length >= 3 ? 'text-4xl' : 'text-5xl'}`}
                     style={{
                       color: driverColor,
-                      WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
+                      WebkitTextStroke:
+                        isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase())
+                          ? '2px white'
+                          : 'none',
                     }}
                   >
                     {driver.number}
@@ -204,7 +206,9 @@ export default function SessionLeaderboard({
 
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
-                <div className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}>
+                <div
+                  className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}
+                >
                   {(driver.name || t('common:unknown')).split(' ').pop()}
                 </div>
                 <div className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -215,7 +219,9 @@ export default function SessionLeaderboard({
                     />
                   )}
                   {/* Own span: an ellipsis does not apply to bare text in a flex row */}
-                  <span className="truncate">{car.brand} {car.model || car.name || ''}</span>
+                  <span className="truncate">
+                    {car.brand} {car.model || car.name || ''}
+                  </span>
                 </div>
               </div>
 
@@ -223,7 +229,9 @@ export default function SessionLeaderboard({
               <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-3 @4xl:gap-6'} flex-shrink-0`}>
                 {/* Laps */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.laps')}</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
+                    {t('leaderboard.laps')}
+                  </div>
                   <div className={`font-mono font-bold ${expanded ? 'text-2xl' : 'text-lg'} text-foreground`}>
                     {stats.laps ?? 0}
                   </div>
@@ -231,26 +239,34 @@ export default function SessionLeaderboard({
 
                 {/* Best Lap */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.best')}</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
+                    {t('leaderboard.best')}
+                  </div>
                   <LapTime time={stats.bestLap} size={expanded ? 'xl' : 'md'} highlight={entry.hasFastestLap} />
                 </div>
 
                 {/* Last Lap */}
                 <div className="text-center">
-                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{t('leaderboard.last')}</div>
+                  <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
+                    {t('leaderboard.last')}
+                  </div>
                   <LapTime time={stats.lastLap} size={expanded ? 'xl' : 'md'} />
                 </div>
 
                 {/* Gap / Total */}
                 <div className={`text-center ${expanded ? 'min-w-[100px]' : 'min-w-16 @4xl:min-w-[80px]'}`}>
                   <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>
-                    {sortBy === 'race' && position === 1 && sessionStatus === SessionStatus.FINISHED ? t('leaderboard.total') : t('leaderboard.gap')}
+                    {sortBy === 'race' && position === 1 && sessionStatus === SessionStatus.FINISHED
+                      ? t('leaderboard.total')
+                      : t('leaderboard.gap')}
                   </div>
                   {sortBy === 'race' && position === 1 ? (
                     sessionStatus === SessionStatus.FINISHED ? (
                       <LapTime time={stats.totalTime} size={expanded ? 'xl' : 'md'} format="total" />
                     ) : (
-                      <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>{t('gapDisplay.leader')}</span>
+                      <span className={`${expanded ? 'text-lg' : 'text-sm'} font-bold ${GAP_COLORS.leader}`}>
+                        {t('gapDisplay.leader')}
+                      </span>
                     )
                   ) : (
                     <GapDisplay

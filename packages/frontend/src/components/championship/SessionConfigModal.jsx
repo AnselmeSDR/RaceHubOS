@@ -6,7 +6,7 @@ import Modal, { ModalFooter, ModalButton } from '../ui/Modal'
 const SESSION_TYPE_ICONS = {
   practice: FlaskConical,
   qualif: Clock,
-  race: Flag
+  race: Flag,
 }
 
 import { CONTROLLER_COLORS } from '../../lib/colors'
@@ -30,27 +30,31 @@ export default function SessionConfigModal({
   onClose,
   onSave,
   onDelete,
-  onReset
+  onReset,
 }) {
   const { t } = useTranslation('championships')
   // Form state
   const [name, setName] = useState(session?.name || '')
   // Duration in DB is ms, UI shows minutes
-  const [durationMinutes, setDurationMinutes] = useState(session?.maxDuration ? Math.round(session.maxDuration / 60000) : 0)
+  const [durationMinutes, setDurationMinutes] = useState(
+    session?.maxDuration ? Math.round(session.maxDuration / 60000) : 0
+  )
   const [maxLaps, setMaxLaps] = useState(session?.maxLaps || 0)
   // Grace period in DB is ms, UI shows seconds (default 30s)
-  const [gracePeriodSeconds, setGracePeriodSeconds] = useState(session?.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30)
+  const [gracePeriodSeconds, setGracePeriodSeconds] = useState(
+    session?.gracePeriod ? Math.round(session.gracePeriod / 1000) : 30
+  )
   const [status, setStatus] = useState(session?.status || 'draft')
   const [controllerConfigs, setControllerConfigs] = useState(() => {
     // Initialize from sessionDrivers
     // Controllers in DB are 0-indexed (0-5), UI shows 1-6
     const configs = {}
     for (let i = 0; i < 6; i++) {
-      const sd = sessionDrivers.find(d => Number(d.controller) === i)
+      const sd = sessionDrivers.find((d) => Number(d.controller) === i)
       configs[i] = {
         driverId: sd?.driverId || null,
         carId: sd?.carId || null,
-        gridPos: sd?.gridPos || null
+        gridPos: sd?.gridPos || null,
       }
     }
     return configs
@@ -68,7 +72,7 @@ export default function SessionConfigModal({
   // Find practice session to copy from (only for non-practice sessions in a championship)
   const practiceSession = useMemo(() => {
     if (isPractice || !session?.championshipId) return null
-    return sessions.find(s => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
+    return sessions.find((s) => s.type === SessionType.PRACTICE && s.drivers?.length > 0)
   }, [sessions, isPractice, session?.championshipId])
 
   // Copy config from practice session
@@ -76,11 +80,11 @@ export default function SessionConfigModal({
     if (!practiceSession?.drivers) return
     const newConfigs = {}
     for (let i = 0; i < 6; i++) {
-      const sd = practiceSession.drivers.find(d => Number(d.controller) === i)
+      const sd = practiceSession.drivers.find((d) => Number(d.controller) === i)
       newConfigs[i] = {
         driverId: sd?.driverId || null,
         carId: sd?.carId || null,
-        gridPos: sd?.gridPos || null
+        gridPos: sd?.gridPos || null,
       }
     }
     setControllerConfigs(newConfigs)
@@ -89,53 +93,47 @@ export default function SessionConfigModal({
   // Get used driver/car IDs to prevent duplicates
   const usedDriverIds = useMemo(() => {
     return Object.values(controllerConfigs)
-      .map(c => c.driverId)
+      .map((c) => c.driverId)
       .filter(Boolean)
   }, [controllerConfigs])
 
   const usedCarIds = useMemo(() => {
     return Object.values(controllerConfigs)
-      .map(c => c.carId)
+      .map((c) => c.carId)
       .filter(Boolean)
   }, [controllerConfigs])
 
   // Handle controller config change
   const handleControllerChange = (controller, field, value) => {
-    setControllerConfigs(prev => ({
+    setControllerConfigs((prev) => ({
       ...prev,
       [controller]: {
         ...prev[controller],
-        [field]: value || null
-      }
+        [field]: value || null,
+      },
     }))
   }
 
   // Get available drivers for a controller (excluding already used)
   const getAvailableDrivers = (controller) => {
     const currentDriverId = controllerConfigs[controller]?.driverId
-    return drivers.filter(d =>
-      d.id === currentDriverId || !usedDriverIds.includes(d.id)
-    )
+    return drivers.filter((d) => d.id === currentDriverId || !usedDriverIds.includes(d.id))
   }
 
   // Get available cars for a controller (excluding already used)
   const getAvailableCars = (controller) => {
     const currentCarId = controllerConfigs[controller]?.carId
-    return cars.filter(c =>
-      c.id === currentCarId || !usedCarIds.includes(c.id)
-    )
+    return cars.filter((c) => c.id === currentCarId || !usedCarIds.includes(c.id))
   }
 
   // Check for incomplete configs (driver without car or car without driver)
   const incompleteControllers = useMemo(() => {
     return Object.entries(controllerConfigs)
-      .filter(([, config]) =>
-        (config.driverId && !config.carId) || (!config.driverId && config.carId)
-      )
+      .filter(([, config]) => (config.driverId && !config.carId) || (!config.driverId && config.carId))
       .map(([controller, config]) => ({
         controller: Number(controller),
         hasDriver: !!config.driverId,
-        hasCar: !!config.carId
+        hasCar: !!config.carId,
       }))
   }, [controllerConfigs])
 
@@ -154,7 +152,7 @@ export default function SessionConfigModal({
           controller: Number(controller), // 0-indexed
           driverId: config.driverId || null,
           carId: config.carId || null,
-          gridPos: config.gridPos || null
+          gridPos: config.gridPos || null,
         }))
 
       // Force draft status if incomplete config (safety check)
@@ -166,7 +164,7 @@ export default function SessionConfigModal({
         maxLaps: maxLaps > 0 ? maxLaps : null,
         gracePeriod: gracePeriodSeconds > 0 ? gracePeriodSeconds * 1000 : 30000, // Convert seconds to ms
         status: finalStatus,
-        drivers: driversPayload
+        drivers: driversPayload,
       })
       onClose()
     } catch (err) {
@@ -306,10 +304,12 @@ export default function SessionConfigModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {[0, 1, 2, 3, 4, 5].map(controller => (
+                {[0, 1, 2, 3, 4, 5].map((controller) => (
                   <tr key={controller}>
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[controller]}`}>
+                      <span
+                        className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${CONTROLLER_COLORS[controller]}`}
+                      >
                         {controller + 1}
                       </span>
                     </td>
@@ -321,7 +321,7 @@ export default function SessionConfigModal({
                         className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
-                        {getAvailableDrivers(controller).map(driver => (
+                        {getAvailableDrivers(controller).map((driver) => (
                           <option key={driver.id} value={driver.id}>
                             {driver.name}
                           </option>
@@ -336,7 +336,7 @@ export default function SessionConfigModal({
                         className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">---</option>
-                        {getAvailableCars(controller).map(car => (
+                        {getAvailableCars(controller).map((car) => (
                           <option key={car.id} value={car.id}>
                             {car.brand} {car.model}
                           </option>
@@ -349,7 +349,9 @@ export default function SessionConfigModal({
                         min="1"
                         max="6"
                         value={controllerConfigs[controller]?.gridPos || ''}
-                        onChange={(e) => handleControllerChange(controller, 'gridPos', e.target.value ? Number(e.target.value) : null)}
+                        onChange={(e) =>
+                          handleControllerChange(controller, 'gridPos', e.target.value ? Number(e.target.value) : null)
+                        }
                         disabled={!canEdit}
                         placeholder="-"
                         className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm text-center disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -387,13 +389,20 @@ export default function SessionConfigModal({
               <div className="mt-3 p-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs">
-                  <p className="text-orange-700 dark:text-orange-300 font-medium">{t('sessionConfigModal.incompleteConfig')}</p>
+                  <p className="text-orange-700 dark:text-orange-300 font-medium">
+                    {t('sessionConfigModal.incompleteConfig')}
+                  </p>
                   <p className="text-orange-600 dark:text-orange-400 mt-0.5">
-                    {incompleteControllers.map(ic => {
-                      if (ic.hasDriver && !ic.hasCar) return t('sessionConfigModal.incompleteDriverNoCar', { n: ic.controller + 1 })
-                      if (!ic.hasDriver && ic.hasCar) return t('sessionConfigModal.incompleteCarNoDriver', { n: ic.controller + 1 })
-                      return null
-                    }).filter(Boolean).join(' • ')}
+                    {incompleteControllers
+                      .map((ic) => {
+                        if (ic.hasDriver && !ic.hasCar)
+                          return t('sessionConfigModal.incompleteDriverNoCar', { n: ic.controller + 1 })
+                        if (!ic.hasDriver && ic.hasCar)
+                          return t('sessionConfigModal.incompleteCarNoDriver', { n: ic.controller + 1 })
+                        return null
+                      })
+                      .filter(Boolean)
+                      .join(' • ')}
                   </p>
                   <p className="text-orange-600 dark:text-orange-400 mt-1">{t('sessionConfigModal.completeToReady')}</p>
                 </div>
@@ -429,11 +438,7 @@ export default function SessionConfigModal({
             <ModalButton variant="secondary" onClick={onClose}>
               {t('common:cancel')}
             </ModalButton>
-            <ModalButton
-              variant="primary"
-              onClick={handleSave}
-              disabled={saving || (!canEdit && !isFinished)}
-            >
+            <ModalButton variant="primary" onClick={handleSave} disabled={saving || (!canEdit && !isFinished)}>
               {saving ? t('common:saving') : t('common:save')}
             </ModalButton>
           </ModalFooter>

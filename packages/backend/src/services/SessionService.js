@@ -86,8 +86,8 @@ export class SessionService extends EventEmitter {
     driver.crossings++;
 
     // if (isFirstCrossing) { // DISABLED
-      // // First crossing = crossing start line from grid, not a lap
-      // this.emitLeaderboard();
+    // // First crossing = crossing start line from grid, not a lap
+    // this.emitLeaderboard();
     // }
 
     // Balancing: ignore laps beyond maxLaps per controller
@@ -127,7 +127,7 @@ export class SessionService extends EventEmitter {
         sessionType: this.currentPhase,
         lapTime: roundedLap,
         totalLaps: driver.totalLaps,
-        maxLapsCompleted: Math.max(...this.sessionDrivers.map(d => d.totalLaps)),
+        maxLapsCompleted: Math.max(...this.sessionDrivers.map((d) => d.totalLaps)),
       });
     }
 
@@ -166,9 +166,11 @@ export class SessionService extends EventEmitter {
       return driver.totalLaps >= maxLaps;
     }
 
-    return this.sessionStatus === SessionStatus.FINISHING
-      && driver.lapsAtFinishing != null
-      && driver.totalLaps > driver.lapsAtFinishing;
+    return (
+      this.sessionStatus === SessionStatus.FINISHING &&
+      driver.lapsAtFinishing != null &&
+      driver.totalLaps > driver.lapsAtFinishing
+    );
   }
 
   /**
@@ -241,7 +243,7 @@ export class SessionService extends EventEmitter {
     this.sessionStatus = session.status;
 
     // Initialize driver states
-    this.sessionDrivers = session.drivers.map(sd => ({
+    this.sessionDrivers = session.drivers.map((sd) => ({
       id: sd.id,
       controller: sd.controller,
       driverId: sd.driverId,
@@ -280,8 +282,6 @@ export class SessionService extends EventEmitter {
     this.raceFinishTime = null;
     this.recalculatePositions();
     this.emitLeaderboard();
-
-
 
     // If session is in finishing state, recreate grace period timer
     if (session.status === SessionStatus.FINISHING && session.finishingAt) {
@@ -511,11 +511,11 @@ export class SessionService extends EventEmitter {
   // ==================== Position & Leaderboard ====================
 
   getDriverByController(controller) {
-    return this.sessionDrivers.find(d => d.controller === controller);
+    return this.sessionDrivers.find((d) => d.controller === controller);
   }
 
   getSessionBestLapTime() {
-    const times = this.sessionDrivers.map(d => d.bestLapTime).filter(t => t && t > 0);
+    const times = this.sessionDrivers.map((d) => d.bestLapTime).filter((t) => t && t > 0);
     return times.length > 0 ? Math.min(...times) : null;
   }
 
@@ -584,7 +584,7 @@ export class SessionService extends EventEmitter {
 
   getEnrichedLeaderboard() {
     if (this.currentPhase === SessionType.BALANCING && this.lapHistory.size > 0) {
-      return this.sessionDrivers.map(d => ({
+      return this.sessionDrivers.map((d) => ({
         ...d,
         laps: this.lapHistory.get(d.controller) || [],
       }));
@@ -686,7 +686,7 @@ export class SessionService extends EventEmitter {
 
       let remainingLaps = null;
       if (this.sessionConfig?.maxLaps) {
-        const leaderLaps = Math.max(...this.sessionDrivers.map(d => d.totalLaps), 0);
+        const leaderLaps = Math.max(...this.sessionDrivers.map((d) => d.totalLaps), 0);
         remainingLaps = Math.max(0, this.sessionConfig.maxLaps - leaderLaps);
       }
 
@@ -738,14 +738,14 @@ export class SessionService extends EventEmitter {
     if (maxLaps && this.sessionStatus === SessionStatus.ACTIVE) {
       if (this.currentPhase === SessionType.BALANCING) {
         // Balancing: finish when all active controllers reached maxLaps
-        const activeDrivers = this.sessionDrivers.filter(d => d.totalLaps > 0);
-        if (activeDrivers.length > 0 && activeDrivers.every(d => d.totalLaps >= maxLaps)) {
+        const activeDrivers = this.sessionDrivers.filter((d) => d.totalLaps > 0);
+        if (activeDrivers.length > 0 && activeDrivers.every((d) => d.totalLaps >= maxLaps)) {
           shouldStop = true;
           reason = 'all_finished';
         }
       } else {
         // Race: checkered flag when leader reaches maxLaps
-        const maxLapsReached = this.sessionDrivers.some(d => d.totalLaps >= maxLaps);
+        const maxLapsReached = this.sessionDrivers.some((d) => d.totalLaps >= maxLaps);
         if (maxLapsReached) {
           shouldStartFinishing = true;
           reason = 'leader_finished';
@@ -779,7 +779,7 @@ export class SessionService extends EventEmitter {
   checkAllDriversFinished() {
     const maxLaps = this.sessionConfig?.maxLaps;
 
-    const activeDrivers = this.sessionDrivers.filter(d => {
+    const activeDrivers = this.sessionDrivers.filter((d) => {
       // Driver was active at checkered flag if they had completed at least 1 lap
       return d.lapsAtFinishing !== null && d.lapsAtFinishing !== undefined && d.lapsAtFinishing > 0;
     });
@@ -791,10 +791,10 @@ export class SessionService extends EventEmitter {
 
     if (maxLaps) {
       // Lap-based race: all must reach maxLaps
-      return activeDrivers.every(d => d.totalLaps >= maxLaps);
+      return activeDrivers.every((d) => d.totalLaps >= maxLaps);
     } else {
       // Time-based race: all must complete their current lap
-      return activeDrivers.every(d => d.totalLaps > d.lapsAtFinishing);
+      return activeDrivers.every((d) => d.totalLaps > d.lapsAtFinishing);
     }
   }
 
@@ -855,7 +855,7 @@ export class SessionService extends EventEmitter {
 
     // Save final positions
     await this.prisma.$transaction([
-      ...this.sessionDrivers.map(driver =>
+      ...this.sessionDrivers.map((driver) =>
         this.prisma.sessionDriver.update({
           where: { id: driver.id },
           data: {
@@ -879,7 +879,7 @@ export class SessionService extends EventEmitter {
       reason,
       championshipId,
       sessionType: this.currentPhase,
-      leaderboard: this.getEnrichedLeaderboard()
+      leaderboard: this.getEnrichedLeaderboard(),
     });
     this.emitStatusChanged('finished', previousStatus);
 
@@ -911,7 +911,7 @@ export class SessionService extends EventEmitter {
     const toSpeedBrake = toLevel;
     const toFuel = toLevel;
 
-    const driverByController = new Map(this.sessionDrivers.map(d => [d.controller, d]));
+    const driverByController = new Map(this.sessionDrivers.map((d) => [d.controller, d]));
 
     for (let addr = 0; addr < 6; addr++) {
       const driver = driverByController.get(addr);
@@ -997,7 +997,17 @@ export class SessionService extends EventEmitter {
    * @param {Object} params - { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying }
    */
   async createSession(params) {
-    const { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status: initialStatus } = params;
+    const {
+      type,
+      name,
+      trackId,
+      championshipId,
+      maxDuration,
+      maxLaps,
+      order,
+      gridFromQualifying,
+      status: initialStatus,
+    } = params;
 
     if (!isSessionType(type)) {
       throw new Error(`Invalid session type. Must be one of: ${SESSION_TYPES.join(', ')}`);
@@ -1046,7 +1056,7 @@ export class SessionService extends EventEmitter {
         include: { drivers: { where: { deletedAt: null }, orderBy: { finalPos: 'asc' } } },
       });
       if (lastQualifying) {
-        gridOrder = lastQualifying.drivers.map(d => d.driverId);
+        gridOrder = lastQualifying.drivers.map((d) => d.driverId);
       }
     }
 
@@ -1054,9 +1064,7 @@ export class SessionService extends EventEmitter {
     for (let i = 0; i < configs.length; i++) {
       const config = configs[i];
       if (config.driverId && config.carId) {
-        const gridPos = gridOrder
-          ? (gridOrder.indexOf(config.driverId) + 1) || configs.length
-          : i + 1;
+        const gridPos = gridOrder ? gridOrder.indexOf(config.driverId) + 1 || configs.length : i + 1;
 
         await this.prisma.sessionDriver.create({
           data: {

@@ -20,10 +20,14 @@ router.get('/', async (req, res) => {
     const computedSorts = ['team', 'bestLap'];
     const useDbSort = !computedSorts.includes(sortBy);
 
-    const dbOrderBy = sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
-      : sortBy === 'laps' ? { laps: { _count: sortOrder } }
-      : useDbSort ? { [sortBy]: sortOrder }
-      : undefined;
+    const dbOrderBy =
+      sortBy === 'sessions'
+        ? { sessions: { _count: sortOrder } }
+        : sortBy === 'laps'
+          ? { laps: { _count: sortOrder } }
+          : useDbSort
+            ? { [sortBy]: sortOrder }
+            : undefined;
 
     const [allDrivers, total] = await Promise.all([
       prisma.driver.findMany({
@@ -57,7 +61,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: drivers.map(d => withNestedImageUrls(d)),
+      data: drivers.map((d) => withNestedImageUrls(d)),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -443,15 +447,13 @@ router.get('/:id/stats', async (req, res) => {
     const totalLaps = driver.laps.length;
     const bestLapTime = driver.bestLap;
 
-    const avgLapTime = totalLaps > 0
-      ? driver.laps.reduce((sum, lap) => sum + lap.lapTime, 0) / totalLaps
-      : null;
+    const avgLapTime = totalLaps > 0 ? driver.laps.reduce((sum, lap) => sum + lap.lapTime, 0) / totalLaps : null;
 
     // Count wins (finalPos === 1)
-    const wins = driver.sessions.filter(s => s.finalPos === 1).length;
+    const wins = driver.sessions.filter((s) => s.finalPos === 1).length;
 
     // Count podiums (finalPos <= 3)
-    const podiums = driver.sessions.filter(s => s.finalPos && s.finalPos <= 3).length;
+    const podiums = driver.sessions.filter((s) => s.finalPos && s.finalPos <= 3).length;
 
     res.json({
       success: true,

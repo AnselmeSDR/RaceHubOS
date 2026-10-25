@@ -33,11 +33,7 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
         }}
       >
         {driver.img ? (
-          <img
-            src={getImgUrl(driver.img)}
-            alt={driver.name}
-            className="w-full h-full rounded-full object-cover"
-          />
+          <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full rounded-full object-cover" />
         ) : (
           <span>{driver.name.charAt(0)}</span>
         )}
@@ -60,12 +56,8 @@ export function DriverListItem({ driver, position, selected, onClick, showStats 
 
       {/* Driver info */}
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">
-          {driver.name}
-        </div>
-        {driver.team && (
-          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>
-        )}
+        <div className="font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">{driver.name}</div>
+        {driver.team && <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>}
       </div>
 
       {/* Stats if enabled */}
@@ -94,7 +86,7 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
     sm: 'w-8 h-8 text-sm',
     md: 'w-12 h-12 text-lg',
     lg: 'w-16 h-16 text-2xl',
-    xl: 'w-20 h-20 text-3xl'
+    xl: 'w-20 h-20 text-3xl',
   }
 
   return (
@@ -108,14 +100,10 @@ export function DriverBadge({ driver, size = 'md', showName = true }) {
           background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}DD 100%)`,
         }}
       >
-        <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-          {driver.number || driver.name.charAt(0)}
-        </span>
+        <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{driver.number || driver.name.charAt(0)}</span>
       </div>
       {showName && (
-        <span className="font-bold text-gray-900 dark:text-white uppercase tracking-wide">
-          {driver.name}
-        </span>
+        <span className="font-bold text-gray-900 dark:text-white uppercase tracking-wide">{driver.name}</span>
       )}
     </div>
   )
@@ -145,11 +133,7 @@ export function DriverGridPosition({ driver, side = 'left' }) {
           style={{ backgroundColor: driverColor }}
         >
           {driver.img ? (
-            <img
-              src={getImgUrl(driver.img)}
-              alt={driver.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
           ) : (
             <span>{driver.name.charAt(0)}</span>
           )}
@@ -162,7 +146,8 @@ export function DriverGridPosition({ driver, side = 'left' }) {
               className={`font-black italic ${String(driver.number).length >= 3 ? 'text-4xl' : 'text-5xl'}`}
               style={{
                 color: driverColor,
-                WebkitTextStroke: isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
+                WebkitTextStroke:
+                  isDark && ['#000', '#000000', 'black'].includes(driverColor?.toLowerCase()) ? '2px white' : 'none',
               }}
             >
               {driver.number}
@@ -175,9 +160,7 @@ export function DriverGridPosition({ driver, side = 'left' }) {
           <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
             {driver.name.split(' ').pop()}
           </div>
-          {driver.team && (
-            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{driver.team.name}</div>
-          )}
+          {driver.team && <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{driver.team.name}</div>}
         </div>
       </div>
     </div>
@@ -207,7 +190,7 @@ export function DriverProfileHeader({ driver }) {
             ${driver.color} 10px,
             transparent 10px,
             transparent 20px
-          )`
+          )`,
         }}
       />
 
@@ -226,11 +209,7 @@ export function DriverProfileHeader({ driver }) {
               }}
             >
               {driver.img ? (
-                <img
-                  src={getImgUrl(driver.img)}
-                  alt={driver.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="drop-shadow-lg">{driver.name.charAt(0)}</span>
               )}
@@ -242,7 +221,9 @@ export function DriverProfileHeader({ driver }) {
                 className="absolute -bottom-3 -right-3 w-18 h-16 rounded-xl flex items-center justify-center shadow-xl ring-4 ring-white px-2"
                 style={{ backgroundColor: driver.color }}
               >
-                <span className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-2xl' : 'text-3xl'}`}>
+                <span
+                  className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-2xl' : 'text-3xl'}`}
+                >
                   {driver.number}
                 </span>
               </div>
@@ -266,7 +247,7 @@ export function DriverProfileHeader({ driver }) {
               className="font-black text-5xl tracking-tight mb-2"
               style={{
                 color: driver.color,
-                textShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                textShadow: '0 2px 8px rgba(0,0,0,0.1)',
               }}
             >
               {driver.name.toUpperCase()}
@@ -308,10 +289,7 @@ export function DriverProfileHeader({ driver }) {
                   <div className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
                     {t('driverDisplays.bestLap')}
                   </div>
-                  <div
-                    className="text-3xl font-black tabular-nums"
-                    style={{ color: driver.color }}
-                  >
+                  <div className="text-3xl font-black tabular-nums" style={{ color: driver.color }}>
                     {(driver.bestLap / 1000).toFixed(3)}s
                   </div>
                 </div>
@@ -322,10 +300,7 @@ export function DriverProfileHeader({ driver }) {
       </div>
 
       {/* Racing stripe */}
-      <div
-        className="absolute top-0 left-0 w-2 h-full"
-        style={{ backgroundColor: driver.color }}
-      />
+      <div className="absolute top-0 left-0 w-2 h-full" style={{ backgroundColor: driver.color }} />
     </div>
   )
 }
@@ -369,12 +344,8 @@ export function DriverStanding({ driver, position, points, change }) {
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <DriverBadge driver={driver} size="md" showName={false} />
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-gray-900 dark:text-white truncate uppercase">
-            {driver.name}
-          </div>
-          {driver.team && (
-            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>
-          )}
+          <div className="font-bold text-gray-900 dark:text-white truncate uppercase">{driver.name}</div>
+          {driver.team && <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>}
         </div>
       </div>
 
@@ -401,9 +372,10 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
       onClick={onToggle}
       className={`
         relative w-full p-4 rounded-xl transition-all duration-200 text-left
-        ${selected
-          ? 'ring-4 ring-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-xl scale-105'
-          : 'bg-white dark:bg-gray-800 shadow hover:shadow-lg'
+        ${
+          selected
+            ? 'ring-4 ring-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-xl scale-105'
+            : 'bg-white dark:bg-gray-800 shadow hover:shadow-lg'
         }
       `}
     >
@@ -411,7 +383,11 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
       {selected && (
         <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
         </div>
       )}
@@ -423,11 +399,7 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
           style={{ backgroundColor: driver.color }}
         >
           {driver.img ? (
-            <img
-              src={getImgUrl(driver.img)}
-              alt={driver.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
           ) : (
             <span>{driver.name.charAt(0)}</span>
           )}
@@ -439,7 +411,9 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
             className="w-20 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0"
             style={{ backgroundColor: driver.color }}
           >
-            <span className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-3xl' : 'text-4xl'}`}>
+            <span
+              className={`font-black text-white italic ${String(driver.number).length >= 3 ? 'text-3xl' : 'text-4xl'}`}
+            >
               {driver.number}
             </span>
           </div>
@@ -447,9 +421,7 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="font-black text-lg text-gray-900 dark:text-white uppercase truncate">
-            {driver.name}
-          </div>
+          <div className="font-black text-lg text-gray-900 dark:text-white uppercase truncate">{driver.name}</div>
           {driver.team && (
             <div
               className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold text-white"
@@ -473,19 +445,13 @@ function StatBox({ icon, label, value, color, highlight }) {
         ${highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm'}
       `}
     >
-      <div
-        className="flex items-center justify-center mb-1"
-        style={{ color: highlight ? '#EAB308' : color }}
-      >
+      <div className="flex items-center justify-center mb-1" style={{ color: highlight ? '#EAB308' : color }}>
         {icon}
       </div>
       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide break-words mb-1">
         {label}
       </div>
-      <div
-        className="text-xl font-black tabular-nums"
-        style={{ color: highlight ? '#EAB308' : color }}
-      >
+      <div className="text-xl font-black tabular-nums" style={{ color: highlight ? '#EAB308' : color }}>
         {value}
       </div>
     </div>

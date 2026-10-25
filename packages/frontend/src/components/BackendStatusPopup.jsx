@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
 import { io } from 'socket.io-client'
 import { Server, Zap, Wifi, WifiOff, Trash2 } from 'lucide-react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -56,17 +50,20 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
         const [healthRes, btRes, simRes] = await Promise.all([
           fetch(`${API_URL}/health`),
           fetch(`${API_URL}/api/bluetooth/status`),
-          fetch(`${API_URL}/api/simulator`)
+          fetch(`${API_URL}/api/simulator`),
         ])
-        const [health, bt, sim] = await Promise.all([
-          healthRes.json(), btRes.json(), simRes.json()
-        ])
+        const [health, bt, sim] = await Promise.all([healthRes.json(), btRes.json(), simRes.json()])
         setBackendStatus(health)
         setCuStatus(bt)
         setSimulatorStatus(sim)
         addLog('info', t('statusPopup.logs.backendStatus', { status: health.status, version: health.version }))
         if (sim.isMockDevice) {
-          addLog('info', t('statusPopup.logs.simulatorMode', { state: sim.running ? t('glossary:status.running') : t('glossary:status.stopped') }))
+          addLog(
+            'info',
+            t('statusPopup.logs.simulatorMode', {
+              state: sim.running ? t('glossary:status.running') : t('glossary:status.stopped'),
+            })
+          )
         } else if (bt.connected) {
           addLog('info', t('statusPopup.logs.cuConnected'))
         } else {
@@ -94,17 +91,33 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
     socket.on('cu:status', (status) => {
       addLog('debug', t('statusPopup.logs.cuStatus', { state: cuStateLabel(t, status.start), mode: status.mode }))
     })
-    socket.on('cu:timer', (data) => addLog('debug', t('statusPopup.logs.timer', {
-      kind: data.isFinishLine ? t('statusPopup.logs.timerFinish') : t('statusPopup.logs.timerSector', { sector: data.sector }),
-      controller: data.controller,
-      lapTime: data.lapTime,
-    })))
-    socket.on('lap:completed', (lap) => addLog('info', t('statusPopup.logs.lap', {
-      label: lap.driver?.name || `Ctrl ${lap.controller}`,
-      time: (lap.lapTime / 1000).toFixed(3),
-    })))
-    socket.on('session:started', ({ sessionId }) => addLog('info', t('statusPopup.logs.sessionStarted', { id: sessionId.substring(0, 8) })))
-    socket.on('session:stopped', ({ sessionId }) => addLog('info', t('statusPopup.logs.sessionStopped', { id: sessionId.substring(0, 8) })))
+    socket.on('cu:timer', (data) =>
+      addLog(
+        'debug',
+        t('statusPopup.logs.timer', {
+          kind: data.isFinishLine
+            ? t('statusPopup.logs.timerFinish')
+            : t('statusPopup.logs.timerSector', { sector: data.sector }),
+          controller: data.controller,
+          lapTime: data.lapTime,
+        })
+      )
+    )
+    socket.on('lap:completed', (lap) =>
+      addLog(
+        'info',
+        t('statusPopup.logs.lap', {
+          label: lap.driver?.name || `Ctrl ${lap.controller}`,
+          time: (lap.lapTime / 1000).toFixed(3),
+        })
+      )
+    )
+    socket.on('session:started', ({ sessionId }) =>
+      addLog('info', t('statusPopup.logs.sessionStarted', { id: sessionId.substring(0, 8) }))
+    )
+    socket.on('session:stopped', ({ sessionId }) =>
+      addLog('info', t('statusPopup.logs.sessionStopped', { id: sessionId.substring(0, 8) }))
+    )
     return () => socket.disconnect()
   }, [isOpen, t])
 
@@ -120,10 +133,10 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
   const addLog = (level, message) => {
     const timestamp = new Date().toLocaleTimeString(i18n.language, { hour12: false })
-    setLogs(prev => [...prev, { timestamp, level, message }])
+    setLogs((prev) => [...prev, { timestamp, level, message }])
   }
 
-  const filteredLogs = filter === 'all' ? logs : logs.filter(l => l.level === filter)
+  const filteredLogs = filter === 'all' ? logs : logs.filter((l) => l.level === filter)
 
   const statusItems = [
     {
@@ -137,8 +150,12 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
       icon: Zap,
       ok: simulatorStatus?.isMockDevice ? simulatorStatus.running : cuStatus?.connected,
       detail: simulatorStatus?.isMockDevice
-        ? (simulatorStatus.running ? t('glossary:status.running') : t('glossary:status.stopped'))
-        : (cuStatus?.connected ? t('glossary:status.connected') : t('glossary:status.disconnected')),
+        ? simulatorStatus.running
+          ? t('glossary:status.running')
+          : t('glossary:status.stopped')
+        : cuStatus?.connected
+          ? t('glossary:status.connected')
+          : t('glossary:status.disconnected'),
     },
     {
       label: t('glossary:system.websocket'),
@@ -157,7 +174,8 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
             {t('statusPopup.title')}
           </SheetTitle>
           <SheetDescription>
-            {backendStatus ? `v${backendStatus.version}` : '...'} · {simulatorStatus?.isMockDevice ? t('glossary:simulator') : t('statusPopup.cuBluetooth')}
+            {backendStatus ? `v${backendStatus.version}` : '...'} ·{' '}
+            {simulatorStatus?.isMockDevice ? t('glossary:simulator') : t('statusPopup.cuBluetooth')}
           </SheetDescription>
         </SheetHeader>
 
@@ -176,7 +194,9 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
 
         {/* Log toolbar */}
         <div className="flex items-center justify-between px-4 py-2 border-y border-border">
-          <span className="text-xs text-muted-foreground">{t('statusPopup.logsCount', { count: filteredLogs.length })}</span>
+          <span className="text-xs text-muted-foreground">
+            {t('statusPopup.logsCount', { count: filteredLogs.length })}
+          </span>
           <div className="flex items-center gap-1.5">
             {['all', ...LOG_TYPES].map((f) => (
               <button
@@ -187,7 +207,15 @@ export default function BackendStatusPopup({ isOpen, onClose }) {
                 {f === 'all' ? t('statusPopup.filterAll') : f}
               </button>
             ))}
-            <Button variant="ghost" size="icon-sm" onClick={() => { setLogs([]); addLog('info', t('statusPopup.logsCleared')) }} title={t('common:clear')}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                setLogs([])
+                addLog('info', t('statusPopup.logsCleared'))
+              }}
+              title={t('common:clear')}
+            >
               <Trash2 className="size-3" />
             </Button>
           </div>

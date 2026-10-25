@@ -26,9 +26,12 @@ export default function Drivers() {
   const [filters, setFilters] = useState({ deleted: false })
 
   useEffect(() => {
-    fetch(`${API_URL}/api/teams`).then(r => r.json()).then(d => {
-      if (d.success) setTeams(d.data || [])
-    }).catch(() => {})
+    fetch(`${API_URL}/api/teams`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setTeams(d.data || [])
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -53,128 +56,147 @@ export default function Drivers() {
       const res = await fetch(`${API_URL}/api/drivers?${params}`)
       const data = await res.json()
       if (data.success) {
-        setDrivers(prev => isFirst ? data.data : [...prev, ...data.data])
+        setDrivers((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
       }
     } catch (err) {
       console.error('Failed to load drivers:', err)
     } finally {
-      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
-      else setLoadingMore(false)
+      if (isFirst) {
+        setLoading(false)
+        hasLoadedOnce.current = true
+      } else setLoadingMore(false)
     }
   }
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'name',
-      header: t('glossary:driver', { count: 1 }),
-      cell: ({ row }) => {
-        const driver = row.original
-        return (
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: driver.color || '#3B82F6' }}
-            >
-              {driver.img ? (
-                <img src={getImgUrl(driver.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                driver.name?.charAt(0)
-              )}
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'name',
+        header: t('glossary:driver', { count: 1 }),
+        cell: ({ row }) => {
+          const driver = row.original
+          return (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: driver.color || '#3B82F6' }}
+              >
+                {driver.img ? (
+                  <img src={getImgUrl(driver.img)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  driver.name?.charAt(0)
+                )}
+              </div>
+              <span className="font-semibold">{driver.name}</span>
             </div>
-            <span className="font-semibold">{driver.name}</span>
-          </div>
-        )
+          )
+        },
       },
-    },
-    {
-      id: 'number',
-      accessorKey: 'number',
-      header: t('columns.number'),
-      meta: { className: 'text-center' },
-      cell: ({ row }) => (
-        row.original.number
-          ? <Badge className="font-mono font-bold text-white" style={{ backgroundColor: row.original.color || '#3B82F6' }}>{row.original.number}</Badge>
-          : <span className="text-muted-foreground">-</span>
-      ),
-    },
-    {
-      id: 'team',
-      accessorFn: (row) => row.team?.name || '',
-      header: t('glossary:team', { count: 1 }),
-      cell: ({ row }) => (
-        row.original.team
-          ? <Badge className="text-white shadow-sm" style={{ backgroundColor: row.original.team.color || row.original.color }}>{row.original.team.name}</Badge>
-          : <span className="text-muted-foreground">-</span>
-      ),
-    },
-    {
-      id: 'sessions',
-      accessorFn: (row) => row._count?.sessions || 0,
-      header: t('glossary:race', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {row.original._count?.sessions || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'wins',
-      accessorKey: 'wins',
-      header: t('glossary:win', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Trophy className="w-4 h-4 text-yellow-500" />
-          {row.original.wins || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'podiums',
-      accessorKey: 'podiums',
-      header: t('glossary:podium', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.podiums || 0}</span>
-      ),
-    },
-    {
-      id: 'laps',
-      accessorFn: (row) => row._count?.laps || 0,
-      header: t('glossary:lap', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <BarChart3 className="w-4 h-4" />
-          {row.original._count?.laps || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'bestLap',
-      accessorFn: (row) => row.bestLap || Infinity,
-      header: t('common:record'),
-      cell: ({ row }) => (
-        <span className="font-mono font-bold">
-          {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
-        </span>
-      ),
-    },
-    {
-      id: 'actions',
-      header: '',
-      enableSorting: false,
-      enableHiding: false,
-      cell: ({ row }) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); setEditingDriver(row.original); setShowForm(true) }}
-          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      ),
-    },
-  ], [t])
+      {
+        id: 'number',
+        accessorKey: 'number',
+        header: t('columns.number'),
+        meta: { className: 'text-center' },
+        cell: ({ row }) =>
+          row.original.number ? (
+            <Badge
+              className="font-mono font-bold text-white"
+              style={{ backgroundColor: row.original.color || '#3B82F6' }}
+            >
+              {row.original.number}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          ),
+      },
+      {
+        id: 'team',
+        accessorFn: (row) => row.team?.name || '',
+        header: t('glossary:team', { count: 1 }),
+        cell: ({ row }) =>
+          row.original.team ? (
+            <Badge
+              className="text-white shadow-sm"
+              style={{ backgroundColor: row.original.team.color || row.original.color }}
+            >
+              {row.original.team.name}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          ),
+      },
+      {
+        id: 'sessions',
+        accessorFn: (row) => row._count?.sessions || 0,
+        header: t('glossary:race', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Flag className="w-4 h-4" />
+            {row.original._count?.sessions || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'wins',
+        accessorKey: 'wins',
+        header: t('glossary:win', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Trophy className="w-4 h-4 text-yellow-500" />
+            {row.original.wins || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'podiums',
+        accessorKey: 'podiums',
+        header: t('glossary:podium', { count: 2 }),
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.podiums || 0}</span>,
+      },
+      {
+        id: 'laps',
+        accessorFn: (row) => row._count?.laps || 0,
+        header: t('glossary:lap', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <BarChart3 className="w-4 h-4" />
+            {row.original._count?.laps || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'bestLap',
+        accessorFn: (row) => row.bestLap || Infinity,
+        header: t('common:record'),
+        cell: ({ row }) => (
+          <span className="font-mono font-bold">
+            {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditingDriver(row.original)
+              setShowForm(true)
+            }}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        ),
+      },
+    ],
+    [t]
+  )
 
   // Deletion is confirmed inside the button itself, then the list reloads
   async function handleDelete(id) {
@@ -197,13 +219,25 @@ export default function Drivers() {
       loading={loading}
       searchPlaceholder={t('searchPlaceholder')}
       addLabel={t('addLabel')}
-      onAdd={() => { setEditingDriver(null); setShowForm(true) }}
+      onAdd={() => {
+        setEditingDriver(null)
+        setShowForm(true)
+      }}
       onRowClick={(row) => !filters.deleted && navigate(`/drivers/${row.id}`)}
-      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((driver) => (
-            <DriverCard key={driver.id} driver={driver} onClick={() => navigate(`/drivers/${driver.id}`)} onEdit={() => { setEditingDriver(driver); setShowForm(true) }} onDelete={() => handleDelete(driver.id)} />
+            <DriverCard
+              key={driver.id}
+              driver={driver}
+              onClick={() => navigate(`/drivers/${driver.id}`)}
+              onEdit={() => {
+                setEditingDriver(driver)
+                setShowForm(true)
+              }}
+              onDelete={() => handleDelete(driver.id)}
+            />
           ))}
         </div>
       )}
@@ -222,7 +256,7 @@ export default function Drivers() {
           key: 'deleted',
           label: t('common:showDeleted'),
           checked: filters.deleted,
-          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
         },
       ]}
     >
@@ -230,7 +264,11 @@ export default function Drivers() {
         <DriverFormModal
           driver={editingDriver}
           teams={teams}
-          onClose={() => { setShowForm(false); setEditingDriver(null); loadData(0) }}
+          onClose={() => {
+            setShowForm(false)
+            setEditingDriver(null)
+            loadData(0)
+          }}
         />
       )}
     </ListPage>
@@ -250,12 +288,15 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
       className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300"
       style={{
         background: `linear-gradient(135deg, ${driver.color}15 0%, ${driver.color}05 100%)`,
-        boxShadow: `0 4px 6px rgba(0,0,0,0.1), 0 0 20px ${driver.color}40`
+        boxShadow: `0 4px 6px rgba(0,0,0,0.1), 0 0 20px ${driver.color}40`,
       }}
     >
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
         <button
-          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
           className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
           aria-label={t('common:edit')}
         >
@@ -264,12 +305,20 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
         <DeleteButton onDelete={onDelete} />
       </div>
       <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: driver.color }} />
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `repeating-linear-gradient(45deg, ${driver.color}, ${driver.color} 10px, transparent 10px, transparent 20px)` }} />
+      <div
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `repeating-linear-gradient(45deg, ${driver.color}, ${driver.color} 10px, transparent 10px, transparent 20px)`,
+        }}
+      />
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
           <div className="relative">
-            <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: driver.color }} />
+            <div
+              className="absolute inset-0 rounded-full blur-md opacity-50"
+              style={{ backgroundColor: driver.color }}
+            />
             <div
               className="relative w-20 h-20 rounded-full flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)` }}
@@ -288,7 +337,10 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
           </div>
           <div className="flex flex-col items-end gap-2">
             {driver.number && (
-              <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}DD 100%)` }}>
+              <div
+                className="w-16 h-16 rounded-lg flex items-center justify-center shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}DD 100%)` }}
+              >
                 <span className="text-4xl font-black text-white drop-shadow-lg">{driver.number}</span>
               </div>
             )}
@@ -299,21 +351,49 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
             )}
           </div>
         </div>
-        <h3 className="font-black text-2xl tracking-tight mb-1" style={{ color: driver.color }}>{driver.name?.toUpperCase()}</h3>
+        <h3 className="font-black text-2xl tracking-tight mb-1" style={{ color: driver.color }}>
+          {driver.name?.toUpperCase()}
+        </h3>
         <div className="h-1 w-16 rounded-full" style={{ backgroundColor: driver.color }} />
       </div>
 
       <div className="relative px-6 pb-4">
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: <Flag className="w-4 h-4" />, label: t('glossary:race', { count: 2 }), value: driver._count?.sessions || 0 },
-            { icon: <Trophy className="w-4 h-4" />, label: t('glossary:podium', { count: 2 }), value: podiums, highlight: podiums > 0 },
-            { icon: <BarChart3 className="w-4 h-4" />, label: t('glossary:lap', { count: 2 }), value: driver._count?.laps || 0 },
+            {
+              icon: <Flag className="w-4 h-4" />,
+              label: t('glossary:race', { count: 2 }),
+              value: driver._count?.sessions || 0,
+            },
+            {
+              icon: <Trophy className="w-4 h-4" />,
+              label: t('glossary:podium', { count: 2 }),
+              value: podiums,
+              highlight: podiums > 0,
+            },
+            {
+              icon: <BarChart3 className="w-4 h-4" />,
+              label: t('glossary:lap', { count: 2 }),
+              value: driver._count?.laps || 0,
+            },
           ].map((stat) => (
-            <div key={stat.label} className={`p-2 rounded-lg text-center ${stat.highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-card/60'}`}>
-              <div className="flex items-center justify-center mb-1" style={{ color: stat.highlight ? '#EAB308' : driver.color }}>{stat.icon}</div>
+            <div
+              key={stat.label}
+              className={`p-2 rounded-lg text-center ${stat.highlight ? 'bg-yellow-50 dark:bg-yellow-900/30 ring-2 ring-yellow-400' : 'bg-card/60'}`}
+            >
+              <div
+                className="flex items-center justify-center mb-1"
+                style={{ color: stat.highlight ? '#EAB308' : driver.color }}
+              >
+                {stat.icon}
+              </div>
               <div className="text-xs font-medium text-muted-foreground uppercase">{stat.label}</div>
-              <div className="text-lg font-black tabular-nums" style={{ color: stat.highlight ? '#EAB308' : driver.color }}>{stat.value}</div>
+              <div
+                className="text-lg font-black tabular-nums"
+                style={{ color: stat.highlight ? '#EAB308' : driver.color }}
+              >
+                {stat.value}
+              </div>
             </div>
           ))}
         </div>
@@ -321,7 +401,9 @@ function DriverCard({ driver, onClick, onEdit, onDelete }) {
           <div className="mt-3 p-3 rounded-lg bg-card/80 border-2" style={{ borderColor: `${driver.color}40` }}>
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground uppercase">{t('card.bestLap')}</span>
-              <span className="text-lg font-black tabular-nums" style={{ color: driver.color }}>{(driver.bestLap / 1000).toFixed(3)}s</span>
+              <span className="text-lg font-black tabular-nums" style={{ color: driver.color }}>
+                {(driver.bestLap / 1000).toFixed(3)}s
+              </span>
             </div>
           </div>
         )}
@@ -338,7 +420,7 @@ export function DriverFormModal({ driver, teams, onClose }) {
     email: driver?.email || '',
     img: driver?.img || '',
     color: driver?.color || '#3B82F6',
-    teamId: driver?.teamId || ''
+    teamId: driver?.teamId || '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -352,7 +434,7 @@ export function DriverFormModal({ driver, teams, onClose }) {
       const res = await fetch(url, {
         method: driver ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
@@ -380,14 +462,44 @@ export function DriverFormModal({ driver, teams, onClose }) {
       error={error}
       success={success}
     >
-      <TextField label={t('form.name')} value={formData.name} onChange={(v) => setFormData(f => ({ ...f, name: v }))} placeholder={t('form.namePlaceholder')} required />
+      <TextField
+        label={t('form.name')}
+        value={formData.name}
+        onChange={(v) => setFormData((f) => ({ ...f, name: v }))}
+        placeholder={t('form.namePlaceholder')}
+        required
+      />
       <div className="grid grid-cols-2 gap-4">
-        <TextField label={t('form.number')} type="number" value={formData.number} onChange={(v) => setFormData(f => ({ ...f, number: v ? parseInt(v) : '' }))} placeholder={t('form.numberPlaceholder')} />
-        <TextField label={t('form.email')} type="email" value={formData.email} onChange={(v) => setFormData(f => ({ ...f, email: v }))} placeholder={t('form.emailPlaceholder')} />
+        <TextField
+          label={t('form.number')}
+          type="number"
+          value={formData.number}
+          onChange={(v) => setFormData((f) => ({ ...f, number: v ? parseInt(v) : '' }))}
+          placeholder={t('form.numberPlaceholder')}
+        />
+        <TextField
+          label={t('form.email')}
+          type="email"
+          value={formData.email}
+          onChange={(v) => setFormData((f) => ({ ...f, email: v }))}
+          placeholder={t('form.emailPlaceholder')}
+        />
       </div>
-      <PhotoUploadField value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="round" onError={setError} uploadType="drivers" />
-      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <SelectField label={t('glossary:team', { count: 1 })} value={formData.teamId} onChange={(v) => setFormData(f => ({ ...f, teamId: v }))} options={teams.map(team => ({ value: team.id, label: team.name }))} placeholder={t('form.noTeam')} />
+      <PhotoUploadField
+        value={formData.img}
+        onChange={(img) => setFormData((f) => ({ ...f, img }))}
+        shape="round"
+        onError={setError}
+        uploadType="drivers"
+      />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData((f) => ({ ...f, color }))} />
+      <SelectField
+        label={t('glossary:team', { count: 1 })}
+        value={formData.teamId}
+        onChange={(v) => setFormData((f) => ({ ...f, teamId: v }))}
+        options={teams.map((team) => ({ value: team.id, label: team.name }))}
+        placeholder={t('form.noTeam')}
+      />
     </FormModal>
   )
 }

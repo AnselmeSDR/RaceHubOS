@@ -18,7 +18,7 @@ export function useFetch(url, options = {}) {
     onSuccess = null,
     onError = null,
     initialData = undefined,
-    transform = defaultTransform
+    transform = defaultTransform,
   } = options
 
   const [data, setData] = useState(initialData)
@@ -52,7 +52,7 @@ export function useFetch(url, options = {}) {
     try {
       const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`
       const response = await fetch(fullUrl, {
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
       })
 
       if (!response.ok) {

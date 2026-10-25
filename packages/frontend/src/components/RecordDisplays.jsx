@@ -30,18 +30,27 @@ export function RecordItem({
       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
         onClick ? 'cursor-pointer' : ''
       } hover:bg-muted ${
-        position === 1 ? 'bg-gradient-to-r from-yellow-500/15 to-transparent border-l-4 border-yellow-400' :
-        position === 2 ? 'bg-gradient-to-r from-gray-400/10 to-transparent border-l-4 border-gray-300' :
-        position === 3 ? 'bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-400' : ''
+        position === 1
+          ? 'bg-gradient-to-r from-yellow-500/15 to-transparent border-l-4 border-yellow-400'
+          : position === 2
+            ? 'bg-gradient-to-r from-gray-400/10 to-transparent border-l-4 border-gray-300'
+            : position === 3
+              ? 'bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-400'
+              : ''
       }`}
     >
       {/* Position */}
-      <span className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm flex-shrink-0 ${
-        position === 1 ? 'bg-yellow-400 text-yellow-950' :
-        position === 2 ? 'bg-gray-300 text-gray-800' :
-        position === 3 ? 'bg-orange-400 text-orange-950' :
-        'text-muted-foreground'
-      }`}>
+      <span
+        className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm flex-shrink-0 ${
+          position === 1
+            ? 'bg-yellow-400 text-yellow-950'
+            : position === 2
+              ? 'bg-gray-300 text-gray-800'
+              : position === 3
+                ? 'bg-orange-400 text-orange-950'
+                : 'text-muted-foreground'
+        }`}
+      >
         {position === 1 ? <Trophy className="size-3.5" /> : position}
       </span>
 
@@ -76,9 +85,7 @@ export function RecordItem({
       {/* Info */}
       <div className="@container flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-foreground truncate">
-            {driver?.name || t('unknown')}
-          </span>
+          <span className="font-semibold text-sm text-foreground truncate">{driver?.name || t('unknown')}</span>
           <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionColor}`}>
             {sessionLabel}
           </Badge>
@@ -87,8 +94,13 @@ export function RecordItem({
         <div className="flex flex-col gap-0.5 @sm:flex-row @sm:items-center @sm:gap-3 text-xs text-muted-foreground mt-0.5">
           {showCar && car && (
             <span className="flex items-center gap-1 min-w-0">
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: car.color || '#6B7280' }} />
-              <span className="truncate">{car.brand} {car.model}</span>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: car.color || '#6B7280' }}
+              />
+              <span className="truncate">
+                {car.brand} {car.model}
+              </span>
             </span>
           )}
           {track && (

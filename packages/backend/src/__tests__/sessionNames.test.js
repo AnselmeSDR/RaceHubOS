@@ -27,35 +27,44 @@ describe('names of the sessions created by the server', () => {
     await prisma.track.deleteMany();
 
     track = await prisma.track.create({ data: { name: 'Ring' } });
-    drivers = await Promise.all(['Alexis', 'Romain', 'Lisa', 'Jordan']
-      .map((name) => prisma.driver.create({ data: { name } })));
+    drivers = await Promise.all(
+      ['Alexis', 'Romain', 'Lisa', 'Jordan'].map((name) => prisma.driver.create({ data: { name } }))
+    );
   });
 
   const createAuto = (extra = {}) =>
-    request(app).post('/api/championships').send({
-      name: 'Rush', season: '2026', trackId: track.id, mode: 'auto',
-      driversPerQualif: 2, driversPerRace: 4,
-      participants: drivers.map((d) => ({ driverId: d.id })),
-      ...extra,
-    });
+    request(app)
+      .post('/api/championships')
+      .send({
+        name: 'Rush',
+        season: '2026',
+        trackId: track.id,
+        mode: 'auto',
+        driversPerQualif: 2,
+        driversPerRace: 4,
+        participants: drivers.map((d) => ({ driverId: d.id })),
+        ...extra,
+      });
 
   const namesOf = async (championshipId) =>
-    (await prisma.session.findMany({ where: { championshipId }, orderBy: { order: 'asc' } }))
-      .map((s) => s.name);
+    (await prisma.session.findMany({ where: { championshipId }, orderBy: { order: 'asc' } })).map((s) => s.name);
 
   it('uses the names sent by the interface', async () => {
     const res = await createAuto({ sessionNames: german });
 
     expect(res.status).toBe(201);
-    expect(await namesOf(res.body.data.id)).toEqual(
-      ['Freies Training', 'Qualifikation 1', 'Qualifikation 2', 'Rennen 1']);
+    expect(await namesOf(res.body.data.id)).toEqual([
+      'Freies Training',
+      'Qualifikation 1',
+      'Qualifikation 2',
+      'Rennen 1',
+    ]);
   });
 
   it('falls back to English when none are sent', async () => {
     const res = await createAuto();
 
-    expect(await namesOf(res.body.data.id)).toEqual(
-      ['Free Practice', 'Qualifying 1', 'Qualifying 2', 'Race 1']);
+    expect(await namesOf(res.body.data.id)).toEqual(['Free Practice', 'Qualifying 1', 'Qualifying 2', 'Race 1']);
   });
 
   it('keeps the interface names when participants change', async () => {

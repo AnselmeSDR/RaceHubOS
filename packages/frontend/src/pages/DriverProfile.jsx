@@ -29,9 +29,12 @@ export default function DriverProfile() {
 
   useEffect(() => {
     loadDriver()
-    fetch(`${API_URL}/api/teams`).then(r => r.json()).then(d => {
-      if (d.success) setTeams(d.data || [])
-    }).catch(() => {})
+    fetch(`${API_URL}/api/teams`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setTeams(d.data || [])
+      })
+      .catch(() => {})
   }, [id])
 
   async function loadDriver() {
@@ -110,23 +113,41 @@ export default function DriverProfile() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-black text-lg" style={{ color: driverColor }}>{driver.name}</h1>
+              <h1 className="font-black text-lg" style={{ color: driverColor }}>
+                {driver.name}
+              </h1>
               {driver.number && (
                 <span className="text-sm font-black italic text-muted-foreground">#{driver.number}</span>
               )}
               {driver.team && (
-                <Badge variant="secondary" style={{ backgroundColor: `${driver.team.color || driverColor}20`, color: driver.team.color || driverColor }}>
+                <Badge
+                  variant="secondary"
+                  style={{
+                    backgroundColor: `${driver.team.color || driverColor}20`,
+                    color: driver.team.color || driverColor,
+                  }}
+                >
                   {driver.team.name}
                 </Badge>
               )}
             </div>
             <div className="text-xs flex items-center gap-3">
-              <span className="text-blue-500 font-medium">{driver._count?.sessions || 0} {t('glossary:race', { count: driver._count?.sessions || 0 })}</span>
-              <span className="text-yellow-500 font-medium">{driver.wins || 0} {t('glossary:win', { count: driver.wins || 0 })}</span>
-              <span className="text-orange-400 font-medium">{driver.podiums || 0} {t('glossary:podium', { count: driver.podiums || 0 })}</span>
-              <span className="text-muted-foreground font-medium">{driver._count?.laps || 0} {t('glossary:lap', { count: driver._count?.laps || 0 })}</span>
+              <span className="text-blue-500 font-medium">
+                {driver._count?.sessions || 0} {t('glossary:race', { count: driver._count?.sessions || 0 })}
+              </span>
+              <span className="text-yellow-500 font-medium">
+                {driver.wins || 0} {t('glossary:win', { count: driver.wins || 0 })}
+              </span>
+              <span className="text-orange-400 font-medium">
+                {driver.podiums || 0} {t('glossary:podium', { count: driver.podiums || 0 })}
+              </span>
+              <span className="text-muted-foreground font-medium">
+                {driver._count?.laps || 0} {t('glossary:lap', { count: driver._count?.laps || 0 })}
+              </span>
               {driver.bestLap && (
-                <span className="flex items-center gap-1">{t('common:record')} <LapTime time={driver.bestLap} size="sm" /></span>
+                <span className="flex items-center gap-1">
+                  {t('common:record')} <LapTime time={driver.bestLap} size="sm" />
+                </span>
               )}
             </div>
           </div>
@@ -135,7 +156,13 @@ export default function DriverProfile() {
           <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowResetConfirm(true)} disabled={resetting} className="text-orange-600 dark:text-orange-400">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowResetConfirm(true)}
+            disabled={resetting}
+            className="text-orange-600 dark:text-orange-400"
+          >
             <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
           </Button>
           <div className="flex items-center gap-2">
@@ -146,7 +173,14 @@ export default function DriverProfile() {
       </div>
 
       {showEdit && (
-        <DriverFormModal driver={driver} teams={teams} onClose={() => { setShowEdit(false); loadDriver() }} />
+        <DriverFormModal
+          driver={driver}
+          teams={teams}
+          onClose={() => {
+            setShowEdit(false)
+            loadDriver()
+          }}
+        />
       )}
 
       <ConfirmModal
@@ -160,14 +194,13 @@ export default function DriverProfile() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
           <RecordsList
             title={t('common:topRecords')}
-            records={driver.records?.map(r => ({
+            records={driver.records?.map((r) => ({
               ...r,
-              driver: { name: driver.name, color: driver.color, img: driver.img }
+              driver: { name: driver.name, color: driver.color, img: driver.img },
             }))}
             showDriverAvatar={false}
             showCarAvatar={true}
@@ -190,7 +223,10 @@ export default function DriverProfile() {
                       className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}
+                        >
                           {sd.session?.type
                             ? t(`glossary:sessionType.${sd.session.type}`, { defaultValue: sd.session.type })
                             : ''}
@@ -201,7 +237,9 @@ export default function DriverProfile() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {sd.finalPos && (
-                          <span className="font-black text-base" style={{ color: driverColor }}>P{sd.finalPos}</span>
+                          <span className="font-black text-base" style={{ color: driverColor }}>
+                            P{sd.finalPos}
+                          </span>
                         )}
                         {sd.bestLapTime && <LapTime time={sd.bestLapTime} size="sm" />}
                       </div>
@@ -209,9 +247,7 @@ export default function DriverProfile() {
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  {t('common:noSessions')}
-                </div>
+                <div className="py-8 text-center text-sm text-muted-foreground">{t('common:noSessions')}</div>
               )}
             </CardContent>
           </Card>

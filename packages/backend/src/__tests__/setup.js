@@ -7,8 +7,8 @@ const databaseUrl = getDatabaseUrl();
 if (!/[/\\]test\.db(\?|$)/.test(databaseUrl)) {
   throw new Error(
     `Tests refused: setup.js deletes all rows and DATABASE_URL does not point to a test database.\n` +
-    `  Resolved URL: ${databaseUrl}\n` +
-    `  Expected a path ending in test.db — run tests via "npm test", which sets DATABASE_URL="file:./test.db".`
+      `  Resolved URL: ${databaseUrl}\n` +
+      `  Expected a path ending in test.db — run tests via "npm test", which sets DATABASE_URL="file:./test.db".`
   );
 }
 

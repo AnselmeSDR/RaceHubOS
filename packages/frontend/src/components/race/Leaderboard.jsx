@@ -12,11 +12,7 @@ export default function Leaderboard({ leaderboard = [] }) {
   const { t } = useTranslation('race')
 
   if (!leaderboard || leaderboard.length === 0) {
-    return (
-      <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">
-        {t('leaderboard.empty')}
-      </div>
-    )
+    return <div className="bg-gray-900 rounded-lg p-8 text-center text-gray-500">{t('leaderboard.empty')}</div>
   }
 
   return (
@@ -45,7 +41,7 @@ export default function Leaderboard({ leaderboard = [] }) {
               exit={{ opacity: 0, x: 50 }}
               transition={{
                 layout: { type: 'spring', stiffness: 200, damping: 30, mass: 1 },
-                opacity: { duration: 0.3 }
+                opacity: { duration: 0.3 },
               }}
               className="flex items-center gap-3 p-3 rounded-lg shadow-md"
               style={{
@@ -56,12 +52,17 @@ export default function Leaderboard({ leaderboard = [] }) {
             >
               {/* Position */}
               <div className="w-14 flex-shrink-0 text-center">
-                <span className={`text-2xl font-black ${
-                  position === 1 ? 'text-yellow-500' :
-                  position === 2 ? 'text-gray-400' :
-                  position === 3 ? 'text-orange-500' :
-                  'text-gray-600'
-                }`}>
+                <span
+                  className={`text-2xl font-black ${
+                    position === 1
+                      ? 'text-yellow-500'
+                      : position === 2
+                        ? 'text-gray-400'
+                        : position === 3
+                          ? 'text-orange-500'
+                          : 'text-gray-600'
+                  }`}
+                >
                   {position}
                 </span>
                 {/* Position delta arrow */}
@@ -74,11 +75,7 @@ export default function Leaderboard({ leaderboard = [] }) {
                       entry.positionDelta > 0 ? 'text-green-500' : 'text-red-500'
                     }`}
                   >
-                    {entry.positionDelta > 0 ? (
-                      <ArrowUp className="w-3 h-3" />
-                    ) : (
-                      <ArrowDown className="w-3 h-3" />
-                    )}
+                    {entry.positionDelta > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                     <span>{Math.abs(entry.positionDelta)}</span>
                   </motion.div>
                 )}
@@ -103,10 +100,7 @@ export default function Leaderboard({ leaderboard = [] }) {
               {/* Number - Large NASCAR style */}
               {driver.number && (
                 <div className="flex-shrink-0 w-16">
-                  <span
-                    className="text-5xl font-black italic opacity-20"
-                    style={{ color: driverColor }}
-                  >
+                  <span className="text-5xl font-black italic opacity-20" style={{ color: driverColor }}>
                     {driver.number}
                   </span>
                 </div>
@@ -127,9 +121,7 @@ export default function Leaderboard({ leaderboard = [] }) {
                 {/* Laps */}
                 <div className="text-center">
                   <div className="text-xs text-gray-400 uppercase">{t('leaderboard.laps')}</div>
-                  <div className="font-mono font-bold text-lg text-gray-900">
-                    {entry.laps ?? entry.lapCount ?? 0}
-                  </div>
+                  <div className="font-mono font-bold text-lg text-gray-900">{entry.laps ?? entry.lapCount ?? 0}</div>
                 </div>
 
                 {/* Best Lap */}

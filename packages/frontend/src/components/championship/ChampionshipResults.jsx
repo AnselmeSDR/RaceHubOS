@@ -37,8 +37,16 @@ function ResultsPodium({ podium }) {
   const podiumBorder = ['border-yellow-400', 'border-gray-300', 'border-orange-400']
   const podiumGlow = ['shadow-yellow-400/20', 'shadow-gray-300/20', 'shadow-orange-400/20']
   const podiumHeight = ['h-28', 'h-20', 'h-16']
-  const podiumBg = ['bg-gradient-to-t from-yellow-400/20 to-transparent', 'bg-gradient-to-t from-gray-300/20 to-transparent', 'bg-gradient-to-t from-orange-400/20 to-transparent']
-  const podiumLabel = [t('results.podiumLabels.first'), t('results.podiumLabels.second'), t('results.podiumLabels.third')]
+  const podiumBg = [
+    'bg-gradient-to-t from-yellow-400/20 to-transparent',
+    'bg-gradient-to-t from-gray-300/20 to-transparent',
+    'bg-gradient-to-t from-orange-400/20 to-transparent',
+  ]
+  const podiumLabel = [
+    t('results.podiumLabels.first'),
+    t('results.podiumLabels.second'),
+    t('results.podiumLabels.third'),
+  ]
   const podiumOrder = podium.length >= 3 ? [podium[1], podium[0], podium[2]] : podium
   const podiumIndexOrder = podium.length >= 3 ? [1, 0, 2] : podium.map((_, i) => i)
 
@@ -50,7 +58,10 @@ function ResultsPodium({ podium }) {
           <div key={entry.driverId} className="flex flex-col items-center w-32">
             <div
               className="w-20 h-20 rounded-full border-3 overflow-hidden mb-2 flex items-center justify-center text-white text-xl font-bold shadow-lg"
-              style={{ borderColor: realIdx === 0 ? '#facc15' : realIdx === 1 ? '#d1d5db' : '#fb923c', backgroundColor: entry.driver?.color || '#6B7280' }}
+              style={{
+                borderColor: realIdx === 0 ? '#facc15' : realIdx === 1 ? '#d1d5db' : '#fb923c',
+                backgroundColor: entry.driver?.color || '#6B7280',
+              }}
             >
               {entry.driver?.img ? (
                 <img src={getImgUrl(entry.driver.img)} className="w-full h-full object-cover" alt="" />
@@ -59,8 +70,12 @@ function ResultsPodium({ podium }) {
               )}
             </div>
             <span className="text-sm font-bold mb-0.5">{entry.driver?.name}</span>
-            <span className="text-[10px] text-muted-foreground mb-1">{t('results.lapsCount', { count: entry.totalLaps })}</span>
-            <div className={`${podiumHeight[realIdx]} w-full ${podiumBg[realIdx]} ${podiumBorder[realIdx]} border-t-2 rounded-t-lg flex items-start justify-center pt-1.5 ${podiumGlow[realIdx]} shadow-lg`}>
+            <span className="text-[10px] text-muted-foreground mb-1">
+              {t('results.lapsCount', { count: entry.totalLaps })}
+            </span>
+            <div
+              className={`${podiumHeight[realIdx]} w-full ${podiumBg[realIdx]} ${podiumBorder[realIdx]} border-t-2 rounded-t-lg flex items-start justify-center pt-1.5 ${podiumGlow[realIdx]} shadow-lg`}
+            >
               <span className="text-lg font-black text-foreground">{podiumLabel[realIdx]}</span>
             </div>
           </div>
@@ -89,8 +104,12 @@ function AwardCard({ award }) {
       case 'comeback':
         return (
           <div>
-            <span className="font-mono text-lg font-bold text-session-race">{t('results.award.places', { count: award.gain })}</span>
-            <div className="text-[10px] text-muted-foreground mt-0.5">P{award.qualifPos} → P{award.racePos}</div>
+            <span className="font-mono text-lg font-bold text-session-race">
+              {t('results.award.places', { count: award.gain })}
+            </span>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              P{award.qualifPos} → P{award.racePos}
+            </div>
           </div>
         )
       case 'consistent':
@@ -103,8 +122,12 @@ function AwardCard({ award }) {
       case 'iron-man':
         return (
           <div>
-            <span className="font-mono text-lg font-bold text-delta-gained">{t('results.award.lapsCount', { count: award.totalLaps })}</span>
-            <div className="text-[10px] text-muted-foreground mt-0.5">{t('results.award.finishedRaces', { count: award.finishedRaces })}</div>
+            <span className="font-mono text-lg font-bold text-delta-gained">
+              {t('results.award.lapsCount', { count: award.totalLaps })}
+            </span>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {t('results.award.finishedRaces', { count: award.finishedRaces })}
+            </div>
           </div>
         )
       default:
@@ -157,24 +180,35 @@ function StandingsTable({ standings }) {
             const lapDiff = leaderLaps - entry.totalLaps
             let gap = null
             if (entry.position > 1) {
-              gap = lapDiff > 0
-                ? { type: 'laps', value: lapDiff }
-                : { type: 'time', value: entry.totalTime - leaderTime }
+              gap =
+                lapDiff > 0 ? { type: 'laps', value: lapDiff } : { type: 'time', value: entry.totalTime - leaderTime }
             }
 
             return (
-              <tr key={entry.driverId} className={
-                entry.position === 1 ? 'bg-gradient-to-r from-yellow-500/20 to-transparent' :
-                entry.position === 2 ? 'bg-gradient-to-r from-gray-400/10 to-transparent' :
-                entry.position === 3 ? 'bg-gradient-to-r from-orange-500/10 to-transparent' : ''
-              }>
+              <tr
+                key={entry.driverId}
+                className={
+                  entry.position === 1
+                    ? 'bg-gradient-to-r from-yellow-500/20 to-transparent'
+                    : entry.position === 2
+                      ? 'bg-gradient-to-r from-gray-400/10 to-transparent'
+                      : entry.position === 3
+                        ? 'bg-gradient-to-r from-orange-500/10 to-transparent'
+                        : ''
+                }
+              >
                 <td className="px-3 py-2">
-                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${
-                    entry.position === 1 ? 'bg-yellow-400 text-yellow-950' :
-                    entry.position === 2 ? 'bg-gray-300 text-gray-800' :
-                    entry.position === 3 ? 'bg-orange-400 text-orange-950' :
-                    'text-muted-foreground'
-                  }`}>
+                  <span
+                    className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${
+                      entry.position === 1
+                        ? 'bg-yellow-400 text-yellow-950'
+                        : entry.position === 2
+                          ? 'bg-gray-300 text-gray-800'
+                          : entry.position === 3
+                            ? 'bg-orange-400 text-orange-950'
+                            : 'text-muted-foreground'
+                    }`}
+                  >
                     {entry.position}
                   </span>
                 </td>
@@ -185,7 +219,11 @@ function StandingsTable({ standings }) {
                     )}
                     <div>
                       <div className="font-medium">{entry.driver?.name}</div>
-                      {entry.car && <div className="text-[10px] text-muted-foreground">{entry.car.brand} {entry.car.model}</div>}
+                      {entry.car && (
+                        <div className="text-[10px] text-muted-foreground">
+                          {entry.car.brand} {entry.car.model}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -193,8 +231,12 @@ function StandingsTable({ standings }) {
                 <td className="px-3 py-2 text-right font-mono text-xs">{formatTotalTime(entry.totalTime)}</td>
                 <td className="px-3 py-2 text-right">
                   {gap ? (
-                    <span className={`font-mono text-xs font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-muted-foreground'}`}>
-                      {gap.type === 'laps' ? t('results.gapLaps', { count: gap.value }) : `+${(gap.value / 1000).toFixed(3)}`}
+                    <span
+                      className={`font-mono text-xs font-medium ${gap.type === 'laps' ? GAP_COLORS.laps : 'text-muted-foreground'}`}
+                    >
+                      {gap.type === 'laps'
+                        ? t('results.gapLaps', { count: gap.value })
+                        : `+${(gap.value / 1000).toFixed(3)}`}
                     </span>
                   ) : (
                     <span className={`text-xs font-bold ${GAP_COLORS.leader}`}>{t('results.leader')}</span>
@@ -227,7 +269,9 @@ export default function ChampionshipResults({ championshipId }) {
     }
   }, [championshipId])
 
-  useEffect(() => { fetchResults() }, [fetchResults])
+  useEffect(() => {
+    fetchResults()
+  }, [fetchResults])
 
   useEffect(() => {
     const refresh = () => fetchResults()
@@ -245,11 +289,7 @@ export default function ChampionshipResults({ championshipId }) {
   }
 
   if (!results || (!results.standings?.length && !results.awards?.length)) {
-    return (
-      <div className="text-center py-12 text-muted-foreground text-sm">
-        {t('results.noResults')}
-      </div>
-    )
+    return <div className="text-center py-12 text-muted-foreground text-sm">{t('results.noResults')}</div>
   }
 
   return (
@@ -257,7 +297,9 @@ export default function ChampionshipResults({ championshipId }) {
       {/* Podium */}
       {results.podium?.length >= 2 && (
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-4 text-center">{t('results.podium')}</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-4 text-center">
+            {t('results.podium')}
+          </h3>
           <ResultsPodium podium={results.podium} />
         </div>
       )}
@@ -270,7 +312,7 @@ export default function ChampionshipResults({ championshipId }) {
             {t('results.bestMoments')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {results.awards.map(award => (
+            {results.awards.map((award) => (
               <AwardCard key={award.id} award={award} />
             ))}
           </div>

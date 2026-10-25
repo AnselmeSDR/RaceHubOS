@@ -107,7 +107,8 @@ export class BLEService extends EventEmitter {
 
       // Utiliser le peripheral déjà trouvé si disponible et correspondant
       if (this.lastFoundPeripheral) {
-        const lastAddr = this.lastFoundPeripheral.address || this.lastFoundPeripheral.uuid || this.lastFoundPeripheral.id;
+        const lastAddr =
+          this.lastFoundPeripheral.address || this.lastFoundPeripheral.uuid || this.lastFoundPeripheral.id;
         if (!address || address === lastAddr) {
           console.log('📱 Using cached peripheral');
           this.peripheral = this.lastFoundPeripheral;
@@ -165,9 +166,12 @@ export class BLEService extends EventEmitter {
         });
       });
 
-      this._discoveredServices = services.map(s => s.uuid);
+      this._discoveredServices = services.map((s) => s.uuid);
       console.log('📋 Found services:', this._discoveredServices);
-      console.log('📋 Found characteristics:', characteristics.map(c => c.uuid));
+      console.log(
+        '📋 Found characteristics:',
+        characteristics.map((c) => c.uuid)
+      );
 
       // Trouver les caractéristiques (comparer sans tirets, en minuscules)
       this.outputCharacteristic = characteristics.find(
@@ -231,7 +235,8 @@ export class BLEService extends EventEmitter {
       // Les notifications BLE se terminent par '$' selon le protocole
       let buffer = data;
 
-      if (buffer[buffer.length - 1] === 0x24) { // '$'
+      if (buffer[buffer.length - 1] === 0x24) {
+        // '$'
         // Retirer le '$' final
         buffer = buffer.slice(0, -1);
 
@@ -307,13 +312,14 @@ export class BLEService extends EventEmitter {
     // Tentative de reconnexion automatique
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(
-        `🔄 Attempting reconnection (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      );
+      console.log(`🔄 Attempting reconnection (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
 
       this.reconnectTimer = setTimeout(() => {
         this.connect().catch((error) => {
-          console.error(`❌ Reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} failed:`, error.message);
+          console.error(
+            `❌ Reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} failed:`,
+            error.message
+          );
           // Trigger next attempt
           this.handleDisconnect();
         });

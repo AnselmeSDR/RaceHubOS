@@ -24,10 +24,24 @@ export default function globalSetup() {
   }
 
   const sqlFile = path.join(backendDir, 'prisma', '.test-schema.sql');
-  execFileSync(process.execPath, [prismaCli(), 'migrate', 'diff', '--from-empty', '--to-schema', 'prisma/schema.prisma', '--script', '--output', sqlFile], {
-    cwd: backendDir,
-    stdio: 'pipe',
-  });
+  execFileSync(
+    process.execPath,
+    [
+      prismaCli(),
+      'migrate',
+      'diff',
+      '--from-empty',
+      '--to-schema',
+      'prisma/schema.prisma',
+      '--script',
+      '--output',
+      sqlFile,
+    ],
+    {
+      cwd: backendDir,
+      stdio: 'pipe',
+    }
+  );
 
   const db = new Database(dbPath);
   try {

@@ -119,13 +119,26 @@ async function main() {
 
   cu.on('status', (status) => {
     const { fuel, start, mode, pit, display } = status;
-    const startNames = ['RACING', 'LIGHTS_1', 'LIGHTS_2', 'LIGHTS_3', 'LIGHTS_4', 'LIGHTS_5', 'FALSE_START', 'GO', '?', 'STOPPED'];
+    const startNames = [
+      'RACING',
+      'LIGHTS_1',
+      'LIGHTS_2',
+      'LIGHTS_3',
+      'LIGHTS_4',
+      'LIGHTS_5',
+      'FALSE_START',
+      'GO',
+      '?',
+      'STOPPED',
+    ];
     const startName = startNames[start] || `UNKNOWN(${start})`;
 
     // Only log if status changed
     const statusStr = JSON.stringify(status);
     if (statusStr !== lastStatus) {
-      console.log(`📊 Status: start=${startName}, mode=${mode}, fuel=[${fuel.join(',')}], pit=[${pit.map(p => p ? '1' : '0').join('')}]`);
+      console.log(
+        `📊 Status: start=${startName}, mode=${mode}, fuel=[${fuel.join(',')}], pit=[${pit.map((p) => (p ? '1' : '0')).join('')}]`
+      );
       logEvent('status', { ...status, startName });
       lastStatus = statusStr;
     }
@@ -243,7 +256,6 @@ async function main() {
       console.log(`📝 Log saved to: ${logFile}`);
       process.exit(0);
     });
-
   } catch (error) {
     console.error('❌ Failed:', error.message);
     logEvent('error', { message: error.message, phase: 'connect' });

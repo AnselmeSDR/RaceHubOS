@@ -11,9 +11,11 @@ const Database = require('better-sqlite3');
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const migrationsDir = path.join(backendDir, 'prisma', 'migrations');
 
-const migrationNames = () => fs.readdirSync(migrationsDir)
-  .filter((name) => fs.existsSync(path.join(migrationsDir, name, 'migration.sql')))
-  .sort();
+const migrationNames = () =>
+  fs
+    .readdirSync(migrationsDir)
+    .filter((name) => fs.existsSync(path.join(migrationsDir, name, 'migration.sql')))
+    .sort();
 
 /** A disposable database with the first `count` migrations replayed by hand. */
 function fixture(dbPath, count) {
@@ -27,7 +29,10 @@ function fixture(dbPath, count) {
 const historyOf = (dbPath) => {
   const db = new Database(dbPath, { readonly: true });
   try {
-    return db.prepare('SELECT migration_name FROM _prisma_migrations').all().map((r) => r.migration_name);
+    return db
+      .prepare('SELECT migration_name FROM _prisma_migrations')
+      .all()
+      .map((r) => r.migration_name);
   } catch {
     return null; // no _prisma_migrations table at all
   } finally {
@@ -38,7 +43,10 @@ const historyOf = (dbPath) => {
 const hasColumn = (dbPath, table, column) => {
   const db = new Database(dbPath, { readonly: true });
   try {
-    return db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
+    return db
+      .prepare(`PRAGMA table_info(${table})`)
+      .all()
+      .some((c) => c.name === column);
   } finally {
     db.close();
   }

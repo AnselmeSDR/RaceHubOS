@@ -17,7 +17,14 @@ import { cn } from '@/lib/utils'
  * The armed state reverts on its own after `timeout` ms, or as soon as the
  * pointer leaves, so a card never stays primed for deletion.
  */
-export default function DeleteButton({ onDelete, className = '', timeout = 4000, label, variant = 'card', size = 'sm' }) {
+export default function DeleteButton({
+  onDelete,
+  className = '',
+  timeout = 4000,
+  label,
+  variant = 'card',
+  size = 'sm',
+}) {
   const { t } = useTranslation('common')
   const [armed, setArmed] = useState(false)
   const timer = useRef(null)
@@ -52,9 +59,14 @@ export default function DeleteButton({ onDelete, className = '', timeout = 4000,
     ? 'bg-destructive text-destructive-foreground px-2 h-6 text-xs font-medium'
     : 'bg-black/20 text-white hover:bg-destructive p-1.5 h-6'
 
-  const classes = variant === 'card'
-    ? cn('inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[min(var(--radius-md),12px)] outline-none transition-colors focus-visible:ring-3 focus-visible:ring-destructive/30', cardClasses, className)
-    : cn(buttonVariants({ variant: armed ? 'destructive' : 'outline', size }), 'overflow-hidden', className)
+  const classes =
+    variant === 'card'
+      ? cn(
+          'inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[min(var(--radius-md),12px)] outline-none transition-colors focus-visible:ring-3 focus-visible:ring-destructive/30',
+          cardClasses,
+          className
+        )
+      : cn(buttonVariants({ variant: armed ? 'destructive' : 'outline', size }), 'overflow-hidden', className)
 
   return (
     <motion.button

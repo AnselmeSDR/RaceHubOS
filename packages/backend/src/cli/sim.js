@@ -23,7 +23,7 @@ function App() {
 
   const addLog = (msg, type = 'info') => {
     const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    setLogs(prev => [...prev.slice(-15), { time, msg, type }]);
+    setLogs((prev) => [...prev.slice(-15), { time, msg, type }]);
   };
 
   // Socket events
@@ -39,7 +39,7 @@ function App() {
     });
 
     socket.on('cu:status', (status) => {
-      setCuStatus(prev => {
+      setCuStatus((prev) => {
         if (prev?.start !== status.start) {
           addLog(`→ ${CU_STATES[status.start] || status.start}`, 'state');
         }
@@ -78,7 +78,7 @@ function App() {
           await fetch(`${API_URL}/api/bluetooth/connect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address: 'SIMULATOR' })
+            body: JSON.stringify({ address: 'SIMULATOR' }),
           });
           break;
 
@@ -107,7 +107,7 @@ function App() {
           await fetch(`${API_URL}/api/bluetooth/simulator/lap`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ controller: ctrl })
+            body: JSON.stringify({ controller: ctrl }),
           });
           break;
         }
@@ -130,7 +130,7 @@ function App() {
           await fetch(`${API_URL}/api/bluetooth/simulator/state`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ state: stateVal })
+            body: JSON.stringify({ state: stateVal }),
           });
           break;
         }
@@ -146,7 +146,7 @@ function App() {
           await fetch(`${API_URL}/api/bluetooth/set-fuel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address: ctrl, value: val })
+            body: JSON.stringify({ address: ctrl, value: val }),
           });
           addLog(`Fuel ctrl=${ctrl + 1} → ${val}`, 'success');
           break;
@@ -179,7 +179,7 @@ function App() {
 
   const handleSubmit = (value) => {
     if (value.trim()) {
-      setHistory(prev => [...prev, value]);
+      setHistory((prev) => [...prev, value]);
       setHistoryIdx(-1);
       execCmd(value);
     }
@@ -208,44 +208,57 @@ function App() {
 
   const getColor = (type) => {
     switch (type) {
-      case 'error': return 'red';
-      case 'success': return 'green';
-      case 'lap': return 'yellow';
-      case 'state': return 'cyan';
-      case 'cmd': return 'magenta';
-      default: return undefined;
+      case 'error':
+        return 'red';
+      case 'success':
+        return 'green';
+      case 'lap':
+        return 'yellow';
+      case 'state':
+        return 'cyan';
+      case 'cmd':
+        return 'magenta';
+      default:
+        return undefined;
     }
   };
 
-  return h(Box, { flexDirection: 'column' },
+  return h(
+    Box,
+    { flexDirection: 'column' },
     // Header
-    h(Box, { borderStyle: 'round', borderColor: 'cyan', paddingX: 1 },
+    h(
+      Box,
+      { borderStyle: 'round', borderColor: 'cyan', paddingX: 1 },
       h(Text, { bold: true, color: 'cyan' }, 'Carrera Simulator'),
       h(Text, null, '  '),
       h(Text, { color: connected ? 'green' : 'red' }, connected ? '● connected' : '○ disconnected')
     ),
 
     // Status Bar
-    h(Box, { paddingX: 1, gap: 2, marginY: 0 },
-      h(Text, null,
-        h(Text, { dimColor: true }, 'State: '),
-        h(Text, { color: 'cyan', bold: true }, state)
-      ),
-      h(Text, null,
-        h(Text, { dimColor: true }, 'Fuel: '),
-        h(Text, null, `[${fuel}]`)
-      ),
-      elapsed !== null && h(Text, null,
-        h(Text, { dimColor: true }, 'Session: '),
-        h(Text, { color: 'yellow' }, sessionStatus.status),
-        h(Text, { dimColor: true }, ` ${elapsed}s`)
-      )
+    h(
+      Box,
+      { paddingX: 1, gap: 2, marginY: 0 },
+      h(Text, null, h(Text, { dimColor: true }, 'State: '), h(Text, { color: 'cyan', bold: true }, state)),
+      h(Text, null, h(Text, { dimColor: true }, 'Fuel: '), h(Text, null, `[${fuel}]`)),
+      elapsed !== null &&
+        h(
+          Text,
+          null,
+          h(Text, { dimColor: true }, 'Session: '),
+          h(Text, { color: 'yellow' }, sessionStatus.status),
+          h(Text, { dimColor: true }, ` ${elapsed}s`)
+        )
     ),
 
     // Logs
-    h(Box, { flexDirection: 'column', paddingX: 1, marginTop: 1 },
+    h(
+      Box,
+      { flexDirection: 'column', paddingX: 1, marginTop: 1 },
       ...logs.map((log, i) =>
-        h(Text, { key: i },
+        h(
+          Text,
+          { key: i },
           h(Text, { dimColor: true }, `[${log.time}] `),
           h(Text, { color: getColor(log.type) }, log.msg)
         )
@@ -253,13 +266,15 @@ function App() {
     ),
 
     // Input
-    h(Box, { marginTop: 1, paddingX: 1 },
+    h(
+      Box,
+      { marginTop: 1, paddingX: 1 },
       h(Text, { color: 'green' }, '❯ '),
       h(TextInput, {
         value: input,
         onChange: setInput,
         onSubmit: handleSubmit,
-        placeholder: 'help for commands'
+        placeholder: 'help for commands',
       })
     )
   );

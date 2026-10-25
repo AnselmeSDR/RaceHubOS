@@ -2,14 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { X, AlertTriangle } from 'lucide-react'
 import { Button } from './button'
 
-export default function Modal({
-  open,
-  onClose,
-  title,
-  icon,
-  children,
-  size = 'md'
-}) {
+export default function Modal({ open, onClose, title, icon, children, size = 'md' }) {
   if (!open) return null
 
   const sizeClasses = {
@@ -18,49 +11,36 @@ export default function Modal({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
-    '3xl': 'max-w-3xl'
+    '3xl': 'max-w-3xl',
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       {/* Le titre reste visible, seul le corps défile : un formulaire long
           dépassait de l'écran sans jamais pouvoir être fait défiler */}
-      <div className={`bg-card border border-border rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
+      <div
+        className={`bg-card border border-border rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}
+      >
         <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             {icon}
             {title}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-muted rounded transition-colors"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded transition-colors">
             <X className="size-6 text-muted-foreground" />
           </button>
         </div>
-        <div className="px-6 pb-6 overflow-y-auto">
-          {children}
-        </div>
+        <div className="px-6 pb-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   )
 }
 
 export function ModalFooter({ children, className = '' }) {
-  return (
-    <div className={`flex justify-end gap-3 pt-4 ${className}`}>
-      {children}
-    </div>
-  )
+  return <div className={`flex justify-end gap-3 pt-4 ${className}`}>{children}</div>
 }
 
-export function ModalButton({
-  type = 'button',
-  variant = 'primary',
-  disabled = false,
-  onClick,
-  children
-}) {
+export function ModalButton({ type = 'button', variant = 'primary', disabled = false, onClick, children }) {
   const variantMap = {
     primary: 'default',
     success: 'default',
@@ -69,12 +49,7 @@ export function ModalButton({
   }
 
   return (
-    <Button
-      type={type}
-      variant={variantMap[variant] || 'default'}
-      disabled={disabled}
-      onClick={onClick}
-    >
+    <Button type={type} variant={variantMap[variant] || 'default'} disabled={disabled} onClick={onClick}>
       {children}
     </Button>
   )
@@ -88,7 +63,7 @@ export function ConfirmModal({
   message,
   confirmLabel,
   cancelLabel,
-  variant = 'danger'
+  variant = 'danger',
 }) {
   const { t } = useTranslation('common')
   if (!open) return null
@@ -107,11 +82,7 @@ export function ConfirmModal({
           <Button variant="outline" className="flex-1" onClick={onClose}>
             {cancelLabel ?? t('cancel')}
           </Button>
-          <Button
-            variant={variant === 'danger' ? 'destructive' : 'default'}
-            className="flex-1"
-            onClick={onConfirm}
-          >
+          <Button variant={variant === 'danger' ? 'destructive' : 'default'} className="flex-1" onClick={onConfirm}>
             {confirmLabel ?? t('confirm')}
           </Button>
         </div>

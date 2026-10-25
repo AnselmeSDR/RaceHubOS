@@ -223,7 +223,7 @@ router.get('/info', async (req, res) => {
         version,
         ble: bleInfo,
         connected: currentDevice.isConnected?.() || false,
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

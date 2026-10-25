@@ -53,20 +53,23 @@ export function ListPage({
   useEffect(() => {
     if (!preferenceKey) return
     Promise.all([
-      fetch(`${API_URL}/api/preferences/columns:${preferenceKey}`).then(r => r.json()),
-      fetch(`${API_URL}/api/preferences/order:${preferenceKey}`).then(r => r.json()),
-      fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`).then(r => r.json()),
-      fetch(`${API_URL}/api/preferences/viewMode:default`).then(r => r.json()),
-    ]).then(([visData, orderData, viewData, defaultViewData]) => {
-      setInitialPrefs({
-        columnVisibility: visData.success && visData.data ? visData.data : {},
-        columnOrder: orderData.success && orderData.data ? orderData.data : [],
+      fetch(`${API_URL}/api/preferences/columns:${preferenceKey}`).then((r) => r.json()),
+      fetch(`${API_URL}/api/preferences/order:${preferenceKey}`).then((r) => r.json()),
+      fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`).then((r) => r.json()),
+      fetch(`${API_URL}/api/preferences/viewMode:default`).then((r) => r.json()),
+    ])
+      .then(([visData, orderData, viewData, defaultViewData]) => {
+        setInitialPrefs({
+          columnVisibility: visData.success && visData.data ? visData.data : {},
+          columnOrder: orderData.success && orderData.data ? orderData.data : [],
+        })
+        if (viewData.success && viewData.data) setViewMode(viewData.data)
+        else if (renderGrid && defaultViewData.success && defaultViewData.data) setViewMode(defaultViewData.data)
       })
-      if (viewData.success && viewData.data) setViewMode(viewData.data)
-      else if (renderGrid && defaultViewData.success && defaultViewData.data) setViewMode(defaultViewData.data)
-    }).catch(() => {
-      setInitialPrefs({ columnVisibility: {}, columnOrder: [] })
-    }).finally(() => setPrefsLoaded(true))
+      .catch(() => {
+        setInitialPrefs({ columnVisibility: {}, columnOrder: [] })
+      })
+      .finally(() => setPrefsLoaded(true))
   }, [preferenceKey])
 
   function handleViewModeChange(mode) {
@@ -93,7 +96,7 @@ export function ListPage({
     addLabel,
   })
 
-  const isShowingDeleted = options?.some(o => o.key === 'deleted' && o.checked)
+  const isShowingDeleted = options?.some((o) => o.key === 'deleted' && o.checked)
 
   function clearSelection() {
     setSelectedIds([])
@@ -103,11 +106,7 @@ export function ListPage({
   async function confirmDelete() {
     if (!deleteEndpoint) return
     try {
-      await Promise.all(
-        selectedIds.map(id =>
-          fetch(`${API_URL}${deleteEndpoint}/${id}`, { method: 'DELETE' })
-        )
-      )
+      await Promise.all(selectedIds.map((id) => fetch(`${API_URL}${deleteEndpoint}/${id}`, { method: 'DELETE' })))
       clearSelection()
       onDeleted?.()
     } catch (error) {
@@ -121,9 +120,7 @@ export function ListPage({
     if (!deleteEndpoint) return
     try {
       await Promise.all(
-        selectedIds.map(id =>
-          fetch(`${API_URL}${deleteEndpoint}/${id}/restore`, { method: 'PATCH' })
-        )
+        selectedIds.map((id) => fetch(`${API_URL}${deleteEndpoint}/${id}/restore`, { method: 'PATCH' }))
       )
       clearSelection()
       onDeleted?.()
@@ -158,10 +155,7 @@ export function ListPage({
           <p className="text-lg font-medium text-foreground">{emptyTitle || t('emptyState.title')}</p>
           <p className="text-sm text-muted-foreground mt-1">{emptyMessage}</p>
           {onAdd && (
-            <Button
-              onClick={onAdd}
-              className={`mt-4 bg-${color}-500 hover:bg-${color}-600 text-white`}
-            >
+            <Button onClick={onAdd} className={`mt-4 bg-${color}-500 hover:bg-${color}-600 text-white`}>
               {addLabel}
             </Button>
           )}
@@ -180,33 +174,37 @@ export function ListPage({
           rowClassName={rowClassName}
           emptyMessage={t('noResultsFound')}
           options={options}
-          onSelectionChange={(rows) => setSelectedIds(rows.map(r => r.original.id))}
+          onSelectionChange={(rows) => setSelectedIds(rows.map((r) => r.original.id))}
           hasMore={hasMore}
           loadingMore={loadingMore}
           onLoadMore={onLoadMore}
           onSortChange={onSortChange}
-          renderActions={deleteEndpoint || exportEndpoint ? () => (
-            <>
-              {exportEndpoint && (
-                <ExportButton
-                  url={`${exportEndpoint}?ids=${selectedIds.join(',')}`}
-                  label={t('exportSelection', { count: selectedIds.length })}
-                />
-              )}
-              {isShowingDeleted && (
-                <Button variant="outline" size="sm" onClick={handleRestore}>
-                  <RotateCcw className="w-4 h-4" />
-                  {t('restore')}
-                </Button>
-              )}
-              {deleteEndpoint && (
-                <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-                  <Trash2 className="w-4 h-4" />
-                  {isShowingDeleted ? t('deletePermanently') : t('delete')}
-                </Button>
-              )}
-            </>
-          ) : undefined}
+          renderActions={
+            deleteEndpoint || exportEndpoint
+              ? () => (
+                  <>
+                    {exportEndpoint && (
+                      <ExportButton
+                        url={`${exportEndpoint}?ids=${selectedIds.join(',')}`}
+                        label={t('exportSelection', { count: selectedIds.length })}
+                      />
+                    )}
+                    {isShowingDeleted && (
+                      <Button variant="outline" size="sm" onClick={handleRestore}>
+                        <RotateCcw className="w-4 h-4" />
+                        {t('restore')}
+                      </Button>
+                    )}
+                    {deleteEndpoint && (
+                      <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+                        <Trash2 className="w-4 h-4" />
+                        {isShowingDeleted ? t('deletePermanently') : t('delete')}
+                      </Button>
+                    )}
+                  </>
+                )
+              : undefined
+          }
         />
       )}
 
@@ -215,16 +213,19 @@ export function ListPage({
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative z-50 bg-popover rounded-xl p-4 shadow-lg w-full max-w-sm mx-4 space-y-4 ring-1 ring-foreground/10">
             <div>
-              <h3 className="font-medium">{isShowingDeleted ? t('deleteConfirm.titlePermanent') : t('deleteConfirm.title')}</h3>
+              <h3 className="font-medium">
+                {isShowingDeleted ? t('deleteConfirm.titlePermanent') : t('deleteConfirm.title')}
+              </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {isShowingDeleted
                   ? t('deleteConfirm.messagePermanent', { count: selectedIds.length })
-                  : t('deleteConfirm.message', { count: selectedIds.length })
-                }
+                  : t('deleteConfirm.message', { count: selectedIds.length })}
               </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>{t('cancel')}</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+                {t('cancel')}
+              </Button>
               <Button variant="destructive" size="sm" onClick={confirmDelete}>
                 {isShowingDeleted ? t('deletePermanently') : t('delete')}
               </Button>

@@ -53,7 +53,7 @@ export default function SessionDetail() {
     if (!session?.drivers?.length) return []
 
     const drivers = session.drivers
-    const allBestLaps = drivers.map(d => d.bestLapTime).filter(t => t && t > 0)
+    const allBestLaps = drivers.map((d) => d.bestLapTime).filter((t) => t && t > 0)
     const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
 
     // Sort
@@ -115,7 +115,7 @@ export default function SessionDetail() {
       lapsByCtrl.get(lap.controller).push({ lapNumber: lap.lapNumber, lapTime: Math.round(lap.lapTime) })
     }
 
-    return (session.drivers || []).map(sd => ({
+    return (session.drivers || []).map((sd) => ({
       id: sd.id,
       controller: sd.controller,
       driver: sd.driver,
@@ -135,7 +135,7 @@ export default function SessionDetail() {
 
   // Fastest lap
   const fastestLap = useMemo(() => {
-    const times = (session?.drivers || []).map(d => d.bestLapTime).filter(t => t && t > 0)
+    const times = (session?.drivers || []).map((d) => d.bestLapTime).filter((t) => t && t > 0)
     return times.length > 0 ? Math.min(...times) : null
   }, [session])
 
@@ -181,8 +181,12 @@ export default function SessionDetail() {
           <TypeIcon className="size-5 text-muted-foreground" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-lg">{session.name || t('unnamedSession', { id: session.id.slice(0, 8) })}</h1>
-              <Badge variant="outline">{t(`glossary:sessionTypeFull.${session.type}`, { defaultValue: session.type })}</Badge>
+              <h1 className="font-bold text-lg">
+                {session.name || t('unnamedSession', { id: session.id.slice(0, 8) })}
+              </h1>
+              <Badge variant="outline">
+                {t(`glossary:sessionTypeFull.${session.type}`, { defaultValue: session.type })}
+              </Badge>
               <Badge variant={session.status === SessionStatus.FINISHED ? 'default' : 'secondary'}>
                 {t(`glossary:sessionStatus.${session.status}`, { defaultValue: session.status })}
               </Badge>
@@ -195,7 +199,10 @@ export default function SessionDetail() {
                 </Link>
               )}
               {session.championship && (
-                <Link to={`/championships/${session.championship.id}`} className="hover:underline flex items-center gap-1">
+                <Link
+                  to={`/championships/${session.championship.id}`}
+                  className="hover:underline flex items-center gap-1"
+                >
                   <Trophy className="size-3" />
                   {session.championship.name}
                 </Link>
@@ -232,40 +239,38 @@ export default function SessionDetail() {
         )}
 
         {/* DNF drivers */}
-        {entries.some(e => e.isDNF) && (
+        {entries.some((e) => e.isDNF) && (
           <div className="flex items-center gap-2 text-sm text-orange-500">
             <Flag className="size-4" />
-            DNF : {entries.filter(e => e.isDNF).map(e => e.driver?.name || `Ctrl ${e.controller + 1}`).join(', ')}
+            DNF :{' '}
+            {entries
+              .filter((e) => e.isDNF)
+              .map((e) => e.driver?.name || `Ctrl ${e.controller + 1}`)
+              .join(', ')}
           </div>
         )}
 
         {/* Main content: Leaderboard or Balancing Chart */}
         {isBalancing ? (
-          balancingEntries.some(e => e.laps.length > 0) ? (
+          balancingEntries.some((e) => e.laps.length > 0) ? (
             <BalancingChart entries={balancingEntries} />
           ) : (
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                {t('profile.noLapData')}
-              </CardContent>
+              <CardContent className="py-12 text-center text-muted-foreground">{t('profile.noLapData')}</CardContent>
             </Card>
           )
+        ) : entries.length > 0 ? (
+          <SessionLeaderboard
+            entries={entries}
+            sortBy={session.type === SessionType.RACE ? 'race' : 'bestLap'}
+            sessionType={session.type}
+            sessionStatus={session.status}
+            expanded
+          />
         ) : (
-          entries.length > 0 ? (
-            <SessionLeaderboard
-              entries={entries}
-              sortBy={session.type === SessionType.RACE ? 'race' : 'bestLap'}
-              sessionType={session.type}
-              sessionStatus={session.status}
-              expanded
-            />
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                {t('profile.noParticipants')}
-              </CardContent>
-            </Card>
-          )
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">{t('profile.noParticipants')}</CardContent>
+          </Card>
         )}
 
         {/* Lap history table */}
@@ -287,7 +292,7 @@ export default function SessionDetail() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {session.laps.map((lap, i) => {
-                      const driver = session.drivers?.find(d => d.controller === lap.controller)
+                      const driver = session.drivers?.find((d) => d.controller === lap.controller)
                       return (
                         <tr key={lap.id || i} className={`${lap.lapTime === fastestLap ? 'bg-purple-500/10' : ''}`}>
                           <td className="px-4 py-1.5 font-mono text-muted-foreground">{lap.lapNumber}</td>

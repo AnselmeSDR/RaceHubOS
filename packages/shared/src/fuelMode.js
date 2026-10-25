@@ -2,10 +2,10 @@
 export const FuelMode = Object.freeze({
   OFF: 'OFF',
   ON: 'ON',
-})
+});
 
-export const FUEL_MODES = Object.freeze(Object.values(FuelMode))
+export const FUEL_MODES = Object.freeze(Object.values(FuelMode));
 
 export function isFuelMode(value) {
-  return FUEL_MODES.includes(value)
+  return FUEL_MODES.includes(value);
 }

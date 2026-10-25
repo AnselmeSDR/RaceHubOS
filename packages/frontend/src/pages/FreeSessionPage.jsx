@@ -6,13 +6,7 @@ import { useDevice } from '../context/DeviceContext'
 import { useSession } from '../context/SessionContext'
 import { useApp } from '../context/AppContext'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import SessionSection from '../components/championship/SessionSection'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import StartingGrid from '../components/race/StartingGrid'
@@ -24,7 +18,10 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 // Tailwind cannot build class names at runtime, so each type's colour is
 // spelled out; the list of types themselves comes from @racehubos/shared
 const TAB_STYLE = {
-  [SessionType.PRACTICE]: { icon: FlaskConical, color: 'data-active:!text-session-practice hover:!text-session-practice' },
+  [SessionType.PRACTICE]: {
+    icon: FlaskConical,
+    color: 'data-active:!text-session-practice hover:!text-session-practice',
+  },
   [SessionType.QUALIF]: { icon: Clock, color: 'data-active:!text-session-qualif hover:!text-session-qualif' },
   [SessionType.RACE]: { icon: Flag, color: 'data-active:!text-session-race hover:!text-session-race' },
 }
@@ -51,7 +48,14 @@ export default function FreeSessionPage() {
 
   const [tracks, setTracks] = useState([])
   const [loading, setLoading] = useState(false)
-  const { showStandings, toggleStandings, freeTrack: selectedTrackId, setFreeTrack: setSelectedTrackId, freeType: selectedType, setFreeType: setSelectedType } = useApp()
+  const {
+    showStandings,
+    toggleStandings,
+    freeTrack: selectedTrackId,
+    setFreeTrack: setSelectedTrackId,
+    freeType: selectedType,
+    setFreeType: setSelectedType,
+  } = useApp()
   const [standings, setStandings] = useState(emptyStandings)
   const [practiceSortBy, setPracticeSortBy] = useState('laps')
   const [drivers, setDrivers] = useState([])
@@ -66,7 +70,9 @@ export default function FreeSessionPage() {
           fetch(`${API_URL}/api/cars`),
         ])
         const [tracksData, driversData, carsData] = await Promise.all([
-          tracksRes.json(), driversRes.json(), carsRes.json(),
+          tracksRes.json(),
+          driversRes.json(),
+          carsRes.json(),
         ])
         if (tracksData.success && tracksData.data?.length > 0) {
           setTracks(tracksData.data)
@@ -95,9 +101,14 @@ export default function FreeSessionPage() {
       const data = await res.json()
       if (data.success) {
         setStandings({
-          practice: (data.data.practice || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
-          qualif: (data.data.qualif || []).map(lap => ({ ...lap, bestTime: lap.lapTime })),
-          race: (data.data.race || []).map(lap => ({ ...lap, bestTime: lap.lapTime, totalLaps: lap.totalLaps || lap.laps || 0, totalTime: lap.totalTime || null })),
+          practice: (data.data.practice || []).map((lap) => ({ ...lap, bestTime: lap.lapTime })),
+          qualif: (data.data.qualif || []).map((lap) => ({ ...lap, bestTime: lap.lapTime })),
+          race: (data.data.race || []).map((lap) => ({
+            ...lap,
+            bestTime: lap.lapTime,
+            totalLaps: lap.totalLaps || lap.laps || 0,
+            totalTime: lap.totalTime || null,
+          })),
         })
       }
     } catch (error) {
@@ -105,7 +116,9 @@ export default function FreeSessionPage() {
     }
   }, [selectedTrackId])
 
-  useEffect(() => { fetchStandings() }, [selectedTrackId])
+  useEffect(() => {
+    fetchStandings()
+  }, [selectedTrackId])
 
   // Refetch standings when a session finishes (auto-finish by time/laps)
   useEffect(() => {
@@ -124,13 +137,15 @@ export default function FreeSessionPage() {
 
       // If newly created session has no drivers, copy from previous session
       if ((!foundSession.drivers || foundSession.drivers.length === 0) && previousDrivers.length > 0) {
-        const driversConfig = previousDrivers.map(sd => ({
-          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
+        const driversConfig = previousDrivers.map((sd) => ({
+          controller: sd.controller,
+          driverId: sd.driverId,
+          carId: sd.carId,
         }))
         await fetch(`${API_URL}/api/sessions/${foundSession.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: driversConfig })
+          body: JSON.stringify({ drivers: driversConfig }),
         })
       }
       await loadSession(foundSession.id)
@@ -155,13 +170,15 @@ export default function FreeSessionPage() {
         gracePeriod: session?.gracePeriod || 30000,
       })
       if (result.success && result.data?.id && session?.drivers?.length > 0) {
-        const driversConfig = session.drivers.map(sd => ({
-          controller: sd.controller, driverId: sd.driverId, carId: sd.carId,
+        const driversConfig = session.drivers.map((sd) => ({
+          controller: sd.controller,
+          driverId: sd.driverId,
+          carId: sd.carId,
         }))
         await fetch(`${API_URL}/api/sessions/${result.data.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: driversConfig })
+          body: JSON.stringify({ drivers: driversConfig }),
         })
         await loadSession(result.data.id)
       }
@@ -176,8 +193,12 @@ export default function FreeSessionPage() {
     if (!session?.id) return
     await startSession(session.id)
   }
-  const handlePause = async () => { if (session?.id) await pauseSession(session.id) }
-  const handleResume = async () => { if (session?.id) await resumeSession(session.id) }
+  const handlePause = async () => {
+    if (session?.id) await pauseSession(session.id)
+  }
+  const handleResume = async () => {
+    if (session?.id) await resumeSession(session.id)
+  }
   const handleStop = async () => {
     if (!session?.id) return
     await stopSession(session.id)
@@ -186,18 +207,28 @@ export default function FreeSessionPage() {
   const handleSaveConfig = async (data) => {
     if (!session?.id) return
     try {
-      if (data.name !== undefined || data.maxDuration !== undefined || data.maxLaps !== undefined || data.gracePeriod !== undefined) {
+      if (
+        data.name !== undefined ||
+        data.maxDuration !== undefined ||
+        data.maxLaps !== undefined ||
+        data.gracePeriod !== undefined
+      ) {
         await fetch(`${API_URL}/api/sessions/${session.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: data.name, maxDuration: data.maxDuration, maxLaps: data.maxLaps, gracePeriod: data.gracePeriod })
+          body: JSON.stringify({
+            name: data.name,
+            maxDuration: data.maxDuration,
+            maxLaps: data.maxLaps,
+            gracePeriod: data.gracePeriod,
+          }),
         })
       }
       if (data.status !== undefined && data.status !== session.status) {
         await fetch(`${API_URL}/api/sessions/${session.id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: data.status })
+          body: JSON.stringify({ status: data.status }),
         })
       }
       if (data.drivers?.length > 0) {
@@ -205,10 +236,10 @@ export default function FreeSessionPage() {
         await fetch(`${API_URL}/api/sessions/${session.id}/drivers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ drivers: data.drivers })
+          body: JSON.stringify({ drivers: data.drivers }),
         })
         // Sync to other free sessions on same track
-        const otherTypes = STANDARD_SESSION_TYPES.filter(type => type !== selectedType)
+        const otherTypes = STANDARD_SESSION_TYPES.filter((type) => type !== selectedType)
         for (const type of otherTypes) {
           const res = await fetch(`${API_URL}/api/sessions?trackId=${selectedTrackId}&type=${type}&championshipId=null`)
           const result = await res.json()
@@ -218,7 +249,7 @@ export default function FreeSessionPage() {
               await fetch(`${API_URL}/api/sessions/${otherSession.id}/drivers`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ drivers: data.drivers })
+                body: JSON.stringify({ drivers: data.drivers }),
               })
             }
           }
@@ -245,8 +276,9 @@ export default function FreeSessionPage() {
     if (result.success) await fetchStandings()
   }
 
-  const selectedTrack = tracks.find(track => track.id === selectedTrackId)
-  const isSessionActive = session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === selectedType
+  const selectedTrack = tracks.find((track) => track.id === selectedTrackId)
+  const isSessionActive =
+    session && ['active', 'paused', 'finishing'].includes(session.status) && session.type === selectedType
 
   return (
     <div className="h-full flex flex-col">
@@ -261,15 +293,17 @@ export default function FreeSessionPage() {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {tracks.map(track => (
-                <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>
+              {tracks.map((track) => (
+                <SelectItem key={track.id} value={track.id}>
+                  {track.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Tabs value={selectedType} onValueChange={setSelectedType}>
             <TabsList>
-              {STANDARD_SESSION_TYPES.map(type => {
+              {STANDARD_SESSION_TYPES.map((type) => {
                 const { icon: Icon, color } = TAB_STYLE[type]
                 return (
                   <TabsTrigger key={type} value={type} className={color}>
@@ -330,37 +364,43 @@ export default function FreeSessionPage() {
                   onReset={handleResetSession}
                 />
 
-                {session && (
-                  maxLapsCompleted === 0 && session.status !== SessionStatus.FINISHED ? (
+                {session &&
+                  (maxLapsCompleted === 0 && session.status !== SessionStatus.FINISHED ? (
                     <StartingGrid entries={entries} />
                   ) : (
                     <SessionLeaderboard
                       entries={entries}
                       expanded={!showStandings}
-                      sortBy={session.type === SessionType.PRACTICE ? practiceSortBy : session.type === SessionType.QUALIF ? 'bestLap' : 'race'}
+                      sortBy={
+                        session.type === SessionType.PRACTICE
+                          ? practiceSortBy
+                          : session.type === SessionType.QUALIF
+                            ? 'bestLap'
+                            : 'race'
+                      }
                       onSortChange={session.type === SessionType.PRACTICE ? setPracticeSortBy : undefined}
                       sessionType={session.type}
                       sessionStatus={session.status}
                     />
-                  )
-                )}
+                  ))}
               </>
             )}
           </div>
 
           {/* Right: Standings */}
-          {showStandings && <div>
-            <h2 className="text-sm font-semibold mb-3">{t('standings.title')}</h2>
-            <StandingsTabs
-              standings={standings}
-              drivers={drivers}
-              activeTab={selectedType}
-              onTabChange={setSelectedType}
-            />
-          </div>}
+          {showStandings && (
+            <div>
+              <h2 className="text-sm font-semibold mb-3">{t('standings.title')}</h2>
+              <StandingsTabs
+                standings={standings}
+                drivers={drivers}
+                activeTab={selectedType}
+                onTabChange={setSelectedType}
+              />
+            </div>
+          )}
         </div>
       </div>
-
     </div>
   )
 }

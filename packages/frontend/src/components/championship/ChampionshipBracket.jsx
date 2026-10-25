@@ -22,12 +22,10 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
   const { t } = useTranslation('championships')
   const s = STATUS_COLORS[status] || STATUS_COLORS.draft
   const StatusIcon = STATUS_ICONS[status] || Circle
-  const borderColor = type === SessionType.QUALIF
-    ? 'border-blue-200 dark:border-blue-800'
-    : 'border-green-200 dark:border-green-800'
-  const bgColor = type === SessionType.QUALIF
-    ? 'bg-blue-50/50 dark:bg-blue-950/20'
-    : 'bg-green-50/50 dark:bg-green-950/20'
+  const borderColor =
+    type === SessionType.QUALIF ? 'border-blue-200 dark:border-blue-800' : 'border-green-200 dark:border-green-800'
+  const bgColor =
+    type === SessionType.QUALIF ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'bg-green-50/50 dark:bg-green-950/20'
 
   return (
     <div className={`border ${borderColor} rounded-lg p-3 ${bgColor}`}>
@@ -46,23 +44,28 @@ function BracketCard({ label, name, status, drivers, type, showTimes = false }) 
             const isPodium = isFinishedRace && sd.finalPos >= 1 && sd.finalPos <= 3
             return (
               <div key={sd.id || i} className="flex items-center gap-2 text-xs">
-                {sd.gridPos && (
-                  <span className="w-4 text-right text-muted-foreground">{sd.gridPos}.</span>
-                )}
+                {sd.gridPos && <span className="w-4 text-right text-muted-foreground">{sd.gridPos}.</span>}
                 {sd.driver?.img && (
                   <img src={`${API_URL}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
                 )}
                 <span className="flex-1 truncate">{sd.driver?.name || '?'}</span>
                 {isFinishedRace && sd.finalPos && (
-                  <span className={`font-medium tabular-nums ${
-                    isPodium ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'
-                  }`}>P{sd.finalPos}</span>
+                  <span
+                    className={`font-medium tabular-nums ${
+                      isPodium ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'
+                    }`}
+                  >
+                    P{sd.finalPos}
+                  </span>
                 )}
-                {showTimes && (
-                  type === SessionType.RACE
-                    ? sd.totalTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
-                    : sd.bestLapTime > 0 && <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
-                )}
+                {showTimes &&
+                  (type === SessionType.RACE
+                    ? sd.totalTime > 0 && (
+                        <span className="text-muted-foreground tabular-nums">{formatTime(sd.totalTime)}</span>
+                      )
+                    : sd.bestLapTime > 0 && (
+                        <span className="text-muted-foreground tabular-nums">{formatTime(sd.bestLapTime)}</span>
+                      ))}
               </div>
             )
           })}
@@ -136,11 +139,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('bracket.qualifications')}</h3>
           {qualifGroups.map((g) => (
-            <button
-              key={g.sessionId}
-              className="w-full text-left"
-              onClick={() => onSessionSelect?.(g.sessionId)}
-            >
+            <button key={g.sessionId} className="w-full text-left" onClick={() => onSessionSelect?.(g.sessionId)}>
               <BracketCard
                 label={g.label}
                 name={g.name}
@@ -157,13 +156,17 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
         <div className="flex flex-col items-center justify-center min-h-[200px] px-2">
           {allQualifsFinished ? (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-center text-muted-foreground mb-2">{t('bracket.qualifRanking')}</p>
+              <p className="text-xs font-semibold text-center text-muted-foreground mb-2">
+                {t('bracket.qualifRanking')}
+              </p>
               <div className="border border-border rounded-lg p-2 bg-card space-y-1 min-w-[140px]">
                 {mergedRanking.map((entry) => (
                   <div key={entry.driverId} className="flex items-center gap-2 text-xs">
-                    <span className={`w-4 text-right font-medium ${
-                      entry.position <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'
-                    }`}>
+                    <span
+                      className={`w-4 text-right font-medium ${
+                        entry.position <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'
+                      }`}
+                    >
                       {entry.position}
                     </span>
                     {entry.driver?.img && (
@@ -178,7 +181,10 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
           ) : (
             <div className="text-center space-y-2">
               <ChevronRight className="w-6 h-6 text-muted-foreground mx-auto" />
-              <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('bracket.rankingAfterQualifs') }} />
+              <p
+                className="text-xs text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: t('bracket.rankingAfterQualifs') }}
+              />
             </div>
           )}
         </div>
@@ -187,11 +193,7 @@ export default function ChampionshipBracket({ championshipId, onSessionSelect })
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">{t('bracket.races')}</h3>
           {raceGroups.map((g) => (
-            <button
-              key={g.sessionId}
-              className="w-full text-left"
-              onClick={() => onSessionSelect?.(g.sessionId)}
-            >
+            <button key={g.sessionId} className="w-full text-left" onClick={() => onSessionSelect?.(g.sessionId)}>
               <BracketCard
                 label={g.label}
                 name={g.name}

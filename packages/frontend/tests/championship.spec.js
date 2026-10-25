@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test'
 const API_URL = 'http://localhost:3000'
 
 test.describe('Championship User Journey', () => {
-
   test.beforeEach(async ({ page }) => {
     // Wait for API to be ready
     await page.goto('/')
@@ -54,7 +53,7 @@ test.describe('Championship User Journey', () => {
 
     // Get first championship link
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
@@ -79,7 +78,7 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
@@ -90,7 +89,7 @@ test.describe('Championship User Journey', () => {
 
       // - Status badge
       const statusBadge = page.locator('.rounded-full').filter({
-        hasText: /brouillon|pret|en cours|termine/i
+        hasText: /brouillon|pret|en cours|termine/i,
       })
       console.log('Status badges found:', await statusBadge.count())
 
@@ -105,14 +104,14 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Check StandingsTabs component
       // - Tab buttons
       const tabButtons = page.locator('button').filter({
-        hasText: /essais libres|qualif|course/i
+        hasText: /essais libres|qualif|course/i,
       })
       const tabCount = await tabButtons.count()
       console.log('Standing tabs found:', tabCount)
@@ -139,13 +138,13 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Click "+ Qualif" button
       const addQualifBtn = page.locator('button').filter({ hasText: /qualif/i })
-      if (await addQualifBtn.count() > 0) {
+      if ((await addQualifBtn.count()) > 0) {
         await addQualifBtn.click()
 
         // Check modal opened
@@ -156,8 +155,11 @@ test.describe('Championship User Journey', () => {
         await expect(page.getByText(/qualification|qualif/i)).toBeVisible()
 
         // Close modal
-        const closeBtn = page.locator('button').filter({ hasText: /annuler|fermer/i }).first()
-        if (await closeBtn.count() > 0) {
+        const closeBtn = page
+          .locator('button')
+          .filter({ hasText: /annuler|fermer/i })
+          .first()
+        if ((await closeBtn.count()) > 0) {
           await closeBtn.click()
         } else {
           // Click X button
@@ -172,13 +174,13 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Click "+ Course" button
       const addRaceBtn = page.locator('button').filter({ hasText: /course/i })
-      if (await addRaceBtn.count() > 0) {
+      if ((await addRaceBtn.count()) > 0) {
         await addRaceBtn.click()
 
         // Check modal opened
@@ -197,13 +199,13 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Click config button (cog icon)
       const configBtn = page.locator('button[title*="onfigur"]').first()
-      if (await configBtn.count() > 0) {
+      if ((await configBtn.count()) > 0) {
         await configBtn.click()
         await page.waitForTimeout(300)
 
@@ -217,7 +219,7 @@ test.describe('Championship User Journey', () => {
 
         // - Controller config table
         const controllerTable = page.locator('table')
-        if (await controllerTable.count() > 0) {
+        if ((await controllerTable.count()) > 0) {
           console.log('Controller config table found')
         }
 
@@ -227,7 +229,7 @@ test.describe('Championship User Journey', () => {
 
         // Close modal
         const cancelBtn = page.locator('button').filter({ hasText: /annuler/i })
-        if (await cancelBtn.count() > 0) {
+        if ((await cancelBtn.count()) > 0) {
           await cancelBtn.click()
         }
       }
@@ -239,7 +241,7 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
@@ -262,15 +264,13 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Check for leaderboard component
       // Look for position numbers or driver names
-      const leaderboardRows = page.locator('[class*="divide-y"] > div').or(
-        page.locator('table tbody tr')
-      )
+      const leaderboardRows = page.locator('[class*="divide-y"] > div').or(page.locator('table tbody tr'))
       const rowCount = await leaderboardRows.count()
       console.log('Leaderboard rows found:', rowCount)
 
@@ -285,16 +285,14 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
       // Look for data freshness indicator
-      const freshnessIndicator = page.locator('[class*="text-green"]').or(
-        page.locator('[class*="text-yellow"]').or(
-          page.locator('[class*="text-red"]')
-        )
-      )
+      const freshnessIndicator = page
+        .locator('[class*="text-green"]')
+        .or(page.locator('[class*="text-yellow"]').or(page.locator('[class*="text-red"]')))
       console.log('Freshness indicators found:', await freshnessIndicator.count())
     }
   })
@@ -304,7 +302,7 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
       await expect(page).toHaveURL(/\/championships\//)
@@ -321,13 +319,13 @@ test.describe('Championship User Journey', () => {
 
   test('13. Console errors check', async ({ page }) => {
     const errors = []
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'error') {
         errors.push(msg.text())
       }
     })
 
-    page.on('pageerror', err => {
+    page.on('pageerror', (err) => {
       errors.push(err.message)
     })
 
@@ -336,7 +334,7 @@ test.describe('Championship User Journey', () => {
     await page.waitForLoadState('networkidle')
 
     const firstLink = page.locator('a[href^="/championships/"]').first()
-    if (await firstLink.count() > 0) {
+    if ((await firstLink.count()) > 0) {
       await firstLink.click()
       await page.waitForLoadState('networkidle')
 
@@ -347,14 +345,12 @@ test.describe('Championship User Journey', () => {
     // Report errors
     if (errors.length > 0) {
       console.log('Console errors found:')
-      errors.forEach(e => console.log(' -', e))
+      errors.forEach((e) => console.log(' -', e))
     }
 
     // Filter out expected errors (like WebSocket connection issues in test env)
-    const criticalErrors = errors.filter(e =>
-      !e.includes('WebSocket') &&
-      !e.includes('socket') &&
-      !e.includes('net::ERR')
+    const criticalErrors = errors.filter(
+      (e) => !e.includes('WebSocket') && !e.includes('socket') && !e.includes('net::ERR')
     )
 
     expect(criticalErrors).toHaveLength(0)

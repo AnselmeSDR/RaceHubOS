@@ -17,9 +17,12 @@ router.get('/', async (req, res) => {
     const parsedOffset = parseInt(offset);
 
     const isComputedSort = sortBy === 'bestLap';
-    const dbOrderBy = sortBy === 'sessions' ? { sessions: { _count: sortOrder } }
-      : isComputedSort ? undefined
-      : { [sortBy]: sortOrder };
+    const dbOrderBy =
+      sortBy === 'sessions'
+        ? { sessions: { _count: sortOrder } }
+        : isComputedSort
+          ? undefined
+          : { [sortBy]: sortOrder };
 
     const [allCars, total] = await Promise.all([
       prisma.car.findMany({
@@ -46,7 +49,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: cars.map(c => withImageUrl(c)),
+      data: cars.map((c) => withImageUrl(c)),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -174,16 +177,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/cars - Create new car
 router.post('/', async (req, res) => {
   try {
-    const {
-      brand,
-      model,
-      year,
-      img,
-      color,
-      maxSpeed,
-      brakeForce,
-      fuelCapacity,
-    } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
 
     // Validation
     if (!brand || brand.trim().length === 0) {
@@ -231,16 +225,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      brand,
-      model,
-      year,
-      img,
-      color,
-      maxSpeed,
-      brakeForce,
-      fuelCapacity,
-    } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
 
     // Check if car exists
     const exists = await prisma.car.findUnique({

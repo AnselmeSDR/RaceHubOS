@@ -34,43 +34,183 @@ function App() {
       <AppProvider>
         <DeviceProvider>
           <VoiceProvider>
-          <SessionProvider>
-          <TooltipProvider>
-          <Routes>
-          {/* Main layout with sidebar */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Suspense><Dashboard /></Suspense>} />
-            {/* Free session mode */}
-            <Route path="race" element={<Suspense><FreeSessionPage /></Suspense>} />
-            <Route path="balancing" element={<Suspense><BalancingPage /></Suspense>} />
-            {/* Championships */}
-            <Route path="championships" element={<Suspense><Championships /></Suspense>} />
-            <Route path="championships/:id" element={<Suspense><ChampionshipDetail /></Suspense>} />
-            {/* Core routes */}
-            <Route path="drivers" element={<Suspense><Drivers /></Suspense>} />
-            <Route path="drivers/:id" element={<Suspense><DriverProfile /></Suspense>} />
-            <Route path="cars" element={<Suspense><Cars /></Suspense>} />
-            <Route path="cars/:id" element={<Suspense><CarProfile /></Suspense>} />
-            <Route path="tracks" element={<Suspense><Tracks /></Suspense>} />
-            <Route path="tracks/:id" element={<Suspense><TrackProfile /></Suspense>} />
-            <Route path="teams" element={<Suspense><Teams /></Suspense>} />
-            {/* Session history */}
-            <Route path="sessions" element={<Suspense><SessionsList /></Suspense>} />
-            <Route path="sessions/:id" element={<Suspense><SessionDetail /></Suspense>} />
-            <Route path="history" element={<Suspense><SessionsList /></Suspense>} />
-            {/* Utils */}
-            <Route path="stats" element={<Suspense><Stats /></Suspense>} />
-            <Route path="settings" element={<Suspense><Settings /></Suspense>} />
-            <Route path="displays" element={<Suspense><Displays /></Suspense>} />
-            <Route path="demo-displays" element={<Suspense><DriverDisplayDemo /></Suspense>} />
-            <Route path="test" element={<Suspense><Test /></Suspense>} />
-          </Route>
+            <SessionProvider>
+              <TooltipProvider>
+                <Routes>
+                  {/* Main layout with sidebar */}
+                  <Route path="/" element={<Layout />}>
+                    <Route
+                      index
+                      element={
+                        <Suspense>
+                          <Dashboard />
+                        </Suspense>
+                      }
+                    />
+                    {/* Free session mode */}
+                    <Route
+                      path="race"
+                      element={
+                        <Suspense>
+                          <FreeSessionPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="balancing"
+                      element={
+                        <Suspense>
+                          <BalancingPage />
+                        </Suspense>
+                      }
+                    />
+                    {/* Championships */}
+                    <Route
+                      path="championships"
+                      element={
+                        <Suspense>
+                          <Championships />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="championships/:id"
+                      element={
+                        <Suspense>
+                          <ChampionshipDetail />
+                        </Suspense>
+                      }
+                    />
+                    {/* Core routes */}
+                    <Route
+                      path="drivers"
+                      element={
+                        <Suspense>
+                          <Drivers />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="drivers/:id"
+                      element={
+                        <Suspense>
+                          <DriverProfile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="cars"
+                      element={
+                        <Suspense>
+                          <Cars />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="cars/:id"
+                      element={
+                        <Suspense>
+                          <CarProfile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="tracks"
+                      element={
+                        <Suspense>
+                          <Tracks />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="tracks/:id"
+                      element={
+                        <Suspense>
+                          <TrackProfile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="teams"
+                      element={
+                        <Suspense>
+                          <Teams />
+                        </Suspense>
+                      }
+                    />
+                    {/* Session history */}
+                    <Route
+                      path="sessions"
+                      element={
+                        <Suspense>
+                          <SessionsList />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="sessions/:id"
+                      element={
+                        <Suspense>
+                          <SessionDetail />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="history"
+                      element={
+                        <Suspense>
+                          <SessionsList />
+                        </Suspense>
+                      }
+                    />
+                    {/* Utils */}
+                    <Route
+                      path="stats"
+                      element={
+                        <Suspense>
+                          <Stats />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="settings"
+                      element={
+                        <Suspense>
+                          <Settings />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="displays"
+                      element={
+                        <Suspense>
+                          <Displays />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="demo-displays"
+                      element={
+                        <Suspense>
+                          <DriverDisplayDemo />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="test"
+                      element={
+                        <Suspense>
+                          <Test />
+                        </Suspense>
+                      }
+                    />
+                  </Route>
 
-          {/* Routes without sidebar */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </TooltipProvider>
-          </SessionProvider>
+                  {/* Routes without sidebar */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </TooltipProvider>
+            </SessionProvider>
           </VoiceProvider>
         </DeviceProvider>
       </AppProvider>

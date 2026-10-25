@@ -19,7 +19,17 @@ const prisma = () => sessionService.prisma;
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, championshipId, trackId, type, deleted, limit = '50', offset = '0', sortBy = 'updatedAt', sortOrder = 'desc' } = req.query;
+    const {
+      status,
+      championshipId,
+      trackId,
+      type,
+      deleted,
+      limit = '50',
+      offset = '0',
+      sortBy = 'updatedAt',
+      sortOrder = 'desc',
+    } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     if (status && status !== 'all') where.status = status.includes(',') ? { in: status.split(',') } : status;
     if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
@@ -32,7 +42,7 @@ router.get('/', async (req, res) => {
     if (championshipId) {
       const ids = championshipId.split(',');
       const hasNull = ids.includes('null');
-      const realIds = ids.filter(id => id !== 'null');
+      const realIds = ids.filter((id) => id !== 'null');
       if (hasNull && realIds.length) {
         where.OR = [{ championshipId: null }, { championshipId: { in: realIds } }];
       } else if (hasNull) {
@@ -50,9 +60,11 @@ router.get('/', async (req, res) => {
     const useDbSort = !computedSorts.includes(sortField);
 
     const dbOrderBy = useDbSort
-      ? sortField === 'track' ? { track: { name: sortOrder } }
-      : sortField === 'championship' ? { championship: { name: sortOrder } }
-      : { [sortField]: sortOrder }
+      ? sortField === 'track'
+        ? { track: { name: sortOrder } }
+        : sortField === 'championship'
+          ? { championship: { name: sortOrder } }
+          : { [sortField]: sortOrder }
       : undefined;
 
     const [allSessions, total] = await Promise.all([
@@ -62,7 +74,7 @@ router.get('/', async (req, res) => {
           track: true,
           championship: true,
           drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
-          _count: { select: { laps: { where: { deletedAt: null } } } }
+          _count: { select: { laps: { where: { deletedAt: null } } } },
         },
         orderBy: dbOrderBy,
         ...(useDbSort ? { skip: parsedOffset, take: parsedLimit } : {}),
@@ -76,13 +88,15 @@ router.get('/', async (req, res) => {
       if (sortField === 'track') {
         sorted = [...allSessions].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
       } else if (sortField === 'championship') {
-        sorted = [...allSessions].sort((a, b) => dir * (a.championship?.name || '').localeCompare(b.championship?.name || ''));
+        sorted = [...allSessions].sort(
+          (a, b) => dir * (a.championship?.name || '').localeCompare(b.championship?.name || '')
+        );
       } else if (sortField === 'drivers') {
         sorted = [...allSessions].sort((a, b) => dir * ((a.drivers?.length || 0) - (b.drivers?.length || 0)));
       } else if (sortField === 'laps') {
         sorted = [...allSessions].sort((a, b) => dir * ((a._count?.laps || 0) - (b._count?.laps || 0)));
       } else if (sortField === 'duration') {
-        const dur = (s) => s.startedAt && s.finishedAt ? new Date(s.finishedAt) - new Date(s.startedAt) : 0;
+        const dur = (s) => (s.startedAt && s.finishedAt ? new Date(s.finishedAt) - new Date(s.startedAt) : 0);
         sorted = [...allSessions].sort((a, b) => dir * (dur(a) - dur(b)));
       }
     }
@@ -127,14 +141,14 @@ router.get('/:id', async (req, res) => {
         drivers: {
           where: { deletedAt: null },
           include: { driver: true, car: true },
-          orderBy: { controller: 'asc' }
+          orderBy: { controller: 'asc' },
         },
         laps: {
           where: { deletedAt: null },
           include: { driver: true },
-          orderBy: { timestamp: 'asc' }
-        }
-      }
+          orderBy: { timestamp: 'asc' },
+        },
+      },
     });
 
     if (!session) {
@@ -180,7 +194,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-
 /**
  * PUT /api/sessions/:id
  */
@@ -205,8 +218,8 @@ router.put('/:id', async (req, res) => {
       include: {
         track: true,
         championship: true,
-        drivers: { include: { driver: true, car: true } }
-      }
+        drivers: { include: { driver: true, car: true } },
+      },
     });
 
     res.json({ success: true, data: session });
@@ -311,7 +324,7 @@ router.put('/:id/drivers', async (req, res) => {
     const reference = session.type === SessionType.BALANCING ? await getReferenceDriver(prisma()) : null;
 
     // Accept partial configs (driver OR car) for draft sessions
-    const validDrivers = drivers.filter(d => (d.driverId || d.carId) && d.controller !== undefined);
+    const validDrivers = drivers.filter((d) => (d.driverId || d.carId) && d.controller !== undefined);
     if (validDrivers.length > 0) {
       await prisma().sessionDriver.createMany({
         data: validDrivers.map((d, idx) => ({
@@ -319,8 +332,8 @@ router.put('/:id/drivers', async (req, res) => {
           driverId: reference?.id ?? d.driverId ?? null,
           carId: d.carId || null,
           controller: Number(d.controller),
-          gridPos: d.gridPos ?? idx + 1
-        }))
+          gridPos: d.gridPos ?? idx + 1,
+        })),
       });
     }
 
@@ -329,8 +342,8 @@ router.put('/:id/drivers', async (req, res) => {
       include: {
         track: true,
         championship: true,
-        drivers: { include: { driver: true, car: true }, orderBy: { controller: 'asc' } }
-      }
+        drivers: { include: { driver: true, car: true }, orderBy: { controller: 'asc' } },
+      },
     });
 
     res.json({ success: true, data: updatedSession });
@@ -352,13 +365,13 @@ router.patch('/:id/status', async (req, res) => {
     if (!newStatus || !validStatuses.includes(newStatus)) {
       return res.status(400).json({
         success: false,
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
       });
     }
 
     const session = await prisma().session.findUnique({
       where: { id },
-      include: { drivers: { include: { driver: true, car: true } } }
+      include: { drivers: { include: { driver: true, car: true } } },
     });
 
     if (!session) {
@@ -371,13 +384,13 @@ router.patch('/:id/status', async (req, res) => {
       'active': ['paused', 'finishing', 'finished'],
       'paused': ['active', 'finished'],
       'finishing': ['finished'],
-      'finished': ['draft']
+      'finished': ['draft'],
     };
 
     if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
       return res.status(400).json({
         success: false,
-        error: `Cannot transition from '${currentStatus}' to '${newStatus}'`
+        error: `Cannot transition from '${currentStatus}' to '${newStatus}'`,
       });
     }
 
@@ -403,7 +416,7 @@ router.patch('/:id/status', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: `Status changed to '${newStatus}'` });
@@ -428,7 +441,7 @@ router.post('/:id/start', async (req, res) => {
     if (session.status !== SessionStatus.DRAFT) {
       return res.status(400).json({
         success: false,
-        error: `Session must be 'draft' to start, current: ${session.status}`
+        error: `Session must be 'draft' to start, current: ${session.status}`,
       });
     }
 
@@ -436,7 +449,7 @@ router.post('/:id/start', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session started' });
@@ -461,7 +474,7 @@ router.post('/:id/pause', async (req, res) => {
     if (session.status !== SessionStatus.ACTIVE) {
       return res.status(400).json({
         success: false,
-        error: `Session must be 'active' to pause, current: ${session.status}`
+        error: `Session must be 'active' to pause, current: ${session.status}`,
       });
     }
 
@@ -469,7 +482,7 @@ router.post('/:id/pause', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session paused' });
@@ -494,7 +507,7 @@ router.post('/:id/resume', async (req, res) => {
     if (session.status !== SessionStatus.PAUSED) {
       return res.status(400).json({
         success: false,
-        error: `Session must be 'paused' to resume, current: ${session.status}`
+        error: `Session must be 'paused' to resume, current: ${session.status}`,
       });
     }
 
@@ -502,7 +515,7 @@ router.post('/:id/resume', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session resumed' });
@@ -527,7 +540,7 @@ router.post('/:id/stop', async (req, res) => {
     if (!['active', 'paused', 'finishing'].includes(session.status)) {
       return res.status(400).json({
         success: false,
-        error: `Session must be active/paused/finishing to stop, current: ${session.status}`
+        error: `Session must be active/paused/finishing to stop, current: ${session.status}`,
       });
     }
 
@@ -535,7 +548,7 @@ router.post('/:id/stop', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session stopped' });
@@ -559,7 +572,7 @@ router.post('/:id/reset', async (req, res) => {
 
     const updatedSession = await prisma().session.findUnique({
       where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } }
+      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
     });
 
     res.json({ success: true, data: updatedSession, message: 'Session reset' });
@@ -584,7 +597,7 @@ router.get('/:id/leaderboard', async (req, res) => {
     // Otherwise calculate from DB
     const session = await prisma().session.findUnique({
       where: { id },
-      include: { drivers: { include: { driver: true, car: true } } }
+      include: { drivers: { include: { driver: true, car: true } } },
     });
 
     if (!session) {
@@ -595,7 +608,7 @@ router.get('/:id/leaderboard', async (req, res) => {
     for (const sd of session.drivers) {
       const laps = await prisma().lap.findMany({
         where: { sessionId: id, controller: sd.controller, deletedAt: null },
-        orderBy: { timestamp: 'desc' }
+        orderBy: { timestamp: 'desc' },
       });
 
       const entry = {
@@ -606,14 +619,14 @@ router.get('/:id/leaderboard', async (req, res) => {
         gridPos: sd.gridPos,
         totalLaps: laps.length,
         totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
-        bestLapTime: laps.length > 0 ? Math.min(...laps.map(l => l.lapTime)) : null,
+        bestLapTime: laps.length > 0 ? Math.min(...laps.map((l) => l.lapTime)) : null,
         lastLapTime: laps.length > 0 ? laps[0].lapTime : null,
       };
 
       // Include lap history for balancing sessions (needed for chart)
       if (session.type === SessionType.BALANCING) {
         const sortedLaps = [...laps].sort((a, b) => a.lapNumber - b.lapNumber);
-        entry.laps = sortedLaps.map(l => ({
+        entry.laps = sortedLaps.map((l) => ({
           lapNumber: l.lapNumber,
           lapTime: Math.round(l.lapTime),
         }));

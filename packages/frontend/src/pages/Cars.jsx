@@ -27,14 +27,22 @@ function RangeField({ label, value, onChange, min = 10, max = 100, step = 10, co
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       <div className="flex items-center gap-3">
-        <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseInt(e.target.value))}
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(parseInt(e.target.value))}
           className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
           style={{
             accentColor: color,
             background: `linear-gradient(to right, ${color} 0%, ${color} ${filled}%, var(--color-muted) ${filled}%, var(--color-muted) 100%)`,
-          }} />
+          }}
+        />
         <span className="text-sm font-medium w-12 text-right tabular-nums">
-          {level}<span className="text-muted-foreground">/10</span>
+          {level}
+          <span className="text-muted-foreground">/10</span>
         </span>
       </div>
     </div>
@@ -76,120 +84,141 @@ export default function Cars() {
       const res = await fetch(`${API_URL}/api/cars?${params}`)
       const data = await res.json()
       if (data.success) {
-        setCars(prev => isFirst ? data.data : [...prev, ...data.data])
+        setCars((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
       }
     } catch (err) {
       console.error('Failed to load cars:', err)
     } finally {
-      if (isFirst) { setLoading(false); hasLoadedOnce.current = true }
-      else setLoadingMore(false)
+      if (isFirst) {
+        setLoading(false)
+        hasLoadedOnce.current = true
+      } else setLoadingMore(false)
     }
   }
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'brand',
-      header: t('fields.brand'),
-      cell: ({ row }) => <span className="font-semibold">{row.original.brand}</span>,
-    },
-    {
-      accessorKey: 'model',
-      header: t('fields.model'),
-      cell: ({ row }) => {
-        const car = row.original
-        return (
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: car.color || '#22C55E' }}
-            >
-              {car.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                car.brand?.charAt(0)
-              )}
-            </div>
-            <span className="font-medium">{car.model}</span>
-          </div>
-        )
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'brand',
+        header: t('fields.brand'),
+        cell: ({ row }) => <span className="font-semibold">{row.original.brand}</span>,
       },
-    },
-    {
-      id: 'year',
-      accessorKey: 'year',
-      header: t('fields.year'),
-      cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
-    },
-    {
-      id: 'maxSpeed',
-      accessorKey: 'maxSpeed',
-      header: t('fields.speed'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-muted rounded-full h-2 w-20">
-            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${levelPercent(row.original.maxSpeed)}%` }} />
+      {
+        accessorKey: 'model',
+        header: t('fields.model'),
+        cell: ({ row }) => {
+          const car = row.original
+          return (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: car.color || '#22C55E' }}
+              >
+                {car.img ? (
+                  <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  car.brand?.charAt(0)
+                )}
+              </div>
+              <span className="font-medium">{car.model}</span>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'year',
+        accessorKey: 'year',
+        header: t('fields.year'),
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
+      },
+      {
+        id: 'maxSpeed',
+        accessorKey: 'maxSpeed',
+        header: t('fields.speed'),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-muted rounded-full h-2 w-20">
+              <div
+                className="bg-green-500 h-2 rounded-full"
+                style={{ width: `${levelPercent(row.original.maxSpeed)}%` }}
+              />
+            </div>
+            <span className="text-muted-foreground w-12 text-right tabular-nums">
+              {formatLevel(row.original.maxSpeed)}
+            </span>
           </div>
-          <span className="text-muted-foreground w-12 text-right tabular-nums">{formatLevel(row.original.maxSpeed)}</span>
-        </div>
-      ),
-    },
-    {
-      id: 'brakeForce',
-      accessorKey: 'brakeForce',
-      header: t('fields.braking'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-muted rounded-full h-2 w-20">
-            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${levelPercent(row.original.brakeForce)}%` }} />
+        ),
+      },
+      {
+        id: 'brakeForce',
+        accessorKey: 'brakeForce',
+        header: t('fields.braking'),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-muted rounded-full h-2 w-20">
+              <div
+                className="bg-red-500 h-2 rounded-full"
+                style={{ width: `${levelPercent(row.original.brakeForce)}%` }}
+              />
+            </div>
+            <span className="text-muted-foreground w-12 text-right tabular-nums">
+              {formatLevel(row.original.brakeForce)}
+            </span>
           </div>
-          <span className="text-muted-foreground w-12 text-right tabular-nums">{formatLevel(row.original.brakeForce)}</span>
-        </div>
-      ),
-    },
-    {
-      id: 'fuelCapacity',
-      accessorKey: 'fuelCapacity',
-      header: t('fields.fuel'),
-      cell: ({ row }) => <span className="text-muted-foreground tabular-nums">{formatLevel(row.original.fuelCapacity)}</span>,
-    },
-    {
-      id: 'bestLap',
-      accessorFn: (row) => row.bestLap || Infinity,
-      header: t('common:record'),
-      cell: ({ row }) => (
-        <span className="font-mono font-bold">
-          {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
-        </span>
-      ),
-    },
-    {
-      id: 'sessions',
-      accessorFn: (row) => row._count?.sessions || 0,
-      header: t('glossary:session', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {row.original._count?.sessions || 0}
-        </span>
-      ),
-    },
-    {
-      id: 'actions',
-      header: '',
-      enableSorting: false,
-      enableHiding: false,
-      cell: ({ row }) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); setEditingCar(row.original); setShowForm(true) }}
-          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      ),
-    },
-  ], [t])
+        ),
+      },
+      {
+        id: 'fuelCapacity',
+        accessorKey: 'fuelCapacity',
+        header: t('fields.fuel'),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground tabular-nums">{formatLevel(row.original.fuelCapacity)}</span>
+        ),
+      },
+      {
+        id: 'bestLap',
+        accessorFn: (row) => row.bestLap || Infinity,
+        header: t('common:record'),
+        cell: ({ row }) => (
+          <span className="font-mono font-bold">
+            {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
+          </span>
+        ),
+      },
+      {
+        id: 'sessions',
+        accessorFn: (row) => row._count?.sessions || 0,
+        header: t('glossary:session', { count: 2 }),
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <Flag className="w-4 h-4" />
+            {row.original._count?.sessions || 0}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditingCar(row.original)
+              setShowForm(true)
+            }}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        ),
+      },
+    ],
+    [t]
+  )
 
   // Deletion is confirmed inside the button itself, then the list reloads
   async function handleDelete(id) {
@@ -212,13 +241,25 @@ export default function Cars() {
       loading={loading}
       searchPlaceholder={t('searchPlaceholder')}
       addLabel={t('addLabel')}
-      onAdd={() => { setEditingCar(null); setShowForm(true) }}
+      onAdd={() => {
+        setEditingCar(null)
+        setShowForm(true)
+      }}
       onRowClick={(row) => !filters.deleted && navigate(`/cars/${row.id}`)}
-      rowClassName={() => filters.deleted ? 'opacity-50' : ''}
+      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((car) => (
-            <CarCard key={car.id} car={car} onClick={() => navigate(`/cars/${car.id}`)} onEdit={() => { setEditingCar(car); setShowForm(true) }} onDelete={() => handleDelete(car.id)} />
+            <CarCard
+              key={car.id}
+              car={car}
+              onClick={() => navigate(`/cars/${car.id}`)}
+              onEdit={() => {
+                setEditingCar(car)
+                setShowForm(true)
+              }}
+              onDelete={() => handleDelete(car.id)}
+            />
           ))}
         </div>
       )}
@@ -237,14 +278,18 @@ export default function Cars() {
           key: 'deleted',
           label: t('common:showDeleted'),
           checked: filters.deleted,
-          onChange: (v) => setFilters(f => ({ ...f, deleted: !!v })),
+          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
         },
       ]}
     >
       {showForm && (
         <CarFormModal
           car={editingCar}
-          onClose={() => { setShowForm(false); setEditingCar(null); loadData(0) }}
+          onClose={() => {
+            setShowForm(false)
+            setEditingCar(null)
+            loadData(0)
+          }}
         />
       )}
     </ListPage>
@@ -265,7 +310,10 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
     >
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
         <button
-          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
           className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
           aria-label={t('common:edit')}
         >
@@ -291,11 +339,15 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
             </div>
           </div>
           {car.year && (
-            <Badge variant="secondary" className="shadow-md">{car.year}</Badge>
+            <Badge variant="secondary" className="shadow-md">
+              {car.year}
+            </Badge>
           )}
         </div>
         <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{car.brand}</h3>
-        <p className="font-bold text-lg" style={{ color: carColor }}>{car.model}</p>
+        <p className="font-bold text-lg" style={{ color: carColor }}>
+          {car.model}
+        </p>
         <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: carColor }} />
       </div>
 
@@ -303,7 +355,13 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
         {[
           { icon: <Zap className="w-4 h-4" />, label: t('fields.speed'), value: car.maxSpeed, color: '#22C55E' },
           { icon: <Flame className="w-4 h-4" />, label: t('fields.braking'), value: car.brakeForce, color: '#EF4444' },
-          { icon: <FlaskConical className="w-4 h-4" />, label: t('fields.tank'), value: car.fuelCapacity, color: '#3B82F6', display: car.fuelCapacity },
+          {
+            icon: <FlaskConical className="w-4 h-4" />,
+            label: t('fields.tank'),
+            value: car.fuelCapacity,
+            color: '#3B82F6',
+            display: car.fuelCapacity,
+          },
         ].map((spec) => (
           <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
             <div className="flex items-center gap-2">
@@ -312,16 +370,23 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-20 bg-muted rounded-full h-2">
-                <div className="h-2 rounded-full" style={{ width: `${levelPercent(spec.value)}%`, backgroundColor: spec.color }} />
+                <div
+                  className="h-2 rounded-full"
+                  style={{ width: `${levelPercent(spec.value)}%`, backgroundColor: spec.color }}
+                />
               </div>
-              <span className="text-sm font-black w-12 text-right tabular-nums" style={{ color: spec.color }}>{formatLevel(spec.display ?? spec.value)}</span>
+              <span className="text-sm font-black w-12 text-right tabular-nums" style={{ color: spec.color }}>
+                {formatLevel(spec.display ?? spec.value)}
+              </span>
             </div>
           </div>
         ))}
         <div className="mt-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground uppercase">{t('glossary:race', { count: 2 })}</span>
-            <span className="text-lg font-black" style={{ color: carColor }}>{car._count?.sessions || 0}</span>
+            <span className="text-lg font-black" style={{ color: carColor }}>
+              {car._count?.sessions || 0}
+            </span>
           </div>
         </div>
       </div>
@@ -354,7 +419,7 @@ export function CarFormModal({ car, onClose }) {
       const res = await fetch(url, {
         method: car ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
@@ -383,15 +448,53 @@ export function CarFormModal({ car, onClose }) {
       success={success}
     >
       <div className="grid grid-cols-2 gap-4">
-        <TextField label={t('fields.brand')} value={formData.brand} onChange={(v) => setFormData(f => ({ ...f, brand: v }))} placeholder={t('form.brandPlaceholder')} required />
-        <TextField label={t('fields.model')} value={formData.model} onChange={(v) => setFormData(f => ({ ...f, model: v }))} placeholder={t('form.modelPlaceholder')} required />
+        <TextField
+          label={t('fields.brand')}
+          value={formData.brand}
+          onChange={(v) => setFormData((f) => ({ ...f, brand: v }))}
+          placeholder={t('form.brandPlaceholder')}
+          required
+        />
+        <TextField
+          label={t('fields.model')}
+          value={formData.model}
+          onChange={(v) => setFormData((f) => ({ ...f, model: v }))}
+          placeholder={t('form.modelPlaceholder')}
+          required
+        />
       </div>
-      <TextField label={t('fields.year')} type="number" value={formData.year} onChange={(v) => setFormData(f => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))} />
-      <PhotoUploadField value={formData.img} onChange={(img) => setFormData(f => ({ ...f, img }))} shape="rect" onError={setError} uploadType="cars" />
-      <ColorPickerField value={formData.color} onChange={(color) => setFormData(f => ({ ...f, color }))} />
-      <RangeField label={t('fields.maxSpeed')} value={formData.maxSpeed} onChange={(v) => setFormData(f => ({ ...f, maxSpeed: v }))} color="#22C55E" />
-      <RangeField label={t('fields.brakeForce')} value={formData.brakeForce} onChange={(v) => setFormData(f => ({ ...f, brakeForce: v }))} color="#EF4444" />
-      <RangeField label={t('fields.fuelCapacity')} value={formData.fuelCapacity} onChange={(v) => setFormData(f => ({ ...f, fuelCapacity: v }))} color="#3B82F6" />
+      <TextField
+        label={t('fields.year')}
+        type="number"
+        value={formData.year}
+        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
+      />
+      <PhotoUploadField
+        value={formData.img}
+        onChange={(img) => setFormData((f) => ({ ...f, img }))}
+        shape="rect"
+        onError={setError}
+        uploadType="cars"
+      />
+      <ColorPickerField value={formData.color} onChange={(color) => setFormData((f) => ({ ...f, color }))} />
+      <RangeField
+        label={t('fields.maxSpeed')}
+        value={formData.maxSpeed}
+        onChange={(v) => setFormData((f) => ({ ...f, maxSpeed: v }))}
+        color="#22C55E"
+      />
+      <RangeField
+        label={t('fields.brakeForce')}
+        value={formData.brakeForce}
+        onChange={(v) => setFormData((f) => ({ ...f, brakeForce: v }))}
+        color="#EF4444"
+      />
+      <RangeField
+        label={t('fields.fuelCapacity')}
+        value={formData.fuelCapacity}
+        onChange={(v) => setFormData((f) => ({ ...f, fuelCapacity: v }))}
+        color="#3B82F6"
+      />
 
       <FormSection title={t('fields.equipment')}>
         <div className="grid grid-cols-2 gap-4">
@@ -400,7 +503,7 @@ export function CarFormModal({ car, onClose }) {
               key={field}
               label={t(`fields.${field}`)}
               value={formData[field]}
-              onChange={(v) => setFormData(f => ({ ...f, [field]: v }))}
+              onChange={(v) => setFormData((f) => ({ ...f, [field]: v }))}
               placeholder={t(`form.${field}Placeholder`, '')}
             />
           ))}
@@ -415,7 +518,7 @@ export function CarFormModal({ car, onClose }) {
               label={t(`fields.${field}`)}
               type="number"
               value={formData[field]}
-              onChange={(v) => setFormData(f => ({ ...f, [field]: v }))}
+              onChange={(v) => setFormData((f) => ({ ...f, [field]: v }))}
             />
           ))}
         </div>
@@ -424,7 +527,7 @@ export function CarFormModal({ car, onClose }) {
       <TextField
         label={t('fields.notes')}
         value={formData.notes}
-        onChange={(v) => setFormData(f => ({ ...f, notes: v }))}
+        onChange={(v) => setFormData((f) => ({ ...f, notes: v }))}
         multiline
       />
     </FormModal>

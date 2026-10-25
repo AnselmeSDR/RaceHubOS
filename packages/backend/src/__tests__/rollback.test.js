@@ -21,10 +21,19 @@ describe('rollback', () => {
     git('config commit.gpgsign false');
 
     // v1: the version we must be able to come back to
-    fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({
-      name: 'rollback-fixture', version: '1.0.0', private: true,
-      scripts: { build: 'node -e "require(\'fs\').writeFileSync(\'dist.txt\', require(\'./package.json\').version)"' },
-    }, null, 2));
+    fs.writeFileSync(
+      path.join(repo, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'rollback-fixture',
+          version: '1.0.0',
+          private: true,
+          scripts: { build: "node -e \"require('fs').writeFileSync('dist.txt', require('./package.json').version)\"" },
+        },
+        null,
+        2
+      )
+    );
     fs.writeFileSync(path.join(repo, 'marker.txt'), 'v1');
     git('add -A');
     git('commit -q -m v1');
@@ -51,7 +60,6 @@ describe('rollback', () => {
   }, 120000);
 
   it('surfaces the failure instead of swallowing it when restoration is impossible', async () => {
-    await expect(rollback('deadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'build failed', { cwd: repo }))
-      .rejects.toThrow();
+    await expect(rollback('deadbeefdeadbeefdeadbeefdeadbeefdeadbeef', 'build failed', { cwd: repo })).rejects.toThrow();
   }, 60000);
 });

@@ -36,7 +36,7 @@ for (const [label, command, cwd, optional] of steps) {
     }
     console.error(`\n❌ Échec : ${label}`);
     console.error(`   Commande : ${command}`);
-    console.error('\nLa réparation n\'a pas abouti. Relancez l\'installeur RaceHubOS.\n');
+    console.error("\nLa réparation n'a pas abouti. Relancez l'installeur RaceHubOS.\n");
     process.exit(1);
   }
 }

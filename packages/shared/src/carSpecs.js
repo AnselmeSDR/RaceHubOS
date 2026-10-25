@@ -5,14 +5,27 @@
  * and an incomplete list stops the user from writing what is actually mounted.
  */
 export const CAR_TEXT_SPECS = Object.freeze([
-  'scale', 'chassis', 'motor', 'gearRatio',
-  'tyresFront', 'tyresRear', 'guide', 'braids', 'magnet', 'notes',
+  'scale',
+  'chassis',
+  'motor',
+  'gearRatio',
+  'tyresFront',
+  'tyresRear',
+  'guide',
+  'braids',
+  'magnet',
+  'notes',
 ]);
 
 /** Measurements: grams for the weight, millimetres for the rest. */
 export const CAR_NUMBER_SPECS = Object.freeze([
-  'weightGrams', 'lengthMm', 'widthMm', 'wheelbaseMm',
-  'frontTrackMm', 'rearTrackMm', 'groundClearanceMm',
+  'weightGrams',
+  'lengthMm',
+  'widthMm',
+  'wheelbaseMm',
+  'frontTrackMm',
+  'rearTrackMm',
+  'groundClearanceMm',
 ]);
 
 export const CAR_SPECS = Object.freeze([...CAR_TEXT_SPECS, ...CAR_NUMBER_SPECS]);

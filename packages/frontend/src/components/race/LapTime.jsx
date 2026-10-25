@@ -12,11 +12,7 @@ export default function LapTime({ time, size = 'md', highlight = false, format =
 
   // Handle null/undefined/invalid times
   if (time === null || time === undefined || time <= 0) {
-    return (
-      <span className={`${sizes[size]} font-mono text-muted-foreground/50 tabular-nums`}>
-        --
-      </span>
-    )
+    return <span className={`${sizes[size]} font-mono text-muted-foreground/50 tabular-nums`}>--</span>
   }
 
   // Format time from milliseconds
@@ -48,9 +44,10 @@ export default function LapTime({ time, size = 'md', highlight = false, format =
     <span
       className={`
         ${sizes[size]} font-mono tabular-nums
-        ${highlight
-          ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded font-bold'
-          : className || 'text-foreground'
+        ${
+          highlight
+            ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded font-bold'
+            : className || 'text-foreground'
         }
       `}
     >

@@ -1,11 +1,7 @@
 import { CheckCircle, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-export default function ConfigStatus({
-  isComplete,
-  unconfiguredCount,
-  unconfiguredSlots
-}) {
+export default function ConfigStatus({ isComplete, unconfiguredCount, unconfiguredSlots }) {
   const { t } = useTranslation('race')
 
   if (isComplete) {

@@ -11,29 +11,29 @@ export default function ErrorMessage({ type = 'error', message, onClose, classNa
       border: 'border-red-400 dark:border-red-600',
       text: 'text-red-800 dark:text-red-300',
       icon: XCircle,
-      iconColor: 'text-red-400'
+      iconColor: 'text-red-400',
     },
     success: {
       bg: 'bg-green-50 dark:bg-green-900/30',
       border: 'border-green-400 dark:border-green-600',
       text: 'text-green-800 dark:text-green-300',
       icon: CheckCircle,
-      iconColor: 'text-green-400'
+      iconColor: 'text-green-400',
     },
     warning: {
       bg: 'bg-yellow-50 dark:bg-yellow-900/30',
       border: 'border-yellow-400 dark:border-yellow-600',
       text: 'text-yellow-800 dark:text-yellow-300',
       icon: AlertTriangle,
-      iconColor: 'text-yellow-400'
+      iconColor: 'text-yellow-400',
     },
     info: {
       bg: 'bg-blue-50 dark:bg-blue-900/30',
       border: 'border-blue-400 dark:border-blue-600',
       text: 'text-blue-800 dark:text-blue-300',
       icon: Info,
-      iconColor: 'text-blue-400'
-    }
+      iconColor: 'text-blue-400',
+    },
   }
 
   const style = styles[type] || styles.error
@@ -46,9 +46,7 @@ export default function ErrorMessage({ type = 'error', message, onClose, classNa
           <Icon className={`h-5 w-5 ${style.iconColor}`} aria-hidden="true" />
         </div>
         <div className="ml-3 flex-1">
-          <p className={`text-sm font-medium ${style.text}`}>
-            {message}
-          </p>
+          <p className={`text-sm font-medium ${style.text}`}>{message}</p>
         </div>
         {onClose && (
           <div className="ml-auto pl-3">

@@ -28,9 +28,7 @@ function useDefaultPageTitle() {
   const { t } = useTranslation('layout')
   const { pathname } = useLocation()
   const basePath = '/' + (pathname.split('/')[1] || '')
-  const item = allNavItems.find(n =>
-    n.to === '/' ? pathname === '/' : basePath === n.to
-  )
+  const item = allNavItems.find((n) => (n.to === '/' ? pathname === '/' : basePath === n.to))
   return item ? navLabel(t, item) : 'RaceHubOS'
 }
 
@@ -47,14 +45,22 @@ function PageHeader() {
     <>
       <div className="flex items-center gap-2.5 min-w-0">
         {header.icon && (
-          <div className={`size-7 bg-${header.color}-100 dark:bg-${header.color}-900/30 rounded-lg flex items-center justify-center shrink-0`}>
-            <span className={`text-${header.color}-600 dark:text-${header.color}-400 [&_svg]:size-4`}>{header.icon}</span>
+          <div
+            className={`size-7 bg-${header.color}-100 dark:bg-${header.color}-900/30 rounded-lg flex items-center justify-center shrink-0`}
+          >
+            <span className={`text-${header.color}-600 dark:text-${header.color}-400 [&_svg]:size-4`}>
+              {header.icon}
+            </span>
           </div>
         )}
         <div className="min-w-0">
           <h1 className="text-sm font-medium truncate leading-tight">{header.title}</h1>
           <p className="text-xs text-muted-foreground leading-tight">
-            {header.loading ? '...' : header.totalCount != null ? t('header.results', { count: header.totalCount }) : ''}
+            {header.loading
+              ? '...'
+              : header.totalCount != null
+                ? t('header.results', { count: header.totalCount })
+                : ''}
           </p>
         </div>
       </div>
@@ -140,7 +146,15 @@ export default function Layout() {
             {t(cuConnected ? (isSimulator ? 'footer.simulator' : 'footer.cu') : 'footer.noCu')}
           </span>
           <span className="text-muted-foreground/40 mx-1">|</span>
-          <span className={cuStatus?.start === 0 ? 'text-green-500' : cuStatus?.start >= 1 && cuStatus?.start <= 7 ? 'text-yellow-500' : 'text-muted-foreground'}>
+          <span
+            className={
+              cuStatus?.start === 0
+                ? 'text-green-500'
+                : cuStatus?.start >= 1 && cuStatus?.start <= 7
+                  ? 'text-yellow-500'
+                  : 'text-muted-foreground'
+            }
+          >
             {cuStateLabel(t, cuStatus?.start)}
           </span>
           <span className="text-muted-foreground/40 mx-1">|</span>
@@ -150,7 +164,9 @@ export default function Layout() {
               <span className="text-muted-foreground/40 mx-1">|</span>
               <span className="text-blue-400">C{lastTimer.controller + 1}</span>
               {lastTimer.isFinishLine ? (
-                <span className="text-green-500 ml-1">{lastTimer.lapTime > 0 ? `${(lastTimer.lapTime / 1000).toFixed(3)}s` : t('footer.lapStart')}</span>
+                <span className="text-green-500 ml-1">
+                  {lastTimer.lapTime > 0 ? `${(lastTimer.lapTime / 1000).toFixed(3)}s` : t('footer.lapStart')}
+                </span>
               ) : (
                 <span className="text-yellow-500 ml-1">S{lastTimer.sector}</span>
               )}
@@ -159,10 +175,7 @@ export default function Layout() {
         </footer>
       </SidebarInset>
 
-      <BackendStatusPopup
-        isOpen={statusPopupOpen}
-        onClose={() => setStatusPopupOpen(false)}
-      />
+      <BackendStatusPopup isOpen={statusPopupOpen} onClose={() => setStatusPopupOpen(false)} />
     </SidebarProvider>
   )
 }

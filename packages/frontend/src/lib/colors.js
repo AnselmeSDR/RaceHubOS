@@ -7,9 +7,9 @@
 // Session types
 export const SESSION_COLORS = {
   practice: { bg: 'bg-session-practice/15', text: 'text-session-practice', solid: 'bg-session-practice' },
-  qualif:   { bg: 'bg-session-qualif/15',   text: 'text-session-qualif',   solid: 'bg-session-qualif' },
-  race:     { bg: 'bg-session-race/15',      text: 'text-session-race',     solid: 'bg-session-race' },
-  balancing:{ bg: 'bg-session-balancing/15', text: 'text-session-balancing', solid: 'bg-session-balancing' },
+  qualif: { bg: 'bg-session-qualif/15', text: 'text-session-qualif', solid: 'bg-session-qualif' },
+  race: { bg: 'bg-session-race/15', text: 'text-session-race', solid: 'bg-session-race' },
+  balancing: { bg: 'bg-session-balancing/15', text: 'text-session-balancing', solid: 'bg-session-balancing' },
 }
 
 // Combined badge classes (bg tint + text color) for a session type.
@@ -27,18 +27,16 @@ export const CHAMPIONSHIP_COLOR = {
 }
 
 // Controllers (0-5)
-export const CONTROLLER_COLORS = [
-  'bg-ctrl-1',
-  'bg-ctrl-2',
-  'bg-ctrl-3',
-  'bg-ctrl-4',
-  'bg-ctrl-5',
-  'bg-ctrl-6',
-]
+export const CONTROLLER_COLORS = ['bg-ctrl-1', 'bg-ctrl-2', 'bg-ctrl-3', 'bg-ctrl-4', 'bg-ctrl-5', 'bg-ctrl-6']
 
 // Podium positions
 export const PODIUM_COLORS = {
-  1: { bg: 'bg-championship', text: 'text-yellow-950', gradient: 'from-championship/40', border: 'border-championship' },
+  1: {
+    bg: 'bg-championship',
+    text: 'text-yellow-950',
+    gradient: 'from-championship/40',
+    border: 'border-championship',
+  },
   2: { bg: 'bg-gray-300', text: 'text-gray-800', gradient: 'from-gray-400/30', border: 'border-gray-300' },
   3: { bg: 'bg-orange-400', text: 'text-orange-950', gradient: 'from-orange-500/30', border: 'border-orange-400' },
 }
@@ -60,11 +58,11 @@ export const DELTA_COLORS = {
 
 // Session status
 export const STATUS_COLORS = {
-  draft:     { bg: 'bg-muted',                text: 'text-muted-foreground' },
-  active:    { bg: 'bg-session-race/15',       text: 'text-session-race' },
-  paused:    { bg: 'bg-championship/15',       text: 'text-championship' },
-  finishing: { bg: 'bg-gap-laps/15',           text: 'text-gap-laps' },
-  finished:  { bg: 'bg-muted',                text: 'text-muted-foreground' },
+  draft: { bg: 'bg-muted', text: 'text-muted-foreground' },
+  active: { bg: 'bg-session-race/15', text: 'text-session-race' },
+  paused: { bg: 'bg-championship/15', text: 'text-championship' },
+  finishing: { bg: 'bg-gap-laps/15', text: 'text-gap-laps' },
+  finished: { bg: 'bg-muted', text: 'text-muted-foreground' },
 }
 
 // Status dots (header)

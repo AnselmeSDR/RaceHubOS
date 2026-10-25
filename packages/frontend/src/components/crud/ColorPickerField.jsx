@@ -6,10 +6,19 @@ export default function ColorPickerField({
   value = '#3B82F6',
   onChange,
   presets = [
-    '#EF4444', '#F97316', '#F59E0B', '#84CC16',
-    '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6',
-    '#6366F1', '#8B5CF6', '#A855F7', '#EC4899'
-  ]
+    '#EF4444',
+    '#F97316',
+    '#F59E0B',
+    '#84CC16',
+    '#22C55E',
+    '#14B8A6',
+    '#06B6D4',
+    '#3B82F6',
+    '#6366F1',
+    '#8B5CF6',
+    '#A855F7',
+    '#EC4899',
+  ],
 }) {
   const { t } = useTranslation('common')
   return (
@@ -23,10 +32,7 @@ export default function ColorPickerField({
           onChange={(e) => onChange(e.target.value)}
           className="w-12 h-12 rounded-lg cursor-pointer border-2 border-border"
         />
-        <div
-          className="w-10 h-10 rounded-full border-2 border-card shadow-md"
-          style={{ backgroundColor: value }}
-        />
+        <div className="w-10 h-10 rounded-full border-2 border-card shadow-md" style={{ backgroundColor: value }} />
         <Input
           type="text"
           value={value}

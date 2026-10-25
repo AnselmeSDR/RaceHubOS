@@ -34,7 +34,7 @@ i18n
     fallbackNS: 'common',
     // A key missing in any language, or an unsupported browser language, falls back to English
     fallbackLng: 'en',
-    supportedLngs: LANGUAGES.map(l => l.code),
+    supportedLngs: LANGUAGES.map((l) => l.code),
     interpolation: { escapeValue: false },
     detection: {
       order: ['localStorage', 'navigator'],
