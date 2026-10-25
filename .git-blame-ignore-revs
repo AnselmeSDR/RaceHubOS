@@ -1,0 +1,4 @@
+# Commits that only reformat code: git blame skips them (npm install sets blame.ignoreRevsFile)
+
+# style: formatage de tout le code avec Prettier
+be7f8ad573133f9603b8833113e6f8232ef5981d
