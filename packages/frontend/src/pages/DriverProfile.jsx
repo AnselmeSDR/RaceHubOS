@@ -1,3 +1,4 @@
+import CockpitHistory from '../components/CockpitHistory'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -194,6 +195,8 @@ export default function DriverProfile() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
+        <CockpitHistory driverId={driver.id} />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
           <RecordsList
