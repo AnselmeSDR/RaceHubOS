@@ -65,3 +65,6 @@ packages/backend/public/uploads-remote-backup/
 
 # Exports de classement (données de course, pas du code)
 *.xlsx
+
+# Optional speech packages are generated outside the repository.
+scripts/piper/__pycache__/

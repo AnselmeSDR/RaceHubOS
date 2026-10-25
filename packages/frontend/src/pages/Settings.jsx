@@ -1,3 +1,4 @@
+import '../i18n/piperVoices'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
@@ -60,6 +61,8 @@ export default function Settings() {
     voiceId: bestLapVoiceId,
     saveVoiceId,
     speak,
+    localVoices,
+    voiceState,
   } = useVoice()
   const [voices, setVoices] = useState([])
 
@@ -294,9 +297,13 @@ export default function Settings() {
 
   useEffect(() => {
     loadVoices()
-    speechSynthesis.addEventListener('voiceschanged', loadVoices)
-    return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
-  }, [loadVoices])
+    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices)
+    i18n.on('languageChanged', loadVoices)
+    return () => {
+      window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices)
+      i18n.off('languageChanged', loadVoices)
+    }
+  }, [i18n, loadVoices])
 
   function handleVoiceChange(voiceURI) {
     saveVoiceId(voiceURI)
@@ -683,14 +690,27 @@ export default function Settings() {
             <div className="flex items-center gap-2 pl-7">
               {/* One voice per interface language, the language's default voice unless chosen */}
               <Select
-                value={voices.some((v) => v.voiceURI === bestLapVoiceId) ? bestLapVoiceId : '_default'}
+                value={
+                  bestLapVoiceId.startsWith('_piper') || voices.some((v) => v.voiceURI === bestLapVoiceId)
+                    ? bestLapVoiceId
+                    : '_default'
+                }
                 onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}
               >
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="flex-1" data-testid="voice-selector" aria-label={t('piperVoices:selection')}>
                   <SelectValue placeholder={t('appearance.defaultVoice')} />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
                   <SelectItem value="_default">{t('appearance.defaultVoice')}</SelectItem>
+                  <SelectItem value="_piper-auto">{t('piperVoices:auto')}</SelectItem>
+                  {localVoices.map((v) => (
+                    <SelectItem key={v.id} value={'_piper:' + v.id}>
+                      {v.name} · {v.locale} · Piper
+                    </SelectItem>
+                  ))}
+                  {bestLapVoiceId === '_piper-thorsten' && (
+                    <SelectItem value="_piper-thorsten">Thorsten · de-DE · Piper</SelectItem>
+                  )}
                   {voices.map((v) => (
                     <SelectItem key={v.voiceURI} value={v.voiceURI}>
                       {v.name} ({v.lang})
@@ -699,6 +719,7 @@ export default function Settings() {
                 </SelectContent>
               </Select>
               <button
+                data-testid="voice-test"
                 onClick={testVoice}
                 className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
                 title={t('appearance.testVoice')}
@@ -707,6 +728,27 @@ export default function Settings() {
               </button>
             </div>
           )}
+
+          <p data-testid="piper-voice-status" role="status" className="text-xs text-muted-foreground">
+            {t(
+              'piperVoices:' +
+                (voiceState === 'unavailable'
+                  ? 'unavailable'
+                  : voiceState === 'fallback'
+                    ? 'fallback'
+                    : localVoices.length
+                      ? 'available'
+                      : 'missing')
+            )}
+          </p>
+          <a
+            href="https://github.com/OHF-Voice/piper1-gpl"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline"
+          >
+            {t('piperVoices:engine')}
+          </a>
 
           <div className="border-t border-border" />
 
