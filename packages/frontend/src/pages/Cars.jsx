@@ -1,3 +1,7 @@
+import { tx, useExtensions } from '../i18n/extensions'
+import CarTyres from '../components/car/CarTyres'
+import { CarreraLookup } from '../components/car/CarreraCatalog'
+import { formatDecimal } from '../lib/formatDecimal'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
@@ -8,7 +12,7 @@ import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
-import { formatLevel, levelPercent } from '@racehubos/shared'
+import { formatLevel, levelPercent, scaleVoltageHint } from '@racehubos/shared'
 import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
 import { FormSection } from '@/components/crud/FormModal'
 
@@ -20,12 +24,13 @@ const API_URL = import.meta.env.VITE_API_URL || ''
  * position match one real level: 70 % is level 7, and nothing exists between.
  */
 function RangeField({ label, value, onChange, min = 10, max = 100, step = 10, color = 'var(--color-primary)' }) {
+  useExtensions()
   const level = Math.round(value / 10)
   // The filled part follows the thumb, so the track reads as a gauge
   const filled = ((value - min) / (max - min)) * 100
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{tx(label)}</label>
       <div className="flex items-center gap-3">
         <input
           type="range"
@@ -50,6 +55,7 @@ function RangeField({ label, value, onChange, min = 10, max = 100, step = 10, co
 }
 
 export default function Cars() {
+  useExtensions()
   const { t } = useTranslation('cars')
   const navigate = useNavigate()
   const [cars, setCars] = useState([])
@@ -60,20 +66,42 @@ export default function Cars() {
   const [showForm, setShowForm] = useState(false)
   const [editingCar, setEditingCar] = useState(null)
   const [sort, setSort] = useState(null)
+  const [scaleFilter, setScaleFilter] = useState('all')
+  const [scaleReady, setScaleReady] = useState(false)
+  const dataGeneration = useRef(0)
+  useEffect(() => {
+    fetch(`${API_URL}/api/preferences/cars:scaleFilter`, { signal: AbortSignal.timeout(5000) })
+      .then((r) => r.json())
+      .then((d) => {
+        if (['all', '132', '124'].includes(d.data)) setScaleFilter(d.data)
+      })
+      .catch(() => {})
+      .finally(() => setScaleReady(true))
+  }, [])
+  function changeScale(value) {
+    setScaleFilter(value)
+    fetch(`${API_URL}/api/preferences/cars:scaleFilter`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    }).catch(() => {})
+  }
   const [filters, setFilters] = useState({ deleted: false })
 
   useEffect(() => {
-    loadData(0)
-  }, [filters, sort])
+    if (scaleReady) loadData(0)
+  }, [filters, sort, scaleFilter, scaleReady])
 
   const hasLoadedOnce = useRef(false)
 
   async function loadData(offset) {
     const isFirst = offset === 0
+    const generation = isFirst ? ++dataGeneration.current : dataGeneration.current
     if (isFirst && !hasLoadedOnce.current) setLoading(true)
     else if (!isFirst) setLoadingMore(true)
     try {
       const params = new URLSearchParams()
+      params.append('scale', scaleFilter)
       if (filters.deleted) params.append('deleted', 'true')
       if (sort) {
         params.append('sortBy', sort.id)
@@ -83,7 +111,7 @@ export default function Cars() {
       params.append('limit', '50')
       const res = await fetch(`${API_URL}/api/cars?${params}`)
       const data = await res.json()
-      if (data.success) {
+      if (data.success && generation === dataGeneration.current) {
         setCars((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
@@ -91,10 +119,12 @@ export default function Cars() {
     } catch (err) {
       console.error('Failed to load cars:', err)
     } finally {
-      if (isFirst) {
-        setLoading(false)
-        hasLoadedOnce.current = true
-      } else setLoadingMore(false)
+      if (generation === dataGeneration.current) {
+        if (isFirst) {
+          setLoading(false)
+          hasLoadedOnce.current = true
+        } else setLoadingMore(false)
+      }
     }
   }
 
@@ -113,11 +143,11 @@ export default function Cars() {
           return (
             <div className="flex items-center gap-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
+                className="w-12 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
                 style={{ backgroundColor: car.color || '#22C55E' }}
               >
                 {car.img ? (
-                  <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
+                  <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-contain p-1" />
                 ) : (
                   car.brand?.charAt(0)
                 )}
@@ -183,7 +213,7 @@ export default function Cars() {
         header: t('common:record'),
         cell: ({ row }) => (
           <span className="font-mono font-bold">
-            {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
+            {row.original.bestLap ? `${formatDecimal(row.original.bestLap / 1000)}s` : '-'}
           </span>
         ),
       },
@@ -270,7 +300,56 @@ export default function Cars() {
       loadingMore={loadingMore}
       onLoadMore={() => loadData(cars.length)}
       onSortChange={setSort}
-      hasActiveFilters={filters.deleted}
+      hasActiveFilters={filters.deleted || scaleFilter !== 'all'}
+      toolbar={
+        <section className="rounded-xl border bg-card p-4 space-y-2" aria-label={tx('Maßstab und Trafospannung')}>
+          <label className="font-medium">
+            {tx('Autos anzeigen')}{' '}
+            <select
+              aria-label={tx('Autos nach Maßstab anzeigen')}
+              className="ml-3 rounded border bg-background px-3 py-2"
+              value={scaleFilter}
+              disabled={!scaleReady}
+              onChange={(e) => changeScale(e.target.value)}
+            >
+              <option value="all">{tx('Beide: 132 und 124')}</option>
+              <option value="132">{tx('Nur 132 (1:32)')}</option>
+              <option value="124">{tx('Nur 124 (1:24)')}</option>
+            </select>
+          </label>
+          <p className="font-semibold" role="status">
+            {tx(scaleVoltageHint(scaleFilter))}
+          </p>
+          {scaleReady && !loading && cars.length === 0 && (
+            <p role="status">{tx('Keine Autos für diese Auswahl vorhanden.')}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {tx(
+              'Die Auswahl filtert die Ansicht und schaltet den Trafo nicht um. Bei beiden Maßstäben die passende Spannung für die tatsächlich eingesetzten Autos wählen. Unbekannter Maßstab erscheint nur bei „Beide“. EVOLUTION zählt als 1:32; digitaler Betrieb setzt einen geeigneten Umbau voraus.'
+            )}
+          </p>
+          <p className="text-xs">
+            {tx('Herstellerangaben:')}{' '}
+            <a
+              className="underline"
+              href="https://carrera-toys.com/products/20030326-digital-132-transformer-eu"
+              target="_blank"
+              rel="noreferrer"
+            >
+              DIGITAL 132
+            </a>{' '}
+            ·{' '}
+            <a
+              className="underline"
+              href="https://carrera-toys.com/products/20020768-transformator-digital-124-eu-18-v-54-va"
+              target="_blank"
+              rel="noreferrer"
+            >
+              DIGITAL 124
+            </a>
+          </p>
+        </section>
+      }
       emptyTitle={t('emptyTitle')}
       emptyMessage={t('emptyMessage')}
       options={[
@@ -297,6 +376,7 @@ export default function Cars() {
 }
 
 function CarCard({ car, onClick, onEdit, onDelete }) {
+  useExtensions()
   const { t } = useTranslation('cars')
   const carColor = car.color || '#22C55E'
 
@@ -328,11 +408,11 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
           <div className="relative">
             <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: carColor }} />
             <div
-              className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
+              className="relative w-36 h-24 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
             >
               {car.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
+                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-contain p-1" />
               ) : (
                 <span className="drop-shadow-lg">{car.brand?.charAt(0)}</span>
               )}
@@ -348,6 +428,15 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
         <p className="font-bold text-lg" style={{ color: carColor }}>
           {car.model}
         </p>
+        <p className="text-xs text-muted-foreground">
+          {car.displayScale || car.scale || tx('Maßstab noch nicht zugeordnet')}
+        </p>
+        {car.articleNumber && (
+          <p className="text-xs text-muted-foreground">
+            {/^H/.test(car.articleNumber) ? 'Superslot' : /^C/.test(car.articleNumber) ? 'Scalextric' : 'Carrera'}{' '}
+            {car.articleNumber}
+          </p>
+        )}
         <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: carColor }} />
       </div>
 
@@ -395,11 +484,13 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
 }
 
 export function CarFormModal({ car, onClose }) {
+  useExtensions()
   const { t } = useTranslation('cars')
   const [formData, setFormData] = useState({
+    articleNumber: car?.articleNumber || '',
     brand: car?.brand || '',
     model: car?.model || '',
-    year: car?.year || new Date().getFullYear(),
+    year: car?.year || '',
     color: car?.color || '#22C55E',
     maxSpeed: car?.maxSpeed || 100,
     brakeForce: car?.brakeForce || 50,
@@ -419,11 +510,11 @@ export function CarFormModal({ car, onClose }) {
       const res = await fetch(url, {
         method: car ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, year: formData.year === '' ? null : Number(formData.year) }),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
-        setTimeout(() => onClose(), 1500)
+        onClose()
       } else {
         const data = await res.json()
         setError(data.error || t('common:saveError'))
@@ -447,6 +538,26 @@ export function CarFormModal({ car, onClose }) {
       error={error}
       success={success}
     >
+      <CarreraLookup
+        number={formData.articleNumber}
+        onNumber={(value) => setFormData((f) => ({ ...f, articleNumber: value }))}
+        onApply={(entry, fields) =>
+          setFormData((previous) => ({
+            ...previous,
+            articleNumber: entry.articleNumber,
+            ...Object.fromEntries(
+              ['brand', 'model', 'scale', 'img']
+                .filter((key) => fields[key] && entry[key])
+                .map((key) => [key, entry[key]])
+            ),
+          }))
+        }
+      />
+      <CarTyres
+        carId={car?.id}
+        number={formData.articleNumber}
+        onAssign={(key, value) => setFormData((previous) => ({ ...previous, [key]: value }))}
+      />
       <div className="grid grid-cols-2 gap-4">
         <TextField
           label={t('fields.brand')}
@@ -467,7 +578,7 @@ export function CarFormModal({ car, onClose }) {
         label={t('fields.year')}
         type="number"
         value={formData.year}
-        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
+        onChange={(v) => setFormData((f) => ({ ...f, year: v === '' ? '' : parseInt(v) || '' }))}
       />
       <PhotoUploadField
         value={formData.img}
