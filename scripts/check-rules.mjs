@@ -56,15 +56,15 @@ const rel = (file) => path.relative(rootDir, file);
 // ---------------------------------------------------------------------------
 
 const rules = [];
-const rule = (id, title, check, { onlyBeforePush = false } = {}) =>
-  rules.push({ id, title, check, onlyBeforePush });
+const rule = (id, title, check, { onlyBeforePush = false } = {}) => rules.push({ id, title, check, onlyBeforePush });
 
 rule('migrations-only', 'Le schéma ne change que par une migration', () => {
   const offenders = [];
   const files = [
     ...sourceFiles(['packages/backend/src', 'packages/backend/scripts', 'scripts']),
     ...['RaceHubOS-install-win.bat', 'RaceHubOS-install-mac.command', 'README.md']
-      .filter(exists).map((f) => path.join(rootDir, f)),
+      .filter(exists)
+      .map((f) => path.join(rootDir, f)),
   ];
   for (const file of files) {
     for (const [i, line] of read(rel(file)).split('\n').entries()) {
@@ -79,12 +79,25 @@ rule('migrations-only', 'Le schéma ne change que par une migration', () => {
 rule('schema-matches-migrations', 'schema.prisma est couvert par les migrations', () => {
   if (!exists('packages/backend/prisma/schema.prisma')) return [];
   try {
-    const diff = execFileSync(process.execPath, [prismaCli(), 'migrate', 'diff',
-      '--from-migrations', 'prisma/migrations', '--to-schema', 'prisma/schema.prisma', '--script'],
-      { cwd: path.join(rootDir, 'packages/backend'), encoding: 'utf-8', stdio: 'pipe' });
+    const diff = execFileSync(
+      process.execPath,
+      [
+        prismaCli(),
+        'migrate',
+        'diff',
+        '--from-migrations',
+        'prisma/migrations',
+        '--to-schema',
+        'prisma/schema.prisma',
+        '--script',
+      ],
+      { cwd: path.join(rootDir, 'packages/backend'), encoding: 'utf-8', stdio: 'pipe' }
+    );
     return /empty migration/i.test(diff)
       ? []
-      : ['schema.prisma décrit un schéma qu\'aucune migration ne produit — créer la migration avec "npm run prisma:migrate -w @racehubos/backend"'];
+      : [
+          'schema.prisma décrit un schéma qu\'aucune migration ne produit — créer la migration avec "npm run prisma:migrate -w @racehubos/backend"',
+        ];
   } catch (err) {
     return [`impossible de comparer le schéma aux migrations (${err.message.split('\n')[0]})`];
   }
@@ -98,7 +111,8 @@ rule('no-database-enums', 'Aucun enum en base : les valeurs sont du texte', () =
   const schemaPath = 'packages/backend/prisma/schema.prisma';
   if (!exists(schemaPath)) return [];
 
-  return read(schemaPath).split('\n')
+  return read(schemaPath)
+    .split('\n')
     .map((line, i) => [line, i + 1])
     .filter(([line]) => /^enum\s/.test(line))
     .map(([line, n]) => `${schemaPath}:${n} — ${line.trim()} : déclarer String et valider dans le code`);
@@ -135,12 +149,28 @@ rule('session-types-from-shared', 'Les valeurs de la base viennent de @racehubos
 rule('shared-symbols-imported', 'Tout symbole partagé utilisé est importé', () => {
   // Un build Vite réussi ne détecte pas ce cas : ce n'est pas une erreur de
   // compilation en JS, seulement une ReferenceError a l'execution
-  const symbols = ['SessionType', 'SESSION_TYPES', 'STANDARD_SESSION_TYPES',
-    'isSessionType', 'sessionTypeKey', 'sessionTypeFullKey', 'sessionTypeAbbrKey',
-    'SessionStatus', 'SESSION_STATUSES', 'RUNNING_SESSION_STATUSES', 'isSessionStatus',
-    'ChampionshipStatus', 'CHAMPIONSHIP_STATUSES', 'isChampionshipStatus',
-    'ChampionshipMode', 'CHAMPIONSHIP_MODES', 'isChampionshipMode',
-    'FuelMode', 'FUEL_MODES', 'isFuelMode'];
+  const symbols = [
+    'SessionType',
+    'SESSION_TYPES',
+    'STANDARD_SESSION_TYPES',
+    'isSessionType',
+    'sessionTypeKey',
+    'sessionTypeFullKey',
+    'sessionTypeAbbrKey',
+    'SessionStatus',
+    'SESSION_STATUSES',
+    'RUNNING_SESSION_STATUSES',
+    'isSessionStatus',
+    'ChampionshipStatus',
+    'CHAMPIONSHIP_STATUSES',
+    'isChampionshipStatus',
+    'ChampionshipMode',
+    'CHAMPIONSHIP_MODES',
+    'isChampionshipMode',
+    'FuelMode',
+    'FUEL_MODES',
+    'isFuelMode',
+  ];
   const offenders = [];
 
   for (const file of sourceFiles(['packages/backend/src', 'packages/frontend/src'])) {
@@ -150,7 +180,8 @@ rule('shared-symbols-imported', 'Tout symbole partagé utilisé est importé', (
     for (const m of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*'@racehubos\/shared'/g)) {
       m[1].split(',').forEach((s) => imported.add(s.trim()));
     }
-    const body = text.split('\n')
+    const body = text
+      .split('\n')
       .filter((l) => !l.includes('@racehubos/shared') && !l.trim().startsWith('*') && !l.trim().startsWith('//'))
       .join('\n');
     for (const symbol of symbols) {
@@ -162,7 +193,7 @@ rule('shared-symbols-imported', 'Tout symbole partagé utilisé est importé', (
   return offenders;
 });
 
-rule('installer-batch-syntax', 'L\'installeur Windows a des blocs valides', () => {
+rule('installer-batch-syntax', "L'installeur Windows a des blocs valides", () => {
   if (!exists('RaceHubOS-install-win.bat')) return [];
   const offenders = [];
   let depth = 0;
@@ -183,9 +214,14 @@ rule('installer-batch-syntax', 'L\'installeur Windows a des blocs valides', () =
 
 rule('installers-declare-version', 'Les installeurs déclarent INSTALLER_VERSION', () => {
   const offenders = [];
-  for (const [name, prefix] of [['RaceHubOS-install-win.bat', '::'], ['RaceHubOS-install-mac.command', '#']]) {
+  for (const [name, prefix] of [
+    ['RaceHubOS-install-win.bat', '::'],
+    ['RaceHubOS-install-mac.command', '#'],
+  ]) {
     if (!exists(name)) continue;
-    const line = read(name).split('\n').find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`));
+    const line = read(name)
+      .split('\n')
+      .find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`));
     if (!/^\d+$/.test(line?.split(/\s+/)[2] ?? '')) {
       offenders.push(`${name} — INSTALLER_VERSION absent ou non numérique`);
     }
@@ -193,51 +229,72 @@ rule('installers-declare-version', 'Les installeurs déclarent INSTALLER_VERSION
   return offenders;
 });
 
-rule('installer-version-bumped', 'Un installeur modifié voit son INSTALLER_VERSION incrémenté', () => {
-  const base = git(['rev-parse', '--verify', 'origin/main']);
-  if (!base) return [];
-  const offenders = [];
+rule(
+  'installer-version-bumped',
+  'Un installeur modifié voit son INSTALLER_VERSION incrémenté',
+  () => {
+    const base = git(['rev-parse', '--verify', 'origin/main']);
+    if (!base) return [];
+    const offenders = [];
 
-  for (const [name, prefix] of [['RaceHubOS-install-win.bat', '::'], ['RaceHubOS-install-mac.command', '#']]) {
-    if (!exists(name)) continue;
-    const changed = git(['diff', '--name-only', `${base}..HEAD`, '--', name]);
-    if (!changed) continue;
+    for (const [name, prefix] of [
+      ['RaceHubOS-install-win.bat', '::'],
+      ['RaceHubOS-install-mac.command', '#'],
+    ]) {
+      if (!exists(name)) continue;
+      const changed = git(['diff', '--name-only', `${base}..HEAD`, '--', name]);
+      if (!changed) continue;
 
-    const versionOf = (text) => Number(
-      text?.split('\n').find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`))?.split(/\s+/)[2] ?? NaN);
-    const before = versionOf(git(['show', `${base}:${name}`]));
-    const after = versionOf(read(name));
-    // Sans cela un poste garde son installeur perime pour toujours
-    if (Number.isFinite(before) && !(after > before)) {
-      offenders.push(`${name} — modifié mais INSTALLER_VERSION reste à ${after}`);
+      const versionOf = (text) =>
+        Number(
+          text
+            ?.split('\n')
+            .find((l) => l.startsWith(`${prefix} INSTALLER_VERSION`))
+            ?.split(/\s+/)[2] ?? NaN
+        );
+      const before = versionOf(git(['show', `${base}:${name}`]));
+      const after = versionOf(read(name));
+      // Sans cela un poste garde son installeur perime pour toujours
+      if (Number.isFinite(before) && !(after > before)) {
+        offenders.push(`${name} — modifié mais INSTALLER_VERSION reste à ${after}`);
+      }
     }
-  }
-  return offenders;
-}, { onlyBeforePush: true });
+    return offenders;
+  },
+  { onlyBeforePush: true }
+);
 
-rule('version-and-changelog', 'Version incrémentée et changelog à jour', () => {
-  // La version se monte sur main, au merge : une branche de contribution n'y touche pas
-  if (git(['rev-parse', '--abbrev-ref', 'HEAD']) !== 'main') return [];
-  const base = git(['rev-parse', '--verify', 'origin/main']);
-  if (!base) return [];
-  const changed = git(['diff', '--name-only', `${base}..HEAD`]);
-  if (!changed) return [];
+rule(
+  'version-and-changelog',
+  'Version incrémentée et changelog à jour',
+  () => {
+    // La version se monte sur main, au merge : une branche de contribution n'y touche pas
+    if (git(['rev-parse', '--abbrev-ref', 'HEAD']) !== 'main') return [];
+    const base = git(['rev-parse', '--verify', 'origin/main']);
+    if (!base) return [];
+    const changed = git(['diff', '--name-only', `${base}..HEAD`]);
+    if (!changed) return [];
 
-  const touchesCode = changed.split('\n').some((f) =>
-    f.startsWith('packages/') || f.startsWith('scripts/') || f.endsWith('.bat') || f.endsWith('.command'));
-  if (!touchesCode) return [];
+    const touchesCode = changed
+      .split('\n')
+      .some(
+        (f) => f.startsWith('packages/') || f.startsWith('scripts/') || f.endsWith('.bat') || f.endsWith('.command')
+      );
+    if (!touchesCode) return [];
 
-  const offenders = [];
-  const version = JSON.parse(read('package.json')).version;
-  const previous = JSON.parse(git(['show', `${base}:package.json`]) ?? '{}').version;
-  if (version === previous) offenders.push(`la version est restée à ${version}`);
-  if (!read('CHANGELOG.md').includes(`## [${version}]`)) {
-    offenders.push(`CHANGELOG.md n'a pas d'entrée pour la version ${version}`);
-  }
-  return offenders;
-}, { onlyBeforePush: true });
+    const offenders = [];
+    const version = JSON.parse(read('package.json')).version;
+    const previous = JSON.parse(git(['show', `${base}:package.json`]) ?? '{}').version;
+    if (version === previous) offenders.push(`la version est restée à ${version}`);
+    if (!read('CHANGELOG.md').includes(`## [${version}]`)) {
+      offenders.push(`CHANGELOG.md n'a pas d'entrée pour la version ${version}`);
+    }
+    return offenders;
+  },
+  { onlyBeforePush: true }
+);
 
-rule('no-npx-through-execfile', 'Prisma n\'est pas lancé par npx via execFile', () => {
+rule('no-npx-through-execfile', "Prisma n'est pas lancé par npx via execFile", () => {
   // Sous Windows npx est un .cmd : execFileSync ne resout pas l'extension
   // (ENOENT) et, depuis les correctifs BatBadBut, node refuse de lancer un .cmd
   // sans shell (EINVAL). Les deux echecs sont invisibles sur macOS et Linux, et
@@ -246,7 +303,10 @@ rule('no-npx-through-execfile', 'Prisma n\'est pas lancé par npx via execFile',
   const offenders = [];
   const bad = /(?:execFileSync|execFile|spawnSync|spawn)\(\s*(?:'(npx|npm)'|NPX)/;
 
-  for (const file of sourceFiles(['packages/backend/src', 'packages/backend/scripts', 'packages/frontend/src', 'scripts'], ['.js', '.jsx', '.mjs'])) {
+  for (const file of sourceFiles(
+    ['packages/backend/src', 'packages/backend/scripts', 'packages/frontend/src', 'scripts'],
+    ['.js', '.jsx', '.mjs']
+  )) {
     if (/check-rules\.mjs$/.test(rel(file))) continue;
     for (const [i, line] of read(rel(file)).split('\n').entries()) {
       if (bad.test(line)) {
@@ -265,11 +325,14 @@ rule('translations-cover-all-languages', 'Chaque clé existe dans toutes les lan
     if (value === null || typeof value !== 'object') return [prefix];
     return Object.entries(value).flatMap(([k, v]) => flatten(v, prefix ? `${prefix}.${k}` : k));
   };
-  const keysOf = (lang, name) => new Set(flatten(JSON.parse(fs.readFileSync(path.join(localesDir, lang, name), 'utf-8'))));
+  const keysOf = (lang, name) =>
+    new Set(flatten(JSON.parse(fs.readFileSync(path.join(localesDir, lang, name), 'utf-8'))));
 
   // Le francais sert de reference : chaque autre langue a exactement ses cles
   const offenders = [];
-  const languages = fs.readdirSync(localesDir).filter((l) => l !== 'fr' && fs.statSync(path.join(localesDir, l)).isDirectory());
+  const languages = fs
+    .readdirSync(localesDir)
+    .filter((l) => l !== 'fr' && fs.statSync(path.join(localesDir, l)).isDirectory());
   for (const lang of languages) {
     for (const name of fs.readdirSync(path.join(localesDir, 'fr'))) {
       if (!fs.existsSync(path.join(localesDir, lang, name))) {
@@ -279,10 +342,12 @@ rule('translations-cover-all-languages', 'Chaque clé existe dans toutes les lan
       const keysFr = keysOf('fr', name);
       const keysLang = keysOf(lang, name);
       for (const key of keysFr) if (!keysLang.has(key)) offenders.push(`${lang}/${name} — ${key} manque`);
-      for (const key of keysLang) if (!keysFr.has(key)) offenders.push(`fr/${name} — ${key} manque (présent en ${lang})`);
+      for (const key of keysLang)
+        if (!keysFr.has(key)) offenders.push(`fr/${name} — ${key} manque (présent en ${lang})`);
     }
     for (const name of fs.readdirSync(path.join(localesDir, lang))) {
-      if (!fs.existsSync(path.join(localesDir, 'fr', name))) offenders.push(`fr/${name} — fichier absent (présent en ${lang})`);
+      if (!fs.existsSync(path.join(localesDir, 'fr', name)))
+        offenders.push(`fr/${name} — fichier absent (présent en ${lang})`);
     }
   }
   return offenders;
@@ -296,6 +361,59 @@ rule('tests-use-a-test-database', 'Les tests tournent sur une base de test', () 
     // setup.js vide toutes les tables : dev.db contient les vraies courses
     if (!/DATABASE_URL="file:\.\/test\.db"/.test(script)) {
       offenders.push(`packages/backend > ${name} — ne fixe pas DATABASE_URL sur test.db`);
+    }
+  }
+  return offenders;
+});
+
+rule('code-is-formatted', 'Le code est formaté (Prettier)', () => {
+  // Un fichier compresse sur quelques lignes est arrive par une PR : rien ne le signalait.
+  // Prettier tranche la forme, la relecture ne porte plus que sur le fond
+  try {
+    execFileSync(
+      process.execPath,
+      [path.join(rootDir, 'node_modules', 'prettier', 'bin', 'prettier.cjs'), '--list-different', '.'],
+      {
+        cwd: rootDir,
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      }
+    );
+    return [];
+  } catch (err) {
+    const files = (err.stdout ?? '').split('\n').filter(Boolean);
+    if (!files.length) throw err;
+    return files.map((f) => `${f} — lancer "npm run format"`);
+  }
+});
+
+rule('no-new-lint-errors', 'Aucune nouvelle erreur ESLint dans les fichiers modifiés', async () => {
+  // Le code existant porte une dette (variables inutilisees, blocs vides) : seule
+  // une erreur ajoutee bloque, pas celles d'un fichier qu'on se contente de toucher
+  const base = git(['merge-base', 'HEAD', 'origin/main']);
+  if (!base) return [];
+  const changed = [
+    ...(git(['diff', '--name-only', base]) ?? '').split('\n'),
+    ...(git(['ls-files', '--others', '--exclude-standard']) ?? '').split('\n'),
+  ].filter((f) => /\.(m?js|jsx)$/.test(f) && exists(f));
+  if (!changed.length) return [];
+
+  const { ESLint } = await import('eslint');
+  const eslint = new ESLint({ cwd: rootDir });
+  const countByRule = (messages) =>
+    messages.reduce((acc, m) => acc.set(m.ruleId, (acc.get(m.ruleId) ?? 0) + 1), new Map());
+
+  const offenders = [];
+  for (const file of changed) {
+    if (await eslint.isPathIgnored(path.join(rootDir, file))) continue;
+    const [after] = await eslint.lintFiles([path.join(rootDir, file)]);
+    const previous = git(['show', `${base}:${file}`]);
+    const [before] =
+      previous === null ? [{ messages: [] }] : await eslint.lintText(previous, { filePath: path.join(rootDir, file) });
+    const counts = countByRule(before.messages);
+    for (const [ruleId, n] of countByRule(after.messages)) {
+      const was = counts.get(ruleId) ?? 0;
+      if (n > was) offenders.push(`${file} — ${ruleId ?? 'erreur de syntaxe'} : ${was} → ${n}`);
     }
   }
   return offenders;
@@ -315,7 +433,7 @@ for (const { id, title, check, onlyBeforePush } of rules) {
   }
   let offenders;
   try {
-    offenders = check();
+    offenders = await check();
   } catch (err) {
     offenders = [`la vérification a échoué : ${err.message.split('\n')[0]}`];
   }
@@ -331,11 +449,15 @@ for (const { id, title, check, onlyBeforePush } of rules) {
 }
 
 if (skipped.length) {
-  console.log(`\n  \x1b[2m${skipped.length} règle(s) réservée(s) au push : ${skipped.join(', ')} — "npm run check:push"\x1b[0m`);
+  console.log(
+    `\n  \x1b[2m${skipped.length} règle(s) réservée(s) au push : ${skipped.join(', ')} — "npm run check:push"\x1b[0m`
+  );
 }
 
 if (failed > 0) {
-  console.log(`\n  \x1b[31m${failed} règle(s) non respectée(s).\x1b[0m Chacune est expliquée dans docs/CONVENTIONS.md.\n`);
+  console.log(
+    `\n  \x1b[31m${failed} règle(s) non respectée(s).\x1b[0m Chacune est expliquée dans docs/CONVENTIONS.md.\n`
+  );
   process.exit(1);
 }
 console.log('\n  Toutes les règles sont respectées.\n');

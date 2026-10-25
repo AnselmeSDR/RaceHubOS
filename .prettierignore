@@ -1,0 +1,20 @@
+# Written by npm
+package.json
+package-lock.json
+
+# Must stay byte-identical: Prisma checks applied migrations against their checksum
+**/prisma/migrations/
+
+# Prose and pages: formatted by hand
+*.md
+*.html
+
+# Generated or uploaded
+**/dist/
+**/public/
+**/test-results/
+**/playwright-report/
+**/logs/
+
+# Local tool settings
+.claude/

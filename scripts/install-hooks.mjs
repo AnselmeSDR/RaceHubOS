@@ -17,6 +17,13 @@ if (!fs.existsSync(path.join(rootDir, '.git'))) process.exit(0);
 
 try {
   execFileSync('git', ['config', 'core.hooksPath', '.githooks'], { cwd: rootDir, stdio: 'ignore' });
+  // git blame saute le commit qui a formate tout le code (git refuse un fichier absent)
+  if (fs.existsSync(path.join(rootDir, '.git-blame-ignore-revs'))) {
+    execFileSync('git', ['config', 'blame.ignoreRevsFile', '.git-blame-ignore-revs'], {
+      cwd: rootDir,
+      stdio: 'ignore',
+    });
+  }
 } catch {
   // Sans git, l'application s'installe quand meme : seuls les hooks manquent
 }
