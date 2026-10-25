@@ -23,6 +23,12 @@ export function DeviceProvider({ children }) {
   // CU/Simulator status
   const [cuStatus, setCuStatus] = useState({ start: 8 })
   const [lastTimer, setLastTimer] = useState(null)
+  const [lastStatusAt, setLastStatusAt] = useState(null)
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Loading states
   const [scanning, setScanning] = useState(false)
@@ -48,6 +54,7 @@ export function DeviceProvider({ children }) {
 
     socket.on('disconnect', () => {
       setSocketConnected(false)
+      setLastStatusAt(null)
     })
 
     socket.on('cu:connected', () => {
@@ -56,6 +63,7 @@ export function DeviceProvider({ children }) {
 
     socket.on('cu:disconnected', () => {
       setConnected(false)
+      setLastStatusAt(null)
       setDeviceType(null)
       setDeviceAddress(null)
     })
@@ -65,6 +73,11 @@ export function DeviceProvider({ children }) {
         setConnected(status.connected)
       }
       setCuStatus(status)
+      setLastStatusAt(
+        Number.isFinite(status.lastStatusAt)
+          ? Date.now() - Math.max(0, (status.serverTime || Date.now()) - status.lastStatusAt)
+          : Date.now()
+      )
     })
 
     socket.on('cu:timer', (data) => {
@@ -96,6 +109,11 @@ export function DeviceProvider({ children }) {
       setDeviceType(data.deviceType || null)
       setDeviceAddress(data.deviceAddress || null)
       setCuStatus(data.lastStatus || { start: 8 })
+      setLastStatusAt(
+        Number.isFinite(data.lastStatusAt)
+          ? Date.now() - Math.max(0, (data.serverTime || Date.now()) - data.lastStatusAt)
+          : null
+      )
     } catch (error) {
       console.error('[DeviceContext] Error loading status:', error)
     }
@@ -266,6 +284,16 @@ export function DeviceProvider({ children }) {
     cuStatus,
     lastTimer,
     socketConnected,
+    lastStatusAt,
+    connectionState: !socketConnected
+      ? 'serverDisconnected'
+      : !connected
+        ? 'cuDisconnected'
+        : !Number.isFinite(lastStatusAt)
+          ? 'waiting'
+          : now - lastStatusAt > 5000
+            ? 'stale'
+            : 'live',
 
     // Derived state
     isInLightsSequence,

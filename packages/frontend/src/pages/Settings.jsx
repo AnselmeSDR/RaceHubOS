@@ -6,6 +6,9 @@ import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
 import { voicesByLanguage } from '../lib/speech'
 import { LANGUAGES } from '../i18n'
+import { tx, useExtensions } from '../i18n/raceScreens'
+import { Link } from 'react-router-dom'
+import { TrackExtrasSettings } from '../components/race/TrackExtras'
 import {
   Wifi,
   Cpu,
@@ -35,6 +38,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
 
 export default function Settings() {
+  useExtensions()
   const { t, i18n } = useTranslation('settings')
   const {
     connected,
@@ -447,6 +451,15 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+      <Link
+        to="/settings/race-screen"
+        className="block rounded-xl border bg-card p-5 space-y-2"
+        data-testid="race-screen-settings-link"
+      >
+        <h2 className="text-xl font-semibold">{tx('Rennbildschirm anpassen')}</h2>
+        <p>{tx('Erste Fahrerzeile als Vorlage, automatische Höhenaufteilung und Vorschau für 1–6 Fahrer.')}</p>
+      </Link>
+      <TrackExtrasSettings />
 
       {/* Connection Status */}
       <Card className={connected ? 'border-green-500/50' : ''}>

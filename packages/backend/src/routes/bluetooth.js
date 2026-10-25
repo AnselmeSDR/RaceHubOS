@@ -35,6 +35,8 @@ router.get('/status', async (req, res) => {
     deviceType: currentDevice ? (isSimulator ? 'simulator' : 'controlUnit') : null,
     deviceAddress: currentDevice ? (isSimulator ? 'SIMULATOR' : currentDevice.address) : null,
     lastStatus: syncService?.getCuStatus(),
+    lastStatusAt: syncService?.lastStatusAt ?? null,
+    serverTime: Date.now(),
   });
 });
 

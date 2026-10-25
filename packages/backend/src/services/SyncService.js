@@ -1,3 +1,4 @@
+import { SectorTiming } from '../lib/sectorTiming.js';
 /**
  * SyncService - Synchronisation hardware CU/Simulator
  *
@@ -14,6 +15,9 @@ export class SyncService {
     this.sessionService = null;
 
     // Timestamps pour calcul lapTime
+    this.sectors = new SectorTiming();
+    this.sectorSessionKey = null;
+    this.lastStatusAt = null;
     this.lastTimestamps = new Map(); // controller -> timestamp
 
     // CU status & polling
@@ -25,7 +29,11 @@ export class SyncService {
     this._onTimer = (event) => this.handleTimerEvent(event);
     this._onStatus = (status) => this.handleStatus(status);
     this._onConnected = () => this.io?.emit('cu:connected');
-    this._onDisconnected = () => this.io?.emit('cu:disconnected');
+    this._onDisconnected = () => {
+      this.resetSectorTiming();
+      this.lastStatusAt = null;
+      this.io?.emit('cu:disconnected');
+    };
   }
 
   setSessionService(sessionService) {
@@ -49,8 +57,9 @@ export class SyncService {
     }
 
     // Clear state
-    this.lastTimestamps.clear();
+    this.resetSectorTiming();
     this.cuStatus = null;
+    this.lastStatusAt = null;
 
     // Set new device
     this.source = device;
@@ -86,7 +95,25 @@ export class SyncService {
    */
   async handleTimerEvent(event) {
     const { controller, timestamp, sector } = event;
+    if (
+      !Number.isInteger(controller) ||
+      controller < 0 ||
+      controller > 5 ||
+      !Number.isFinite(timestamp) ||
+      timestamp <= 0 ||
+      ![1, 2, 3].includes(sector)
+    )
+      return;
     const isFinishLine = sector === 1;
+
+    const session = this.sessionService;
+    const running = session?.isActive() && session.sessionStatus !== 'paused';
+    const key = running ? `${session.activeSessionId}:${session.currentPhase}` : null;
+    if (key !== this.sectorSessionKey) {
+      this.sectors.reset();
+      this.lastTimestamps.clear();
+      this.sectorSessionKey = key;
+    }
 
     let lapTime = 0;
     if (isFinishLine && timestamp > 0) {
@@ -95,16 +122,20 @@ export class SyncService {
       if (lapTime >= 0) {
         this.lastTimestamps.set(controller, timestamp);
       } else {
-        lapTime = 0; // CU glitch, treat as first pass
+        lapTime = 0; // Restart all controller baselines after a CU clock reset.
+        this.lastTimestamps.clear();
+        this.lastTimestamps.set(controller, timestamp);
+        this.sectors.reset();
       }
     }
 
     // Emit raw timer (for frontend logs/footer)
     this.io?.emit('cu:timer', { controller, timestamp, lapTime, sector, isFinishLine });
 
-    // Only forward finish line crossings to SessionService
-    if (isFinishLine && this.sessionService?.isActive()) {
-      await this.sessionService.handleLap({ controller, timestamp, lapTime, sector });
+    const sectors = key ? this.sectors.push(event) : null;
+    if (sectors && !isFinishLine) session.handleSector?.(controller, sectors);
+    if (isFinishLine && running) {
+      await session.handleLap({ controller, timestamp, lapTime, sector, sectors });
     }
   }
 
@@ -121,7 +152,8 @@ export class SyncService {
     const isFirstLight = status?.start === 1;
 
     this.cuStatus = status;
-    this.io?.emit('cu:status', status);
+    this.lastStatusAt = Date.now();
+    this.io?.emit('cu:status', { ...status, lastStatusAt: this.lastStatusAt, serverTime: Date.now() });
 
     // Reset CU when entering 1/5 lights (clean slate before race)
     if (isFirstLight && wasNotInLights) {
@@ -232,8 +264,14 @@ export class SyncService {
     }
   }
 
-  async reset() {
+  resetSectorTiming() {
+    this.sectors.reset();
+    this.sectorSessionKey = null;
     this.lastTimestamps.clear();
+  }
+
+  async reset() {
+    this.resetSectorTiming();
     this.io?.emit('cu:reset');
     if (this.source?.reset) {
       await this.source.reset();
