@@ -1,5 +1,6 @@
 import 'dotenv/config';
 if (!process.env.DATABASE_URL) process.env.DATABASE_URL = 'file:./dev.db';
+import catalogRouter from './routes/catalog.js';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -166,6 +167,7 @@ app.get('/api', (req, res) => {
 // Mount API routes
 app.use('/api/drivers', driversRouter);
 app.use('/api/cars', carsRouter);
+app.use('/api/catalog', catalogRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/championships', championshipsRouter);

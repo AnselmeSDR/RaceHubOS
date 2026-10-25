@@ -1,3 +1,4 @@
+import CarTyres from '../components/car/CarTyres'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -101,7 +102,11 @@ export default function CarProfile() {
               className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
               style={{ '--tw-ring-color': carColor }}
             >
-              <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
+              <img
+                src={getImgUrl(car.img)}
+                alt={`${car.brand} ${car.model}`}
+                className="w-full h-full object-contain p-1"
+              />
             </div>
           ) : (
             <div
@@ -143,7 +148,7 @@ export default function CarProfile() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+          <Button variant="outline" size="sm" aria-label={t('common:edit')} onClick={() => setShowEdit(true)}>
             <Pencil className="size-4" />
           </Button>
           <Button
@@ -162,6 +167,7 @@ export default function CarProfile() {
         </div>
       </div>
 
+      <CarTyres carId={car.id} number={car.articleNumber} />
       {showEdit && (
         <CarFormModal
           car={car}
