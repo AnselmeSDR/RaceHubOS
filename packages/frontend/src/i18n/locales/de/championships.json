@@ -133,6 +133,14 @@
       "lapsCount": "{{count}} Runden",
       "finishedRaces_one": "{{count}} Rennen beendet",
       "finishedRaces_other": "{{count}} Rennen beendet"
+    },
+    "awardTitles": {
+      "best-lap": "Beste Runde",
+      "best-qualif": "Beste Qualifikation",
+      "best-race-lap": "Schnellste Rennrunde",
+      "comeback": "Größte Aufholjagd",
+      "consistent": "Konstantester Fahrer",
+      "iron-man": "Ausdauerndster Fahrer"
     }
   },
   "configModal": {

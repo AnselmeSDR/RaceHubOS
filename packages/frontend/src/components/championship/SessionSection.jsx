@@ -222,6 +222,8 @@ export default function SessionSection({
 
   const sessionLabel = useMemo(() => {
     if (!session) return ''
+    // Balancing is not a numbered championship session and has no abbreviation.
+    if (session.type === SessionType.BALANCING) return ''
     if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
     const sameType = sessions
       .filter((s) => s.type === session.type)
@@ -353,10 +355,13 @@ export default function SessionSection({
     <div data-testid="session-section" className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <TypeIcon className="w-5 h-5 text-muted-foreground" />
-          <h2 className="font-semibold text-foreground flex items-center gap-1">
-            {sessionLabel} -{' '}
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <TypeIcon className="w-5 h-5 text-muted-foreground shrink-0" />
+          <h2
+            data-testid="session-title"
+            className="font-semibold text-foreground flex flex-wrap items-center gap-1 min-w-0 break-words"
+          >
+            {sessionLabel && `${sessionLabel} - `}
             {editingName ? (
               <span
                 ref={nameInputRef}

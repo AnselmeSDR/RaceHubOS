@@ -133,6 +133,14 @@
       "lapsCount": "{{count}} tours",
       "finishedRaces_one": "{{count}} course terminée",
       "finishedRaces_other": "{{count}} courses terminées"
+    },
+    "awardTitles": {
+      "best-lap": "Meilleur tour",
+      "best-qualif": "Meilleur qualifié",
+      "best-race-lap": "Plus rapide en course",
+      "comeback": "Plus gros comeback",
+      "consistent": "Le plus régulier",
+      "iron-man": "Le plus endurant"
     }
   },
   "configModal": {

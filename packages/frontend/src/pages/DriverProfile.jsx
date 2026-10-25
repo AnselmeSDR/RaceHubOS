@@ -96,8 +96,11 @@ export default function DriverProfile() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div
+        data-testid="driver-profile-header"
+        className="border-b px-4 py-3 flex flex-wrap gap-3 items-center justify-between"
+      >
+        <div className="basis-full sm:basis-auto sm:flex-1 min-w-0 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/drivers')}>
             <ArrowLeft className="size-4" />
           </Button>
@@ -111,8 +114,8 @@ export default function DriverProfile() {
               <span>{driver.name.charAt(0)}</span>
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-black text-lg" style={{ color: driverColor }}>
                 {driver.name}
               </h1>
@@ -122,6 +125,8 @@ export default function DriverProfile() {
               {driver.team && (
                 <Badge
                   variant="secondary"
+                  data-testid="driver-team-badge"
+                  className="inline-block h-auto max-w-full whitespace-normal break-words"
                   style={{
                     backgroundColor: `${driver.team.color || driverColor}20`,
                     color: driver.team.color || driverColor,
@@ -131,7 +136,7 @@ export default function DriverProfile() {
                 </Badge>
               )}
             </div>
-            <div className="text-xs flex items-center gap-3">
+            <div className="text-xs flex flex-wrap items-center gap-3">
               <span className="text-blue-500 font-medium">
                 {driver._count?.sessions || 0} {t('glossary:race', { count: driver._count?.sessions || 0 })}
               </span>

@@ -133,6 +133,14 @@
       "lapsCount": "{{count}} laps",
       "finishedRaces_one": "{{count}} race finished",
       "finishedRaces_other": "{{count}} races finished"
+    },
+    "awardTitles": {
+      "best-lap": "Best lap",
+      "best-qualif": "Best qualifier",
+      "best-race-lap": "Fastest race lap",
+      "comeback": "Biggest comeback",
+      "consistent": "Most consistent driver",
+      "iron-man": "Most enduring driver"
     }
   },
   "configModal": {
