@@ -17,6 +17,7 @@ import { createPrismaClient } from './lib/prisma.js';
 import { CarreraSimulator } from './services/simulator.js';
 import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
+import { CuRecovery } from './services/CuRecovery.js';
 
 // Import routes
 import driversRouter from './routes/drivers.js';
@@ -26,7 +27,7 @@ import teamsRouter from './routes/teams.js';
 import championshipsRouter, { setChampionshipService } from './routes/championships.js';
 import statsRouter from './routes/stats.js';
 import settingsRouter, { setSettingsIo } from './routes/settings.js';
-import bluetoothRouter, { setControlUnit, setSimulator, setSyncService } from './routes/bluetooth.js';
+import bluetoothRouter, { setControlUnit, setSimulator, setSyncService, setCuRecovery } from './routes/bluetooth.js';
 import sessionsRouter, { setSessionService } from './routes/sessions.js';
 import configRouter, { setConfigService } from './routes/config.js';
 import recordsRouter from './routes/records.js';
@@ -72,6 +73,8 @@ const championshipService = new ChampionshipService(io);
 const controlUnit = new ControlUnit();
 const simulator = new CarreraSimulator(io);
 const syncService = new SyncService(io);
+const cuRecovery = new CuRecovery(controlUnit, syncService, io);
+setCuRecovery(cuRecovery);
 
 // Pass references to bluetooth router
 setControlUnit(controlUnit);
@@ -375,9 +378,7 @@ httpServer.listen(PORT, async () => {
       if (lastDevice) {
         console.log(`🔄 Auto-connecting to ${lastDevice.name} (${lastDevice.address})...`);
         try {
-          syncService.setDevice(controlUnit);
-          await controlUnit.connect(lastDevice.address);
-          syncService.startPolling();
+          await cuRecovery.connect(lastDevice.address);
           console.log('✅ Auto-connected to Control Unit');
         } catch (err) {
           console.warn('⚠️  Auto-connect failed:', err.message);
@@ -402,6 +403,7 @@ function gracefulShutdown(signal) {
   console.log(`\n⚠️  ${signal} received, closing server...`);
 
   try {
+    cuRecovery.close();
     syncService.close();
     simulator.disconnect();
     controlUnit.disconnect();
