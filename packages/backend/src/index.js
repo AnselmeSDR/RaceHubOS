@@ -1,3 +1,4 @@
+import voiceRouter from './routes/voice.js';
 import 'dotenv/config';
 if (!process.env.DATABASE_URL) process.env.DATABASE_URL = 'file:./dev.db';
 import express from 'express';
@@ -178,6 +179,7 @@ app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/preferences', preferencesRouter);
+app.use('/api/voice', voiceRouter);
 app.use('/api/update', updateRouter);
 
 // SyncService endpoints (hardware control)

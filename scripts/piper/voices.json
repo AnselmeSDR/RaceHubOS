@@ -1,0 +1,65 @@
+{
+  "revision": "5041a7a49ae5b3a0f30e6837769eb03fdbb231bd",
+  "voices": [
+    {
+      "id": "de_DE-thorsten-medium",
+      "language": "de",
+      "name": "Thorsten",
+      "license": "CC0",
+      "files": {
+        "de_DE-thorsten-medium.onnx": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/de/de_DE/thorsten/medium/de_DE-thorsten-medium.onnx",
+          "sha256": "7e64762d8e5118bb578f2eea6207e1a35a8e0c30595010b666f983fc87bb7819"
+        },
+        "de_DE-thorsten-medium.onnx.json": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/de/de_DE/thorsten/medium/de_DE-thorsten-medium.onnx.json",
+          "sha256": "974adee790533adb273a1ac88f49027d2a1b8f0f2cf4905954a4791e79264e85"
+        },
+        "MODEL_CARD": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/de/de_DE/thorsten/medium/MODEL_CARD",
+          "sha256": "5196b5ab0794e6056263a1f37c18bec407b61ac187529bee29d1c366871e5c9e"
+        }
+      }
+    },
+    {
+      "id": "en_US-ljspeech-high",
+      "language": "en",
+      "name": "LJ Speech",
+      "license": "Public domain dataset",
+      "files": {
+        "en_US-ljspeech-high.onnx": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx",
+          "sha256": "5d4f08ba6a2a48c44592eed3ce56bf85e9de3dd4e20df90541ae68a8310c029a"
+        },
+        "en_US-ljspeech-high.onnx.json": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx.json",
+          "sha256": "7e1f4634af596d83cca997fb7a931ba80b70f8a316a2655ee69c55365e0ace14"
+        },
+        "MODEL_CARD": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/en/en_US/ljspeech/high/MODEL_CARD",
+          "sha256": "289f7421072d689a3d91f6c632f486af46f9b8b04417536104a4ea667b8a394b"
+        }
+      }
+    },
+    {
+      "id": "fr_FR-siwis-medium",
+      "language": "fr",
+      "name": "Siwis",
+      "license": "CC-BY-4.0 dataset",
+      "files": {
+        "fr_FR-siwis-medium.onnx": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx",
+          "sha256": "641d1ab097da2b81128c076810edb052b385decc8be3381814802a64a73baf99"
+        },
+        "fr_FR-siwis-medium.onnx.json": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json",
+          "sha256": "39479916c2db192b5ac9764daddd0c744d83e023ad890c6976c0633ae4df8959"
+        },
+        "MODEL_CARD": {
+          "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/fr/fr_FR/siwis/medium/MODEL_CARD",
+          "sha256": "bd8b8d079d4d3d2c4cc20345889bbcd586d72f021a132f93357a763eb5232cce"
+        }
+      }
+    }
+  ]
+}
