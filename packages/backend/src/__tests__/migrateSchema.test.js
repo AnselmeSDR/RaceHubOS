@@ -60,6 +60,7 @@ const hasColumn = (dbPath, table, column) => {
  */
 describe('migrateSchema', () => {
   const originalUrl = process.env.DATABASE_URL;
+  const originalRustLog = process.env.RUST_LOG;
   let workDir;
   let dbPath;
 
@@ -67,10 +68,15 @@ describe('migrateSchema', () => {
     workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'racehubos-migrate-test-'));
     dbPath = path.join(workDir, 'fixture.db');
     process.env.DATABASE_URL = `file:${dbPath}`;
+    // Quiet application logging must not suppress the engine message Prisma
+    // needs to create a new SQLite database (upstream issue #29355).
+    process.env.RUST_LOG = 'warn';
   });
 
   afterEach(() => {
     process.env.DATABASE_URL = originalUrl;
+    if (originalRustLog === undefined) delete process.env.RUST_LOG;
+    else process.env.RUST_LOG = originalRustLog;
     fs.rmSync(workDir, { recursive: true, force: true });
   });
 
@@ -79,6 +85,7 @@ describe('migrateSchema', () => {
 
     expect(result.baselined).toEqual([]);
     expect(historyOf(dbPath)).toEqual(migrationNames());
+    expect(process.env.RUST_LOG).toBe('warn');
   }, 120000);
 
   it('baselines a database left current by db push, keeping its data', () => {
