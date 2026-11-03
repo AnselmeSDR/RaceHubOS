@@ -142,7 +142,12 @@ function AwardCard({ award }) {
           <Icon className="size-4 text-championship" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">{award.title}</div>
+          <div
+            data-testid="championship-award-title"
+            className="text-xs font-semibold text-muted-foreground uppercase mb-1"
+          >
+            {t(`results.awardTitles.${award.id}`, { defaultValue: award.title })}
+          </div>
           <div className="flex items-center gap-2">
             {award.driver?.img && (
               <img src={getImgUrl(award.driver.img)} className="w-6 h-6 rounded-full object-cover" alt="" />

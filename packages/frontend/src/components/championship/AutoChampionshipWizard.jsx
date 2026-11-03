@@ -189,7 +189,7 @@ export default function AutoChampionshipWizard({
       size="2xl"
     >
       {/* Step indicators */}
-      <div className="flex items-center gap-2 mb-6">
+      <div data-testid="championship-wizard-steps" className="flex flex-wrap items-center gap-2 mb-6">
         {STEPS.map((s, i) => {
           const Icon = s.icon
           const isActive = i === step
@@ -307,8 +307,8 @@ export default function AutoChampionshipWizard({
 
       {/* Step 3: Config */}
       {step === 2 && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        <div data-testid="championship-wizard-config" className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label={t('wizard.driversPerQualif')}>
               <Input
                 type="number"
@@ -333,7 +333,7 @@ export default function AutoChampionshipWizard({
             </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Qualif config */}
             <div className="space-y-3 border border-blue-200 dark:border-blue-800 rounded-lg p-3 bg-blue-50/30 dark:bg-blue-950/20">
               <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('wizard.qualifications')}</h3>
@@ -444,7 +444,7 @@ export default function AutoChampionshipWizard({
       {/* Step 4: Preview */}
       {step === 3 && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             {/* Qualifs */}
             <div>
               <h3 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">{t('wizard.qualifications')}</h3>
@@ -469,7 +469,7 @@ export default function AutoChampionshipWizard({
             <div className="flex flex-col items-center justify-center">
               <div className="text-xs text-muted-foreground mb-2">{t('wizard.globalRanking')}</div>
               <div className="text-xs text-muted-foreground">{t('wizard.globalRankingHint')}</div>
-              <div className="mt-2 text-lg">→</div>
+              <div className="mt-2 text-lg rotate-90 sm:rotate-0">→</div>
             </div>
 
             {/* Races */}

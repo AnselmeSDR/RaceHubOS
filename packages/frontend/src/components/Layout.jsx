@@ -54,7 +54,7 @@ function PageHeader() {
           </div>
         )}
         <div className="min-w-0">
-          <h1 className="text-sm font-medium truncate leading-tight">{header.title}</h1>
+          <h1 className="text-sm font-medium break-words leading-tight">{header.title}</h1>
           <p className="text-xs text-muted-foreground leading-tight">
             {header.loading
               ? '...'
@@ -81,6 +81,7 @@ function PageHeader() {
         )}
         {header.onAdd && (
           <Button
+            data-testid="page-add"
             size="sm"
             onClick={header.onAdd}
             className={`bg-${header.color}-500 hover:bg-${header.color}-600 text-white`}
@@ -129,13 +130,16 @@ export default function Layout() {
       />
       <SidebarInset>
         <PageHeaderProvider>
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+          <header
+            data-testid="page-header"
+            className="flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2"
+          >
             <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-full" />
+            <Separator orientation="vertical" className="mr-2 h-5" />
             <PageHeader />
           </header>
 
-          <div className="flex-1 overflow-auto">
+          <div data-testid="page-content" className="flex-1 min-w-0 overflow-auto">
             <Outlet />
           </div>
         </PageHeaderProvider>
