@@ -3,17 +3,21 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-export default function OfflineVoiceSettings({ onChanged, voiceState }) {
-  const { t, i18n } = useTranslation('offlineVoices')
+export default function OfflineVoiceSettings(props) {
+  const { i18n } = useTranslation('offlineVoices')
   const language = ['de', 'en', 'fr'].includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en'
+  return <OfflineVoiceInstallation key={language} {...props} language={language} />
+}
+
+function OfflineVoiceInstallation({ onChanged, voiceState, language }) {
+  const { t, i18n } = useTranslation('offlineVoices')
   const [extraLanguages, setExtraLanguages] = useState([])
   const selection = [language, ...extraLanguages.filter((value) => value !== language)].sort().join(',')
   const languageName = (value) => new Intl.DisplayNames([i18n.resolvedLanguage], { type: 'language' }).of(value)
-  useEffect(() => setExtraLanguages([]), [language])
-  const [status, setStatus] = useState(null)
+  const [storedStatus, setStatus] = useState(null)
+  const status = storedStatus?.selection === selection ? storedStatus.data : null
   const [error, setError] = useState(false)
   const [revision, setRevision] = useState(0)
-  useEffect(() => setStatus(null), [selection])
   const busy = status?.phase === 'installing' || status?.phase === 'removing'
   useEffect(() => {
     let active = true
@@ -24,7 +28,7 @@ export default function OfflineVoiceSettings({ onChanged, voiceState }) {
         if (!response.ok) throw new Error()
         const data = await response.json()
         if (!active) return
-        setStatus(data)
+        setStatus({ selection, data })
         if (data.phase === 'installing' || data.phase === 'removing') timer = setTimeout(load, 750)
         else onChanged()
       } catch {
@@ -39,7 +43,10 @@ export default function OfflineVoiceSettings({ onChanged, voiceState }) {
   }, [revision, onChanged, selection])
   async function change(method, endpoint) {
     setError(false)
-    setStatus((previous) => ({ ...previous, phase: method === 'POST' ? 'installing' : 'removing' }))
+    setStatus((previous) => ({
+      selection,
+      data: { ...previous?.data, phase: method === 'POST' ? 'installing' : 'removing' },
+    }))
     try {
       const response = await fetch(`${API_URL}/api/voice/${endpoint}`, {
         method,
@@ -51,10 +58,10 @@ export default function OfflineVoiceSettings({ onChanged, voiceState }) {
           : {}),
       })
       if (!response.ok) throw new Error()
-      setStatus(await response.json())
+      setStatus({ selection, data: await response.json() })
     } catch {
       setError(true)
-      setStatus((previous) => ({ ...previous, phase: 'idle' }))
+      setStatus((previous) => ({ selection, data: { ...previous?.data, phase: 'idle' } }))
     }
     setRevision((value) => value + 1)
   }
