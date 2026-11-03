@@ -12,7 +12,17 @@ export function createVoiceRouter({
     res.set('Cache-Control', 'no-store');
     next();
   });
-  router.get('/status', (req, res) => res.json(manager.status()));
+  const validLanguages = (value) =>
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= 3 &&
+    value.every((language) => ['de', 'en', 'fr'].includes(language));
+  router.get('/status', (req, res) => {
+    const languages = req.query.languages?.split(',');
+    if (languages && !validLanguages(languages))
+      return res.status(400).json({ error: 'Invalid offline voice languages' });
+    res.json(manager.status(languages));
+  });
   router.use((req, res, next) => {
     const origin = req.get('origin');
     if (origin && origin !== `${req.protocol}://${req.get('host')}`)
@@ -20,8 +30,15 @@ export function createVoiceRouter({
     next();
   });
   router.post('/install', (req, res) => {
+    const languages = req.body?.languages;
+    if (!validLanguages(languages)) return res.status(400).json({ error: 'Select offline voice languages' });
     if (!manager.status().supported) return res.status(400).json({ error: 'Unsupported offline voice platform' });
-    if (!manager.startInstall()) return res.status(409).json({ error: 'Offline voice operation in progress' });
+    if (!manager.startInstall([...new Set(languages)], { onlyMissing: true }))
+      return res.status(409).json({ error: 'Offline voice operation in progress' });
+    res.status(202).json(manager.status());
+  });
+  router.post('/cancel', (req, res) => {
+    if (!manager.cancelInstall()) return res.status(409).json({ error: 'No cancellable offline voice installation' });
     res.status(202).json(manager.status());
   });
   router.delete('/installation', async (req, res) => {

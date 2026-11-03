@@ -62,11 +62,15 @@ export default function Settings() {
     voiceId: bestLapVoiceId,
     saveVoiceId,
     speak,
+    cancelSpeech,
     localVoices,
     refreshLocalVoices,
     voiceState,
   } = useVoice()
   const [voices, setVoices] = useState([])
+  const [previewState, setPreviewState] = useState('idle')
+  const previewRef = useRef(null)
+  useEffect(() => () => clearTimeout(previewRef.current?.timer), [])
   const isPiperChoice = typeof bestLapVoiceId === 'string' && bestLapVoiceId.startsWith('_piper')
   const selectedLocalVoice = selectLocalVoice(localVoices, bestLapVoiceId, i18n.resolvedLanguage)
 
@@ -305,12 +309,43 @@ export default function Settings() {
     return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
   }, [loadVoices])
 
+  function stopPreview() {
+    clearTimeout(previewRef.current?.timer)
+    previewRef.current = null
+    cancelSpeech()
+    setPreviewState('idle')
+  }
   function handleVoiceChange(voiceURI) {
+    if (isPiperChoice || voiceURI.startsWith('_piper')) stopPreview()
     saveVoiceId(voiceURI)
   }
 
   function testVoice() {
-    speak(t('appearance.testVoicePhrase'))
+    if (!isPiperChoice) {
+      speak(t('appearance.testVoicePhrase'))
+      return
+    }
+    stopPreview()
+    const preview = {}
+    previewRef.current = preview
+    setPreviewState('loading')
+    const finish = (state) => {
+      if (previewRef.current !== preview) return
+      clearTimeout(preview.timer)
+      previewRef.current = null
+      setPreviewState(state)
+    }
+    const utterance = speak(t('appearance.testVoicePhrase'), { force: true, preview: true })
+    if (!utterance) {
+      finish('failed')
+      return
+    }
+    utterance.onend = () => finish('done')
+    utterance.onerror = () => finish('failed')
+    preview.timer = setTimeout(() => {
+      cancelSpeech()
+      finish('failed')
+    }, 35000)
   }
 
   function handleBestLapVoiceMinLaps(value) {
@@ -731,9 +766,19 @@ export default function Settings() {
                 className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
                 title={t('appearance.testVoice')}
               >
-                <Play className="size-3.5" />
+                {previewState === 'loading' ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Play className="size-3.5" />
+                )}
               </button>
             </div>
+          )}
+
+          {previewState !== 'idle' && (
+            <p data-testid="voice-preview-status" role="status" className="pl-7 text-sm">
+              {t('offlineVoices:preview' + previewState)}
+            </p>
           )}
 
           <OfflineVoiceSettings onChanged={refreshLocalVoices} voiceState={voiceState} />
