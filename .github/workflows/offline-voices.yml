@@ -50,7 +50,12 @@ jobs:
       - name: Install native build prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y libbluetooth-dev
+          sudo apt-get install -y libbluetooth-dev pulseaudio
+      - name: Provide a virtual audio output for real browser playback
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=racehubos_ci
+          pactl set-default-sink racehubos_ci
       - run: npm ci
       - run: npm run prisma:generate -w @racehubos/backend
       - run: npm run check:push
