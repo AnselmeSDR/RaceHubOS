@@ -1,0 +1,17 @@
+{
+  "title": "Offline-Stimmen",
+  "selection": "Sprachausgabe",
+  "description": "Optionale Piper-Stimmen für Französisch, Englisch und Deutsch. Browserstimmen bleiben verfügbar. Vor deinem Klick wird nichts heruntergeladen.",
+  "downloadSize": "Download: {{size}} MiB (Engine und drei Stimmen).",
+  "installed": "Offline-Stimmen installiert.",
+  "missing": "Keine vollständige Installation von Offline-Stimmen.",
+  "installing": "Download und Prüfung laufen…",
+  "removing": "Offline-Stimmen werden entfernt…",
+  "install": "Offline-Stimmen installieren",
+  "remove": "Offline-Stimmen entfernen",
+  "operationFailed": "Der Vorgang ist fehlgeschlagen. Verbindung und freien Speicher prüfen und erneut versuchen.",
+  "unsupported": "Keine vorkompilierte Engine für diese Plattform; Browserstimmen verwenden.",
+  "fallback": "Lokale Stimme nicht verfügbar; Browser-Sprachausgabe wird verwendet.",
+  "savedUnavailable": "Gespeicherte Piper-Auswahl, Stimme nicht verfügbar",
+  "credits": "Engine sherpa-onnx; Piper-Modelle Thorsten, LJ Speech und Siwis. Lizenzen und Modellkarten bleiben bei den Downloads erhalten."
+}

@@ -1,4 +1,3 @@
-import voiceRouter from './routes/voice.js';
 import 'dotenv/config';
 if (!process.env.DATABASE_URL) process.env.DATABASE_URL = 'file:./dev.db';
 import express from 'express';
@@ -20,6 +19,7 @@ import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
 
 // Import routes
+import voiceRouter from './routes/voice.js';
 import driversRouter from './routes/drivers.js';
 import carsRouter from './routes/cars.js';
 import tracksRouter from './routes/tracks.js';

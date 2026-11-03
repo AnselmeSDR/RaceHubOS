@@ -1,0 +1,33 @@
+name: Offline voice smoke test
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/offline-voices.yml'
+      - 'packages/backend/src/lib/piper*.js'
+      - 'packages/backend/src/lib/offlineVoices.js'
+      - 'packages/backend/src/data/offlineVoices.json'
+      - 'scripts/test-offline-voices.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: offline-voices-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthesize:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      # Explicit integration-test install in a temporary directory, never app startup.
+      - run: node scripts/test-offline-voices.js --install

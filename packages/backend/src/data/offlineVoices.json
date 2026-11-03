@@ -1,0 +1,69 @@
+{
+  "engineVersion": "1.13.8",
+  "runtime": {
+    "sherpa-onnx-node": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-node/-/sherpa-onnx-node-1.13.8.tgz",
+      "integrity": "sha512-MsDMBdhLFTZ1GwvcGSSQhnS7g/EA8OMH6IYysCVUOM7j8Icty9KRc0E6YT1A5fWBsZwRfKOeh88QC95aRvS8ag==",
+      "bytes": 11954
+    },
+    "sherpa-onnx-win-x64": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-win-x64/-/sherpa-onnx-win-x64-1.13.8.tgz",
+      "integrity": "sha512-oZF1c9VPOKtMwn83Bboc5XSWL+76BRoyB3eUuVnCknBKxwSULZU2Foia9VHWzU+n4I12rPsP6z6H9Rp1hD9o8g==",
+      "bytes": 8894875
+    },
+    "sherpa-onnx-win-ia32": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-win-ia32/-/sherpa-onnx-win-ia32-1.13.8.tgz",
+      "integrity": "sha512-H0Ojln9hfvM+pxWqW0cnjB/XK8/JPq4/k0IWu2JpY5Z458M3zv+XC3Hu+wmot3AoH/K1Bgt23n/tTKtPV9x8qg==",
+      "bytes": 7698196
+    },
+    "sherpa-onnx-linux-x64": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-linux-x64/-/sherpa-onnx-linux-x64-1.13.8.tgz",
+      "integrity": "sha512-6plnhjagsSeTntCgnlag86hWbs/uZE9Crms1LgOb68/1nKsIQjMd+WG519m+aPwT6TrsBOiEMzrx41t8sL5L5g==",
+      "bytes": 11089653
+    },
+    "sherpa-onnx-darwin-x64": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-darwin-x64/-/sherpa-onnx-darwin-x64-1.13.8.tgz",
+      "integrity": "sha512-7BLRpjM6w4f9W46/nmkmq8lEKUayhebvcpslCVQ+6QN2uReYlZEMDZlSpXMjme+hUFrPfRz8P3UNq8ep/4d19g==",
+      "bytes": 11191481
+    },
+    "sherpa-onnx-linux-arm64": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-linux-arm64/-/sherpa-onnx-linux-arm64-1.13.8.tgz",
+      "integrity": "sha512-Tlg7a70b/Wge3OF8IgTHF9jhSVCsLyKQKhwc4BsJ5A+dL/SrFtGBjzuHp4XeLhiiOT7afCxX5PdSn/D4c8Lnuw==",
+      "bytes": 13910679
+    },
+    "sherpa-onnx-darwin-arm64": {
+      "url": "https://registry.npmjs.org/sherpa-onnx-darwin-arm64/-/sherpa-onnx-darwin-arm64-1.13.8.tgz",
+      "integrity": "sha512-FPNgJMgnWVl/KhRTIhG3KL3A4Om63Rn4YKXc9/uHY7SzLcvqLJLc/h7UBWJwduXvv7K18t5NpxHR6XgXn4sjWw==",
+      "bytes": 10047754
+    }
+  },
+  "voices": [
+    {
+      "id": "de_DE-thorsten-medium",
+      "language": "de",
+      "locale": "de-DE",
+      "name": "Thorsten",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium.tar.bz2",
+      "sha256": "50487d9c95fdf2191f31d2588569381063ba1591dcd4c7d4bdd30f12b2191714",
+      "bytes": 67214254
+    },
+    {
+      "id": "en_US-ljspeech-high",
+      "language": "en",
+      "locale": "en-US",
+      "name": "LJ Speech",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ljspeech-high.tar.bz2",
+      "sha256": "00c6408d2409050312193b0d40ae07fde28af7d3d45a56efcc55440db516b935",
+      "bytes": 115817679
+    },
+    {
+      "id": "fr_FR-siwis-medium",
+      "language": "fr",
+      "locale": "fr-FR",
+      "name": "Siwis",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-siwis-medium.tar.bz2",
+      "sha256": "375909aa30842b3a4efa10b1beb1d761af792960ae6873b4d53889f96c66195b",
+      "bytes": 67207459
+    }
+  ]
+}

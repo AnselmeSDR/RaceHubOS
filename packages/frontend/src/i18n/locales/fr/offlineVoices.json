@@ -1,0 +1,17 @@
+{
+  "title": "Voix hors ligne",
+  "selection": "Sortie vocale",
+  "description": "Voix Piper facultatives en français, anglais et allemand. La synthèse du navigateur reste disponible. Aucun téléchargement avant votre clic.",
+  "downloadSize": "Téléchargement : {{size}} Mio (moteur et trois voix).",
+  "installed": "Voix hors ligne installées.",
+  "missing": "Aucune installation complète de voix hors ligne.",
+  "installing": "Téléchargement et vérification en cours…",
+  "removing": "Suppression des voix hors ligne…",
+  "install": "Installer les voix hors ligne",
+  "remove": "Supprimer les voix hors ligne",
+  "operationFailed": "L’opération a échoué. Vérifiez la connexion et l’espace disque, puis réessayez.",
+  "unsupported": "Aucun moteur précompilé pour cette plateforme ; utilisez les voix du navigateur.",
+  "fallback": "Voix locale indisponible ; synthèse du navigateur utilisée.",
+  "savedUnavailable": "Choix Piper enregistré, voix indisponible",
+  "credits": "Moteur sherpa-onnx ; modèles Piper Thorsten, LJ Speech et Siwis. Les licences et fiches des modèles sont conservées avec les téléchargements."
+}
