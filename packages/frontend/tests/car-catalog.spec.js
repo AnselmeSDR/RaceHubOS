@@ -1,83 +1,116 @@
 import { test, expect } from '@playwright/test'
+
 const API = 'http://localhost:3101'
-test.beforeEach(async ({ page, request }) => {
-  await request.put(`${API}/api/preferences/cars:scaleFilter`, { data: { value: 'all' } })
-  await page.addInitScript(() => {
-    if (!sessionStorage.getItem('catalogue-language-set')) {
-      localStorage.setItem('racehubos-lang', 'en')
-      sessionStorage.setItem('catalogue-language-set', '1')
-    }
-  })
+test.beforeEach(async ({ page }, testInfo) => {
+  const language = testInfo.title.match(/form in (fr|de|en)$/)?.[1] || 'en'
+  await page.addInitScript((value) => localStorage.setItem('racehubos-lang', value), language)
 })
-test('lookup and selected adoption preserve existing settings and mounted tyres', async ({ page, request }) => {
+
+test('manual catalog entry, local photo, selective adoption and persistence', async ({ page, request }) => {
+  const serial = `OWN-${Date.now()}`
+  const photo = await request.post(`${API}/api/upload/cars`, {
+    multipart: {
+      img: {
+        name: 'own.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+          'base64'
+        ),
+      },
+    },
+  })
+  const img = (await photo.json()).data.url
+  const errors = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/catalog')
+  await page.getByTestId('catalog-add').click()
+  await page.getByTestId('catalog-field-serial').fill(serial)
+  await page.getByTestId('catalog-field-brand').fill('My catalog brand')
+  await page.getByTestId('catalog-field-model').fill('My catalog car')
+  await page.getByTestId('catalog-field-year').fill('1888')
+  await page.getByTestId('catalog-field-tyresRear').fill('Local rear tyres')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByTestId('catalog-entry').filter({ hasText: serial })).toBeVisible()
+  const entry = (await (await request.get(`${API}/api/catalog/lookup/${serial}`)).json()).data
+  const { createdAt, updatedAt, ...data } = entry
+  expect(createdAt).toBeTruthy()
+  expect(updatedAt).toBeTruthy()
+  await request.put(`${API}/api/catalog/${serial}`, { data: { ...data, img } })
+  await page.reload()
+  await expect(page.getByTestId('catalog-entry').filter({ hasText: serial }).locator('img')).toBeVisible()
   const car = (
     await (
       await request.post(`${API}/api/cars`, {
         data: {
-          brand: 'Catalogue E2E',
-          model: `Own-${Date.now()}`,
-          maxSpeed: 30,
-          brakeForce: 40,
-          fuelCapacity: 80,
-          tyresFront: 'My front tyres',
-          tyresRear: 'My rear tyres',
-          motor: 'My motor',
-          notes: 'My notes',
+          brand: 'Own brand',
+          model: 'Own car',
           year: 2020,
+          maxSpeed: 30,
+          motor: 'My motor',
+          tyresFront: 'My tyres',
         },
       })
     ).json()
   ).data
-  const errors = []
-  page.on('pageerror', (e) => errors.push(e.message))
   await page.goto(`/cars/${car.id}`)
-  await page.getByRole('button', { name: 'Edit', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Car product reference', exact: true }).fill('c4226')
-  await page.getByRole('button', { name: 'Search local catalogue', exact: true }).click()
-  await expect(page.getByRole('link', { name: 'Product source', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Apply selected data and image', exact: true }).click()
-  await page.screenshot({ path: '../../../car-catalog-form.png', fullPage: true })
+  await page.getByTestId('car-edit').click()
+  await page.getByTestId('car-serial').fill(serial)
+  await page.getByTestId('catalog-search').click()
+  await expect(page.getByTestId('catalog-result')).toBeVisible()
+  for (const key of ['model', 'year', 'img', 'tyresRear']) await page.getByTestId(`catalog-apply-${key}`).check()
+  await page.getByTestId('catalog-apply').click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeHidden()
+  await expect(page.getByTestId('catalog-lookup')).toBeHidden()
   const saved = (await (await request.get(`${API}/api/cars/${car.id}`)).json()).data
-  expect(saved.articleNumber).toBe('C4226')
-  expect(saved.model).toContain('K.I.T.T.')
-  for (const key of ['maxSpeed', 'brakeForce', 'fuelCapacity', 'tyresFront', 'tyresRear', 'motor', 'notes', 'year'])
-    expect(saved[key]).toBe(car[key])
-  expect(saved.img).toContain('/api/img/cars/')
-  expect((await request.get(`${API}${saved.img}`)).ok()).toBeTruthy()
-  await page.screenshot({ path: '../../../car-catalog-profile.png', fullPage: true })
+  expect(saved.serial).toBe(serial)
+  expect(saved.model).toBe('My catalog car')
+  expect(saved.year).toBe(1888)
+  expect(saved.img).toBe(img)
+  expect(saved.tyresRear).toBe('Local rear tyres')
+  expect(saved.brand).toBe('Own brand')
+  expect(saved.maxSpeed).toBe(30)
+  expect(saved.motor).toBe('My motor')
+  expect(saved.tyresFront).toBe('My tyres')
+  expect((await request.get(`${API}${img}`)).ok()).toBeTruthy()
+  await page.reload()
+  await expect(page.getByText(serial, { exact: false })).toBeVisible()
   expect(errors).toEqual([])
 })
-test('offline search supports verified alias and cancellation creates no car', async ({ page, request }) => {
-  const before = (await (await request.get(`${API}/api/cars?limit=100`)).json()).total
-  await page.goto('/cars')
-  await page.getByRole('button', { name: 'New car', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Car product reference', exact: true }).fill('C4249')
-  await page.getByRole('button', { name: 'Search local catalogue', exact: true }).click()
-  await expect(page.getByText('H4249 · SUPERSLOT · 1:32', { exact: false })).toBeVisible()
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
-  expect((await (await request.get(`${API}/api/cars?limit=100`)).json()).total).toBe(before)
+
+test('JSON import, validation failure, editing and deletion', async ({ page, request }) => {
+  const serial = `IMPORT-${Date.now()}`
+  await page.goto('/catalog')
+  const upload = async (entries) =>
+    page.getByTestId('catalog-import').setInputFiles({
+      name: 'catalog.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ version: 1, entries })),
+    })
+  await upload([{ serial, brand: 'Manual', model: 'Imported' }])
+  await expect(page.getByRole('status')).toHaveText('Import completed.')
+  const card = page.getByTestId('catalog-entry').filter({ hasText: serial })
+  await expect(card).toBeVisible()
+  await card.getByTestId('catalog-edit').click()
+  await page.getByTestId('catalog-field-model').fill('Edited')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(card).toContainText('Edited')
+  await upload([{ serial, brand: 'Manual', model: 'Rejected', img: 'https://shop.example/photo.jpg' }])
+  await expect(page.getByRole('status')).toContainText('Import rejected.')
+  expect((await (await request.get(`${API}/api/catalog/lookup/${serial}`)).json()).data.model).toBe('Edited')
+  await card.getByTestId('catalog-delete').click()
+  await expect(card).toBeHidden()
 })
-test('scale filter persists across reload and filters the vehicle list', async ({ page, request }) => {
-  const model = `Scale-${Date.now()}`
-  await request.post(`${API}/api/cars`, { data: { brand: 'ScaleE2E', model, scale: '1:24' } })
-  await page.goto('/cars')
-  const filter = page.getByRole('combobox', { name: 'Show cars by scale', exact: true })
-  await filter.selectOption('124')
-  await expect(page.getByText(model, { exact: true })).toBeVisible()
-  await page.reload()
-  await expect(filter).toHaveValue('124')
-  await filter.selectOption('132')
-  await expect(page.getByText(model, { exact: true })).toHaveCount(0)
-})
-test('catalogue settings and French/English labels render without runtime errors', async ({ page }) => {
-  const errors = []
-  page.on('pageerror', (e) => errors.push(e.message))
-  await page.goto('/settings')
-  await expect(page.getByRole('button', { name: 'Update catalogue', exact: true })).toBeVisible()
-  await page.evaluate(() => localStorage.setItem('racehubos-lang', 'fr'))
-  await page.reload()
-  await expect(page.getByRole('button', { name: 'Mettre à jour le catalogue', exact: true })).toBeVisible()
-  expect(errors).toEqual([])
-})
+
+for (const [lang, title] of [
+  ['fr', 'Catalogue'],
+  ['de', 'Katalog'],
+  ['en', 'Catalog'],
+]) {
+  test(`catalog navigation and form in ${lang}`, async ({ page }) => {
+    await page.goto('/catalog')
+    await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
+    await page.getByTestId('catalog-add').click()
+    await expect(page.getByTestId('catalog-field-serial')).toBeVisible()
+  })
+}

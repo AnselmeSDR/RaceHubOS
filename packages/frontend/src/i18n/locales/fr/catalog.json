@@ -1,0 +1,18 @@
+{
+  "title": "Catalogue",
+  "serial": "Référence",
+  "lookup": "Rechercher dans le catalogue local",
+  "apply": "Appliquer les champs sélectionnés",
+  "lookupError": "Référence introuvable ou catalogue indisponible.",
+  "edit": "Modifier une entrée",
+  "saveError": "Impossible d’enregistrer l’entrée.",
+  "loadError": "Impossible de lire le catalogue.",
+  "imported": "Import terminé.",
+  "importError": "Import refusé. Vérifiez le format JSON (version 1, 1 Mo maximum).",
+  "add": "Créer une entrée",
+  "import": "Importer un fichier JSON",
+  "description": "Catalogue local de véhicules et de pneus. Ajoutez vos propres données et photos.",
+  "importHelp": "Format : {\"version\":1,\"entries\":[{\"serial\":\"EX-1\",\"brand\":\"Exemple\",\"model\":\"Voiture\"}]}. Les références existantes sont remplacées ; les autres sont conservées. Champs optionnels : année, équipement et mesures du véhicule. Images : chemins locaux /api/img/cars/… après téléversement, jamais une URL distante. Documentation complète : docs/CAR-CATALOG.md.",
+  "empty": "Le catalogue est vide.",
+  "delete": "Supprimer"
+}

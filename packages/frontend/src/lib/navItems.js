@@ -23,6 +23,7 @@ export const allNavItems = [
   { to: '/tracks', labelKey: 'track', glossary: true, Icon: Map },
   { to: '/teams', labelKey: 'team', glossary: true, Icon: Users2 },
   { to: '/drivers', labelKey: 'driver', glossary: true, Icon: Users },
+  { to: '/catalog', labelKey: 'nav.catalog', Icon: Car },
   { to: '/cars', labelKey: 'car', glossary: true, Icon: Car },
   { to: '/stats', labelKey: 'nav.stats', Icon: BarChart3 },
   { to: '/balancing', labelKey: 'nav.balancing', Icon: Scale },

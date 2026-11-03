@@ -1,28 +1,70 @@
-# Vehicle management and local catalogue
+# Local vehicle and tyre catalog
 
-Cars can be created and edited manually or associated with a Carrera, Scalextric or Superslot article reference. A lookup changes nothing until the user explicitly applies selected brand, model, scale and image fields and saves the car. Equipment, mounted tyres, colour, CU settings and race results remain unchanged. Model year is optional.
+Open **Catalog / Catalogue / Katalog** in the sidebar. The catalog starts empty.
+Create or edit entries by hand, including front/rear tyre references, equipment,
+measurements and a photo uploaded from your computer. No shop page, search service,
+API or image is downloaded. Product references are arbitrary, case-sensitive text;
+use the exact same reference in the catalog and car form.
 
-## Sources and operation
+In a car form, enter a reference and search the local catalog. Check the fields you
+want and click **Apply selected fields**. Nothing is selected automatically. Save
+the car to persist those fields. Unselected equipment, CU settings and race results
+are preserved. `serial`, `scale`, `year`, `img`, `tyresFront`, `tyresRear` and other
+specifications are normal Car columns; no per-car Preferences are used. Editing or
+deleting a catalog entry does not retroactively change saved cars.
 
-Settings and the car form provide a manual update for all three sources:
-- Carrera public product feeds: DIGITAL 124, DIGITAL 132 and EVOLUTION.
-- Scalextric's public Cars catalogue and the product feed referenced by that page.
-- Superslot's public vehicle listing at Hobbymodelismo.
+## JSON import (version 1)
 
-Only single 1:32/1:24 vehicles are accepted. These are current lists, not a complete historical archive. Superslot H/C equivalences require an exact, unique normalized model/livery match; the prefix is never simply substituted. Sources and verification dates are retained. Two existing verified KITT/DeLorean records and their thumbnails are bundled in `packages/backend/data/catalog`; they are catalogue data, not a user's personal cars. Product images and names belong to their respective sources.
+Select a UTF-8 JSON file on the Catalog page (maximum 1 MiB, 1000 entries). Example:
 
-After updating, article lookups and downloaded thumbnails work offline. Reads never trigger remote requests. Old entries survive updates. All metadata sources must succeed before replacing the index. Requests, image size and total image storage are bounded; catalogue cache cleanup preserves images referenced by saved cars. No account, paid service or scheduled update is required.
+```json
+{
+  "version": 1,
+  "entries": [
+    {
+      "serial": "MY-001",
+      "brand": "My brand",
+      "model": "My car",
+      "year": 1888,
+      "scale": "1:32",
+      "tyresFront": "My front tyre reference",
+      "tyresRear": "My rear tyre reference",
+      "notes": "My own measurements"
+    }
+  ]
+}
+```
 
-Tyre lookup reads the explicit spare-parts section on the Carrera product page, or the bundled verified Scalextric references. It describes original-wheel fit only; unknown axle assignments remain unknown. Assigning front/rear tyre text requires an explicit action and saving the car. A failed online query preserves the previous cache.
+`serial`, `brand`, `model` are required nonempty strings. References must be unique
+within the file. Other fields are optional and may be null:
 
-## Persistence and scope
+- Strings: `img`, `scale`, `chassis`, `motor`, `gearRatio`, `tyresFront`, `tyresRear`,
+  `guide`, `braids`, `magnet`, `notes`.
+- Integers: `year`, `weightGrams`. Year has no historical range restriction and
+  may be omitted or null.
+- Finite numbers in millimetres: `lengthMm`, `widthMm`, `wheelbaseMm`,
+  `frontTrackMm`, `rearTrackMm`, `groundClearanceMm`.
 
-No schema migration is needed. The existing Preference table stores the index (`carrera:catalog:v1`), car reference (`carrera:car:<id>`), tyre cache (`carrera:tyres:<reference>`) and scale filter (`cars:scaleFilter`). Images use the normal local uploads directory. Backups must include both database and uploads. This branch does not add a backup system or distribute personal databases, imported Cockpit-XP data or the owner's catalogue cache.
+Unknown fields, invalid types, duplicate references and remote image URLs reject
+the entire import before any write. All rows are written in one transaction.
+Existing references are replaced with the imported entry (omitted optional fields
+are cleared); other entries remain. Importing an empty array does nothing.
 
-The persistent scale filter runs before pagination and counting. Unknown scales appear under Both; an explicit vehicle scale takes precedence over catalogue scale. Voltage hints describe Carrera's original 14.8 V/18 V configurations and do not control hardware. EVOLUTION is analogue unless suitably converted.
+Images are uploaded separately using the entry editor. `img` can reference only a
+local car upload, e.g. `/api/img/cars/123456-789.jpg`. Upload the photo on the target
+installation before importing that path; JSON contains no image bytes. Do not put
+filesystem paths, external URLs or base64 images in `img`.
 
-The feature supplies French, English and German strings. The independent German base-interface translation remains in `feat/i18n-de`; this branch preserves upstream's language selection and default.
+Entries live in the local SQLite database (`CatalogEntry`); photos live in the
+existing `public/uploads/cars` directory. Database backups include the catalog table. Copy the upload directory as well
+when backing up or moving photos to another installation. Removing an entry keeps its image because a car
+may still use it. No catalog content or third-party product photos ship in the repo.
+Only contribute repository images with permission and documented source/license.
 
-## Validation
+## Scope
 
-Run the standard backend Jest suite, `npm run check:push` and `npm run build`. Catalogue/parser/import/API and translation regression tests live in the normal backend test directory and use only the isolated test database or disposable directories. UI tests use dedicated Playwright ports and e2e.db.
+Scale filtering and additional year validation are deliberately excluded. A future
+scale-filter PR should use a `FilterHeader` scale column in `Cars.jsx`, scales in use
+as options, a comma-separated API parameter and `where.scale = { in: scale.split(',') }`.
+No year-validation PR is needed for the catalog: year remains optional without a
+historical range restriction.

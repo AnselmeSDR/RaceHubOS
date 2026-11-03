@@ -1,0 +1,18 @@
+{
+  "title": "Katalog",
+  "serial": "Produktreferenz",
+  "lookup": "Lokalen Katalog durchsuchen",
+  "apply": "Ausgewählte Felder übernehmen",
+  "lookupError": "Referenz nicht gefunden oder Katalog nicht verfügbar.",
+  "edit": "Eintrag bearbeiten",
+  "saveError": "Eintrag konnte nicht gespeichert werden.",
+  "loadError": "Katalog konnte nicht gelesen werden.",
+  "imported": "Import abgeschlossen.",
+  "importError": "Import abgelehnt. JSON-Format prüfen (Version 1, höchstens 1 MB).",
+  "add": "Eintrag anlegen",
+  "import": "JSON-Datei importieren",
+  "description": "Lokaler Fahrzeug- und Reifenkatalog. Ergänze eigene Daten und Fotos.",
+  "importHelp": "Format: {\"version\":1,\"entries\":[{\"serial\":\"EX-1\",\"brand\":\"Beispiel\",\"model\":\"Auto\"}]}. Vorhandene Referenzen werden ersetzt; andere Einträge bleiben erhalten. Optionale Felder: Baujahr, Ausstattung und Maße des Autos. Bilder: lokale /api/img/cars/…-Pfade nach dem Hochladen, keine externen URLs. Vollständige Dokumentation: docs/CAR-CATALOG.md.",
+  "empty": "Der Katalog ist leer.",
+  "delete": "Löschen"
+}

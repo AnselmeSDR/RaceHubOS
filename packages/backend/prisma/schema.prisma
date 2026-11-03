@@ -32,6 +32,7 @@ model Driver {
 
 model Car {
   id                String             @id @default(cuid())
+  serial            String?
   brand             String
   model             String
   year              Int?
@@ -269,5 +270,34 @@ model Device {
 model Preference {
   key       String   @id
   value     String   // JSON
+  updatedAt DateTime @updatedAt
+}
+
+model CatalogEntry {
+  serial String @id
+  brand             String
+  model             String
+  year              Int?
+  img               String?
+  // Équipement : texte libre, les pièces changent trop pour figer une liste
+  scale             String?
+  chassis           String?
+  motor             String?
+  gearRatio         String?
+  tyresFront        String?
+  tyresRear         String?
+  guide             String?
+  braids            String?
+  magnet            String?
+  notes             String?
+  // Mesures, en grammes et en millimètres
+  weightGrams       Int?
+  lengthMm          Float?
+  widthMm           Float?
+  wheelbaseMm       Float?
+  frontTrackMm      Float?
+  rearTrackMm       Float?
+  groundClearanceMm Float?
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

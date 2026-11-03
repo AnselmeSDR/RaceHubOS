@@ -1,57 +1,17 @@
-import { canonicalReference, scalextricEntries } from '../lib/scalextricCatalog.js';
 import express from 'express';
-import { articleNumber } from '../lib/carreraCatalog.js';
+import { carSpecsFrom } from '@racehubos/shared';
 import { createPrismaClient } from '../lib/prisma.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
-import { normalizedCarScale, carSpecsFrom } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
-function requestYear(value) {
-  if (value === undefined) return undefined;
-  if (value === null || (typeof value === 'string' && !value.trim())) return null;
-  const year = typeof value === 'number' || typeof value === 'string' ? Number(value) : NaN;
-  if (!Number.isInteger(year) || year < 1 || year > 9999) {
-    const error = new Error('Bitte ein gültiges Baujahr eingeben oder das Feld leer lassen.');
-    error.status = 400;
-    throw error;
-  }
-  return year;
-}
-const articleKey = (id) => `carrera:car:${id}`;
-async function withArticle(car) {
-  const pref = await prisma.preference.findUnique({ where: { key: articleKey(car.id) } });
-  return { ...car, articleNumber: pref ? JSON.parse(pref.value) : null };
-}
-function requestArticle(req) {
-  if (req.body.articleNumber === undefined) return undefined;
-  if (!req.body.articleNumber) return null;
-  const number = articleNumber(req.body.articleNumber);
-  if (!number) {
-    const e = new Error('Bitte eine Carrera-, Scalextric- oder Superslot-Artikelnummer eingeben.');
-    e.status = 400;
-    throw e;
-  }
-  return canonicalReference(number);
-}
-async function saveArticle(tx, id, number) {
-  if (number !== undefined)
-    await tx.preference.upsert({
-      where: { key: articleKey(id) },
-      create: { key: articleKey(id), value: JSON.stringify(number) },
-      update: { value: JSON.stringify(number) },
-    });
-}
 
 // GET /api/cars - List all cars
 router.get('/', async (req, res) => {
   try {
-    const { deleted, scale = 'all', limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
-    if (!['all', '132', '124'].includes(scale))
-      return res.status(400).json({ success: false, error: 'Ungültiger Maßstabsfilter.' });
-    const selectedScale = scale === '132' ? '1:32' : scale === '124' ? '1:24' : null;
+    const { deleted, limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
@@ -64,7 +24,7 @@ router.get('/', async (req, res) => {
           ? undefined
           : { [sortBy]: sortOrder };
 
-    const [allCars, databaseTotal] = await Promise.all([
+    const [allCars, total] = await Promise.all([
       prisma.car.findMany({
         where,
         include: {
@@ -75,40 +35,17 @@ router.get('/', async (req, res) => {
           },
         },
         orderBy: dbOrderBy,
-        ...(!isComputedSort && !selectedScale ? { skip: parsedOffset, take: parsedLimit } : {}),
+        ...(!isComputedSort ? { skip: parsedOffset, take: parsedLimit } : {}),
       }),
       prisma.car.count({ where }),
     ]);
 
-    const preferences = await prisma.preference.findMany({
-      where: { key: { in: allCars.map((c) => articleKey(c.id)) } },
-    });
-    const articles = new Map(preferences.map((p) => [p.key, JSON.parse(p.value)]));
-    const catalogPreference = await prisma.preference.findUnique({ where: { key: 'carrera:catalog:v1' } });
-    const catalogue = new Map(
-      (catalogPreference ? JSON.parse(catalogPreference.value).entries || [] : []).map((e) => [
-        e.articleNumber,
-        e.scale,
-      ])
-    );
-    const enriched = allCars.map((car) => {
-      const number = articles.get(articleKey(car.id)) || null;
-      return {
-        ...car,
-        articleNumber: number,
-        displayScale:
-          normalizedCarScale(car.scale) ||
-          normalizedCarScale(catalogue.get(number)) ||
-          scalextricEntries.find((e) => e.articleNumber === number || e.aliases.includes(number))?.scale,
-      };
-    });
-    let sorted = selectedScale ? enriched.filter((car) => car.displayScale === selectedScale) : enriched;
-    const total = selectedScale ? sorted.length : databaseTotal;
+    let sorted = allCars;
     if (isComputedSort) {
       const dir = sortOrder === 'asc' ? 1 : -1;
-      sorted = [...sorted].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
+      sorted = [...allCars].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
     }
-    const cars = isComputedSort || selectedScale ? sorted.slice(parsedOffset, parsedOffset + parsedLimit) : sorted;
+    const cars = isComputedSort ? sorted.slice(parsedOffset, parsedOffset + parsedLimit) : sorted;
 
     res.json({
       success: true,
@@ -226,7 +163,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: withNestedImageUrls({ ...(await withArticle(car)), records }),
+      data: withNestedImageUrls({ ...car, records }),
     });
   } catch (error) {
     console.error('Error fetching car:', error);
@@ -240,9 +177,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/cars - Create new car
 router.post('/', async (req, res) => {
   try {
-    const number = requestArticle(req);
-    const normalizedYear = requestYear(req.body.year);
-    const { brand, model, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity, serial } = req.body;
 
     // Validation
     if (!brand || brand.trim().length === 0) {
@@ -259,33 +194,30 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const car = await prisma.$transaction(async (tx) => {
-      const saved = await tx.car.create({
-        data: {
-          brand: brand.trim(),
-          model: model.trim(),
-          year: normalizedYear ?? null,
-          img: img || null,
-          color: color || '#3B82F6',
-          maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
-          brakeForce: brakeForce !== undefined ? brakeForce : 50,
-          fuelCapacity: fuelCapacity !== undefined ? fuelCapacity : 100,
-          ...carSpecsFrom(req.body),
-        },
-      });
-      await saveArticle(tx, saved.id, number);
-      return saved;
+    const car = await prisma.car.create({
+      data: {
+        serial: typeof serial === 'string' ? serial.trim() || null : null,
+        brand: brand.trim(),
+        model: model.trim(),
+        year: year ?? null,
+        img: img || null,
+        color: color || '#3B82F6',
+        maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
+        brakeForce: brakeForce !== undefined ? brakeForce : 50,
+        fuelCapacity: fuelCapacity !== undefined ? fuelCapacity : 100,
+        ...carSpecsFrom(req.body),
+      },
     });
 
     res.status(201).json({
       success: true,
-      data: withImageUrl(await withArticle(car)),
+      data: withImageUrl(car),
     });
   } catch (error) {
     console.error('Error creating car:', error);
-    res.status(error.status || 500).json({
+    res.status(500).json({
       success: false,
-      error: error.status ? error.message : 'Failed to create car',
+      error: 'Failed to create car',
     });
   }
 });
@@ -293,10 +225,8 @@ router.post('/', async (req, res) => {
 // PUT /api/cars/:id - Update car
 router.put('/:id', async (req, res) => {
   try {
-    const number = requestArticle(req);
-    const normalizedYear = requestYear(req.body.year);
     const { id } = req.params;
-    const { brand, model, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity, serial } = req.body;
 
     // Check if car exists
     const exists = await prisma.car.findUnique({
@@ -312,9 +242,10 @@ router.put('/:id', async (req, res) => {
 
     // Build update data
     const updateData = {};
+    if (serial !== undefined) updateData.serial = typeof serial === 'string' ? serial.trim() || null : null;
     if (brand !== undefined) updateData.brand = brand.trim();
     if (model !== undefined) updateData.model = model.trim();
-    if (normalizedYear !== undefined) updateData.year = normalizedYear;
+    if (year !== undefined) updateData.year = year;
     if (img !== undefined) updateData.img = img;
     if (color !== undefined) updateData.color = color;
     if (maxSpeed !== undefined) updateData.maxSpeed = maxSpeed;
@@ -322,21 +253,20 @@ router.put('/:id', async (req, res) => {
     if (fuelCapacity !== undefined) updateData.fuelCapacity = fuelCapacity;
     Object.assign(updateData, carSpecsFrom(req.body, { partial: true }));
 
-    const car = await prisma.$transaction(async (tx) => {
-      const saved = await tx.car.update({ where: { id }, data: updateData });
-      await saveArticle(tx, id, number);
-      return saved;
+    const car = await prisma.car.update({
+      where: { id },
+      data: updateData,
     });
 
     res.json({
       success: true,
-      data: withImageUrl(await withArticle(car)),
+      data: withImageUrl(car),
     });
   } catch (error) {
     console.error('Error updating car:', error);
-    res.status(error.status || 500).json({
+    res.status(500).json({
       success: false,
-      error: error.status ? error.message : 'Failed to update car',
+      error: 'Failed to update car',
     });
   }
 });
@@ -440,7 +370,7 @@ router.post('/:id/reset-stats', async (req, res) => {
 
     res.json({
       success: true,
-      data: withImageUrl(await withArticle(car)),
+      data: withImageUrl(car),
       message: 'Statistics reset successfully',
     });
   } catch (error) {
