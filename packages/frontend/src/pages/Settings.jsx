@@ -1,4 +1,3 @@
-import { CarreraCatalogSettings } from '../components/car/CarreraCatalog'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
@@ -362,7 +361,6 @@ export default function Settings() {
 
   return (
     <div className="p-4 space-y-4">
-      <CarreraCatalogSettings />
       {/* Update Section */}
       <Card>
         <CardContent>

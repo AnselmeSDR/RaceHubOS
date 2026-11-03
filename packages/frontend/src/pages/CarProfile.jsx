@@ -1,12 +1,11 @@
-import CarTyres from '../components/car/CarTyres'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
+import { formatLevel } from '@racehubos/shared'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '../components/ui/DeleteButton'
 import ExportButton from '../components/ui/ExportButton'
-import { formatLevel } from '@racehubos/shared'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
@@ -102,11 +101,7 @@ export default function CarProfile() {
               className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
               style={{ '--tw-ring-color': carColor }}
             >
-              <img
-                src={getImgUrl(car.img)}
-                alt={`${car.brand} ${car.model}`}
-                className="w-full h-full object-contain p-1"
-              />
+              <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
             </div>
           ) : (
             <div
@@ -121,7 +116,12 @@ export default function CarProfile() {
               <h1 className="font-black text-lg" style={{ color: carColor }}>
                 {car.brand} {car.model}
               </h1>
-              {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
+              {car.serial && (
+                <span className="text-sm text-muted-foreground">
+                  {t('catalog:serial')}: {car.serial}
+                </span>
+              )}
+              {car.year != null && <span className="text-sm text-muted-foreground">{car.year}</span>}
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-3">
               <span className="flex items-center gap-1">
@@ -148,7 +148,13 @@ export default function CarProfile() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" aria-label={t('common:edit')} onClick={() => setShowEdit(true)}>
+          <Button
+            data-testid="car-edit"
+            aria-label={t('common:edit')}
+            variant="outline"
+            size="sm"
+            onClick={() => setShowEdit(true)}
+          >
             <Pencil className="size-4" />
           </Button>
           <Button
@@ -167,7 +173,6 @@ export default function CarProfile() {
         </div>
       </div>
 
-      <CarTyres carId={car.id} number={car.articleNumber} />
       {showEdit && (
         <CarFormModal
           car={car}

@@ -1,0 +1,18 @@
+{
+  "title": "Catalog",
+  "serial": "Product reference",
+  "lookup": "Search local catalog",
+  "apply": "Apply selected fields",
+  "lookupError": "Reference not found or catalog unavailable.",
+  "edit": "Edit entry",
+  "saveError": "Could not save entry.",
+  "loadError": "Could not read catalog.",
+  "imported": "Import completed.",
+  "importError": "Import rejected. Check the JSON format (version 1, maximum 1 MB).",
+  "add": "Create entry",
+  "import": "Import JSON file",
+  "description": "Local vehicle and tyre catalog. Add your own data and photos.",
+  "importHelp": "Format: {\"version\":1,\"entries\":[{\"serial\":\"EX-1\",\"brand\":\"Example\",\"model\":\"Car\"}]}. Existing references are replaced; other entries are kept. Optional fields: car year, equipment and measurements. Images: local /api/img/cars/… paths after upload, never remote URLs. Full documentation: docs/CAR-CATALOG.md.",
+  "empty": "The catalog is empty.",
+  "delete": "Delete"
+}

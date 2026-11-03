@@ -1,6 +1,5 @@
 import 'dotenv/config';
 if (!process.env.DATABASE_URL) process.env.DATABASE_URL = 'file:./dev.db';
-import catalogRouter from './routes/catalog.js';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -14,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '../../..');
 const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
 const APP_VERSION = pkg.version;
+import catalogRoutes from './routes/catalog.js';
 import { createPrismaClient } from './lib/prisma.js';
 import { CarreraSimulator } from './services/simulator.js';
 import { SyncService } from './services/SyncService.js';
@@ -113,6 +113,7 @@ setConfigService(configService);
 
 // Middleware
 app.use(cors());
+app.use('/api/catalog', express.json({ limit: '1mb' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
@@ -166,8 +167,8 @@ app.get('/api', (req, res) => {
 
 // Mount API routes
 app.use('/api/drivers', driversRouter);
+app.use('/api/catalog', catalogRoutes);
 app.use('/api/cars', carsRouter);
-app.use('/api/catalog', catalogRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/championships', championshipsRouter);

@@ -86,11 +86,7 @@ export default function PhotoUploadField({
             <div className="animate-spin rounded-full size-8 border-b-2 border-primary" />
           ) : imageUrl ? (
             <>
-              <img
-                src={imageUrl}
-                alt="Preview"
-                className={`w-full h-full ${shape === 'rect' ? 'object-contain p-1' : 'object-cover'}`}
-              />
+              <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={handleRemove}
