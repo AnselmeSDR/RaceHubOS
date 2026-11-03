@@ -62,18 +62,32 @@ export class OfflineVoices {
     this.error = null;
     this.downloadedBytes = 0;
     this.operation = null;
+    this.stage = 'idle';
+    this.fileIndex = 0;
+    this.verifiedFiles = 0;
+    this.cancelled = false;
+    this.installController = null;
   }
-  plan() {
+  plan(languages = this.manifest.voices.map((voice) => voice.language), onlyMissing = false) {
     const name = runtimePackage(this.platform, this.arch);
     if (!name) return null;
-    return [
+    const existing = installedVoices(this.home, this.manifest);
+    const runtime = [
       { ...this.manifest.runtime['sherpa-onnx-node'], directory: 'node_modules/sherpa-onnx-node', compression: 'gzip' },
       { ...this.manifest.runtime[name], directory: `node_modules/${name}`, compression: 'gzip' },
-      ...this.manifest.voices.map((voice) => ({ ...voice, directory: 'models', compression: 'bzip2' })),
+    ];
+    return [
+      ...(onlyMissing && existing.length ? [] : runtime),
+      ...this.manifest.voices
+        .filter(
+          (voice) =>
+            languages.includes(voice.language) && (!onlyMissing || !existing.some((item) => item.id === voice.id))
+        )
+        .map((voice) => ({ ...voice, directory: 'models', compression: 'bzip2' })),
     ];
   }
-  status() {
-    const plan = this.plan();
+  status(languages) {
+    const plan = this.activePlan || this.plan(languages, !!languages);
     const voices = installedVoices(this.home, this.manifest);
     let removable = false;
     try {
@@ -87,8 +101,15 @@ export class OfflineVoices {
       removable,
       supported: !!plan,
       phase: this.phase,
+      stage: this.stage,
+      fileIndex: this.fileIndex,
+      fileCount: plan?.length || 0,
+      verifiedFiles: this.verifiedFiles,
+      cancelled: this.cancelled,
       error: this.error,
-      installed: voices.length === this.manifest.voices.length,
+      installed: (languages || this.manifest.voices.map((voice) => voice.language)).every((language) =>
+        voices.some((voice) => voice.language === language)
+      ),
       available: voices.length > 0,
       voices: voices.map(({ id, name, language, locale }) => ({ id, name, language, locale })),
       downloadBytes: plan?.reduce((sum, file) => sum + file.bytes, 0) || 0,
@@ -100,37 +121,69 @@ export class OfflineVoices {
     const marker = JSON.parse(fs.readFileSync(path.join(this.home, 'installation.json'), 'utf8'));
     if (marker.application !== 'RaceHubOS offline voices') throw new Error('Unmanaged voice directory');
   }
-  startInstall() {
+  startInstall(languages, { onlyMissing = false } = {}) {
     if (this.operation) return false;
+    const plan = this.plan(languages, onlyMissing);
+    if (!plan || !plan.length) return false;
+    this.activePlan = plan;
     this.phase = 'installing';
+    this.stage = 'preparing';
     this.error = null;
     this.downloadedBytes = 0;
-    this.operation = this.install()
+    this.fileIndex = 0;
+    this.verifiedFiles = 0;
+    this.cancelled = false;
+    this.installController = new AbortController();
+    this.operation = this.install(languages, { plan })
       .catch(() => {
-        this.error = 'installFailed';
+        if (!this.cancelled) this.error = 'installFailed';
       })
       .finally(() => {
         this.phase = 'idle';
+        this.stage = 'idle';
+        this.installController = null;
+        this.activePlan = null;
         this.operation = null;
       });
     return true;
   }
-  async install() {
-    const plan = this.plan();
+  cancelInstall() {
+    if (this.phase !== 'installing' || !this.operation || this.stage === 'publishing') return false;
+    this.cancelled = true;
+    this.stage = 'cancelling';
+    this.installController.abort();
+    return true;
+  }
+  async install(languages = this.manifest.voices.map((voice) => voice.language), { plan: selectedPlan } = {}) {
+    const plan = selectedPlan || this.plan(languages);
+    const previousVoices = installedVoices(this.home, this.manifest);
+    const previousArchives = previousVoices.length
+      ? JSON.parse(fs.readFileSync(path.join(this.home, 'installation.json'), 'utf8')).archives || []
+      : [];
     if (!plan) throw new Error('Unsupported offline voice platform');
     this.managed();
     await fs.promises.mkdir(path.dirname(this.home), { recursive: true });
     const staging = await fs.promises.mkdtemp(this.home + '-install-');
     let backup;
     try {
+      if (previousVoices.length) await fs.promises.cp(this.home, staging, { recursive: true });
       for (const [index, file] of plan.entries()) {
+        this.installController?.signal.throwIfAborted();
+        this.fileIndex = index + 1;
+        this.stage = 'downloading';
         const archive = path.join(staging, `${index}.archive`);
         await this.download(file, archive);
+        this.installController?.signal.throwIfAborted();
+        this.stage = 'extracting';
         const destination = path.join(staging, file.directory);
+        const replaced = file.directory === 'models' ? path.join(destination, 'vits-piper-' + file.id) : destination;
+        await fs.promises.rm(replaced, { recursive: true, force: true });
         await fs.promises.mkdir(destination, { recursive: true });
         await this.extract(archive, destination, file.compression);
         await fs.promises.rm(archive);
       }
+      this.installController?.signal.throwIfAborted();
+      this.stage = 'checking';
       await fs.promises.writeFile(
         path.join(staging, 'installation.json'),
         JSON.stringify({
@@ -138,12 +191,22 @@ export class OfflineVoices {
           engineVersion: this.manifest.engineVersion,
           platform: this.platform,
           arch: this.arch,
-          archives: plan.map(({ url, sha256, integrity }) => ({ url, sha256, integrity })),
+          archives: [
+            ...new Map(
+              [...previousArchives, ...plan.map(({ url, sha256, integrity }) => ({ url, sha256, integrity }))].map(
+                (archive) => [archive.url, archive]
+              )
+            ).values(),
+          ],
         })
       );
-      if (installedVoices(staging, this.manifest).length !== this.manifest.voices.length)
+      const expected = new Set([...languages, ...previousVoices.map((voice) => voice.language)]);
+      const stagedVoices = installedVoices(staging, this.manifest);
+      if ([...expected].some((language) => !stagedVoices.some((voice) => voice.language === language)))
         throw new Error('Incomplete offline voice installation');
       await this.beforeChange();
+      this.installController?.signal.throwIfAborted();
+      this.stage = 'publishing';
       if (fs.existsSync(this.home)) {
         backup = this.home + '-previous-' + randomUUID();
         await fs.promises.rename(this.home, backup);
@@ -163,7 +226,10 @@ export class OfflineVoices {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10 * 60 * 1000);
     try {
-      const response = await this.fetchFile(file.url, { signal: controller.signal });
+      const signal = this.installController
+        ? AbortSignal.any([controller.signal, this.installController.signal])
+        : controller.signal;
+      const response = await this.fetchFile(file.url, { signal });
       if (!response.ok || !response.body) throw new Error('Offline voice download failed');
       const hash = createHash(file.sha256 ? 'sha256' : 'sha512');
       let size = 0;
@@ -176,10 +242,12 @@ export class OfflineVoices {
           done(null, chunk);
         },
       });
-      await pipeline(Readable.fromWeb(response.body), meter, fs.createWriteStream(target));
+      await pipeline(Readable.fromWeb(response.body), meter, fs.createWriteStream(target), { signal });
+      this.stage = 'verifying';
       const actual = file.sha256 ? hash.digest('hex') : 'sha512-' + hash.digest('base64');
       if (size !== file.bytes || actual !== (file.sha256 || file.integrity))
         throw new Error('Offline voice checksum mismatch');
+      this.verifiedFiles++;
     } finally {
       clearTimeout(timer);
     }

@@ -84,3 +84,48 @@ test('successful local audio honors volume, callback and busy/forced cancellatio
   expect(f.browserSpeak).toHaveBeenCalledWith('force', { rate: 1.1, volume: 0.9, force: true });
   f.player.cancel();
 });
+
+test('preview unlocks one audio element before synthesis and reuses it after the response', async () => {
+  const f = fixture();
+  const plays = [];
+  let release;
+  f.env.Audio = class {
+    constructor(src) {
+      this.src = src;
+      f.audios.push(this);
+    }
+    play() {
+      plays.push(this.src);
+      return Promise.resolve();
+    }
+    pause() {}
+  };
+  f.env.fetch = () =>
+    new Promise((resolve) => {
+      release = resolve;
+    });
+  const job = f.player.speak('Hallo', { language: 'de', selection: '_piper-auto', voices, preview: true });
+  job.onend = jest.fn();
+  expect(plays).toHaveLength(1);
+  expect(plays[0]).toMatch(/^data:audio\/wav/);
+  release({ ok: true, blob: async () => ({}) });
+  await flush();
+  expect(f.audios).toHaveLength(1);
+  expect(plays[1]).toBe('blob:fixture');
+  f.audios[0].onended({ type: 'ended' });
+  expect(job.onend).toHaveBeenCalledTimes(1);
+});
+
+test('fallback reports browser failure and does not mistake normal end events for errors', async () => {
+  const f = fixture();
+  const job = f.player.speak('Fallback', { language: 'en' });
+  job.onend = jest.fn();
+  job.onerror = jest.fn();
+  f.utterance.onerror({ error: 'synthesis-unavailable' });
+  expect(job.onerror).toHaveBeenCalledTimes(1);
+  expect(job.onend).not.toHaveBeenCalled();
+  const next = f.player.speak('Next', { language: 'en' });
+  next.onend = jest.fn();
+  f.utterance.onend({ type: 'end' });
+  expect(next.onend).toHaveBeenCalledTimes(1);
+});

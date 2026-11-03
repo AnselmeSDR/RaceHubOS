@@ -9,8 +9,8 @@ explicit voice choice, never an automatic replacement for browser speech.
 ## Install and remove in Settings
 
 The Offline voices section shows the exact compressed download size for the
-current platform before installation. Click **Install offline voices** to download
-the pinned engine and German Thorsten, English LJ Speech and French Siwis models.
+current platform and selected languages before installation. The interface language is included by default; additional languages are opt-in checkboxes. Already installed matching voices and the runtime are reused. Adding another language preserves existing voices. Click **Install offline voices** to download
+the missing engine components and selected models (German Thorsten, English LJ Speech or French Siwis).
 No engine or model is downloaded by application startup, opening Settings, normal
 `npm install`, or selecting a voice. The application only reads local status until
 that button is clicked. An explicit POST to `/api/voice/install` is the equivalent
@@ -94,3 +94,11 @@ Real synthesis has been checked locally on Linux. A path-limited, read-only GitH
 Actions workflow invokes the same explicit smoke test on Windows, macOS and Linux
 runners. Its results are reported separately from local tests. Hardware speaker
 playback and pronunciation still need listening checks on the target race PC.
+
+## Installation progress and cancellation
+
+Settings shows received MiB, the current archive and the number of archives whose checksums have passed. Downloading, checksum verification, extraction and final installation checks are distinct stages. A 100% download alone does not mean installation is complete. Cancel installation aborts the active download and removes its staging directory; an existing managed installation remains intact. During extraction, cancellation takes effect before proceeding to the next archive or publishing. The short final publication step cannot be cancelled. Installation can be retried afterward.
+
+The existing browser voice list and normal browser preview remain unchanged. The explicit Piper preview cancels a stale speech job, primes its audio element during the click before waiting for synthesis, and reports completion or failure. A failed preview can be retried without reloading Settings.
+
+The install API requires `{ "languages": ["de"] }` (supported values: `de`, `en`, `fr`). GET `/api/voice/status?languages=de` calculates the missing download for that selection without installing anything. The manual smoke script explicitly requests all three languages.

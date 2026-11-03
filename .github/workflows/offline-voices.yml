@@ -33,3 +33,30 @@ jobs:
       - run: npm ci --ignore-scripts
       # Explicit integration-test install in a temporary directory, never app startup.
       - run: node scripts/test-offline-voices.js --install
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Use the upstream main as the rule-check baseline
+        run: git fetch --no-tags https://github.com/AnselmeSDR/RaceHubOS.git +main:refs/remotes/origin/main
+      - name: Install native build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libbluetooth-dev
+      - run: npm ci
+      - run: npm run prisma:generate -w @racehubos/backend
+      - run: npm run check:push
+      - run: npm test -w @racehubos/backend
+      - run: npx playwright install --with-deps chromium firefox
+        working-directory: packages/frontend
+      - run: npm test -w @racehubos/frontend -- piper-voices.spec.js
+      - run: npm test -w @racehubos/frontend -- --config=playwright.firefox.config.js piper-voices.spec.js
+      - run: npm run build

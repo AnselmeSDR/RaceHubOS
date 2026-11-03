@@ -14,18 +14,29 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
     if (job.browser) env.speechSynthesis?.cancel()
     onState('idle')
   }
-  function speak(text, { language, selection, voices = [], rate = 1.1, volume = 0.9, force = false } = {}) {
+  function speak(
+    text,
+    { language, selection, voices = [], rate = 1.1, volume = 0.9, force = false, preview = false } = {}
+  ) {
     if (!force && (active || env.speechSynthesis?.speaking)) return null
     cancel()
-    const job = { controller: new env.AbortController(), onend: null, audio: null, url: null, browser: false }
+    const job = {
+      controller: new env.AbortController(),
+      onend: null,
+      onerror: null,
+      audio: null,
+      url: null,
+      browser: false,
+    }
     active = job
-    const finish = () => {
+    const finish = (error) => {
       if (active !== job) return
       clearTimeout(job.timer)
       if (job.url) env.URL.revokeObjectURL(job.url)
       active = null
       onState('done')
-      job.onend?.()
+      if (error && job.onerror) job.onerror(error)
+      else job.onend?.()
     }
     const fallback = () => {
       if (active !== job || job.browser) return
@@ -39,14 +50,22 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
       onState('fallback')
       const utterance = browserSpeak(text, { rate, volume, force })
       if (utterance) {
-        utterance.onend = finish
+        utterance.onend = () => finish()
         utterance.onerror = finish
-      } else Promise.resolve().then(finish)
+      } else Promise.resolve().then(() => finish(new Error('Browser speech unavailable')))
     }
     const voice = selectLocalVoice(voices, selection, language)
     if (!voice || typeof text !== 'string' || !text.trim() || text.length > 400) {
       fallback()
       return job
+    }
+    // Unlock the same audio element during the preview click, before synthesis
+    // can outlast the browser's user-activation window. Announcements are unchanged.
+    if (preview) {
+      job.audio = new env.Audio(
+        'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQIAAAAAAA=='
+      )
+      Promise.resolve(job.audio.play()).catch(() => {})
     }
     onState('loading')
     job.timer = setTimeout(() => {
@@ -66,9 +85,10 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
         if (active !== job || job.browser) return
         clearTimeout(job.timer)
         job.url = env.URL.createObjectURL(blob)
-        job.audio = new env.Audio(job.url)
+        if (job.audio) job.audio.src = job.url
+        else job.audio = new env.Audio(job.url)
         job.audio.volume = Math.min(1, Math.max(0, volume))
-        job.audio.onended = finish
+        job.audio.onended = () => finish()
         job.audio.onerror = fallback
         await job.audio.play()
         if (active === job && !job.browser) onState('local')

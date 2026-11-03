@@ -175,6 +175,11 @@ export function VoiceProvider({ children }) {
     [speakBrowser]
   )
 
+  const cancelSpeech = useCallback(() => {
+    playerRef.current?.cancel()
+    window.speechSynthesis?.cancel()
+  }, [])
+
   // Format time for speech
   const formatTimeVoice = useCallback((ms) => {
     if (!ms) return ''
@@ -203,6 +208,7 @@ export function VoiceProvider({ children }) {
         podiumEnabledRef,
         minLapsRef,
         speak,
+        cancelSpeech,
         getVoice,
         formatTimeVoice,
         localVoices,
