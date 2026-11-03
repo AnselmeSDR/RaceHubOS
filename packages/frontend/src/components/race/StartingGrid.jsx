@@ -36,7 +36,7 @@ export default function StartingGrid({ entries = [] }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div data-testid="starting-grid" className="space-y-4">
       {/* Header */}
       <div className="text-center">
         <span className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/15 text-yellow-600 rounded-lg font-semibold text-sm">
@@ -62,7 +62,7 @@ export default function StartingGrid({ entries = [] }) {
             </div>
 
             {/* 2 drivers per row, staggered */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {row.map((entry, posInRow) => {
                 const driver = entry.driver || {}
                 const car = entry.car || {}

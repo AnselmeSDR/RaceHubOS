@@ -118,10 +118,13 @@ export function DriverGridPosition({ driver, side = 'left' }) {
   const driverColor = driver.color || '#3B82F6'
 
   return (
-    <div className={`flex items-center gap-3 ${side === 'right' ? 'flex-row-reverse' : ''}`}>
+    <div
+      data-testid="driver-grid-position"
+      className={`flex items-center gap-3 min-w-0 ${side === 'right' ? 'flex-row-reverse' : ''}`}
+    >
       {/* Driver card */}
       <div
-        className="flex items-center gap-3 p-3 rounded-lg flex-1 shadow-sm dark:shadow-none"
+        className="flex items-center gap-3 p-3 rounded-lg flex-1 min-w-0 shadow-sm dark:shadow-none"
         style={{
           background: `linear-gradient(to right, ${driverColor}45, ${driverColor}25 50%, ${driverColor}08 70%, var(--card))`,
           borderLeft: `5px solid ${driverColor}`,
@@ -175,6 +178,7 @@ export function DriverProfileHeader({ driver }) {
   const { t } = useTranslation('displays')
   return (
     <div
+      data-testid="driver-profile-display"
       className="relative overflow-hidden rounded-2xl shadow-2xl"
       style={{
         background: `linear-gradient(135deg, ${driver.color}20 0%, ${driver.color}05 100%)`,
@@ -195,7 +199,7 @@ export function DriverProfileHeader({ driver }) {
       />
 
       <div className="relative p-8">
-        <div className="flex items-start gap-6">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
           {/* Large avatar */}
           <div className="relative flex-shrink-0">
             <div
@@ -231,11 +235,11 @@ export function DriverProfileHeader({ driver }) {
           </div>
 
           {/* Info */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 w-full">
             {/* Team badge */}
             {driver.team && (
               <div
-                className="inline-block px-4 py-1 rounded-full text-sm font-bold text-white shadow-md mb-3"
+                className="inline-block max-w-full break-words px-4 py-1 rounded-full text-sm font-bold text-white shadow-md mb-3"
                 style={{ backgroundColor: driver.team.color || driver.color }}
               >
                 {driver.team.name}
@@ -244,7 +248,7 @@ export function DriverProfileHeader({ driver }) {
 
             {/* Name */}
             <h1
-              className="font-black text-5xl tracking-tight mb-2"
+              className="font-black text-3xl sm:text-5xl break-words tracking-tight mb-2"
               style={{
                 color: driver.color,
                 textShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -254,7 +258,7 @@ export function DriverProfileHeader({ driver }) {
             </h1>
 
             {/* Stats row */}
-            <div className="grid grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
               <StatBox
                 icon={<Flag className="w-5 h-5" />}
                 label={t('glossary:race_other')}
@@ -369,6 +373,7 @@ export function DriverStanding({ driver, position, points, change }) {
 export function DriverSelectCard({ driver, selected, onToggle }) {
   return (
     <button
+      data-testid="driver-select-card"
       onClick={onToggle}
       className={`
         relative w-full p-4 rounded-xl transition-all duration-200 text-left
@@ -424,7 +429,7 @@ export function DriverSelectCard({ driver, selected, onToggle }) {
           <div className="font-black text-lg text-gray-900 dark:text-white uppercase truncate">{driver.name}</div>
           {driver.team && (
             <div
-              className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold text-white"
+              className="inline-block max-w-full whitespace-normal break-words mt-1 px-2 py-0.5 rounded text-xs font-bold text-white"
               style={{ backgroundColor: driver.team.color || driver.color }}
             >
               {driver.team.name}
