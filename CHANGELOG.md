@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.4] - 2026-11-03
+
+### Fixed
+- Interface sur écran étroit : barres d'outils, assistant de championnat, profil pilote et grille de départ passent à la ligne au lieu de déborder.
+- Titres des récompenses de championnat traduits, et titre de la session d'équilibrage qui affichait « sessionTypeAbbr.balancing ».
+
+## [1.25.3] - 2026-11-02
+
+### Fixed
+- Création d'une base neuve qui échouait (« Schema engine error ») quand RUST_LOG était réglé sur warn ou error.
+
 ## [1.25.2] - 2026-10-25
 
 ### Changed

@@ -17,7 +17,11 @@ const run = (args) =>
     cwd: backendDir,
     encoding: 'utf-8',
     stdio: 'pipe',
-    env: { ...process.env, DATABASE_URL: getDatabaseUrl() },
+    // Prisma's SQLite database-existence check reads an INFO engine message.
+    // Inheriting RUST_LOG=warn/error hides it and breaks first-run deploys:
+    // https://github.com/prisma/prisma/issues/29355
+    // Scope the workaround to this child process, never the application.
+    env: { ...process.env, DATABASE_URL: getDatabaseUrl(), RUST_LOG: 'info' },
   });
 
 /** Migrations present on disk, oldest first. */

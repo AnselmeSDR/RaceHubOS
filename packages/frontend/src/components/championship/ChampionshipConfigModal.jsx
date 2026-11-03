@@ -559,7 +559,7 @@ export default function ChampionshipConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-border">
           {championship?.status === ChampionshipStatus.FINISHED ? (
             <Button
               variant="outline"
@@ -599,7 +599,7 @@ export default function ChampionshipConfigModal({
           ) : (
             <div />
           )}
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={onClose}>
               {t('common:close')}
             </Button>
