@@ -44,6 +44,8 @@ async function prepare(page, language = 'en', preference = null, { realAudio = f
         }
       }
       if (!realAudio) {
+        Object.defineProperty(window, 'AudioContext', { value: undefined, configurable: true })
+        Object.defineProperty(window, 'webkitAudioContext', { value: undefined, configurable: true })
         HTMLMediaElement.prototype.play = function () {
           setTimeout(() => this.onended?.(), 20)
           return Promise.resolve()

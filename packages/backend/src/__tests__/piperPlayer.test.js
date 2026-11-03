@@ -129,3 +129,49 @@ test('fallback reports browser failure and does not mistake normal end events fo
   f.utterance.onend({ type: 'end' });
   expect(next.onend).toHaveBeenCalledTimes(1);
 });
+
+test('Web Audio preview resumes during the click, decodes the delayed WAV and releases its context', async () => {
+  const f = fixture();
+  const events = [];
+  const source = { connect: jest.fn(), disconnect: jest.fn(), start: jest.fn(), stop: jest.fn() };
+  const gain = { gain: { value: 1 }, connect: jest.fn() };
+  const close = jest.fn(async () => {});
+  f.env.AudioContext = class {
+    resume() {
+      events.push('resume');
+      return Promise.resolve();
+    }
+    decodeAudioData() {
+      events.push('decode');
+      return Promise.resolve({});
+    }
+    createBufferSource() {
+      return source;
+    }
+    createGain() {
+      return gain;
+    }
+    close() {
+      return close();
+    }
+  };
+  let release;
+  f.env.fetch = () => {
+    events.push('fetch');
+    return new Promise((resolve) => {
+      release = resolve;
+    });
+  };
+  const job = f.player.speak('Hallo', { language: 'de', selection: '_piper-auto', voices, preview: true, volume: 0.4 });
+  job.onend = jest.fn();
+  expect(events).toEqual(['resume', 'fetch']);
+  release({ ok: true, blob: async () => ({ arrayBuffer: async () => new ArrayBuffer(4) }) });
+  await flush();
+  expect(source.start).toHaveBeenCalledTimes(1);
+  expect(gain.gain.value).toBe(0.4);
+  expect(f.audios).toHaveLength(0);
+  source.onended();
+  expect(job.onend).toHaveBeenCalledTimes(1);
+  expect(close).toHaveBeenCalledTimes(1);
+  expect(source.disconnect).toHaveBeenCalledTimes(1);
+});

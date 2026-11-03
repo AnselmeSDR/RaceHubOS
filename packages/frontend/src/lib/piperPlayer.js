@@ -3,13 +3,28 @@ import { selectLocalVoice } from './piperSelection'
 /** Only the explicitly selected Piper path uses this player. Browser speech stays on main's path. */
 export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, onState = () => {} } = {}) {
   let active = null
+  function stopAudio(job) {
+    job.audio?.pause()
+    if (job.source) {
+      job.source.onended = null
+      try {
+        job.source.stop()
+      } catch {
+        /* Already ended. */
+      }
+      job.source.disconnect?.()
+    }
+    const context = job.context
+    job.context = null
+    if (context) Promise.resolve(context.close()).catch(() => {})
+  }
   function cancel() {
     if (!active) return
     const job = active
     active = null
     clearTimeout(job.timer)
     job.controller.abort()
-    job.audio?.pause()
+    stopAudio(job)
     if (job.url) env.URL.revokeObjectURL(job.url)
     if (job.browser) env.speechSynthesis?.cancel()
     onState('idle')
@@ -32,6 +47,7 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
     const finish = (error) => {
       if (active !== job) return
       clearTimeout(job.timer)
+      stopAudio(job)
       if (job.url) env.URL.revokeObjectURL(job.url)
       active = null
       onState('done')
@@ -41,7 +57,7 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
     const fallback = () => {
       if (active !== job || job.browser) return
       clearTimeout(job.timer)
-      job.audio?.pause()
+      stopAudio(job)
       if (job.url) {
         env.URL.revokeObjectURL(job.url)
         job.url = null
@@ -59,9 +75,19 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
       fallback()
       return job
     }
-    // Unlock the same audio element during the preview click, before synthesis
-    // can outlast the browser's user-activation window. Announcements are unchanged.
-    if (preview) {
+    // Resume Web Audio during the click, so delayed synthesis retains permission
+    // to play in Firefox too. Ordinary browser announcements are unchanged.
+    const Context = env.AudioContext || env.webkitAudioContext
+    if (preview && Context) {
+      try {
+        job.context = new Context()
+        job.resumed = Promise.resolve(job.context.resume()).catch((error) => {
+          job.contextError = error
+        })
+      } catch (error) {
+        job.contextError = error
+      }
+    } else if (preview) {
       job.audio = new env.Audio(
         'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQIAAAAAAA=='
       )
@@ -84,6 +110,25 @@ export function createSpeechPlayer({ api = '', env = globalThis, browserSpeak, o
         const blob = await response.blob()
         if (active !== job || job.browser) return
         clearTimeout(job.timer)
+        if (job.contextError) throw job.contextError
+        if (job.context) {
+          const context = job.context
+          await job.resumed
+          if (job.contextError) throw job.contextError
+          const buffer = await context.decodeAudioData(await blob.arrayBuffer())
+          if (active !== job || job.browser) return
+          const source = context.createBufferSource()
+          const gain = context.createGain()
+          gain.gain.value = Math.min(1, Math.max(0, volume))
+          source.buffer = buffer
+          source.connect(gain)
+          gain.connect(context.destination)
+          job.source = source
+          source.onended = () => finish()
+          source.start()
+          onState('local')
+          return
+        }
         job.url = env.URL.createObjectURL(blob)
         if (job.audio) job.audio.src = job.url
         else job.audio = new env.Audio(job.url)
