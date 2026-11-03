@@ -1,44 +1,63 @@
 import express from 'express';
-import { discoverVoices, selectPiperVoice } from '../lib/piperVoices.js';
+import { OfflineVoices, installedVoices } from '../lib/offlineVoices.js';
+import { selectPiperVoice } from '../lib/piperVoices.js';
 import { PiperSpeech } from '../lib/piperSpeech.js';
-export function createVoiceRouter({ discover = discoverVoices, speech = new PiperSpeech() } = {}) {
+
+export function createVoiceRouter({
+  speech = new PiperSpeech(),
+  manager = new OfflineVoices({ beforeChange: () => speech.close() }),
+} = {}) {
   const router = express.Router();
-  router.get('/status', (req, res) => {
-    const voices = discover().map(({ id, language, locale, name }) => ({ id, language, locale, name }));
-    res.set('Cache-Control', 'no-store').json({ available: voices.length > 0, offline: true, voices });
+  router.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
   });
-  router.post('/speak', async (req, res) => {
+  router.get('/status', (req, res) => res.json(manager.status()));
+  router.use((req, res, next) => {
     const origin = req.get('origin');
     if (origin && origin !== `${req.protocol}://${req.get('host')}`)
       return res.status(403).json({ error: 'Same-origin requests only' });
-    const { text, language, voiceId = '_piper-auto', rate = 0.95 } = req.body || {};
+    next();
+  });
+  router.post('/install', (req, res) => {
+    if (!manager.status().supported) return res.status(400).json({ error: 'Unsupported offline voice platform' });
+    if (!manager.startInstall()) return res.status(409).json({ error: 'Offline voice operation in progress' });
+    res.status(202).json(manager.status());
+  });
+  router.delete('/installation', async (req, res) => {
+    try {
+      if (!(await manager.remove())) return res.status(409).json({ error: 'Offline voice operation in progress' });
+      res.json(manager.status());
+    } catch {
+      res.status(500).json({ error: 'Failed to remove offline voices' });
+    }
+  });
+  router.post('/speak', async (req, res) => {
+    const { text, language, voiceId, rate = 1.1 } = req.body || {};
     if (
       typeof text !== 'string' ||
       !text.trim() ||
       text.length > 400 ||
       typeof language !== 'string' ||
-      !['de', 'en', 'fr'].includes(language.split(/[-_]/)[0]) ||
       typeof voiceId !== 'string' ||
       !Number.isFinite(rate) ||
-      rate < 0.8 ||
-      rate > 1.2
+      rate < 0.1 ||
+      rate > 10
     )
       return res.status(400).json({ error: 'Invalid speech request' });
-    const voice = selectPiperVoice(discover(), language, voiceId);
-    if (!voice) return res.status(503).json({ error: 'Matching local voice is not installed' });
+    const voice = selectPiperVoice(installedVoices(manager.home), language, voiceId);
+    if (manager.phase !== 'idle' || !voice)
+      return res.status(503).json({ error: 'Matching local voice is not installed' });
     try {
-      res
-        .set('Cache-Control', 'no-store')
-        .type('audio/wav')
-        .send(await speech.speak(voice, text.trim(), rate));
+      res.type('audio/wav').send(await speech.speak(voice, text.trim(), rate));
     } catch (error) {
-      res
-        .status(error.status || 503)
-        .json({ error: error.status === 429 ? 'Local voice is busy' : 'Local synthesis unavailable' });
+      res.status(error.status || 503).json({ error: 'Local synthesis unavailable' });
     }
   });
   return router;
 }
 const speech = new PiperSpeech();
-process.once('exit', () => speech.close());
+process.once('exit', () => {
+  speech.close().catch(() => {});
+});
 export default createVoiceRouter({ speech });

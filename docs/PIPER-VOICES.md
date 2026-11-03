@@ -1,39 +1,96 @@
-# Optional offline Piper speech
+# Optional offline Piper voices
 
-Piper is optional. RaceHubOS continues to work with browser speech when it is absent. This feature adds no npm dependency, schema migration, application-start download or system service. The Python runtime and large ONNX models stay outside the Git repository and are installed separately.
+RaceHubOS keeps its existing browser speech. The default remains the browser's
+choice for `speechLocale`, at rate 1.1 and volume 0.9; explicit browser voice
+preferences, force/busy behavior, the returned utterance and durations translated
+through `locales/<lang>/voice.json` retain main's behavior. Piper is an additional,
+explicit voice choice, never an automatic replacement for browser speech.
 
-## Voices and language selection
+## Install and remove in Settings
 
-The package includes German **Thorsten** (`de_DE-thorsten-medium`), US English **LJ Speech** (`en_US-ljspeech-high`) and French **Siwis** (`fr_FR-siwis-medium`). They are different speakers, not a multilingual clone of Thorsten. In Settings, select **Piper · follow interface language** or an explicit voice, then use the existing sample button. Only a voice matching the current interface language is used. Missing, mismatched or failed local synthesis falls back to browser speech in the current language; browser quality and available languages depend on the computer. Reload the page after installing voices. The existing `_piper-thorsten` preference remains supported.
+The Offline voices section shows the exact compressed download size for the
+current platform before installation. Click **Install offline voices** to download
+the pinned engine and German Thorsten, English LJ Speech and French Siwis models.
+No engine or model is downloaded by application startup, opening Settings, normal
+`npm install`, or selecting a voice. The application only reads local status until
+that button is clicked. An explicit POST to `/api/voice/install` is the equivalent
+API operation; cross-origin mutations are refused.
 
-The independent branch retains upstream's French/English interface selection. German Piper output is implemented and tested, but selecting the full German interface requires the separate German translation contribution (#1). Installed model names and languages remain visible in the voice selector. No previous voice preference is overwritten automatically.
+A background operation verifies every archive (runtime SHA-512 and model SHA-256),
+extracts into a separate staging directory without running package install scripts,
+and publishes the installation only when complete. Interrupted, truncated,
+checksum-invalid or incomplete downloads do not replace an existing installation.
+The UI polls local progress; failures remain visible and may be retried.
 
-## Separate installation
+Installed Piper voices appear beside browser voices in the same selector. Only
+Piper voices matching the interface language are offered. The selected voice is
+saved per language, like browser voices. Missing voices, local synthesis failure
+or playback failure use the original browser speech path, preserving completion
+callbacks. Cancellation and language changes discard stale local audio.
 
-A prepared offline Debian package uses the independent name `racehubos-piper-multilang`, directory `/opt/racehubos-piper-multilang` and CLI `racehubos-piper-multilang`. It can coexist with the old `racehubos-piper-thorsten` package and `/opt/racehubos-piper`. No maintainer scripts, startup service or installation-time audio/download is added. This binary package targets Linux Mint 22 / Ubuntu 24.04, amd64, Python 3.12; do not install it on another platform.
+Click **Remove offline voices** to stop and await the Node speech worker, then
+remove only this managed installation. A saved Piper preference remains readable
+and uses browser fallback after removal. Browser voices and preferences are not
+removed. Legacy `_piper-auto` / `_piper-thorsten` choices remain understood; old
+Python/system Piper installations are neither loaded nor modified.
 
-Alternatively, from a source checkout:
+## Node runtime and platforms
+
+The optional engine is **sherpa-onnx-node 1.13.8**. It is downloaded only on opt-in
+into the managed data directory, together with the exact matching prebuilt package
+for Windows x64/ia32, macOS x64/arm64 or Linux x64/arm64. Unsupported CPU/platform
+combinations keep browser speech and display that no prebuilt engine is available.
+No Python, pip, system package manager or compiler is required.
+
+Version 2.0.1 was evaluated with real Piper models and rejected: it removes the
+integrated espeak/Piper frontend and requires external phoneme input. Pinning the
+last 1.x release retains the tested Node-only phonemization path. Both the wrapper
+and native platform archive are pinned with exact integrity and byte size in
+`packages/backend/src/data/offlineVoices.json`; npm semver resolution is not used
+for this optional runtime. The core app adds only two small JavaScript archive
+readers (`tar`, `unbzip2-stream`), not the speech engine or models, to its dependencies.
+
+The speech engine loads in a separate Node process. Native-library paths are set
+for each OS before launching it. At most four requests are pending; timeouts,
+worker crashes and invalid audio fail to browser fallback. Audio caches are bounded
+and keyed by model/text/rate. The worker stops after an idle period and before
+installation/removal, so Windows DLL handles are not left open.
+
+## Storage, checksums and licenses
+
+The default managed directory is `offline-voices` beside the configured SQLite
+database. `RACEHUBOS_OFFLINE_VOICES_DIR` may select another dedicated directory.
+Status checks do not create it. An existing directory without the RaceHubOS
+installation marker is never overwritten or recursively removed. No models or
+native binaries are committed to Git. Back up this optional directory separately,
+or reinstall it after restoring the normal application database.
+
+The manifest pins the official npm archives and the prepared Piper model archives
+from [sherpa-onnx releases](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models).
+Model cards, espeak data and package license information remain in the downloaded
+installation. Thorsten's model card identifies a CC0 dataset, LJ Speech a public
+domain dataset, and Siwis a CC-BY-4.0 dataset; retain their cards and attribution.
+sherpa-onnx is Apache-2.0 and its bundled espeak-ng frontend has its own GPL license.
+See the [official Node addon examples](https://github.com/k2-fsa/sherpa-onnx/tree/v1.13.8/nodejs-addon-examples)
+and downloaded packages for the component licenses.
+
+## Verification
+
+Run the normal project rules, backend tests and Piper Playwright tests. Tests use
+throwaway databases and fake network/audio; they do not download voices.
+
+For a real, explicitly requested download/synthesis/removal smoke test on any
+supported machine:
 
 ```sh
-python3 scripts/piper/install.py --languages de,en,fr
+node scripts/test-offline-voices.js --install
 ```
 
-The default is a **new** `~/.local/share/racehubos-piper-multilang` directory. Installation requires Python with venv/pip support and Internet access to PyPI/Hugging Face. The installer pins Piper 1.8.0, pins the model repository revision and verifies each model/config/model-card SHA256 before publishing the installation. Dependencies are supplied by pip. If venv/pip is unavailable, installation stops without changing any existing voice; no system package is installed by the script. A different destination can be specified with `--target /new/directory`; set `RACEHUBOS_PIPER_HOME=/new/directory` for RaceHubOS afterwards. Existing destinations are always refused, including upgrades. A failed installation removes only its newly created staging directory. Do not point it at an existing Thorsten installation.
+Add `--keep` to retain three WAV files and the temporary model installation for
+listening. The test does not play audio, connect to a CU or alter real race data.
+It is never run by startup, npm install, or the normal test suite.
 
-For a prepared offline installation, `--runtime-from /existing/piper/home --model-cache /downloaded/models` copies an existing compatible Piper virtual environment **read-only** and uses the checksum-matching files. This is intended for the same OS, architecture and Python version. It does not modify, upgrade or remove the source. `build-deb.py --runtime-home /prepared/home --output /new/output` creates the Linux package without installing it.
-
-The optional runtime includes a CLI for creating WAV files without automatically playing them:
-
-```sh
-python3 /new/directory/speak.py --language en --text "New best lap." --output /tmp/sample-en.wav
-```
-
-The output must not already exist. After installation, speech generation is offline. No speech text is sent to a cloud service. The browser requests WAV audio from its RaceHubOS backend. Model/runtime detection is read-only. Existing local and system Thorsten installations are still detected. Per-language detection allows a complete voice in a later installation to fill a language missing in an earlier one.
-
-## Distribution and credits
-
-Runtime: [Piper, GPL-3.0](https://github.com/OHF-Voice/piper1-gpl). Voice sources, fixed revisions, model cards and checksums are recorded in `scripts/piper/voices.json` and installed beside the models. Thorsten's dataset is CC0; LJ Speech's dataset is public domain; Siwis's dataset is CC-BY-4.0. Original model cards accompany each voice. Keep their attribution and the runtime/library licences when distributing packages. The thin RaceHubOS integration and packaging scripts remain part of this repository's Apache-2.0 code. Voice models/runtime binaries are not committed to this repository.
-
-## Verification and limits
-
-Tests cover read-only legacy detection, partial installs, language matching, explicit and automatic choices, browser fallback, completion callbacks, cancellation, stale responses, voice-specific caches, worker failure, queue limits, timeouts, invalid requests, cross-origin rejection and installation rollback/no-overwrite. Browser tests use controlled audio/speech responses and isolated `e2e.db`; they do not establish speaker playback quality. Real separate-runtime tests generate nonempty WAV files for all three languages. Human listening remains necessary to assess pronunciation, driver names and speaker quality. Runtime and Debian package validation is Linux-only; Windows/macOS packaging and playback are not claimed. No CU connection or race session is required.
+Real synthesis has been checked locally on Linux. A path-limited, read-only GitHub
+Actions workflow invokes the same explicit smoke test on Windows, macOS and Linux
+runners. Its results are reported separately from local tests. Hardware speaker
+playback and pronunciation still need listening checks on the target race PC.

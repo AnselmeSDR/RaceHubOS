@@ -1,0 +1,17 @@
+{
+  "title": "Offline voices",
+  "selection": "Speech output",
+  "description": "Optional Piper voices in French, English and German. Browser speech remains available. Nothing is downloaded before you click.",
+  "downloadSize": "Download: {{size}} MiB (engine and three voices).",
+  "installed": "Offline voices installed.",
+  "missing": "No complete offline voice installation.",
+  "installing": "Downloading and verifying…",
+  "removing": "Removing offline voices…",
+  "install": "Install offline voices",
+  "remove": "Remove offline voices",
+  "operationFailed": "The operation failed. Check the connection and free disk space, then retry.",
+  "unsupported": "No prebuilt engine for this platform; use browser voices.",
+  "fallback": "Local voice unavailable; using browser speech.",
+  "savedUnavailable": "Saved Piper choice, voice unavailable",
+  "credits": "sherpa-onnx engine; Piper Thorsten, LJ Speech and Siwis models. Licenses and model cards are kept with the downloads."
+}

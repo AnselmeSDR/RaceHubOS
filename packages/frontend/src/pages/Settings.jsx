@@ -1,12 +1,6 @@
-import '../i18n/piperVoices'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
-import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
-import { useApp } from '../context/AppContext'
-import { useVoice } from '../context/VoiceContext'
-import { voicesByLanguage } from '../lib/speech'
-import { LANGUAGES } from '../i18n'
 import {
   Wifi,
   Cpu,
@@ -28,6 +22,13 @@ import {
   UserCog,
   AlertTriangle,
 } from 'lucide-react'
+import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
+import { useApp } from '../context/AppContext'
+import { useVoice } from '../context/VoiceContext'
+import { voicesByLanguage } from '../lib/speech'
+import { selectLocalVoice } from '../lib/piperSelection'
+import OfflineVoiceSettings from '../components/config/OfflineVoiceSettings'
+import { LANGUAGES } from '../i18n'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -62,9 +63,12 @@ export default function Settings() {
     saveVoiceId,
     speak,
     localVoices,
+    refreshLocalVoices,
     voiceState,
   } = useVoice()
   const [voices, setVoices] = useState([])
+  const isPiperChoice = typeof bestLapVoiceId === 'string' && bestLapVoiceId.startsWith('_piper')
+  const selectedLocalVoice = selectLocalVoice(localVoices, bestLapVoiceId, i18n.resolvedLanguage)
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [autoConnect, setAutoConnect] = useState(false)
@@ -297,13 +301,9 @@ export default function Settings() {
 
   useEffect(() => {
     loadVoices()
-    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices)
-    i18n.on('languageChanged', loadVoices)
-    return () => {
-      window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices)
-      i18n.off('languageChanged', loadVoices)
-    }
-  }, [i18n, loadVoices])
+    speechSynthesis.addEventListener('voiceschanged', loadVoices)
+    return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+  }, [loadVoices])
 
   function handleVoiceChange(voiceURI) {
     saveVoiceId(voiceURI)
@@ -691,25 +691,32 @@ export default function Settings() {
               {/* One voice per interface language, the language's default voice unless chosen */}
               <Select
                 value={
-                  bestLapVoiceId.startsWith('_piper') || voices.some((v) => v.voiceURI === bestLapVoiceId)
-                    ? bestLapVoiceId
-                    : '_default'
+                  selectedLocalVoice
+                    ? '_piper:' + selectedLocalVoice.id
+                    : isPiperChoice || voices.some((v) => v.voiceURI === bestLapVoiceId)
+                      ? bestLapVoiceId
+                      : '_default'
                 }
                 onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}
               >
-                <SelectTrigger className="flex-1" data-testid="voice-selector" aria-label={t('piperVoices:selection')}>
+                <SelectTrigger
+                  className="flex-1"
+                  data-testid="voice-selector"
+                  aria-label={t('offlineVoices:selection')}
+                >
                   <SelectValue placeholder={t('appearance.defaultVoice')} />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
                   <SelectItem value="_default">{t('appearance.defaultVoice')}</SelectItem>
-                  <SelectItem value="_piper-auto">{t('piperVoices:auto')}</SelectItem>
-                  {localVoices.map((v) => (
-                    <SelectItem key={v.id} value={'_piper:' + v.id}>
-                      {v.name} · {v.locale} · Piper
-                    </SelectItem>
-                  ))}
-                  {bestLapVoiceId === '_piper-thorsten' && (
-                    <SelectItem value="_piper-thorsten">Thorsten · de-DE · Piper</SelectItem>
+                  {localVoices
+                    .filter((voice) => voice.language === i18n.resolvedLanguage)
+                    .map((voice) => (
+                      <SelectItem key={voice.id} value={'_piper:' + voice.id}>
+                        {voice.name} · {voice.locale} · Piper
+                      </SelectItem>
+                    ))}
+                  {isPiperChoice && !selectedLocalVoice && (
+                    <SelectItem value={bestLapVoiceId}>{t('offlineVoices:savedUnavailable')}</SelectItem>
                   )}
                   {voices.map((v) => (
                     <SelectItem key={v.voiceURI} value={v.voiceURI}>
@@ -729,26 +736,7 @@ export default function Settings() {
             </div>
           )}
 
-          <p data-testid="piper-voice-status" role="status" className="text-xs text-muted-foreground">
-            {t(
-              'piperVoices:' +
-                (voiceState === 'unavailable'
-                  ? 'unavailable'
-                  : voiceState === 'fallback'
-                    ? 'fallback'
-                    : localVoices.length
-                      ? 'available'
-                      : 'missing')
-            )}
-          </p>
-          <a
-            href="https://github.com/OHF-Voice/piper1-gpl"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs underline"
-          >
-            {t('piperVoices:engine')}
-          </a>
+          <OfflineVoiceSettings onChanged={refreshLocalVoices} voiceState={voiceState} />
 
           <div className="border-t border-border" />
 
