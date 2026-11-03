@@ -79,5 +79,6 @@
   "exportExcel": "Export to Excel",
   "exportSelection": "Export ({{count}})",
   "items_one": "item",
-  "items_other": "items"
+  "items_other": "items",
+  "all": "All"
 }
