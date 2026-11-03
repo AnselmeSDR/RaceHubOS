@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Car, Flag, Zap, Flame, FlaskConical, Pencil, Trash2 } from 'lucide-react'
+import { formatLevel, levelPercent } from '@racehubos/shared'
+import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
+import DeleteButton from '../components/ui/DeleteButton'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
+import { FilterHeader } from '@/components/ui/filter-header'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
-import { formatLevel, levelPercent } from '@racehubos/shared'
-import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
 import { FormSection } from '@/components/crud/FormModal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -60,7 +61,11 @@ export default function Cars() {
   const [showForm, setShowForm] = useState(false)
   const [editingCar, setEditingCar] = useState(null)
   const [sort, setSort] = useState(null)
-  const [filters, setFilters] = useState({ deleted: false })
+  const [filters, setFilters] = useState({ deleted: false, scale: [] })
+  const [scales, setScales] = useState([])
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+  const dataGeneration = useRef(0)
 
   useEffect(() => {
     loadData(0)
@@ -70,10 +75,13 @@ export default function Cars() {
 
   async function loadData(offset) {
     const isFirst = offset === 0
+    const generation = isFirst ? ++dataGeneration.current : dataGeneration.current
+    if (isFirst) setLoadingMore(false)
     if (isFirst && !hasLoadedOnce.current) setLoading(true)
     else if (!isFirst) setLoadingMore(true)
     try {
       const params = new URLSearchParams()
+      if (filters.scale.length) params.append('scale', filters.scale.join(','))
       if (filters.deleted) params.append('deleted', 'true')
       if (sort) {
         params.append('sortBy', sort.id)
@@ -83,7 +91,14 @@ export default function Cars() {
       params.append('limit', '50')
       const res = await fetch(`${API_URL}/api/cars?${params}`)
       const data = await res.json()
+      if (generation !== dataGeneration.current) return
       if (data.success) {
+        const nextScales = data.scales || []
+        setScales((previous) =>
+          previous.length === nextScales.length && previous.every((scale, index) => scale === nextScales[index])
+            ? previous
+            : nextScales
+        )
         setCars((prev) => (isFirst ? data.data : [...prev, ...data.data]))
         setHasMore(data.hasMore ?? false)
         if (isFirst) setTotalCount(data.total ?? 0)
@@ -91,10 +106,12 @@ export default function Cars() {
     } catch (err) {
       console.error('Failed to load cars:', err)
     } finally {
-      if (isFirst) {
-        setLoading(false)
-        hasLoadedOnce.current = true
-      } else setLoadingMore(false)
+      if (generation === dataGeneration.current) {
+        if (isFirst) {
+          setLoading(false)
+          hasLoadedOnce.current = true
+        } else setLoadingMore(false)
+      }
     }
   }
 
@@ -126,6 +143,21 @@ export default function Cars() {
             </div>
           )
         },
+      },
+      {
+        accessorKey: 'scale',
+        meta: { label: t('fields.scale') },
+        header: ({ column }) => (
+          <FilterHeader
+            column={column}
+            label={t('fields.scale')}
+            active={filtersRef.current.scale.length > 0}
+            value={filtersRef.current.scale}
+            options={scales.map((scale) => ({ value: scale, label: scale }))}
+            onChange={(scale) => setFilters((previous) => ({ ...previous, scale }))}
+          />
+        ),
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.scale || '-'}</span>,
       },
       {
         id: 'year',
@@ -217,7 +249,7 @@ export default function Cars() {
         ),
       },
     ],
-    [t]
+    [t, scales]
   )
 
   // Deletion is confirmed inside the button itself, then the list reloads
@@ -270,7 +302,7 @@ export default function Cars() {
       loadingMore={loadingMore}
       onLoadMore={() => loadData(cars.length)}
       onSortChange={setSort}
-      hasActiveFilters={filters.deleted}
+      hasActiveFilters={filters.deleted || filters.scale.length > 0}
       emptyTitle={t('emptyTitle')}
       emptyMessage={t('emptyMessage')}
       options={[

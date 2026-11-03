@@ -1,9 +1,9 @@
 import express from 'express';
+import { carSpecsFrom } from '@racehubos/shared';
 import { createPrismaClient } from '../lib/prisma.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
-import { carSpecsFrom } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -11,8 +11,10 @@ const prisma = createPrismaClient();
 // GET /api/cars - List all cars
 router.get('/', async (req, res) => {
   try {
-    const { deleted, limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
+    const { deleted, scale, limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
     const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
+    const scaleWhere = { ...where };
+    if (scale) where.scale = { in: scale.split(',') };
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
@@ -24,7 +26,7 @@ router.get('/', async (req, res) => {
           ? undefined
           : { [sortBy]: sortOrder };
 
-    const [allCars, total] = await Promise.all([
+    const [allCars, total, scales] = await Promise.all([
       prisma.car.findMany({
         where,
         include: {
@@ -38,6 +40,12 @@ router.get('/', async (req, res) => {
         ...(!isComputedSort ? { skip: parsedOffset, take: parsedLimit } : {}),
       }),
       prisma.car.count({ where }),
+      prisma.car.findMany({
+        where: { ...scaleWhere, scale: { not: null } },
+        select: { scale: true },
+        distinct: ['scale'],
+        orderBy: { scale: 'asc' },
+      }),
     ]);
 
     let sorted = allCars;
@@ -51,6 +59,7 @@ router.get('/', async (req, res) => {
       success: true,
       data: cars.map((c) => withImageUrl(c)),
       total,
+      scales: scales.map((car) => car.scale).filter(Boolean),
       hasMore: parsedOffset + parsedLimit < total,
     });
   } catch (error) {

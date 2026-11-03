@@ -7,6 +7,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { Search, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -19,8 +21,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
-import { motion } from 'framer-motion'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -161,14 +161,12 @@ export function DataTable({
   }
 
   function handleSortingChange(updater) {
-    setSorting((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
-      if (onSortChange) {
-        const sort = next[0]
-        onSortChange(sort ? { id: sort.id, desc: sort.desc } : null)
-      }
-      return next
-    })
+    const next = typeof updater === 'function' ? updater(sorting) : updater
+    setSorting(next)
+    if (onSortChange) {
+      const sort = next[0]
+      onSortChange(sort ? { id: sort.id, desc: sort.desc } : null)
+    }
   }
 
   const table = useReactTable({
@@ -220,7 +218,7 @@ export function DataTable({
           {toggleableColumns.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button data-testid="table-columns" variant="outline" size="sm">
                   <Columns3 className="w-4 h-4" />
                   {t('columns')}
                 </Button>
@@ -229,6 +227,7 @@ export function DataTable({
                 {toggleableColumns.map((column) => (
                   <DropdownMenuCheckboxItem
                     key={column.id}
+                    data-testid={`column-toggle-${column.id}`}
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     onSelect={(e) => e.preventDefault()}
@@ -272,6 +271,7 @@ export function DataTable({
                 return (
                   <motion.th
                     key={header.id}
+                    data-testid={`column-header-${header.column.id}`}
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-head"
