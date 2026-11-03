@@ -1,5 +1,7 @@
 name: Offline voice smoke test
 on:
+  push:
+    branches: [feat/piper-voices]
   pull_request:
     paths:
       - '.github/workflows/offline-voices.yml'
