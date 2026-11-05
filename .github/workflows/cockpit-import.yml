@@ -52,8 +52,11 @@ jobs:
         with:
           node-version: '22'
       - run: git fetch --no-tags https://github.com/AnselmeSDR/RaceHubOS.git +main:refs/remotes/origin/main
-      - run: npm ci --ignore-scripts
-      - run: npm rebuild better-sqlite3
+      - name: Install existing Bluetooth build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libbluetooth-dev
+      - run: npm ci
       - run: npm run prisma:generate -w @racehubos/backend
       - run: npm run check:push
       - run: npm test -w @racehubos/backend
