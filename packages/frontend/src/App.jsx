@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 
 // Lazy load all pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Import = lazy(() => import('./pages/Import'))
 const Drivers = lazy(() => import('./pages/Drivers'))
 const DriverProfile = lazy(() => import('./pages/DriverProfile'))
 const Cars = lazy(() => import('./pages/Cars'))
@@ -21,7 +22,6 @@ const DriverDisplayDemo = lazy(() => import('./pages/DriverDisplayDemo'))
 const SessionsList = lazy(() => import('./pages/SessionsList'))
 const SessionDetail = lazy(() => import('./pages/SessionDetail'))
 const Stats = lazy(() => import('./pages/Stats'))
-const Import = lazy(() => import('./pages/Import'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Test = lazy(() => import('./pages/Test'))
 const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
@@ -82,14 +82,6 @@ function App() {
                         </Suspense>
                       }
                     />
-                    <Route
-                      path="import"
-                      element={
-                        <Suspense>
-                          <Import />
-                        </Suspense>
-                      }
-                    />
                     {/* Core routes */}
                     <Route
                       path="drivers"
@@ -136,6 +128,14 @@ function App() {
                       element={
                         <Suspense>
                           <TrackProfile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="import"
+                      element={
+                        <Suspense>
+                          <Import />
                         </Suspense>
                       }
                     />
