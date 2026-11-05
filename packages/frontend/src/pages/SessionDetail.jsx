@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
 import SessionLeaderboard from '../components/race/SessionLeaderboard'
 import BalancingChart from '../components/balancing/BalancingChart'
+import SectorTimingPanel from '../components/race/SectorTimingPanel'
 import Podium from '../components/race/Podium'
 import LapTime from '../components/race/LapTime'
 import { SessionStatus, SessionType } from '@racehubos/shared'
@@ -266,6 +267,7 @@ export default function SessionDetail() {
             sessionType={session.type}
             sessionStatus={session.status}
             expanded
+            showSectors={false}
           />
         ) : (
           <Card>
@@ -273,6 +275,7 @@ export default function SessionDetail() {
           </Card>
         )}
 
+        <SectorTimingPanel entries={entries} session={session} />
         {/* Lap history table */}
         {session.laps?.length > 0 && !isBalancing && (
           <Card>

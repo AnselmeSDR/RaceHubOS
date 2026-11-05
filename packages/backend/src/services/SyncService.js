@@ -1,3 +1,5 @@
+import { SessionStatus } from '@racehubos/shared';
+import { SectorTiming } from '../lib/sectorTiming.js';
 /**
  * SyncService - Synchronisation hardware CU/Simulator
  *
@@ -12,6 +14,9 @@ export class SyncService {
     this.source = null; // ControlUnit ou Simulator (set via setDevice)
     this.io = io;
     this.sessionService = null;
+    this.sectorTimingEnabled = false;
+    this.sectors = new SectorTiming();
+    this.sectorSessionKey = null;
 
     // Timestamps pour calcul lapTime
     this.lastTimestamps = new Map(); // controller -> timestamp
@@ -25,7 +30,10 @@ export class SyncService {
     this._onTimer = (event) => this.handleTimerEvent(event);
     this._onStatus = (status) => this.handleStatus(status);
     this._onConnected = () => this.io?.emit('cu:connected');
-    this._onDisconnected = () => this.io?.emit('cu:disconnected');
+    this._onDisconnected = () => {
+      if (this.sectorTimingEnabled) this.resetSectorTiming();
+      this.io?.emit('cu:disconnected');
+    };
   }
 
   setSessionService(sessionService) {
@@ -51,6 +59,8 @@ export class SyncService {
     // Clear state
     this.lastTimestamps.clear();
     this.cuStatus = null;
+    this.sectors.reset();
+    this.sectorSessionKey = null;
 
     // Set new device
     this.source = device;
@@ -85,6 +95,7 @@ export class SyncService {
    * Format: { controller: 0-5, timestamp: ms, sector: 1-3 }
    */
   async handleTimerEvent(event) {
+    if (this.sectorTimingEnabled) return this.handleTimerEventWithSectors(event);
     const { controller, timestamp, sector } = event;
     const isFinishLine = sector === 1;
 
@@ -106,6 +117,63 @@ export class SyncService {
     if (isFinishLine && this.sessionService?.isActive()) {
       await this.sessionService.handleLap({ controller, timestamp, lapTime, sector });
     }
+  }
+
+  async handleTimerEventWithSectors(event) {
+    const { controller, timestamp, sector } = event;
+    if (
+      !Number.isInteger(controller) ||
+      controller < 0 ||
+      controller > 5 ||
+      !Number.isFinite(timestamp) ||
+      timestamp <= 0 ||
+      ![1, 2, 3].includes(sector)
+    )
+      return;
+    const isFinishLine = sector === 1;
+
+    const session = this.sessionService;
+    const running = session?.isActive() && session.sessionStatus !== SessionStatus.PAUSED;
+    const key = running ? `${session.activeSessionId}:${session.currentPhase}` : null;
+    if (key !== this.sectorSessionKey) {
+      this.sectors.reset();
+      this.lastTimestamps.clear();
+      this.sectorSessionKey = key;
+    }
+
+    let lapTime = 0;
+    if (isFinishLine && timestamp > 0) {
+      const lastTimestamp = this.lastTimestamps.get(controller) || 0;
+      lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
+      if (lapTime >= 0) {
+        this.lastTimestamps.set(controller, timestamp);
+      } else {
+        lapTime = 0; // Restart all controller baselines after a CU clock reset.
+        this.lastTimestamps.clear();
+        this.lastTimestamps.set(controller, timestamp);
+        this.sectors.reset();
+      }
+    }
+
+    // Emit raw timer (for frontend logs/footer)
+    this.io?.emit('cu:timer', { controller, timestamp, lapTime, sector, isFinishLine });
+
+    const sectors = key ? this.sectors.push(event) : null;
+    if (sectors && !isFinishLine) session.handleSector?.(controller, sectors);
+    if (isFinishLine && running) {
+      await session.handleLap({ controller, timestamp, lapTime, sector, sectors });
+    }
+  }
+
+  setSectorTimingEnabled(enabled) {
+    this.sectorTimingEnabled = enabled === true;
+    this.sectors.reset();
+    this.sectorSessionKey = null;
+  }
+  resetSectorTiming() {
+    this.sectors.reset();
+    this.sectorSessionKey = null;
+    this.lastTimestamps.clear();
   }
 
   /**
@@ -233,6 +301,8 @@ export class SyncService {
   }
 
   async reset() {
+    this.sectors.reset();
+    this.sectorSessionKey = null;
     this.lastTimestamps.clear();
     this.io?.emit('cu:reset');
     if (this.source?.reset) {

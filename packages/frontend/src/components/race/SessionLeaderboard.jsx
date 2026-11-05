@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 import LapTime from './LapTime'
+import SectorTimingPanel from './SectorTimingPanel'
 import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
 import { GAP_COLORS } from '../../lib/colors'
-import { SessionStatus, SessionType } from '@racehubos/shared'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -21,6 +22,7 @@ export default function SessionLeaderboard({
   sessionType = SessionType.RACE,
   sessionStatus,
   expanded = false,
+  showSectors = true,
 }) {
   const { isDark } = useApp()
   const { t } = useTranslation('race')
@@ -281,6 +283,7 @@ export default function SessionLeaderboard({
           )
         })}
       </AnimatePresence>
+      {showSectors && <SectorTimingPanel entries={entriesWithPositions} />}
     </div>
   )
 }
