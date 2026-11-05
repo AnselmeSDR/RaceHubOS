@@ -1,0 +1,12 @@
+{
+  "title": "Sector timing",
+  "enabled": "Enable sector recording and display",
+  "help": "Disabled by default. One or two intermediate sensors produce two or three sectors. Missing, duplicate or out-of-order readings stay unknown. Finish sessions before changing this option.",
+  "hardware": "A real CU and intermediate-sensor acceptance test is required before merging. No track control is added.",
+  "failed": "Unable to change this option. Finish active sessions and retry.",
+  "controller": "Controller {{number}}",
+  "completed": "Last lap",
+  "current": "Current lap",
+  "sector": "Sector {{number}}",
+  "empty": "No drivers."
+}

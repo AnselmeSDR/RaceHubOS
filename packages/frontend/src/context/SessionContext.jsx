@@ -534,6 +534,7 @@ export function SessionProvider({ children }) {
           lastLap: p.lastLapTime || null,
           totalTime: p.totalTime || 0,
           gap: p.gap ?? null,
+          ...(p.sectors ? { sectors: p.sectors } : {}),
         },
         position: p.position || 0,
         positionDelta: p.positionDelta || 0, // From backend
