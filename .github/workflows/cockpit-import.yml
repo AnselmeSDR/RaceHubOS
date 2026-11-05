@@ -1,0 +1,62 @@
+name: Cockpit import validation
+on:
+  push:
+    branches: [feat/cockpit-xp-import]
+  pull_request:
+    paths:
+      - '.github/workflows/cockpit-import.yml'
+      - 'packages/backend/src/lib/cockpit*.js'
+      - 'packages/backend/src/routes/cockpit.js'
+      - 'packages/frontend/src/pages/Import.jsx'
+      - 'packages/frontend/tests/cockpit/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cockpit-import-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native-import:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
+      - run: npm run prisma:generate -w @racehubos/backend
+      - name: Read ZIP, review and import through Prisma, including rollback and backup
+        working-directory: packages/backend
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
+          NODE_ENV: test
+          DATABASE_URL: file:./test.db
+        run: node ../../node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/cockpitImport.test.js
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - run: git fetch --no-tags https://github.com/AnselmeSDR/RaceHubOS.git +main:refs/remotes/origin/main
+      - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
+      - run: npm run prisma:generate -w @racehubos/backend
+      - run: npm run check:push
+      - run: npm test -w @racehubos/backend
+      - run: npx playwright install --with-deps chromium
+      - run: node node_modules/@playwright/test/cli.js test --config packages/frontend/tests/cockpit/config.js
+      - run: npm run build

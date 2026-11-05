@@ -66,5 +66,6 @@ packages/backend/public/uploads-remote-backup/
 # Exports de classement (données de course, pas du code)
 *.xlsx
 
-# Automatic pre-import backups contain private race data
-**/cockpit-import-backups/
+# Isolated Cockpit-XP browser database
+packages/backend/prisma/cockpit-e2e.db-shm
+packages/backend/prisma/cockpit-e2e.db-wal

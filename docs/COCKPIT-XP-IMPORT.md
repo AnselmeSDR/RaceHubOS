@@ -1,44 +1,35 @@
 # Cockpit-XP import
 
-Open **Settings** on the race computer via `http://localhost:<port>`. Python 3 must be available as `python3` on the backend's PATH. The importer uses only Python's standard library; it does not install or run Cockpit-XP, add-ons, licences or hardware profiles. This feature has been tested on Linux; Windows and macOS runtime validation remains to be done.
+Open **Import** in the sidebar and select a Cockpit-XP ZIP backup. Node is the only runtime; `better-sqlite3` and `jszip` are direct backend dependencies. No program, add-on, hardware profile, license, XML instruction or source SQL is executed. Only the SQLite tables described below and referenced raster images are read; archive paths are never extracted.
 
-1. End any running, paused or finishing session.
-2. Select which master data, vehicle equipment, maintenance snapshots and historical statistics to import. Inactive entities are skipped unless explicitly selected.
-3. Select the Cockpit-XP ZIP backup and check its preview. No database or uploaded-image changes are made by the preview.
-4. Review counts, examples and unresolved mappings, then explicitly confirm the import. Changing the file or selection requires a new preview. Previews expire after 30 minutes or a backend restart; only the three most recent previews are kept.
-5. Download the automatic pre-import backup using the link shown after import. The backend keeps it in `cockpit-import-backups/` next to the configured SQLite database, outside version control. Keep these private backups on a separate medium. A failed backup prevents import. No general backup restore endpoint is exposed by this feature.
+Each object type has a separate tab: drivers, cars, tracks, sessions, results and laps. The preview displays actual editable records, including default speed 100, brake 50, fuel 100 and the model's default color when missing. A missing brand remains empty and must be supplied; it is never assumed to be Carrera. All dates are ISO timestamps and durations are milliseconds. Records are paged in groups of 25 to keep large imports responsive.
 
-## Supported data and limits
+Review every tab. Edit fields, fix references, remove rows, and choose whether to include each picture. Removing an entity can leave dependent rows unresolved: explicitly repair or remove those rows. Ambiguous race/lap matches are left unresolved instead of guessed. The import button stays disabled for unresolved references; the server independently validates every submitted field, range and reference. Empty years and historical years such as 1888 are accepted.
 
-The ZIP must contain exactly one SQLite `Database.sqlite/cpv2stamm` with `DriverItems`, `CarItems` and `CourseItems`. Optional `CarData` and `Database.sqlite/cpv2statistik` provide equipment and historical data. Directory separators and database path case are normalized. Other Cockpit-XP database formats are not supported.
+The action selector either creates a new object or links to an existing one. Linked rows are not overwritten, including car equipment, CU settings and existing results. To change an imported proposal, choose Create and edit it before the initial import. Previously imported identities are fixed links; they cannot be silently remapped, copied or overwritten on repeat imports. Removing an already imported target requires restoring it before importing the same source rows again.
 
-- ZIP upload: 180 MB; at most 20,000 archive entries.
-- Master database: 20 MB; statistics database: 50 MB.
-- Master records: 5,000 per table; historical rows: 50,000 per supported statistics table.
-- Images: PNG, JPEG, GIF or WebP, at most 5 MB each and 25 MB per import. Ambiguous image basenames are rejected rather than guessed.
-- Historical archive: 5 MB in the existing `Preference` table. No schema migration is needed.
-- Automatic backup images: 30 MB total. A larger existing image collection prevents import until a supported backup can be made.
+After explicit confirmation:
 
-No archive member is extracted to its original path. Only the selected SQLite databases are copied into a private temporary directory and opened read-only. Programs and XML declarations are never executed. Temporary uploaded ZIP files are removed after processing.
+1. Refuse an active, paused or finishing session and an outdated preview.
+2. Call the existing `backupDatabase()` into `prisma/db-old/`; backup failure stops the import before any writes.
+3. Recheck the target snapshot inside a Prisma transaction. Store drivers, cars and tracks in their normal tables; races as finished `Session` rows, standings in `SessionDriver`, individual rounds in `Lap` with the session's track and reviewed driver/car/controller links.
+4. Save only source fingerprints, object types and target IDs in `CockpitImportRecord`, created through a Prisma migration. No source archive in Preferences, no provenance markers in car notes. Fingerprints prevent reimporting identical source rows, even after the user edits a target's name or equipment.
+5. On error roll back all database changes and remove newly written images. Preserve the reviewed preview for retry. Existing source and target files are never overwritten.
 
-## Preservation and matching
+The import has the same network accessibility as other RaceHubOS features. It does not add a loopback/origin restriction or modify the Vite proxy. A successful import emits the usual data refresh event. It is independent of the catalog and all other feature PRs. Host version and changelog are unchanged.
 
-New entities receive RaceHubOS defaults. Existing speed, brake, fuel, tyres and results remain unchanged. Only empty motor and gear-ratio fields may receive explicitly supplied equipment values. Maintenance counters remain historical snapshots, not current service counters.
+## Supported source data
 
-Mapping uses exact names/aliases, an explicit prior import marker, a stored mapping, or exact image content. Ambiguous entities and unmatched historical references are reported and skipped. No fuzzy name, brand or part-number matching is used. Historical statistics stay labelled separately in statistics and car/driver profiles, with original units and sector codes. They do not create current sessions, laps or track records. Repeated rows are deduplicated even if the backup filename changes.
+The ZIP contains exactly one `Database.sqlite/cpv2stamm` and optionally one `Database.sqlite/cpv2statistik` (nested backup directories and Windows separators are supported).
 
-Import, preview and backup download require a loopback connection and matching browser origin. Read-only history uses the same access model as existing statistics routes. The Vite proxy preserves the Host header for `/api/data` so local development has the same origin check.
+- `DriverItems`: ID, Driver/FullName, optional Email, Number, Color, Picture.
+- `CarItems`: ID, Car/FullName, optional Brand/Manufacturer, Year, Color, MaxSpeed, BrakeForce, FuelCapacity, Notes, Picture. Selected `CarData` equipment is mapped to motor, gear ratio, scale and tyres; absent fields keep the normal defaults or remain optional.
+- `CourseItems`: ID, Course/FullName, optional Length, Corners, Color, Picture.
+- `StRennResults`: ID, Fahrer, Fahrzeug, RennStrecke, Runden, Gesamtzeit, BesteRunde, Platz, Datum, Uhrzeit, RennArt, MasterID. MasterID plus track groups participants of a race. Without MasterID, a complete date/time/track/type key is used; without time each result becomes its own proposed session. A reviewed session can hold the normal maximum of six controllers.
+- `StRoundTime`: ID, Driver, Car, Course, RoundTime, Date, MasterID, optional Sector1/2/3. Laps link automatically only when driver/car/track and available race/date identifiers identify exactly one result. Otherwise select the session explicitly in preview. Imported result aggregates are preserved; a backup can contain fewer individual laps than its aggregate lap count.
 
-## Verification
+Counters, winners summaries, maintenance intervals and unsupported source tables are not represented as fake sessions or hidden archives. Pictures must be PNG, JPEG, GIF or WebP with matching content signatures. Unknown file types and unused archive members are ignored. Sources with different table layouts need another explicit mapper; this does not claim universal compatibility with every Cockpit-XP version.
 
-Backend tests use `test.db` and synthetic ZIPs generated by `src/__tests__/fixtures/createCockpitFixture.py`. Run the normal backend suite with the project's Node/npm runtime:
+Limits: 180 MiB uploaded ZIP, 20,000 members, 50 MiB per SQLite database, 5,000 rows per supported table, 5 MiB per referenced image and 25 MiB total image data. Preview IDs expire after 30 minutes; three previews are kept per server. Exact source-content fingerprints support repeat imports, not fuzzy matching between independently changed exports. Transaction failure or a changed target requires rechecking the relevant preview.
 
-```sh
-npm test -w @racehubos/backend
-npm run check:push
-npm run build
-cd packages/frontend
-npx playwright test tests/cockpit-import.spec.js
-```
-
-The browser tests start separate mock-device servers and use `e2e.db`; they must never reuse a race server or database. No private backup, database, image or Cockpit-XP installation belongs in a commit. Integration with the separate German translation and car-catalog branches must preserve all locale namespaces, the shared list-page toolbar and the highest release version/changelog entries.
+Tests use generated SQLite/ZIP fixtures with a synthetic PNG. No personal backup, race database or manufacturer image is bundled. Native Windows/macOS runtime and representative real-backup acceptance remain separate validation items until exercised.

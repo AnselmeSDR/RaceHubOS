@@ -8,7 +8,8 @@
     "balancing": "Fahrzeugabgleich",
     "displays": "Anzeigen",
     "test": "Test",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "import": "Importieren"
   },
   "theme": {
     "dayMode": "Tagmodus",

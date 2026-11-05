@@ -1,149 +1,194 @@
-import { beforeAll, afterAll, beforeEach, test, expect } from '@jest/globals';
+import { jest } from '@jest/globals';
 import express from 'express';
 import request from 'supertest';
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
-import Database from 'better-sqlite3';
 import { createCockpitRouter } from '../routes/cockpit.js';
+import { backupDatabase } from '../lib/backupDatabase.js';
 import { getDatabasePath } from '../lib/database-url.js';
-import { readCockpitArchive } from '../lib/cockpitHistory.js';
-import { validateBackup } from '../lib/dataBackup.js';
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cockpit-api-'));
-const fixture = path.join(root, 'synthetic.zip');
-const generator = fileURLToPath(new URL('./fixtures/createCockpitFixture.py', import.meta.url));
-const converter = fileURLToPath(new URL('../../scripts/cockpit_import.py', import.meta.url));
-let db,
-  app,
-  active = false;
-const backups = path.join(root, 'backups'),
-  uploads = path.join(root, 'uploads');
-beforeAll(() => {
-  execFileSync('python3', [generator, fixture]);
-  db = new Database(getDatabasePath());
+import { createCockpitFixture } from './fixtures/createCockpitFixture.js';
+import { prisma } from './setup.js';
+
+let root;
+let app;
+let zip;
+let backup;
+beforeAll(async () => {
+  root = await fs.mkdtemp(path.join(os.tmpdir(), 'cockpit-test-'));
+  zip = await createCockpitFixture();
 });
-beforeEach(() => {
-  active = false;
-  db.exec('DELETE FROM Driver; DELETE FROM Car; DELETE FROM Track; DELETE FROM Preference;');
-  fs.rmSync(backups, { recursive: true, force: true });
-  fs.rmSync(uploads, { recursive: true, force: true });
+beforeEach(async () => {
+  await prisma.cockpitImportRecord.deleteMany();
+  await prisma.trackRecord.deleteMany();
+  await prisma.controllerConfig.deleteMany();
+  await prisma.lap.deleteMany();
+  await prisma.sessionDriver.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.driver.deleteMany();
+  await prisma.car.deleteMany();
+  await prisma.track.deleteMany();
+  backup = jest.fn((options) => backupDatabase({ ...options, reason: options.reason + '-' + Date.now() }));
   app = express();
-  app.use(express.json());
-  app.use(
-    '/api/data',
-    createCockpitRouter({ uploadsPath: uploads, backupDirectory: backups, sessionService: { isActive: () => active } })
-  );
+  app.use(express.json({ limit: '10mb' }));
+  app.use('/api/data', createCockpitRouter({ prisma, uploads: root, backup }));
 });
-afterAll(() => {
-  db.close();
-  fs.rmSync(root, { recursive: true, force: true });
+afterAll(async () => {
+  await fs.rm(root, { recursive: true, force: true });
+  await fs.rm(path.join(path.dirname(getDatabasePath()), 'db-old'), { recursive: true, force: true });
 });
-const preview = (options = {}) =>
-  request(app).post('/api/data/cockpit/preview').field('options', JSON.stringify(options)).attach('file', fixture);
-const commit = (id, confirmed = true) => request(app).post('/api/data/cockpit/import').send({ id, confirmed });
-test('ZIP preview is read-only; confirmation creates a verified pre-import backup and imports images and labelled history exactly once', async () => {
-  const p = await preview();
-  expect(p.status).toBe(200);
-  expect(p.body.summary.counts).toEqual({ drivers: 1, cars: 1, tracks: 1, technology: 1, history: 2 });
-  expect(p.body.summary.inactive).toBe(1);
-  expect(p.body.summary.history.empty).toBe(1);
-  expect(db.prepare('SELECT count(*) n FROM Driver').get().n).toBe(0);
-  expect(fs.existsSync(backups)).toBe(false);
-  expect((await commit(p.body.id, false)).status).toBe(400);
-  const result = await commit(p.body.id);
-  expect(result.status).toBe(200);
-  const backup = JSON.parse(fs.readFileSync(path.join(backups, result.body.previous)));
-  validateBackup(getDatabasePath(), backup);
-  expect(backup.payload.tables.Driver.rows).toHaveLength(0);
-  expect(db.prepare('SELECT name FROM Driver').get().name).toBe('Fixture Driver');
-  expect(db.prepare('SELECT motor,gearRatio FROM Car').get()).toEqual({ motor: 'Fixture motor', gearRatio: '9 / 27' });
-  expect(fs.readdirSync(path.join(uploads, 'cars'))).toHaveLength(1);
-  expect(readCockpitArchive(db).records).toHaveLength(2);
-  expect(db.prepare('SELECT count(*) n FROM Lap').get().n).toBe(0);
-  expect(db.prepare('SELECT count(*) n FROM Session').get().n).toBe(0);
-  expect((await request(app).get(`/api/data/download/${result.body.previous}`)).status).toBe(200);
-  expect((await commit(p.body.id)).status).toBe(400);
-  const repeat = await preview();
-  expect(repeat.body.summary.counts).toEqual({ drivers: 0, cars: 0, tracks: 0, technology: 0, history: 0 });
-  expect((await commit(repeat.body.id)).status).toBe(400);
-  expect(fs.readdirSync(backups)).toHaveLength(1);
-});
-test('malformed ZIPs and options are rejected without writes', async () => {
-  expect(
-    (await request(app).post('/api/data/cockpit/preview').attach('file', Buffer.from('not a zip'), 'invalid.zip'))
-      .status
-  ).toBe(400);
-  expect(
-    (await request(app).post('/api/data/cockpit/preview').field('options', '{broken').attach('file', fixture)).status
-  ).toBe(400);
-  expect((await request(app).post('/api/data/cockpit/preview')).status).toBe(400);
-  expect(db.prepare('SELECT count(*) n FROM Car').get().n).toBe(0);
-});
-test('active sessions, expired previews, cross-origin requests and changed targets reject import', async () => {
-  active = true;
-  expect((await preview()).status).toBe(400);
-  active = false;
-  const p = await preview();
-  expect(p.status).toBe(200);
-  active = true;
-  expect((await commit(p.body.id)).status).toBe(400);
-  active = false;
-  expect((await commit('missing')).status).toBe(400);
-  expect(
-    (
-      await request(app)
-        .post('/api/data/cockpit/import')
-        .set('Origin', 'https://example.invalid')
-        .send({ id: p.body.id, confirmed: true })
-    ).status
-  ).toBe(403);
-  db.prepare('INSERT INTO Driver(id,name,createdAt,updatedAt) VALUES(?,?,?,?)').run(
-    'existing',
-    'Fixture Driver',
-    Date.now(),
-    Date.now()
-  );
-  const changed = await commit(p.body.id);
-  expect(changed.status).toBe(400);
-  expect(changed.body.error).toMatch(/seit der Vorschau/);
-  expect(fs.existsSync(backups)).toBe(false);
-});
-test('sections can be deselected and inactive entries explicitly included', async () => {
-  const p = await preview({
-    cars: false,
-    tracks: false,
-    history: false,
-    technology: false,
-    maintenance: false,
-    includeInactive: true,
+const preview = async (buffer = zip) =>
+  (
+    await request(app)
+      .post('/api/data/cockpit/preview')
+      .set('Origin', 'http://other-network-device:5173')
+      .attach('file', buffer, 'synthetic.zip')
+      .expect(200)
+  ).body.data;
+function reviewed(value) {
+  const rows = structuredClone(value.rows);
+  for (const group of Object.keys(rows))
+    rows[group] = rows[group].map(({ key, targetId, data, includeImage }) => ({ key, targetId, data, includeImage }));
+  rows.cars[0].data.brand = 'User selected brand';
+  return rows;
+}
+const commit = (value, rows = reviewed(value)) =>
+  request(app).post('/api/data/cockpit/import').send({ id: value.id, confirmed: true, rows });
+test('Node preview exposes editable records, defaults and a missing brand without writes or backup', async () => {
+  const value = await preview();
+  expect(Object.keys(value.rows)).toEqual(['drivers', 'cars', 'tracks', 'sessions', 'results', 'laps']);
+  expect(value.rows.cars[0].data).toMatchObject({
+    brand: '',
+    maxSpeed: 100,
+    brakeForce: 50,
+    fuelCapacity: 100,
+    color: '#3B82F6',
+    motor: 'Fixture motor',
   });
-  expect(p.status).toBe(200);
-  expect(p.body.summary.counts).toEqual({ drivers: 2, cars: 0, tracks: 0, technology: 0, history: 0 });
-  expect((await commit(p.body.id)).status).toBe(200);
-  expect(db.prepare('SELECT count(*) n FROM Driver').get().n).toBe(2);
-  expect(db.prepare('SELECT count(*) n FROM Car').get().n).toBe(0);
+  expect(value.rows.sessions).toHaveLength(1);
+  expect(value.rows.laps[0].data.session).toBe(value.rows.sessions[0].key);
+  expect(await prisma.driver.count()).toBe(0);
+  expect(await prisma.session.count()).toBe(0);
+  expect(backup).not.toHaveBeenCalled();
+  await request(app)
+    .get(`/api/data/cockpit/preview/${value.id}/image/${value.rows.drivers[0].key}`)
+    .expect('Content-Type', /image\/png/)
+    .expect(200);
 });
-test('backup failure prevents database and image writes', async () => {
-  fs.writeFileSync(backups, 'not a directory');
-  try {
-    const p = await preview();
-    expect(p.status).toBe(200);
-    expect((await commit(p.body.id)).status).toBe(400);
-    expect(db.prepare('SELECT count(*) n FROM Car').get().n).toBe(0);
-    expect(fs.existsSync(uploads)).toBe(false);
-  } finally {
-    fs.rmSync(backups, { force: true });
+test('reviewed values and removal are stored through normal tables, including results/laps and images', async () => {
+  const value = await preview();
+  const rows = reviewed(value);
+  rows.drivers = rows.drivers.filter((row) => row.data.name !== 'Unused Driver');
+  rows.cars[0].data.model = 'Edited by user';
+  rows.cars[0].data.year = 1888;
+  rows.cars[0].data.maxSpeed = 70;
+  rows.results[0].data.totalLaps = 9;
+  rows.laps[0].data.lapTime = 6543;
+  const result = (await commit(value, rows).expect(200)).body.data;
+  expect(result.counts).toEqual({ drivers: 1, cars: 1, tracks: 1, sessions: 1, results: 1, laps: 1 });
+  expect(backup).toHaveBeenCalledTimes(1);
+  const car = await prisma.car.findFirst();
+  expect(car).toMatchObject({
+    model: 'Edited by user',
+    year: 1888,
+    maxSpeed: 70,
+    brakeForce: 50,
+    brand: 'User selected brand',
+  });
+  expect(car.notes).toBeNull();
+  const session = await prisma.session.findFirst({ include: { drivers: true, laps: true } });
+  expect(session.status).toBe('finished');
+  expect(session.drivers[0].totalLaps).toBe(9);
+  expect(session.laps[0]).toMatchObject({ lapTime: 6543, carId: car.id, trackId: session.trackId });
+  const driver = await prisma.driver.findFirst();
+  expect(driver.img).toMatch(/^\/api\/img\/drivers\/cockpit-/);
+  expect(await prisma.preference.findFirst({ where: { key: { startsWith: 'cockpit:' } } })).toBeNull();
+});
+test('repeated imports link the previous targets without duplicates or overwriting their edited values', async () => {
+  const first = await preview();
+  await commit(first).expect(200);
+  const car = await prisma.car.findFirst();
+  await prisma.car.update({ where: { id: car.id }, data: { motor: 'User motor' } });
+  const second = await preview();
+  expect(second.rows.cars[0].targetId).toBe(car.id);
+  await commit(second).expect(200);
+  expect(await prisma.car.count()).toBe(1);
+  expect(await prisma.session.count()).toBe(1);
+  expect(await prisma.lap.count()).toBe(1);
+  expect((await prisma.car.findFirst()).motor).toBe('User motor');
+});
+test('missing confirmation, arbitrary keys/fields, invalid defaults and remote images never write', async () => {
+  const value = await preview();
+  await request(app)
+    .post('/api/data/cockpit/import')
+    .send({ id: value.id, rows: reviewed(value) })
+    .expect(400);
+  for (const modify of [
+    (rows) => {
+      rows.cars[0].key = 'forged';
+    },
+    (rows) => {
+      rows.cars[0].data.unexpected = true;
+    },
+    (rows) => {
+      rows.cars[0].data.maxSpeed = 101;
+    },
+    (rows) => {
+      rows.cars[0].data.img = 'https://example.com/image.png';
+    },
+    (rows) => {
+      rows.cars[0].data.brand = '';
+    },
+  ]) {
+    const rows = reviewed(value);
+    modify(rows);
+    await commit(value, rows).expect(400);
   }
+  expect(await prisma.car.count()).toBe(0);
+  expect(backup).not.toHaveBeenCalled();
 });
-test('ambiguous image basenames are rejected rather than importing a wrong photo', () => {
-  const duplicate = path.join(root, 'duplicate-images.zip');
-  fs.copyFileSync(fixture, duplicate);
-  execFileSync('python3', [
-    '-c',
-    "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1],'a'); z.writestr('other/Bilder/car.png',b'other image'); z.close()",
-    duplicate,
-  ]);
-  expect(() => execFileSync('python3', [converter, duplicate], { stdio: 'pipe' })).toThrow();
+test('removed references and ambiguous race links must be explicitly resolved', async () => {
+  const value = await preview(await createCockpitFixture({ ambiguous: true }));
+  expect(value.rows.laps[0].data.session).toBe('');
+  await commit(value).expect(400);
+  const rows = reviewed(value);
+  rows.laps[0].data.session = rows.sessions[0].key;
+  await commit(value, rows).expect(200);
+  const next = await preview();
+  const invalid = reviewed(next);
+  invalid.cars = [];
+  invalid.results[0].targetId = '';
+  await commit(next, invalid).expect(400);
+});
+test('backup failure leaves no rows or image files; preview remains reusable', async () => {
+  backup.mockImplementation(() => {
+    throw new Error('Backup unavailable');
+  });
+  const value = await preview();
+  const before = await fs.readdir(root);
+  await commit(value).expect(500);
+  expect(await prisma.car.count()).toBe(0);
+  expect(await fs.readdir(root)).toEqual(before);
+});
+test('database changes invalidate a preview before any backup or write', async () => {
+  const value = await preview();
+  await prisma.car.create({ data: { brand: 'Existing', model: 'New after preview' } });
+  await commit(value).expect(409);
+  expect(await prisma.car.count()).toBe(1);
+  expect(backup).not.toHaveBeenCalled();
+});
+test('failed Prisma transaction removes staged images and all imported rows', async () => {
+  const value = await preview();
+  const rows = reviewed(value);
+  rows.drivers[0].data.email = 'duplicate@example.com';
+  rows.drivers[1].data.email = 'duplicate@example.com';
+  const before = await fs.readdir(path.join(root, 'drivers')).catch(() => []);
+  await commit(value, rows).expect(500);
+  expect(await prisma.driver.count()).toBe(0);
+  expect(await prisma.cockpitImportRecord.count()).toBe(0);
+  expect(await fs.readdir(path.join(root, 'drivers'))).toEqual(before);
+});
+test('invalid archive is rejected without executing or extracting programs', async () => {
+  await request(app).post('/api/data/cockpit/preview').attach('file', Buffer.from('not a zip'), 'bad.zip').expect(400);
+  expect(await prisma.car.count()).toBe(0);
 });
