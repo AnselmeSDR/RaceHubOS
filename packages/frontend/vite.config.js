@@ -15,8 +15,6 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Preserve Host so the local-only import can verify its browser Origin.
-      '/api/data': { target: `http://localhost:${backendPort}`, changeOrigin: false },
       '/api': {
         target: `http://localhost:${backendPort}`,
         changeOrigin: true,

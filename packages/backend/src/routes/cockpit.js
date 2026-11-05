@@ -1,141 +1,101 @@
 import express from 'express';
 import multer from 'multer';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { randomUUID, createHash } from 'node:crypto';
-import Database from 'better-sqlite3';
-import { cockpitPlan as buildCockpitPlan, cockpitSummary as summary, cockpitSignature } from '../lib/cockpitPlan.js';
-import { readCockpitArchive } from '../lib/cockpitHistory.js';
-import { getDatabasePath } from '../lib/database-url.js';
-import { createBackup } from '../lib/dataBackup.js';
-import { insertCockpitData } from '../lib/cockpitData.js';
+import { createPrismaClient } from '../lib/prisma.js';
+import { readCockpitArchive } from '../lib/cockpitArchive.js';
+import { mapCockpitArchive } from '../lib/cockpitMappers.js';
+import { COCKPIT_FIELDS, prepareCockpitPreview, commitCockpitImport } from '../lib/cockpitImport.js';
 
 export function createCockpitRouter({
-  databasePath = getDatabasePath(),
-  uploadsPath = fileURLToPath(new URL('../../public/uploads/', import.meta.url)),
-  backupDirectory = path.join(path.dirname(databasePath), 'cockpit-import-backups'),
-  sessionService,
+  prisma = createPrismaClient(),
+  uploads = fileURLToPath(new URL('../../public/uploads/', import.meta.url)),
+  backup,
   io,
 } = {}) {
-  const dataDirectory = backupDirectory;
-  const uploads = uploadsPath;
-  const service = sessionService,
-    socket = io;
-  const converter = fileURLToPath(new URL('../../scripts/cockpit_import.py', import.meta.url));
-  const router = express.Router(),
-    previews = new Map();
-  router.get('/cockpit/history', (req, res) => {
-    const db = new Database(databasePath, { readonly: true });
-    try {
-      res.set('Cache-Control', 'no-store');
-      res.json({ success: true, data: readCockpitArchive(db) });
-    } catch (e) {
-      fail(res, e);
-    } finally {
-      db.close();
-    }
-  });
+  const router = express.Router();
+  const previews = new Map();
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 180 * 1024 * 1024, files: 1 } });
+  const entry = (id) => {
+    const preview = previews.get(id);
+    if (!preview || preview.expires < Date.now()) throw Object.assign(new Error('Preview expired'), { status: 410 });
+    return preview;
+  };
   router.use((req, res, next) => {
-    const address = req.socket.remoteAddress,
-      origin = req.get('origin');
-    if (
-      !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address) ||
-      (origin && origin !== `${req.protocol}://${req.get('host')}`)
-    )
-      return res.status(403).json({ success: false, error: 'Datensicherung nur lokal auf diesem Rechner öffnen.' });
     res.set('Cache-Control', 'no-store');
     next();
   });
-  const backupName = /^racehubos-[a-z0-9-]+\.json$/;
-  const digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-  function checkIdle() {
-    if (service?.isActive()) throw new Error('Bitte die laufende oder pausierte Sitzung zuerst beenden.');
-  }
-  function saveLocalBackup(prefix = 'sicherung') {
-    checkIdle();
-    const backup = createBackup(databasePath, uploads);
-    fs.mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
-    const id = `racehubos-${prefix}-${Date.now()}-${randomUUID().slice(0, 8)}.json`;
-    fs.writeFileSync(path.join(dataDirectory, id), JSON.stringify(backup), { mode: 0o600 });
-    return { id, backup };
-  }
-  function remember(value) {
-    for (const [id, entry] of previews) if (entry.expires < Date.now()) previews.delete(id);
-    while (previews.size >= 3) previews.delete(previews.keys().next().value);
-    const id = randomUUID();
-    previews.set(id, { ...value, expires: Date.now() + 30 * 60000 });
-    return id;
-  }
-  function entry(id, kind) {
-    const value = previews.get(id);
-    if (!value || value.kind !== kind || value.expires < Date.now())
-      throw new Error('Vorschau abgelaufen. Bitte erneut prüfen.');
-    return value;
-  }
-  function fail(res, error) {
-    return res.status(400).json({ success: false, error: error.message || 'Vorgang fehlgeschlagen.' });
-  }
-  router.get('/download/:id', (req, res) => {
-    if (!backupName.test(req.params.id)) return res.status(400).end();
-    res.download(path.join(dataDirectory, req.params.id), req.params.id, (e) => {
-      if (e && !res.headersSent) res.status(404).json({ success: false, error: 'Sicherung nicht gefunden.' });
-    });
-  });
-  const cockpitPlan = (data, options) => buildCockpitPlan(databasePath, uploads, data, options);
-  // Private directory: uploaded backups can contain personal information.
-  const uploadDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'racehub-cockpit-'));
-  const upload = multer({ dest: uploadDirectory, limits: { fileSize: 180 * 1024 * 1024, files: 1 } });
-  router.post('/cockpit/preview', upload.single('file'), async (req, res) => {
+  router.post('/cockpit/preview', upload.single('file'), async (req, res, next) => {
     try {
-      checkIdle();
-      if (!req.file) throw new Error('Bitte eine Cockpit-XP-ZIP-Sicherung auswählen.');
-      const { stdout } = await promisify(execFile)('python3', [converter, req.file.path], {
-        timeout: 60000,
-        maxBuffer: 45 * 1024 * 1024,
-      });
-      const data = JSON.parse(stdout);
-      data.source = req.file.originalname;
-      const options = JSON.parse(req.body.options || '{}'),
-        plan = cockpitPlan(data, options);
-      res.json({
-        success: true,
-        id: remember({ kind: 'cockpit', data, options, before: digest(cockpitSignature(plan)) }),
-        summary: summary(plan),
-      });
-    } catch (e) {
-      fail(res, new Error(e.stderr?.trim() || e.message));
-    } finally {
-      if (req.file?.path) fs.rmSync(req.file.path, { force: true });
+      if (!req.file) throw Object.assign(new Error('Select a Cockpit-XP ZIP backup'), { status: 400 });
+      for (const [id, value] of previews) if (value.expires < Date.now()) previews.delete(id);
+      if (previews.size >= 3) previews.delete(previews.keys().next().value);
+      const raw = await readCockpitArchive(req.file.buffer);
+      const preview = await prepareCockpitPreview(prisma, mapCockpitArchive(raw));
+      const id = randomUUID();
+      previews.set(id, { ...preview, expires: Date.now() + 30 * 60000 });
+      const rows = Object.fromEntries(
+        Object.entries(preview.rows).map(([group, items]) => [
+          group,
+          items.map(({ key, targetId, data, image, lockedTarget }) => ({
+            key,
+            targetId,
+            data,
+            lockedTarget,
+            includeImage: !!image,
+            hasImage: !!image,
+          })),
+        ])
+      );
+      res.json({ success: true, data: { id, rows, fields: COCKPIT_FIELDS, targets: preview.targets } });
+    } catch (error) {
+      error.status ||= 400;
+      next(error);
     }
   });
-  router.post('/cockpit/import', (req, res) => {
+  router.get('/cockpit/preview/:id/image/:key', async (req, res, next) => {
     try {
-      checkIdle();
-      if (req.body.confirmed !== true) throw new Error('Datenübernahme bitte bestätigen.');
-      const value = entry(req.body.id, 'cockpit'),
-        plan = cockpitPlan(value.data, value.options);
-      if (!Object.values(summary(plan).counts).some((n) => n > 0))
-        throw new Error(
-          'Keine neuen zuordenbaren Daten vorhanden. Bereits importierte Daten werden nicht doppelt übernommen.'
-        );
-      if (digest(cockpitSignature(plan)) !== value.before)
-        throw new Error('Daten wurden seit der Vorschau geändert. Bitte erneut prüfen.');
-      const previous = saveLocalBackup('vor-cockpit-import');
-      insertCockpitData(databasePath, uploads, plan);
+      const preview = entry(req.params.id);
+      const image = Object.values(preview.rows)
+        .flat()
+        .find((row) => row.key === req.params.key)?.image;
+      if (!image) return res.sendStatus(404);
+      const mime = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      res.set('X-Content-Type-Options', 'nosniff').type(mime[image.extension]).send(Buffer.from(image.data, 'base64'));
+    } catch (error) {
+      next(error);
+    }
+  });
+  router.post('/cockpit/import', async (req, res, next) => {
+    let preview;
+    let locked = false;
+    try {
+      if (req.body.confirmed !== true) throw Object.assign(new Error('Confirm the reviewed import'), { status: 400 });
+      preview = entry(req.body.id);
+      if (preview.busy) return res.status(409).json({ success: false, error: 'Import already running' });
+      preview.busy = true;
+      locked = true;
+      const result = await commitCockpitImport({ prisma, preview, rows: req.body.rows, uploads, backup });
       previews.delete(req.body.id);
-      socket?.emit('data:restored');
-      res.json({ success: true, previous: previous.id, summary: summary(plan) });
-    } catch (e) {
-      fail(res, e);
+      io?.emit('data:restored');
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    } finally {
+      if (locked) preview.busy = false;
     }
   });
   router.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
-    fail(res, new Error(error.code === 'LIMIT_FILE_SIZE' ? 'Datei zu groß. Maximal 180 MB.' : error.message));
+    res
+      .status(error.status || (error instanceof multer.MulterError ? 400 : 500))
+      .json({ success: false, error: error.message || 'Cockpit-XP import failed' });
   });
   return router;
 }

@@ -271,3 +271,11 @@ model Preference {
   value     String   // JSON
   updatedAt DateTime @updatedAt
 }
+
+// Provenance for repeat imports; source data lives in the normal application tables.
+model CockpitImportRecord {
+  key String @id
+  sourceType String
+  targetId String
+  createdAt DateTime @default(now())
+}
