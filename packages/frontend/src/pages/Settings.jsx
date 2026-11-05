@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
+import RaceScreenSettingsCard from '../components/race/RaceScreenSettingsCard'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
@@ -831,6 +832,7 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      <RaceScreenSettingsCard />
       {/* Logs */}
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 border-b border-border">

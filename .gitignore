@@ -65,3 +65,7 @@ packages/backend/public/uploads-remote-backup/
 
 # Exports de classement (données de course, pas du code)
 *.xlsx
+
+# Isolated race-screen browser database
+packages/backend/prisma/race-screen-e2e.db-shm
+packages/backend/prisma/race-screen-e2e.db-wal
