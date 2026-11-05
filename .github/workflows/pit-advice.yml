@@ -1,0 +1,42 @@
+name: Optional pit-advice validation
+on:
+  push:
+    branches: [feat/pit-advice]
+  pull_request:
+    paths:
+      - '.github/workflows/pit-advice.yml'
+      - 'packages/frontend/src/components/race/Pit*.jsx'
+      - 'packages/frontend/src/components/race/usePitAdvice.js'
+      - 'packages/frontend/src/components/race/useLiveCuTelemetry.js'
+      - 'packages/frontend/src/lib/pitAdvice.js'
+      - 'packages/frontend/src/lib/fuelTelemetry.js'
+      - 'packages/frontend/tests/pit-advice/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pit-advice-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - run: git fetch --no-tags https://github.com/AnselmeSDR/RaceHubOS.git +main:refs/remotes/origin/main
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libbluetooth-dev
+      - run: npm ci
+      - run: npm run prisma:generate -w @racehubos/backend
+      - run: npm run check:push
+      - run: node --test packages/frontend/tests/pit-advice/model.test.js
+      - run: npx playwright install --with-deps chromium
+      - run: node node_modules/@playwright/test/cli.js test --config packages/frontend/tests/pit-advice/config.js
+      - run: npm run build

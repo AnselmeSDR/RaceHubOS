@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
 import { useApp } from '../../context/AppContext'
 import { getImgUrl } from '../../utils/image'
+import PitAdvicePanel from './PitAdvicePanel'
 import { GAP_COLORS } from '../../lib/colors'
-import { SessionStatus, SessionType } from '@racehubos/shared'
 
 /**
  * SessionLeaderboard - Unified leaderboard for all session types
@@ -99,6 +100,9 @@ export default function SessionLeaderboard({
   // Container: below @4xl (896px) the row tightens so the car name stays readable
   return (
     <div className="@container space-y-2">
+      {[SessionStatus.ACTIVE, SessionStatus.FINISHING].includes(sessionStatus) && (
+        <PitAdvicePanel entries={entriesWithPositions} />
+      )}
       <AnimatePresence mode="popLayout">
         {entriesWithPositions.map((entry) => {
           const position = entry.position

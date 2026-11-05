@@ -1,0 +1,18 @@
+{
+  "title": "Pit advice",
+  "enabled": "Enable pit advice",
+  "places": "Simultaneous refuelling places",
+  "help": "Disabled by default. Suggests cars at 5/15 or below, lowest fuel first. Requires FUEL ON, CU data less than five seconds old and pit telemetry.",
+  "limits": "Advice only: check places before entering. The CU reports the pit lane, not individual left/right bay occupancy. No switch or waiting order is controlled.",
+  "save": "Save",
+  "saved": "Pit advice saved.",
+  "failed": "Unable to save.",
+  "unavailable": "Fresh CU data and FUEL ON are required.",
+  "recommended": "Check places before the next group:",
+  "none": "No stop recommended.",
+  "inside": "{{count}} car(s) in the pit lane.",
+  "controller": "Controller {{number}}",
+  "reading": "{{fuel}}/15",
+  "urgent": "REFUEL IMMEDIATELY",
+  "remaining": "Then {{count}} more car(s)."
+}
