@@ -321,6 +321,8 @@ Voiture quitte le pit lane
 Status.pit[addr] repasse à false
 ```
 
+Comportement mesuré sur piste réelle : voir §14.
+
 ### 10.4 Reset
 
 ```javascript
@@ -416,7 +418,41 @@ Le CU n'a pas d'options "logicielles" toggleables via le protocole BLE — toute
 
 ---
 
-## 14. Sources
+## 14. Stands et sorties de piste — relevé terrain (2026-11-05)
+
+Mesuré sur la piste de Creutzwald (Pit Lane 30356, `mode = 0x4`, carburant désactivé), deux voitures, en lisant les trames brutes du CU.
+
+### Où écouter
+
+- `ControlUnit` émet `status` à chaque poll sans Timer en attente ; `status.pit[i]` concerne le slot `i`, même numérotation que `timer.controller` (voiture n° `i + 1`).
+- `SyncService.handleStatus()` reçoit chaque status et le relaie en `cu:status`. **`status.pit` n'est exploité nulle part aujourd'hui** (seul `simulator.js` émet `race:pitStop`). Point d'accroche : comparer `status.pit` au status précédent dans `handleStatus()`.
+- Poll toutes les 500 ms (100 ms pendant les feux) : entrées et sorties sont datées à ±500 ms.
+
+### Ce que signifie `pit[i]`
+
+- **false → true** : la voiture passe le capteur de la voie des stands. Ce passage émet aussi un Timer `sector = 1` (écart mesuré ≤ 0,6 s) : le tour est compté, et l'heure exacte de l'entrée est celle du Timer.
+- **Reste true pendant tout l'arrêt** (mesuré de 1 à 59 s).
+- **true → false**, sans aucun Timer : la voiture repart. Traversée sans arrêt : 0,6 à 1,4 s. Hypothèse non vérifiée : c'est la reprise d'accélération qui déclenche, pas la sortie physique de la voie. Test à faire : s'arrêter, puis rouler au pas jusqu'au bout de la voie.
+- **Capteur en début de voie, zone d'arrêt après.** Une voiture arrêtée avant le capteur est invisible (`pit` reste false, aucun Timer) : rien ne la distingue d'une sortie de piste.
+- `fuel` reste à 0 malgré `mode & 0x4` tant que le mode carburant (`0x1`) est désactivé.
+
+### Détecter une sortie de piste
+
+Le CU n'envoie rien : on la déduit.
+
+- **Référence** : médiane des 10 derniers tours ≤ 1,5 × meilleur tour. Sans ce filtre, arrêts et sorties font dériver la référence.
+- **Absence de passage** : `maintenant − max(dernier passage, dernière sortie des stands) > max(2 × réf, réf + 4 s)`, seulement si `start = 0` et la voiture hors stands.
+- **Tour lent** : `tour − temps aux stands > 1,5 × réf` et `> réf + 2 s`.
+- **Temps aux stands d'un tour** : chevauchement des intervalles `pit` avec `[début du tour − 1,5 s, fin du tour]` — le capteur des stands compte le tour, donc l'entrée tombe à cheval sur deux tours.
+- **Pièges rencontrés** : le temps des feux compté comme absence ; le reset du CU au feu 1 remet les timestamps à 0 (le premier passage devient la nouvelle origine) ; un arrêt aux stands compté comme absence.
+
+### Relance de course observée
+
+1er appui START en course → `start = 1` (reset du CU). 2e appui → les feux défilent seuls, un par seconde (`2` à `6`), puis `7`, puis `0` (GO). Ne correspond pas à §10.1 (un appui par feu).
+
+---
+
+## 15. Sources
 
 - `carreralib/src/carreralib/cu.py` — API du CU, helpers `setspeed/setbrake/setfuel/setpos/setlap`, constantes mode
 - `carreralib/src/carreralib/protocol.py` — Format binaire (`pack`/`unpack`), checksum
