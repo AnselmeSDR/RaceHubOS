@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import RaceScreen from './race/RaceScreen'
 import AppSidebar from './AppSidebar'
 import BackendStatusPopup from './BackendStatusPopup'
 import { allNavItems, navLabel } from '../lib/navItems'
@@ -141,6 +142,7 @@ export default function Layout() {
 
           <div data-testid="page-content" className="flex-1 min-w-0 overflow-auto">
             <Outlet />
+            <RaceScreen />
           </div>
         </PageHeaderProvider>
 
