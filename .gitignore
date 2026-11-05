@@ -25,6 +25,8 @@ Thumbs.db
 # Database
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Logs
 logs/
@@ -65,7 +67,3 @@ packages/backend/public/uploads-remote-backup/
 
 # Exports de classement (données de course, pas du code)
 *.xlsx
-
-# Isolated Cockpit-XP browser database
-packages/backend/prisma/cockpit-e2e.db-shm
-packages/backend/prisma/cockpit-e2e.db-wal
