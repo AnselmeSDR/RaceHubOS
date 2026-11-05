@@ -1,0 +1,18 @@
+{
+  "title": "Boxenhinweise",
+  "enabled": "Tankempfehlungen aktivieren",
+  "places": "Gleichzeitige Tankplätze",
+  "help": "Standardmäßig ausgeschaltet. Empfiehlt Autos ab 5/15 oder weniger, niedrigster Tank zuerst. Benötigt FUEL ON, höchstens fünf Sekunden alte CU-Daten und Boxentelemetrie.",
+  "limits": "Nur eine Empfehlung: Plätze vor der Einfahrt prüfen. Die CU meldet die Boxengasse, keine einzelne Links-/Rechts-Belegung. Keine Weiche und keine Wartepflicht werden gesteuert.",
+  "save": "Speichern",
+  "saved": "Boxenhinweise gespeichert.",
+  "failed": "Speichern fehlgeschlagen.",
+  "unavailable": "Aktuelle CU-Daten und FUEL ON erforderlich.",
+  "recommended": "Plätze vor der nächsten Gruppe prüfen:",
+  "none": "Kein Tankstopp empfohlen.",
+  "inside": "{{count}} Auto(s) in der Boxengasse.",
+  "controller": "Regler {{number}}",
+  "reading": "{{fuel}}/15",
+  "urgent": "SOFORT TANKEN",
+  "remaining": "Danach {{count}} weitere Auto(s)."
+}
