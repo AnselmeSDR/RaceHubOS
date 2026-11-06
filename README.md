@@ -153,7 +153,7 @@ All contributions are welcome — whether it's a feature, a bug fix, a design id
 
 ## 📄 License
 
-Apache-2.0
+[AGPL-3.0](LICENSE) — free to use, modify and share; any modified version you distribute or offer as an online service must stay open source under the same license. A commercial license is available for closed-source use: anselme8@icloud.com.
 
 ## 🙏 Credits
 
@@ -295,7 +295,7 @@ Le projet est en développement actif et ouvert aux contributions :
 
 ### Licence
 
-Apache-2.0
+[AGPL-3.0](LICENSE) — libre d'utiliser, de modifier et de partager ; toute version modifiée, distribuée ou proposée en service en ligne, doit rester open source sous la même licence. Une licence commerciale est disponible pour un usage en code fermé : anselme8@icloud.com.
 
 ### Crédits
 

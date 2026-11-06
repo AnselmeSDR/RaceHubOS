@@ -57,3 +57,7 @@ npm test -w @racehubos/backend
 - One PR = one topic, based on the latest `main`.
 - Every translation key exists in every language (`fr`, `en`, `de`…), checked by `npm run check`.
 - Enable **Allow edits by maintainers**, so small fixes can be made directly on your branch.
+
+## License
+
+RaceHubOS is licensed under [AGPL-3.0](LICENSE), and also offered under a commercial license for closed-source use. By opening a PR, you agree that your contribution is released under AGPL-3.0 and that the maintainer may also distribute it under a commercial license. Your name stays on your commits.

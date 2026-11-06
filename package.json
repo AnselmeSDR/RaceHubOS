@@ -1,6 +1,6 @@
 {
   "name": "racehubos",
-  "version": "1.25.5",
+  "version": "1.25.6",
   "description": "Open Source Race Management System for Carrera Digital 132/124",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -35,7 +35,7 @@
     "npm": ">=10.0.0"
   },
   "author": "",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-or-later",
   "overrides": {
     "tar": "^7.5.4",
     "lodash": "^4.17.22"
