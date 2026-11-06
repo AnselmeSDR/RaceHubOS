@@ -5,6 +5,7 @@ import * as protocol from './protocol.js';
 /**
  * Interface vers le Control Unit Carrera Digital 124/132
  * Équivalent Node.js de carreralib.ControlUnit
+ * Dérivé de carreralib (MIT, Thomas Kemmer) — voir THIRD_PARTY_NOTICES.md
  */
 export class ControlUnit extends EventEmitter {
   // IDs des boutons du Control Unit

@@ -1,6 +1,6 @@
 /**
  * Protocole de communication Carrera Digital 124/132
- * Inspiré de carreralib Python
+ * Dérivé de carreralib (MIT, Thomas Kemmer) — voir THIRD_PARTY_NOTICES.md
  */
 
 /**

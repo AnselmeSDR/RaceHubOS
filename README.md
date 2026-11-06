@@ -165,6 +165,7 @@ All contributions are welcome — whether it's a feature, a bug fix, a design id
 - Protocol reverse engineering: [Stephan Hess (slotbaer.de)](http://www.slotbaer.de/)
 - [carreralib](https://github.com/tkem/carreralib): Thomas Kemmer
 - [OpenLap](https://github.com/tkem/openlap): Thomas Kemmer
+- License notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 Vibe coded with [Claude Code](https://claude.ai/code)
 
@@ -307,6 +308,7 @@ Le projet est en développement actif et ouvert aux contributions :
 - Reverse engineering du protocole : [Stephan Hess (slotbaer.de)](http://www.slotbaer.de/)
 - [carreralib](https://github.com/tkem/carreralib) : Thomas Kemmer
 - [OpenLap](https://github.com/tkem/openlap) : Thomas Kemmer
+- Mentions de licence : [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 Vibe codé avec [Claude Code](https://claude.ai/code)
 
