@@ -1,6 +1,7 @@
 {
   "name": "@racehubos/shared",
-  "version": "1.25.7",
+  "version": "1.25.8",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "type": "module",
   "main": "./src/index.js",
