@@ -8,11 +8,15 @@
   "saveError": "Could not save entry.",
   "loadError": "Could not read catalog.",
   "imported": "Import completed.",
-  "importError": "Import rejected. Check the JSON format (version 1, maximum 1 MB).",
+  "importError": "Import rejected. Check JSON and images (version 1: 1 MB; version 2 with images: 50 MB).",
   "add": "Create entry",
   "import": "Import JSON file",
   "description": "Local vehicle and tyre catalog. Add your own data and photos.",
-  "importHelp": "Format: {\"version\":1,\"entries\":[{\"serial\":\"EX-1\",\"brand\":\"Example\",\"model\":\"Car\"}]}. Existing references are replaced; other entries are kept. Optional fields: car year, equipment and measurements. Images: local /api/img/cars/… paths after upload, never remote URLs. Full documentation: docs/CAR-CATALOG.md.",
+  "importHelp": "Select a catalog or article file. Existing references are replaced; other entries are kept. Older files without embedded images remain supported.",
   "empty": "The catalog is empty.",
-  "delete": "Delete"
+  "delete": "Delete",
+  "export": "Export catalog",
+  "exportEntry": "Export article",
+  "exportError": "Export failed. Check that all images exist. Maximum 1000 articles, 5 MB per image and 50 MB per export.",
+  "exportHelp": "Catalog and article exports include data and image files. Both can be restored on another installation using the same import."
 }

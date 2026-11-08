@@ -1,6 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
-import { catalogEntry, catalogImport } from '../lib/catalog.js';
+import { catalogEntry, catalogImportBundle, storeCatalogImages, catalogExport } from '../lib/catalog.js';
 
 const prisma = createPrismaClient();
 const router = express.Router();
@@ -16,6 +16,30 @@ router.get('/', async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to read catalog' });
   }
 });
+async function exportCatalog(req, res) {
+  try {
+    const serial = req.params.serial;
+    const rows =
+      serial === undefined
+        ? await prisma.catalogEntry.findMany({ orderBy: { serial: 'asc' } })
+        : await prisma.catalogEntry.findMany({ where: { serial } });
+    if (serial !== undefined && !rows.length)
+      return res.status(404).json({ success: false, error: 'Catalog entry not found' });
+    let json;
+    try {
+      json = catalogExport(rows);
+    } catch (error) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+    const filename =
+      serial === undefined ? 'catalog.json' : `catalog-${serial.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80)}.json`;
+    res.attachment(filename).type('application/json').send(json);
+  } catch {
+    res.status(500).json({ success: false, error: 'Failed to export catalog' });
+  }
+}
+router.get('/export', exportCatalog);
+router.get('/export/:serial', exportCatalog);
 router.get('/lookup/:serial', async (req, res) => {
   try {
     const entry = await prisma.catalogEntry.findUnique({ where: { serial: req.params.serial.trim() } });
@@ -27,12 +51,14 @@ router.get('/lookup/:serial', async (req, res) => {
 });
 router.post('/import', async (req, res) => {
   let entries;
+  let images;
   try {
-    entries = catalogImport(req.body);
+    ({ entries, images } = catalogImportBundle(req.body));
   } catch (error) {
     return res.status(400).json({ success: false, error: error.message });
   }
   try {
+    storeCatalogImages(images);
     await prisma.$transaction(
       entries.map((entry) =>
         prisma.catalogEntry.upsert({

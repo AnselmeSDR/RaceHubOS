@@ -109,7 +109,7 @@ export default function Catalog() {
     setBusy(true)
     setMessage('')
     try {
-      if (file.size > 1024 * 1024) throw new Error()
+      if (file.size > 50 * 1024 * 1024) throw new Error()
       const response = await fetch(`${API_URL}/api/catalog/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,6 +120,30 @@ export default function Catalog() {
       await load()
     } catch {
       setMessage(t('importError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function exportFile(serial) {
+    setBusy(true)
+    setMessage('')
+    try {
+      const response = await fetch(
+        `${API_URL}/api/catalog/export${serial === undefined ? '' : `/${encodeURIComponent(serial)}`}`
+      )
+      if (!response.ok) throw new Error()
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download =
+        serial === undefined ? 'catalog.json' : `catalog-${serial.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80)}.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setMessage(t('exportError'))
     } finally {
       setBusy(false)
     }
@@ -141,6 +165,9 @@ export default function Catalog() {
         <Button data-testid="catalog-add" onClick={() => setEditing(null)}>
           {t('add')}
         </Button>
+        <Button data-testid="catalog-export" variant="outline" disabled={busy} onClick={() => exportFile()}>
+          {t('export')}
+        </Button>
         <label>
           {t('import')}
           <Input
@@ -153,6 +180,7 @@ export default function Catalog() {
         </label>
       </div>
       <p>{t('importHelp')}</p>
+      <p>{t('exportHelp')}</p>
       {message && <p role="status">{message}</p>}
       {!entries.length && <p data-testid="catalog-empty">{t('empty')}</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -170,6 +198,14 @@ export default function Catalog() {
             </p>
             <Button data-testid="catalog-edit" onClick={() => setEditing(entry)}>
               {t('edit')}
+            </Button>
+            <Button
+              data-testid="catalog-export-entry"
+              variant="outline"
+              disabled={busy}
+              onClick={() => exportFile(entry.serial)}
+            >
+              {t('exportEntry')}
             </Button>
             <Button data-testid="catalog-delete" variant="outline" onClick={() => remove(entry.serial)}>
               {t('delete')}

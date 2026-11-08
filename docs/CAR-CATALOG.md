@@ -13,9 +13,23 @@ are preserved. `serial`, `scale`, `year`, `img`, `tyresFront`, `tyresRear` and o
 specifications are normal Car columns; no per-car Preferences are used. Editing or
 deleting a catalog entry does not retroactively change saved cars.
 
-## JSON import (version 1)
+## JSON export and import (versions 1 and 2)
 
-Select a UTF-8 JSON file on the Catalog page (maximum 1 MiB, 1000 entries). Example:
+Use **Export catalog** to download every entry, or **Export article** on a card to
+save only that article. Both downloads use the version-2 envelope with embedded base64 image files and can
+be restored with the same JSON file picker. Only catalog fields are exported;
+internal creation/update timestamps are omitted. Empty catalogs export an empty
+array. Exports are limited to 1000 entries and 50 MiB (5 MiB per image) so every exported file fits
+the importer. Exporting does not modify catalog entries or saved cars.
+
+Version-2 exports contain an `images` object mapping each entry's image path to
+its base64 file bytes. Import validates all metadata, image paths, encodings,
+file signatures and sizes before writing. Images receive content-based local
+filenames; existing photos are never overwritten. Shared images are embedded once.
+Missing source photos reject export so incomplete files are not silently produced.
+Version-1 imports remain supported (1 MiB, image paths only).
+
+Select a UTF-8 JSON file on the Catalog page. Legacy data-only example (version 1, maximum 1 MiB, 1000 entries):
 
 ```json
 {
@@ -50,9 +64,9 @@ the entire import before any write. All rows are written in one transaction.
 Existing references are replaced with the imported entry (omitted optional fields
 are cleared); other entries remain. Importing an empty array does nothing.
 
-Images are uploaded separately using the entry editor. `img` can reference only a
+For legacy version-1 files, images are uploaded separately using the entry editor. `img` can reference only a
 local car upload, e.g. `/api/img/cars/123456-789.jpg`. Upload the photo on the target
-installation before importing that path; JSON contains no image bytes. Do not put
+installation before importing that path; version-1 JSON contains no image bytes. Do not put
 filesystem paths, external URLs or base64 images in `img`.
 
 Entries live in the local SQLite database (`CatalogEntry`); photos live in the

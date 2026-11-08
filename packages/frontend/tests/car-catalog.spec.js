@@ -114,3 +114,79 @@ for (const [lang, title] of [
     await expect(page.getByTestId('catalog-field-serial')).toBeVisible()
   })
 }
+
+test('full catalog and single article downloads both import through the file picker', async ({ page, request }) => {
+  const serial = `EXPORT-${Date.now()}`
+  const imageBytes = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+    'base64'
+  )
+  const photo = await request.post(`${API}/api/upload/cars`, {
+    multipart: { img: { name: 'export.png', mimeType: 'image/png', buffer: imageBytes } },
+  })
+  const img = (await photo.json()).data.url
+  const sample = {
+    serial,
+    img,
+    brand: 'Export brand',
+    model: 'Export model',
+    year: 1977,
+    notes: 'Größe · texte',
+    tyresRear: 'Rear',
+  }
+  expect((await request.put(`${API}/api/catalog/${serial}`, { data: sample })).ok()).toBeTruthy()
+  await page.goto('/catalog')
+  const downloadJson = async (button) => {
+    const pending = page.waitForEvent('download')
+    await button.click()
+    const download = await pending
+    expect(download.suggestedFilename()).toMatch(/\.json$/)
+    const stream = await download.createReadStream()
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+    return Buffer.concat(chunks)
+  }
+  const card = page.getByTestId('catalog-entry').filter({ hasText: serial })
+  const single = await downloadJson(card.getByTestId('catalog-export-entry'))
+  expect(JSON.parse(single).entries).toHaveLength(1)
+  const full = await downloadJson(page.getByTestId('catalog-export'))
+  expect(JSON.parse(full).entries.some((entry) => entry.serial === serial)).toBeTruthy()
+  for (const buffer of [single, full]) {
+    expect((await request.delete(`${API}/api/catalog/${serial}`)).ok()).toBeTruthy()
+    await page.reload()
+    await expect(card).toBeHidden()
+    await page
+      .getByTestId('catalog-import')
+      .setInputFiles({ name: 'export.json', mimeType: 'application/json', buffer })
+    await expect(page.getByTestId('catalog-page').getByRole('status')).toHaveText('Import completed.')
+    await expect(card).toBeVisible()
+    const restored = (await (await request.get(`${API}/api/catalog/lookup/${serial}`)).json()).data
+    expect(restored).toMatchObject({ ...sample, img: expect.stringMatching(/^\/api\/img\/cars\/catalog-import-/) })
+    expect(await (await request.get(`${API}${restored.img}`)).body()).toEqual(imageBytes)
+    expect(restored).toHaveProperty('createdAt')
+  }
+})
+
+test('portable catalog API validates image bundles atomically and accepts legacy imports', async ({ request }) => {
+  const serial = `BUNDLE-${Date.now()}`
+  const legacy = { version: 1, entries: [{ serial, brand: 'Original', model: 'Original' }] }
+  expect((await request.post(`${API}/api/catalog/import`, { data: legacy })).ok()).toBeTruthy()
+  const ref = '/api/img/cars/portable.png'
+  const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='
+  const entry = { serial, brand: 'Portable', model: 'Restored', img: ref }
+  for (const images of [
+    {},
+    { [ref]: 'not base64' },
+    { [ref]: Buffer.from('not a png').toString('base64') },
+    { '../escape.png': png },
+  ]) {
+    expect(
+      (await request.post(`${API}/api/catalog/import`, { data: { version: 2, entries: [entry], images } })).status()
+    ).toBe(400)
+    expect((await (await request.get(`${API}/api/catalog/lookup/${serial}`)).json()).data.brand).toBe('Original')
+  }
+  expect((await request.get(`${API}/api/catalog/export/missing-article`)).status()).toBe(404)
+  expect(
+    (await request.post(`${API}/api/catalog/import`, { data: { version: 2, entries: [], images: {} } })).ok()
+  ).toBeTruthy()
+})
