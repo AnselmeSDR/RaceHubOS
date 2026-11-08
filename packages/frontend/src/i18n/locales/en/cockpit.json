@@ -67,7 +67,18 @@
     "timestamp": "Timestamp (ISO)",
     "sector1": "Sector 1 (ms)",
     "sector2": "Sector 2 (ms)",
-    "sector3": "Sector 3 (ms)"
+    "sector3": "Sector 3 (ms)",
+    "chassis": "Chassis",
+    "guide": "Guide",
+    "braids": "Braids",
+    "magnet": "Magnet",
+    "weightGrams": "Weight (g)",
+    "lengthMm": "Length (mm)",
+    "widthMm": "Width (mm)",
+    "wheelbaseMm": "Wheelbase (mm)",
+    "frontTrackMm": "Front track (mm)",
+    "rearTrackMm": "Rear track (mm)",
+    "groundClearanceMm": "Ground clearance (mm)"
   },
   "types": {
     "practice": "Practice",
@@ -77,5 +88,10 @@
   },
   "previous": "Previous",
   "next": "Next",
-  "page": "Page {{page}} / {{count}}"
+  "page": "Page {{page}} / {{count}}",
+  "catalogOption": "Also copy cars and tyre details into the local catalog",
+  "catalogHelp": "Optional: Copy all selected cars with brand, model, reference, photo, equipment, front/rear tyres and measurements. References must be present and unique. Existing catalog articles and linked cars are preserved.",
+  "catalogUnavailable": "This option requires the local car catalog. The normal Cockpit-XP import works independently.",
+  "catalogSerial": "Catalog reference",
+  "catalogDone": "Catalog: {{added}} articles added, {{skipped}} existing articles preserved."
 }

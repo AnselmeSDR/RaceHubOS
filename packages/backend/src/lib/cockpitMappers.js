@@ -31,9 +31,18 @@ export function mapCar(row, images, equipment) {
   const props = Object.fromEntries(
     equipment.filter((item) => item.CarName === row.Car).map((item) => [normalize(item.Property), text(item.Value)])
   );
+  const tyreNotes = equipment
+    .filter(
+      (item) =>
+        item.CarName === row.Car &&
+        /reifen|tyres?|tires?/.test(normalize(item.Property)) &&
+        !['reifen vorne', 'reifen hinten'].includes(normalize(item.Property))
+    )
+    .map((item) => `${text(item.Property)}: ${text(item.Value)}`);
   const ratio = props.ritzel && props.zahnrad ? `${props.ritzel}:${props.zahnrad}` : null;
   return {
     ...identity('cars', row),
+    catalogSerial: text(row.Serial || row.ArticleNumber || props.artikelnummer || props.serial),
     image: image(row, images),
     aliases: [text(row.Car), text(row.FullName)],
     data: {
@@ -46,11 +55,22 @@ export function mapCar(row, images, equipment) {
       brakeForce: number(row.BrakeForce, 50),
       fuelCapacity: number(row.FuelCapacity, 100),
       motor: props.motor || null,
+      chassis: props.chassis || null,
+      guide: props.leitkiel || props.guide || null,
+      braids: props.schleifer || props.braids || null,
+      magnet: props.magnet || null,
+      weightGrams: number(row.WeightGrams ?? props['gewicht (g)']),
+      lengthMm: number(row.LengthMm ?? props['länge (mm)']),
+      widthMm: number(row.WidthMm ?? props['breite (mm)']),
+      wheelbaseMm: number(row.WheelbaseMm ?? props['radstand (mm)']),
+      frontTrackMm: number(row.FrontTrackMm ?? props['spurweite vorne (mm)']),
+      rearTrackMm: number(row.RearTrackMm ?? props['spurweite hinten (mm)']),
+      groundClearanceMm: number(row.GroundClearanceMm ?? props['bodenfreiheit (mm)']),
       gearRatio: ratio,
       scale: props['maßstab'] || props.scale || null,
       tyresFront: props['reifen vorne'] || null,
       tyresRear: props['reifen hinten'] || null,
-      notes: text(row.Notes) || null,
+      notes: [text(row.Notes), ...tyreNotes].filter(Boolean).join('\n') || null,
     },
   };
 }

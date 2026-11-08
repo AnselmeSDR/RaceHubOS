@@ -32,13 +32,19 @@ for (const lang of ['fr', 'en', 'de'])
     await page.getByTestId('cockpit-preview').click()
     await expect(page.getByTestId('cockpit-row-drivers')).toHaveCount(2)
     await page.getByTestId('cockpit-row-drivers').nth(1).getByRole('button', { name: t.remove, exact: true }).click()
+    const catalogOption = page.getByTestId('cockpit-catalog-option')
+    await expect(catalogOption).not.toBeChecked()
+    const catalogAvailable = await catalogOption.isEnabled()
+    if (catalogAvailable) await catalogOption.check()
     await page.getByTestId('cockpit-tab-cars').click()
     const car = page.getByTestId('cockpit-row-cars')
+    if (catalogAvailable) await page.getByTestId('cockpit-catalog-serial').fill('COCKPIT-UI-' + lang)
     await expect(car.getByRole('textbox', { name: t.fields.brand, exact: true })).toHaveValue('')
     await expect(car.getByRole('spinbutton', { name: t.fields.maxSpeed, exact: true })).toHaveValue('100')
     await car.getByRole('textbox', { name: t.fields.brand, exact: true }).fill('Custom maker')
     await car.getByRole('textbox', { name: t.fields.model, exact: true }).fill('Reviewed model ' + lang)
     await car.getByRole('spinbutton', { name: t.fields.year, exact: true }).fill('1888')
+    await car.getByRole('textbox', { name: t.fields.tyresRear, exact: true }).fill('Reviewed rear tyres')
     for (const group of ['tracks', 'sessions', 'results', 'laps']) {
       await page.getByTestId('cockpit-tab-' + group).click()
       await expect(page.getByTestId('cockpit-row-' + group)).toHaveCount(1)
@@ -49,7 +55,19 @@ for (const lang of ['fr', 'en', 'de'])
     await expect(page.getByRole('status')).toContainText(t.done.split('{{backup}}')[0])
     const cars = (await (await request.get('http://127.0.0.1:3218/api/cars')).json()).data
     expect(cars).toHaveLength(1)
-    expect(cars[0]).toMatchObject({ brand: 'Custom maker', model: 'Reviewed model ' + lang, year: 1888, maxSpeed: 100 })
+    expect(cars[0]).toMatchObject({
+      brand: 'Custom maker',
+      model: 'Reviewed model ' + lang,
+      year: 1888,
+      maxSpeed: 100,
+      tyresRear: 'Reviewed rear tyres',
+    })
+    if (catalogAvailable) {
+      expect(cars[0].serial).toBe('COCKPIT-UI-' + lang)
+      const article = (await (await request.get('http://127.0.0.1:3218/api/catalog/lookup/COCKPIT-UI-' + lang)).json())
+        .data
+      expect(article).toMatchObject({ model: 'Reviewed model ' + lang, tyresRear: 'Reviewed rear tyres' })
+    }
     const sessions = (await (await request.get('http://127.0.0.1:3218/api/sessions')).json()).data
     expect(sessions).toHaveLength(1)
     expect(sessions[0].status).toBe('finished')

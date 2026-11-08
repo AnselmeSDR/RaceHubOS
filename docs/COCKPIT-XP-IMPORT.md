@@ -33,3 +33,24 @@ Counters, winners summaries, maintenance intervals and unsupported source tables
 Limits: 180 MiB uploaded ZIP, 20,000 members, 50 MiB per SQLite database, 5,000 rows per supported table, 5 MiB per referenced image and 25 MiB total image data. Preview IDs expire after 30 minutes; three previews are kept per server. Exact source-content fingerprints support repeat imports, not fuzzy matching between independently changed exports. Transaction failure or a changed target requires rechecking the relevant preview.
 
 Tests use generated SQLite/ZIP fixtures with a synthetic PNG. No personal backup, race database or manufacturer image is bundled. Native Windows/macOS runtime and representative real-backup acceptance remain separate validation items until exercised.
+
+## Optional local catalog integration
+
+When the local catalog feature is installed, the reviewed import offers an
+unchecked option to also copy all selected cars into the catalog. The import
+remains usable on its own; without the catalog model this option is disabled.
+
+The car preview exposes a catalog reference for every selected car. Explicit
+`Serial`, `ArticleNumber` or equipment `Artikelnummer`/`serial` values are
+prefilled; references are never inferred from names. Missing references can be
+entered manually and must be unique. Existing catalog references are retained,
+with added/skipped counts shown after import. Existing linked cars stay unchanged.
+
+Catalog copies include reviewed brand, model, year, scale, equipment, front/rear
+tyre references, notes, photo and measurements. Explicit gram/millimetre fields
+are supported; no unknown units are converted. Tyre references belong to the
+car; the import does not guess axle assignments or create standalone tyre stock.
+Newly imported cars receive the reviewed catalog reference. Catalog writes share
+the normal transaction and mandatory pre-import backup; a catalog change also
+invalidates a stale preview. Drivers, tracks and race history stay in their
+normal import groups.

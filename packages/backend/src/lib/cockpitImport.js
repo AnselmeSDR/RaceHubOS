@@ -1,9 +1,16 @@
-import { SessionType, SessionStatus, RUNNING_SESSION_STATUSES } from '@racehubos/shared';
+import {
+  SessionType,
+  SessionStatus,
+  RUNNING_SESSION_STATUSES,
+  CAR_TEXT_SPECS,
+  CAR_NUMBER_SPECS,
+} from '@racehubos/shared';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { backupDatabase } from './backupDatabase.js';
 import { importedStatus } from './cockpitMappers.js';
+import { hasCockpitCatalog, cockpitCatalogCandidates, storeCockpitCatalog } from './cockpitCatalog.js';
 
 const field = (name, type = 'text', options = {}) => ({ name, type, ...options });
 export const COCKPIT_FIELDS = {
@@ -22,7 +29,8 @@ export const COCKPIT_FIELDS = {
     field('maxSpeed', 'integer', { min: 0, max: 100, required: true }),
     field('brakeForce', 'integer', { min: 0, max: 100, required: true }),
     field('fuelCapacity', 'integer', { min: 0, max: 100, required: true }),
-    ...['motor', 'gearRatio', 'scale', 'tyresFront', 'tyresRear', 'notes', 'img'].map((name) => field(name)),
+    ...[...CAR_TEXT_SPECS, 'img'].map((name) => field(name)),
+    ...CAR_NUMBER_SPECS.map((name) => field(name, name === 'weightGrams' ? 'integer' : 'number', { min: 0 })),
   ],
   tracks: [
     field('name', 'text', { required: true }),
@@ -75,6 +83,8 @@ export async function targetSnapshot(prisma) {
     const rows = await prisma[model].findMany({ orderBy: { id: 'asc' } });
     signature.push([model, hash(rows)]);
   }
+  if (hasCockpitCatalog(prisma))
+    signature.push(['catalog', await prisma.catalogEntry.findMany({ orderBy: { serial: 'asc' } })]);
   signature.push(['imports', await prisma.cockpitImportRecord.findMany({ orderBy: { key: 'asc' } })]);
   return hash(signature);
 }
@@ -126,7 +136,7 @@ export function validateCockpitRows(input, preview) {
         !row ||
         !source.has(row.key) ||
         keys.has(row.key) ||
-        Object.keys(row).some((name) => !['key', 'targetId', 'data', 'includeImage'].includes(name))
+        Object.keys(row).some((name) => !['key', 'targetId', 'data', 'includeImage', 'catalogSerial'].includes(name))
       )
         validation('Invalid or duplicate import row');
       keys.add(row.key);
@@ -137,6 +147,11 @@ export function validateCockpitRows(input, preview) {
         (row.targetId && !preview.targets[group].some((item) => item.id === row.targetId))
       )
         validation('Unknown import target');
+      if (
+        row.catalogSerial !== undefined &&
+        (typeof row.catalogSerial !== 'string' || row.catalogSerial.length > 10000)
+      )
+        validation('Invalid catalog reference');
       if (row.includeImage !== undefined && typeof row.includeImage !== 'boolean')
         validation('Invalid image selection');
       if (
@@ -180,6 +195,7 @@ export function validateCockpitRows(input, preview) {
       return {
         key: row.key,
         targetId: row.targetId,
+        catalogSerial: row.catalogSerial || '',
         data,
         image: row.includeImage === false ? null : source.get(row.key).image,
       };
@@ -212,8 +228,16 @@ export function validateCockpitRows(input, preview) {
     }
   return selected;
 }
-export async function commitCockpitImport({ prisma, preview, rows, uploads, backup = backupDatabase }) {
+export async function commitCockpitImport({
+  prisma,
+  preview,
+  rows,
+  uploads,
+  importCatalog = false,
+  backup = backupDatabase,
+}) {
   const selected = validateCockpitRows(rows, preview);
+  const catalogRows = cockpitCatalogCandidates(selected, importCatalog, prisma);
   if (!Object.values(selected).some((rows) => rows.length)) validation('No rows selected');
   if (await prisma.session.count({ where: { status: { in: RUNNING_SESSION_STATUSES } } }))
     validation('Finish active sessions before importing');
@@ -233,6 +257,21 @@ export async function commitCockpitImport({ prisma, preview, rows, uploads, back
         const ids = new Map();
         const sessionTracks = new Map();
         const counts = {};
+        if (importCatalog) Object.assign(counts, { catalogImported: 0, catalogSkipped: 0 });
+        const writeImage = async (row, group) => {
+          const fileName = 'cockpit-' + randomUUID() + row.image.extension;
+          const target = path.join(uploads, group, fileName);
+          await fs.mkdir(path.dirname(target), { recursive: true });
+          await fs.writeFile(target, Buffer.from(row.image.data, 'base64'), { flag: 'wx' });
+          written.push(target);
+          return `/api/img/${group}/${fileName}`;
+        };
+        const addCatalog = async (row, img, id) => {
+          const candidate = catalogRows.get(row.key);
+          if (!candidate) return;
+          const result = await storeCockpitCatalog(tx, candidate, row, img, id, writeImage);
+          counts[result]++;
+        };
         for (const [group, model] of Object.entries(models)) {
           counts[group] = 0;
           for (const row of selected[group]) {
@@ -241,6 +280,7 @@ export async function commitCockpitImport({ prisma, preview, rows, uploads, back
             if (row.targetId) {
               if (group === 'sessions')
                 sessionTracks.set(id, (await tx.session.findUniqueOrThrow({ where: { id } })).trackId);
+              if (group === 'cars' && importCatalog) await addCatalog(row, row.data.img, id);
               // Existing entities are explicit links, never silently overwritten.
               await tx.cockpitImportRecord.upsert({
                 where: { key: row.key },
@@ -251,12 +291,7 @@ export async function commitCockpitImport({ prisma, preview, rows, uploads, back
             }
             const data = { ...row.data, id };
             if (row.image && ['drivers', 'cars', 'tracks'].includes(group)) {
-              const fileName = 'cockpit-' + randomUUID() + row.image.extension;
-              const target = path.join(uploads, group, fileName);
-              await fs.mkdir(path.dirname(target), { recursive: true });
-              await fs.writeFile(target, Buffer.from(row.image.data, 'base64'), { flag: 'wx' });
-              written.push(target);
-              data.img = `/api/img/${group}/${fileName}`;
+              data.img = await writeImage(row, group);
             }
             if (group === 'sessions') {
               data.trackId = ids.get(data.track);
@@ -281,6 +316,7 @@ export async function commitCockpitImport({ prisma, preview, rows, uploads, back
               else delete data.timestamp;
             }
             await tx[model].create({ data });
+            if (group === 'cars' && importCatalog) await addCatalog(row, data.img, id);
             await tx.cockpitImportRecord.create({ data: { key: row.key, sourceType: group, targetId: id } });
             counts[group]++;
           }

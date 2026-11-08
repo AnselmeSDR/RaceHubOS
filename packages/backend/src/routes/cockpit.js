@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { createPrismaClient } from '../lib/prisma.js';
 import { readCockpitArchive } from '../lib/cockpitArchive.js';
 import { mapCockpitArchive } from '../lib/cockpitMappers.js';
+import { hasCockpitCatalog } from '../lib/cockpitCatalog.js';
 import { COCKPIT_FIELDS, prepareCockpitPreview, commitCockpitImport } from '../lib/cockpitImport.js';
 
 export function createCockpitRouter({
@@ -37,17 +38,27 @@ export function createCockpitRouter({
       const rows = Object.fromEntries(
         Object.entries(preview.rows).map(([group, items]) => [
           group,
-          items.map(({ key, targetId, data, image, lockedTarget }) => ({
+          items.map(({ key, targetId, data, image, lockedTarget, catalogSerial }) => ({
             key,
             targetId,
             data,
             lockedTarget,
+            ...(group === 'cars' ? { catalogSerial: catalogSerial || '' } : {}),
             includeImage: !!image,
             hasImage: !!image,
           })),
         ])
       );
-      res.json({ success: true, data: { id, rows, fields: COCKPIT_FIELDS, targets: preview.targets } });
+      res.json({
+        success: true,
+        data: {
+          id,
+          rows,
+          fields: COCKPIT_FIELDS,
+          targets: preview.targets,
+          catalogAvailable: hasCockpitCatalog(prisma),
+        },
+      });
     } catch (error) {
       error.status ||= 400;
       next(error);
@@ -81,7 +92,14 @@ export function createCockpitRouter({
       if (preview.busy) return res.status(409).json({ success: false, error: 'Import already running' });
       preview.busy = true;
       locked = true;
-      const result = await commitCockpitImport({ prisma, preview, rows: req.body.rows, uploads, backup });
+      const result = await commitCockpitImport({
+        prisma,
+        preview,
+        rows: req.body.rows,
+        uploads,
+        backup,
+        importCatalog: req.body.importCatalog ?? false,
+      });
       previews.delete(req.body.id);
       io?.emit('data:restored');
       res.json({ success: true, data: result });

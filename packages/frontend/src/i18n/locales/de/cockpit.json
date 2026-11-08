@@ -67,7 +67,18 @@
     "timestamp": "Zeitstempel (ISO)",
     "sector1": "Sektor 1 (ms)",
     "sector2": "Sektor 2 (ms)",
-    "sector3": "Sektor 3 (ms)"
+    "sector3": "Sektor 3 (ms)",
+    "chassis": "Chassis",
+    "guide": "Leitkiel",
+    "braids": "Schleifer",
+    "magnet": "Magnet",
+    "weightGrams": "Gewicht (g)",
+    "lengthMm": "Länge (mm)",
+    "widthMm": "Breite (mm)",
+    "wheelbaseMm": "Radstand (mm)",
+    "frontTrackMm": "Spurweite vorn (mm)",
+    "rearTrackMm": "Spurweite hinten (mm)",
+    "groundClearanceMm": "Bodenfreiheit (mm)"
   },
   "types": {
     "practice": "Training",
@@ -77,5 +88,10 @@
   },
   "previous": "Zurück",
   "next": "Weiter",
-  "page": "Seite {{page}} / {{count}}"
+  "page": "Seite {{page}} / {{count}}",
+  "catalogOption": "Autos und Reifenangaben zusätzlich in den lokalen Katalog übernehmen",
+  "catalogHelp": "Optional: Alle ausgewählten Autos mit Marke, Modell, Artikelnummer, Bild, Ausstattung, Vorder-/Hinterreifen und Maßen übernehmen. Artikelnummern müssen vorhanden und eindeutig sein. Bestehende Katalogartikel und verknüpfte Autos werden nicht überschrieben.",
+  "catalogUnavailable": "Diese Option benötigt den lokalen Autokatalog. Der normale Cockpit-XP-Import funktioniert unabhängig davon.",
+  "catalogSerial": "Artikelnummer für den Katalog",
+  "catalogDone": "Katalog: {{added}} Artikel ergänzt, {{skipped}} vorhandene Artikel beibehalten."
 }

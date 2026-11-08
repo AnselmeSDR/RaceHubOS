@@ -71,6 +71,7 @@ export default function Import() {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [importCatalog, setImportCatalog] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [message, setMessage] = useState('')
   const [completed, setCompleted] = useState(false)
@@ -96,6 +97,7 @@ export default function Import() {
     if (!response.ok || !result.success) throw new Error()
     setPreview(result.data)
     setPages({})
+    setImportCatalog(false)
     setActiveGroup('drivers')
     setConfirmed(false)
     setCompleted(false)
@@ -127,13 +129,19 @@ export default function Import() {
     const rows = Object.fromEntries(
       groups.map((group) => [
         group,
-        preview.rows[group].map(({ key, data, targetId, includeImage }) => ({ key, data, targetId, includeImage })),
+        preview.rows[group].map(({ key, data, targetId, includeImage, catalogSerial }) => ({
+          key,
+          data,
+          targetId,
+          includeImage,
+          catalogSerial,
+        })),
       ])
     )
     const response = await fetch(API + '/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: preview.id, rows, confirmed }),
+      body: JSON.stringify({ id: preview.id, rows, confirmed, importCatalog }),
     })
     const result = await response.json()
     if (response.status === 409) {
@@ -144,7 +152,13 @@ export default function Import() {
     if (!response.ok || !result.success) throw new Error()
     setCompleted(true)
     setPreview(null)
-    setMessage(t('done', { backup: result.data.backupFile }))
+    setMessage(
+      t('done', { backup: result.data.backupFile }) +
+        (importCatalog
+          ? ' ' +
+            t('catalogDone', { added: result.data.counts.catalogImported, skipped: result.data.counts.catalogSkipped })
+          : '')
+    )
   }
   return (
     <div className="p-6 space-y-4" data-testid="cockpit-import-page">
@@ -207,6 +221,7 @@ export default function Import() {
                             {preview.fields[group].map((field) => (
                               <TableHead key={field.name}>{t(`fields.${field.name}`)}</TableHead>
                             ))}
+                            {group === 'cars' && importCatalog && <TableHead>{t('catalogSerial')}</TableHead>}
                             {['drivers', 'cars', 'tracks'].includes(group) && <TableHead>{t('image')}</TableHead>}
                             <TableHead>{t('remove')}</TableHead>
                           </TableRow>
@@ -246,7 +261,7 @@ export default function Import() {
                                       field={field}
                                       value={row.data[field.name]}
                                       rows={preview.rows}
-                                      busy={busy || !!row.targetId}
+                                      busy={busy || (!!row.targetId && !(group === 'cars' && importCatalog))}
                                       t={t}
                                       onChange={(value) =>
                                         change(group, row.key, (item) => ({
@@ -258,6 +273,22 @@ export default function Import() {
                                     />
                                   </TableCell>
                                 ))}
+                                {group === 'cars' && importCatalog && (
+                                  <TableCell>
+                                    <Input
+                                      aria-label={t('catalogSerial')}
+                                      data-testid="cockpit-catalog-serial"
+                                      value={row.catalogSerial || ''}
+                                      disabled={busy}
+                                      onChange={(event) =>
+                                        change(group, row.key, (item) => ({
+                                          ...item,
+                                          catalogSerial: event.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </TableCell>
+                                )}
                                 {['drivers', 'cars', 'tracks'].includes(group) && (
                                   <TableCell>
                                     {row.hasImage && (
@@ -269,7 +300,7 @@ export default function Import() {
                                         />
                                         <Checkbox
                                           aria-label={t('image')}
-                                          disabled={busy || !!row.targetId}
+                                          disabled={busy || (!!row.targetId && !(group === 'cars' && importCatalog))}
                                           checked={row.includeImage}
                                           onCheckedChange={(value) =>
                                             change(group, row.key, (item) => ({ ...item, includeImage: value }))
@@ -319,6 +350,19 @@ export default function Import() {
                   </TabsContent>
                 ))}
             </Tabs>
+            <label className="flex items-center gap-2">
+              <Checkbox
+                data-testid="cockpit-catalog-option"
+                checked={importCatalog}
+                disabled={busy || !preview.catalogAvailable}
+                onCheckedChange={(value) => {
+                  setImportCatalog(value === true)
+                  setConfirmed(false)
+                }}
+              />
+              {t('catalogOption')}
+            </label>
+            <p>{t(preview.catalogAvailable ? 'catalogHelp' : 'catalogUnavailable')}</p>
             {unresolved && <p role="alert">{t('unresolvedHelp')}</p>}
             <label className="flex items-center gap-2">
               <Checkbox
@@ -331,7 +375,12 @@ export default function Import() {
             </label>
             <Button
               data-testid="cockpit-import"
-              disabled={busy || !confirmed || unresolved}
+              disabled={
+                busy ||
+                !confirmed ||
+                unresolved ||
+                (importCatalog && preview.rows.cars.some((row) => !row.catalogSerial?.trim()))
+              }
               onClick={() => run(commit)}
             >
               {t('import')}

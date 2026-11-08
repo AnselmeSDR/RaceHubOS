@@ -192,3 +192,59 @@ test('invalid archive is rejected without executing or extracting programs', asy
   await request(app).post('/api/data/cockpit/preview').attach('file', Buffer.from('not a zip'), 'bad.zip').expect(400);
   expect(await prisma.car.count()).toBe(0);
 });
+
+test('optional catalog copy is capability-gated, transactional and preserves existing articles', async () => {
+  const archive = await createCockpitFixture({ carPhoto: true });
+  const value = await preview(archive);
+  const rows = reviewed(value);
+  rows.cars[0].catalogSerial = 'COCKPIT-CATALOG-TEST';
+  rows.cars[0].data.tyresFront = 'Reviewed front tyres';
+  rows.cars[0].data.tyresRear = 'Reviewed rear tyres';
+  rows.cars[0].data.lengthMm = 125;
+  const send = (current, data) =>
+    request(app)
+      .post('/api/data/cockpit/import')
+      .send({ id: current.id, confirmed: true, importCatalog: true, rows: data });
+  if (!prisma.catalogEntry) {
+    expect(value.catalogAvailable).toBe(false);
+    await send(value, rows).expect(400);
+    expect(backup).not.toHaveBeenCalled();
+    expect(await prisma.car.count()).toBe(0);
+    return;
+  }
+  await prisma.catalogEntry.deleteMany({ where: { serial: 'COCKPIT-CATALOG-TEST' } });
+  // Refresh after any deliberate catalog edit so stale-preview detection remains active.
+  const fresh = await preview(archive);
+  const current = reviewed(fresh);
+  Object.assign(current.cars[0], { catalogSerial: rows.cars[0].catalogSerial });
+  Object.assign(current.cars[0].data, rows.cars[0].data);
+  const result = (await send(fresh, current).expect(200)).body.data;
+  expect(result.counts.catalogImported).toBe(1);
+  const article = await prisma.catalogEntry.findUnique({ where: { serial: 'COCKPIT-CATALOG-TEST' } });
+  expect(article).toMatchObject({
+    tyresFront: 'Reviewed front tyres',
+    tyresRear: 'Reviewed rear tyres',
+    lengthMm: 125,
+  });
+  const car = await prisma.car.findFirst();
+  expect(car.serial).toBe(article.serial);
+  expect(article.img).toBe(car.img);
+  expect(await fs.readFile(path.join(root, 'cars', path.basename(article.img)))).toEqual(
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+      'base64'
+    )
+  );
+  const again = await preview(archive);
+  const repeat = reviewed(again);
+  repeat.cars[0].catalogSerial = article.serial;
+  const repeated = (await send(again, repeat).expect(200)).body.data;
+  expect(repeated.counts.catalogSkipped).toBe(1);
+  expect(await prisma.catalogEntry.findUnique({ where: { serial: article.serial } })).toEqual(article);
+  const stale = await preview(archive);
+  await prisma.catalogEntry.update({ where: { serial: article.serial }, data: { notes: 'Concurrent catalog edit' } });
+  const staleRows = reviewed(stale);
+  staleRows.cars[0].catalogSerial = article.serial;
+  await send(stale, staleRows).expect(409);
+  await prisma.catalogEntry.delete({ where: { serial: article.serial } });
+});

@@ -67,7 +67,18 @@
     "timestamp": "Horodatage (ISO)",
     "sector1": "Secteur 1 (ms)",
     "sector2": "Secteur 2 (ms)",
-    "sector3": "Secteur 3 (ms)"
+    "sector3": "Secteur 3 (ms)",
+    "chassis": "Châssis",
+    "guide": "Guide",
+    "braids": "Tresses",
+    "magnet": "Aimant",
+    "weightGrams": "Poids (g)",
+    "lengthMm": "Longueur (mm)",
+    "widthMm": "Largeur (mm)",
+    "wheelbaseMm": "Empattement (mm)",
+    "frontTrackMm": "Voie avant (mm)",
+    "rearTrackMm": "Voie arrière (mm)",
+    "groundClearanceMm": "Garde au sol (mm)"
   },
   "types": {
     "practice": "Essais",
@@ -77,5 +88,10 @@
   },
   "previous": "Précédent",
   "next": "Suivant",
-  "page": "Page {{page}} / {{count}}"
+  "page": "Page {{page}} / {{count}}",
+  "catalogOption": "Ajouter aussi les voitures et leurs pneus au catalogue local",
+  "catalogHelp": "Option : reprendre les voitures sélectionnées avec marque, modèle, référence, photo, équipement, pneus avant/arrière et mesures. Les références doivent être présentes et uniques. Les articles existants et les voitures liées sont conservés.",
+  "catalogUnavailable": "Cette option nécessite le catalogue local de voitures. L’import Cockpit-XP normal reste indépendant.",
+  "catalogSerial": "Référence du catalogue",
+  "catalogDone": "Catalogue : {{added}} articles ajoutés, {{skipped}} articles existants conservés."
 }

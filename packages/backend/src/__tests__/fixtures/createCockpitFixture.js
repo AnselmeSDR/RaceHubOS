@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 /** Synthetic data and a generated 1x1 PNG; no user backup or third-party photo. */
-export async function createCockpitFixture({ ambiguous = false } = {}) {
+export async function createCockpitFixture({ ambiguous = false, carPhoto = false } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'cockpit-fixture-'));
   try {
     const master = new Database(path.join(root, 'master'));
@@ -13,7 +13,7 @@ export async function createCockpitFixture({ ambiguous = false } = {}) {
     INSERT INTO DriverItems VALUES(1,'Fixture Driver','Fixture Driver',1,'driver.png');
     INSERT INTO DriverItems VALUES(2,'Unused Driver','Unused Driver',0,NULL);
     CREATE TABLE CarItems(ID INTEGER,Car TEXT,FullName TEXT,Activ INTEGER,Picture TEXT);
-    INSERT INTO CarItems VALUES(3,'Fixture Car','Fixture Car',1,NULL);
+    INSERT INTO CarItems VALUES(3,'Fixture Car','Fixture Car',1,${carPhoto ? "'driver.png'" : 'NULL'});
     CREATE TABLE CourseItems(ID INTEGER,Course TEXT,FullName TEXT,Activ INTEGER,Picture TEXT);
     INSERT INTO CourseItems VALUES(4,'Fixture Track','Fixture Track',1,NULL);
     CREATE TABLE CarData(CarName TEXT,Property TEXT,Value TEXT);
