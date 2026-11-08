@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 
 // Lazy load all pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Import = lazy(() => import('./pages/Import'))
 const Drivers = lazy(() => import('./pages/Drivers'))
 const DriverProfile = lazy(() => import('./pages/DriverProfile'))
 const Cars = lazy(() => import('./pages/Cars'))
@@ -127,6 +128,14 @@ function App() {
                       element={
                         <Suspense>
                           <TrackProfile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="import"
+                      element={
+                        <Suspense>
+                          <Import />
                         </Suspense>
                       }
                     />

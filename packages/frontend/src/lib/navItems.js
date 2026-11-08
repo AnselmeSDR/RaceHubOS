@@ -11,6 +11,7 @@ import {
   Scale,
   Terminal,
   Settings,
+  Import,
 } from 'lucide-react'
 
 // labelKey resolves against the 'layout' namespace, unless `glossary: true`
@@ -28,6 +29,7 @@ export const allNavItems = [
   { to: '/balancing', labelKey: 'nav.balancing', Icon: Scale },
   { to: '/displays', labelKey: 'nav.displays', Icon: LayoutGrid, adminOnly: true },
   { to: '/test', labelKey: 'nav.test', Icon: Terminal, adminOnly: true },
+  { to: '/import', labelKey: 'nav.import', Icon: Import },
   { to: '/settings', labelKey: 'nav.settings', Icon: Settings },
 ]
 

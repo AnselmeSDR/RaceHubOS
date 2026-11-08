@@ -19,6 +19,7 @@ import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
 
 // Import routes
+import { createCockpitRouter } from './routes/cockpit.js';
 import driversRouter from './routes/drivers.js';
 import carsRouter from './routes/cars.js';
 import tracksRouter from './routes/tracks.js';
@@ -165,6 +166,7 @@ app.get('/api', (req, res) => {
 
 // Mount API routes
 app.use('/api/drivers', driversRouter);
+app.use('/api/data', createCockpitRouter({ io }));
 app.use('/api/cars', carsRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/teams', teamsRouter);
