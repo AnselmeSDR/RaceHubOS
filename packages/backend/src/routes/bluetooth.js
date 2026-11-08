@@ -9,6 +9,11 @@ const prisma = createPrismaClient();
 let controlUnit = null;
 let simulator = null;
 let syncService = null;
+let cuRecovery = null;
+
+export function setCuRecovery(recovery) {
+  cuRecovery = recovery;
+}
 
 export function setControlUnit(cu) {
   controlUnit = cu;
@@ -29,12 +34,13 @@ router.get('/status', async (req, res) => {
   const currentDevice = syncService?.getDevice();
   const isSimulator = currentDevice === simulator;
 
-  res.json({
+  res.set('Cache-Control', 'no-store').json({
     available: true,
     connected: syncService?.isConnected() || false,
     deviceType: currentDevice ? (isSimulator ? 'simulator' : 'controlUnit') : null,
     deviceAddress: currentDevice ? (isSimulator ? 'SIMULATOR' : currentDevice.address) : null,
     lastStatus: syncService?.getCuStatus(),
+    recovery: cuRecovery?.snapshot() || null,
   });
 });
 
@@ -120,6 +126,8 @@ router.post('/connect', async (req, res) => {
       if (!simulator) {
         return res.status(400).json({ success: false, error: 'Simulator not available' });
       }
+      cuRecovery?.stop();
+      await controlUnit?.disconnect();
       await simulator.connect();
       device = simulator;
       deviceType = 'simulator';
@@ -128,16 +136,17 @@ router.post('/connect', async (req, res) => {
       if (!controlUnit) {
         return res.status(400).json({ success: false, error: 'Control Unit not available' });
       }
-      await controlUnit.connect(address);
+      if (cuRecovery) await cuRecovery.connect(address);
+      else await controlUnit.connect(address);
       device = controlUnit;
       deviceType = 'controlUnit';
     }
 
     // Hot-swap device in SyncService
-    syncService?.setDevice(device);
+    if (!cuRecovery || deviceType !== 'controlUnit') syncService?.setDevice(device);
 
     // Start polling for real CU
-    if (deviceType === 'controlUnit') {
+    if (deviceType === 'controlUnit' && !cuRecovery) {
       syncService?.startPolling();
     }
 
@@ -173,7 +182,9 @@ router.post('/connect', async (req, res) => {
  */
 router.post('/disconnect', async (req, res) => {
   try {
+    cuRecovery?.stop();
     const currentDevice = syncService?.getDevice();
+    if (currentDevice !== controlUnit) await controlUnit?.disconnect();
 
     if (currentDevice) {
       await currentDevice.disconnect();
