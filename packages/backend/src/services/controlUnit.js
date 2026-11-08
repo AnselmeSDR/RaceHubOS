@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { BLEService } from './ble.js';
+import { BLEService } from './bluetoothTransport.js';
 import * as protocol from './protocol.js';
 
 /**
