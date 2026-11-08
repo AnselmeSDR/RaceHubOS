@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Filter, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import {
   DropdownMenu,
@@ -7,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function FilterHeader({ label, active, value = [], options, onChange, column }) {
+  const { t } = useTranslation('common')
   const sorted = column?.getIsSorted?.()
   const canSort = column?.getCanSort?.()
 
@@ -40,7 +42,11 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
         </span>
         <span className="flex-1" />
         <DropdownMenuTrigger asChild>
-          <button className="p-1 rounded hover:bg-muted transition-colors">
+          <button
+            data-testid={`filter-${column?.id}`}
+            aria-label={label}
+            className="p-1 rounded hover:bg-muted transition-colors"
+          >
             {active ? (
               <Filter className="w-4 h-4 text-primary" />
             ) : (
@@ -51,17 +57,19 @@ export function FilterHeader({ label, active, value = [], options, onChange, col
       </div>
       <DropdownMenuContent align="end" className="w-52 max-h-72 overflow-y-auto">
         <DropdownMenuCheckboxItem
+          data-testid={`filter-${column?.id}-all`}
           checked={selected.length === 0}
           onCheckedChange={() => toggleValue('')}
           onSelect={(e) => e.preventDefault()}
         >
-          Tous
+          {t('all')}
         </DropdownMenuCheckboxItem>
         {options
           .filter((o) => o.value)
           .map((opt) => (
             <DropdownMenuCheckboxItem
               key={opt.value}
+              data-testid={`filter-${column?.id}-option-${opt.value}`}
               checked={selected.includes(opt.value)}
               onCheckedChange={() => toggleValue(opt.value)}
               onSelect={(e) => e.preventDefault()}
