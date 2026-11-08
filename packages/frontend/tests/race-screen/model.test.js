@@ -98,6 +98,6 @@ test('DeviceContext, SessionContext, backend, versions and changelog remain unto
   ])
     assert.deepEqual(
       fs.readFileSync(path.join(root, name)),
-      execFileSync('git', ['show', '8ac83c2:' + name], { cwd: root })
+      execFileSync('git', ['show', 'e162798e943406b8fe26ba5597fcf6d4ff6b593c:' + name], { cwd: root })
     )
 })
