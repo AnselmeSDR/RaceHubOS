@@ -1,0 +1,22 @@
+{
+  "title": "Katalog",
+  "serial": "Produktreferenz",
+  "lookup": "Lokalen Katalog durchsuchen",
+  "apply": "Ausgewählte Felder übernehmen",
+  "lookupError": "Referenz nicht gefunden oder Katalog nicht verfügbar.",
+  "edit": "Eintrag bearbeiten",
+  "saveError": "Eintrag konnte nicht gespeichert werden.",
+  "loadError": "Katalog konnte nicht gelesen werden.",
+  "imported": "Import abgeschlossen.",
+  "importError": "Import abgelehnt. JSON-Format und Bilder prüfen (Version 1: 1 MB; Version 2 mit Bildern: 50 MB).",
+  "add": "Eintrag anlegen",
+  "import": "JSON-Datei importieren",
+  "description": "Lokaler Fahrzeug- und Reifenkatalog. Ergänze eigene Daten und Fotos.",
+  "importHelp": "Katalog- oder Artikeldatei auswählen. Vorhandene Artikelnummern werden ersetzt; andere Einträge bleiben erhalten. Ältere Dateien ohne eingebettete Bilder werden weiterhin unterstützt.",
+  "empty": "Der Katalog ist leer.",
+  "delete": "Löschen",
+  "export": "Katalog exportieren",
+  "exportEntry": "Artikel exportieren",
+  "exportError": "Export fehlgeschlagen. Prüfe, ob alle Bilder vorhanden sind. Höchstens 1000 Artikel, 5 MB je Bild und 50 MB je Export.",
+  "exportHelp": "Katalog- und Artikelexporte enthalten Daten und Bilddateien. Beide lassen sich über denselben Import auf einer anderen Installation einlesen."
+}

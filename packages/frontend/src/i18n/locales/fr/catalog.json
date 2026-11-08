@@ -1,0 +1,22 @@
+{
+  "title": "Catalogue",
+  "serial": "Référence",
+  "lookup": "Rechercher dans le catalogue local",
+  "apply": "Appliquer les champs sélectionnés",
+  "lookupError": "Référence introuvable ou catalogue indisponible.",
+  "edit": "Modifier une entrée",
+  "saveError": "Impossible d’enregistrer l’entrée.",
+  "loadError": "Impossible de lire le catalogue.",
+  "imported": "Import terminé.",
+  "importError": "Import rejeté. Vérifiez le JSON et les images (version 1 : 1 Mo ; version 2 avec images : 50 Mo).",
+  "add": "Créer une entrée",
+  "import": "Importer un fichier JSON",
+  "description": "Catalogue local de véhicules et de pneus. Ajoutez vos propres données et photos.",
+  "importHelp": "Sélectionnez un fichier de catalogue ou d’article. Les références existantes sont remplacées ; les autres entrées sont conservées. Les anciens fichiers sans images intégrées restent acceptés.",
+  "empty": "Le catalogue est vide.",
+  "delete": "Supprimer",
+  "export": "Exporter le catalogue",
+  "exportEntry": "Exporter cet article",
+  "exportError": "Échec de l’export. Vérifiez les images. Maximum 1000 articles, 5 Mo par image et 50 Mo par export.",
+  "exportHelp": "Les exports du catalogue et des articles contiennent les données et les images. Le même import permet de les restaurer sur une autre installation."
+}

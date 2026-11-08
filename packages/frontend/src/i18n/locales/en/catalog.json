@@ -1,0 +1,22 @@
+{
+  "title": "Catalog",
+  "serial": "Product reference",
+  "lookup": "Search local catalog",
+  "apply": "Apply selected fields",
+  "lookupError": "Reference not found or catalog unavailable.",
+  "edit": "Edit entry",
+  "saveError": "Could not save entry.",
+  "loadError": "Could not read catalog.",
+  "imported": "Import completed.",
+  "importError": "Import rejected. Check JSON and images (version 1: 1 MB; version 2 with images: 50 MB).",
+  "add": "Create entry",
+  "import": "Import JSON file",
+  "description": "Local vehicle and tyre catalog. Add your own data and photos.",
+  "importHelp": "Select a catalog or article file. Existing references are replaced; other entries are kept. Older files without embedded images remain supported.",
+  "empty": "The catalog is empty.",
+  "delete": "Delete",
+  "export": "Export catalog",
+  "exportEntry": "Export article",
+  "exportError": "Export failed. Check that all images exist. Maximum 1000 articles, 5 MB per image and 50 MB per export.",
+  "exportHelp": "Catalog and article exports include data and image files. Both can be restored on another installation using the same import."
+}

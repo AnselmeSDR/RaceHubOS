@@ -1,9 +1,9 @@
 import express from 'express';
+import { carSpecsFrom } from '@racehubos/shared';
 import { createPrismaClient } from '../lib/prisma.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
-import { carSpecsFrom } from '@racehubos/shared';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -177,7 +177,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/cars - Create new car
 router.post('/', async (req, res) => {
   try {
-    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity, serial } = req.body;
 
     // Validation
     if (!brand || brand.trim().length === 0) {
@@ -196,9 +196,10 @@ router.post('/', async (req, res) => {
 
     const car = await prisma.car.create({
       data: {
+        serial: typeof serial === 'string' ? serial.trim() || null : null,
         brand: brand.trim(),
         model: model.trim(),
-        year: year || null,
+        year: year ?? null,
         img: img || null,
         color: color || '#3B82F6',
         maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
@@ -225,7 +226,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
+    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity, serial } = req.body;
 
     // Check if car exists
     const exists = await prisma.car.findUnique({
@@ -241,6 +242,7 @@ router.put('/:id', async (req, res) => {
 
     // Build update data
     const updateData = {};
+    if (serial !== undefined) updateData.serial = typeof serial === 'string' ? serial.trim() || null : null;
     if (brand !== undefined) updateData.brand = brand.trim();
     if (model !== undefined) updateData.model = model.trim();
     if (year !== undefined) updateData.year = year;

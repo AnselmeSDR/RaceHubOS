@@ -1,16 +1,17 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import DeleteButton from '../components/ui/DeleteButton'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Car, Flag, Zap, Flame, FlaskConical, Pencil, Trash2 } from 'lucide-react'
+import { formatLevel, levelPercent } from '@racehubos/shared'
+import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
+import DeleteButton from '../components/ui/DeleteButton'
 import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
 import { ListPage } from '@/components/ui/list-page'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getImgUrl } from '../utils/image'
-import { formatLevel, levelPercent } from '@racehubos/shared'
-import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
 import { FormSection } from '@/components/crud/FormModal'
+import CatalogLookup from '../components/car/CatalogLookup'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -131,7 +132,7 @@ export default function Cars() {
         id: 'year',
         accessorKey: 'year',
         header: t('fields.year'),
-        cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.year ?? '-'}</span>,
       },
       {
         id: 'maxSpeed',
@@ -338,7 +339,7 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
               )}
             </div>
           </div>
-          {car.year && (
+          {car.year != null && (
             <Badge variant="secondary" className="shadow-md">
               {car.year}
             </Badge>
@@ -397,9 +398,10 @@ function CarCard({ car, onClick, onEdit, onDelete }) {
 export function CarFormModal({ car, onClose }) {
   const { t } = useTranslation('cars')
   const [formData, setFormData] = useState({
+    serial: car?.serial || '',
     brand: car?.brand || '',
     model: car?.model || '',
-    year: car?.year || new Date().getFullYear(),
+    year: car?.year ?? '',
     color: car?.color || '#22C55E',
     maxSpeed: car?.maxSpeed || 100,
     brakeForce: car?.brakeForce || 50,
@@ -419,7 +421,7 @@ export function CarFormModal({ car, onClose }) {
       const res = await fetch(url, {
         method: car ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, year: formData.year === '' ? null : formData.year }),
       })
       if (res.ok) {
         setSuccess(t('form.saved'))
@@ -447,6 +449,11 @@ export function CarFormModal({ car, onClose }) {
       error={error}
       success={success}
     >
+      <CatalogLookup
+        serial={formData.serial}
+        onSerial={(serial) => setFormData((f) => ({ ...f, serial }))}
+        onApply={(values) => setFormData((f) => ({ ...f, ...values }))}
+      />
       <div className="grid grid-cols-2 gap-4">
         <TextField
           label={t('fields.brand')}
@@ -467,7 +474,7 @@ export function CarFormModal({ car, onClose }) {
         label={t('fields.year')}
         type="number"
         value={formData.year}
-        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
+        onChange={(v) => setFormData((f) => ({ ...f, year: v === '' ? '' : Number(v) }))}
       />
       <PhotoUploadField
         value={formData.img}
