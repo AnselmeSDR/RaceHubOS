@@ -4,6 +4,7 @@ import { io } from 'socket.io-client'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
+import SectorTimingSettings from '../components/race/SectorTimingSettings'
 import { voicesByLanguage } from '../lib/speech'
 import { LANGUAGES } from '../i18n'
 import {
@@ -754,6 +755,7 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      <SectorTimingSettings />
       {/* Reference driver */}
       <Card>
         <CardContent className=" space-y-4">

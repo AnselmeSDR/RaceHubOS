@@ -1,0 +1,12 @@
+{
+  "title": "Sektorzeiten",
+  "enabled": "Sektoraufzeichnung und Anzeige aktivieren",
+  "help": "Standardmäßig ausgeschaltet. Eine oder zwei Zwischenmessstellen ergeben zwei oder drei Sektoren. Fehlende, doppelte oder ungeordnete Messungen bleiben unbekannt. Vor einer Änderung Sitzungen beenden.",
+  "hardware": "Vor dem Merge ist ein Test mit echter CU und Zwischenmessstellen erforderlich. Es wird keine Streckensteuerung ergänzt.",
+  "failed": "Option konnte nicht geändert werden. Laufende Sitzungen beenden und erneut versuchen.",
+  "controller": "Regler {{number}}",
+  "completed": "Letzte Runde",
+  "current": "Laufende Runde",
+  "sector": "Sektor {{number}}",
+  "empty": "Keine Fahrer."
+}

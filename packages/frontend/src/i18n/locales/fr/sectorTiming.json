@@ -1,0 +1,12 @@
+{
+  "title": "Chronométrage des secteurs",
+  "enabled": "Activer l’enregistrement et l’affichage des secteurs",
+  "help": "Désactivé par défaut. Une ou deux cellules intermédiaires donnent deux ou trois secteurs. Les mesures manquantes, doubles ou désordonnées restent inconnues. Terminer les sessions avant de changer cette option.",
+  "hardware": "Une validation sur une vraie CU avec cellules intermédiaires reste nécessaire avant fusion. Aucun contrôle de piste n’est ajouté.",
+  "failed": "Impossible de changer l’option. Terminer les sessions actives et réessayer.",
+  "controller": "Manette {{number}}",
+  "completed": "Dernier tour",
+  "current": "Tour en cours",
+  "sector": "Secteur {{number}}",
+  "empty": "Aucun pilote."
+}
