@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
 import { speechLocale } from '../lib/speech'
+import { createSpeechPlayer } from '../lib/piperPlayer'
+import { normalizeVoiceIds } from '../lib/piperSelection'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -16,6 +18,31 @@ export function VoiceProvider({ children }) {
   const {
     i18n: { resolvedLanguage },
   } = useTranslation()
+
+  const [localVoices, setLocalVoices] = useState([])
+  const localVoicesRef = useRef([])
+  const [voiceState, setVoiceState] = useState('idle')
+  const playerRef = useRef(null)
+  const refreshLocalVoices = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/voice/status`)
+      const status = await response.json()
+      if (!response.ok) return
+      localVoicesRef.current = status.voices || []
+      setLocalVoices(localVoicesRef.current)
+    } catch {
+      /* Browser speech remains available. */
+    }
+  }, [])
+  useEffect(() => {
+    refreshLocalVoices()
+    const stop = () => playerRef.current?.cancel()
+    i18n.on('languageChanged', stop)
+    return () => {
+      i18n.off('languageChanged', stop)
+      stop()
+    }
+  }, [refreshLocalVoices])
 
   // Refs for access from socket listeners
   const bestLapEnabledRef = useRef(bestLapEnabled)
@@ -52,7 +79,7 @@ export function VoiceProvider({ children }) {
       .then((d) => {
         if (!d.success || d.data === null) return
         // Before 1.25.0 a single voice was stored, always a French one
-        setVoiceIds(typeof d.data === 'string' ? { fr: d.data } : d.data)
+        setVoiceIds(normalizeVoiceIds(d.data))
       })
       .catch(() => {})
   }, [])
@@ -107,7 +134,7 @@ export function VoiceProvider({ children }) {
   }, [])
 
   // Speak text with current settings
-  const speak = useCallback(
+  const speakBrowser = useCallback(
     (text, { rate = 1.1, volume = 0.9, force = false } = {}) => {
       try {
         if (!force && speechSynthesis.speaking) return null
@@ -125,6 +152,33 @@ export function VoiceProvider({ children }) {
     },
     [getVoice]
   )
+
+  const speak = useCallback(
+    (text, options = {}) => {
+      const selection = voiceIdsRef.current[i18n.resolvedLanguage] || ''
+      if (typeof selection === 'string' && selection.startsWith('_piper')) {
+        if (!playerRef.current)
+          playerRef.current = createSpeechPlayer({ api: API_URL, browserSpeak: speakBrowser, onState: setVoiceState })
+        return playerRef.current.speak(text, {
+          ...options,
+          language: i18n.resolvedLanguage,
+          selection,
+          voices: localVoicesRef.current,
+        })
+      }
+      if (playerRef.current?.speaking) {
+        if (!options.force) return null
+        playerRef.current.cancel()
+      }
+      return speakBrowser(text, options)
+    },
+    [speakBrowser]
+  )
+
+  const cancelSpeech = useCallback(() => {
+    playerRef.current?.cancel()
+    window.speechSynthesis?.cancel()
+  }, [])
 
   // Format time for speech
   const formatTimeVoice = useCallback((ms) => {
@@ -154,8 +208,12 @@ export function VoiceProvider({ children }) {
         podiumEnabledRef,
         minLapsRef,
         speak,
+        cancelSpeech,
         getVoice,
         formatTimeVoice,
+        localVoices,
+        refreshLocalVoices,
+        voiceState,
       }}
     >
       {children}

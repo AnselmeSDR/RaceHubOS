@@ -1,11 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
-import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
-import { useApp } from '../context/AppContext'
-import { useVoice } from '../context/VoiceContext'
-import { voicesByLanguage } from '../lib/speech'
-import { LANGUAGES } from '../i18n'
 import {
   Wifi,
   Cpu,
@@ -27,6 +22,13 @@ import {
   UserCog,
   AlertTriangle,
 } from 'lucide-react'
+import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
+import { useApp } from '../context/AppContext'
+import { useVoice } from '../context/VoiceContext'
+import { voicesByLanguage } from '../lib/speech'
+import { selectLocalVoice } from '../lib/piperSelection'
+import OfflineVoiceSettings from '../components/config/OfflineVoiceSettings'
+import { LANGUAGES } from '../i18n'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -60,8 +62,17 @@ export default function Settings() {
     voiceId: bestLapVoiceId,
     saveVoiceId,
     speak,
+    cancelSpeech,
+    localVoices,
+    refreshLocalVoices,
+    voiceState,
   } = useVoice()
   const [voices, setVoices] = useState([])
+  const [previewState, setPreviewState] = useState('idle')
+  const previewRef = useRef(null)
+  useEffect(() => () => clearTimeout(previewRef.current?.timer), [])
+  const isPiperChoice = typeof bestLapVoiceId === 'string' && bestLapVoiceId.startsWith('_piper')
+  const selectedLocalVoice = selectLocalVoice(localVoices, bestLapVoiceId, i18n.resolvedLanguage)
 
   const [defaultViewMode, setDefaultViewMode] = useState('grid')
   const [autoConnect, setAutoConnect] = useState(false)
@@ -298,12 +309,43 @@ export default function Settings() {
     return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
   }, [loadVoices])
 
+  function stopPreview() {
+    clearTimeout(previewRef.current?.timer)
+    previewRef.current = null
+    cancelSpeech()
+    setPreviewState('idle')
+  }
   function handleVoiceChange(voiceURI) {
+    if (isPiperChoice || voiceURI.startsWith('_piper')) stopPreview()
     saveVoiceId(voiceURI)
   }
 
   function testVoice() {
-    speak(t('appearance.testVoicePhrase'))
+    if (!isPiperChoice) {
+      speak(t('appearance.testVoicePhrase'))
+      return
+    }
+    stopPreview()
+    const preview = {}
+    previewRef.current = preview
+    setPreviewState('loading')
+    const finish = (state) => {
+      if (previewRef.current !== preview) return
+      clearTimeout(preview.timer)
+      previewRef.current = null
+      setPreviewState(state)
+    }
+    const utterance = speak(t('appearance.testVoicePhrase'), { force: true, preview: true })
+    if (!utterance) {
+      finish('failed')
+      return
+    }
+    utterance.onend = () => finish('done')
+    utterance.onerror = () => finish('failed')
+    preview.timer = setTimeout(() => {
+      cancelSpeech()
+      finish('failed')
+    }, 35000)
   }
 
   function handleBestLapVoiceMinLaps(value) {
@@ -683,14 +725,34 @@ export default function Settings() {
             <div className="flex items-center gap-2 pl-7">
               {/* One voice per interface language, the language's default voice unless chosen */}
               <Select
-                value={voices.some((v) => v.voiceURI === bestLapVoiceId) ? bestLapVoiceId : '_default'}
+                value={
+                  selectedLocalVoice
+                    ? '_piper:' + selectedLocalVoice.id
+                    : isPiperChoice || voices.some((v) => v.voiceURI === bestLapVoiceId)
+                      ? bestLapVoiceId
+                      : '_default'
+                }
                 onValueChange={(v) => handleVoiceChange(v === '_default' ? '' : v)}
               >
-                <SelectTrigger className="flex-1">
+                <SelectTrigger
+                  className="flex-1"
+                  data-testid="voice-selector"
+                  aria-label={t('offlineVoices:selection')}
+                >
                   <SelectValue placeholder={t('appearance.defaultVoice')} />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
                   <SelectItem value="_default">{t('appearance.defaultVoice')}</SelectItem>
+                  {localVoices
+                    .filter((voice) => voice.language === i18n.resolvedLanguage)
+                    .map((voice) => (
+                      <SelectItem key={voice.id} value={'_piper:' + voice.id}>
+                        {voice.name} · {voice.locale} · Piper
+                      </SelectItem>
+                    ))}
+                  {isPiperChoice && !selectedLocalVoice && (
+                    <SelectItem value={bestLapVoiceId}>{t('offlineVoices:savedUnavailable')}</SelectItem>
+                  )}
                   {voices.map((v) => (
                     <SelectItem key={v.voiceURI} value={v.voiceURI}>
                       {v.name} ({v.lang})
@@ -699,14 +761,27 @@ export default function Settings() {
                 </SelectContent>
               </Select>
               <button
+                data-testid="voice-test"
                 onClick={testVoice}
                 className="size-8 shrink-0 rounded border border-border flex items-center justify-center hover:bg-muted"
                 title={t('appearance.testVoice')}
               >
-                <Play className="size-3.5" />
+                {previewState === 'loading' ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Play className="size-3.5" />
+                )}
               </button>
             </div>
           )}
+
+          {previewState !== 'idle' && (
+            <p data-testid="voice-preview-status" role="status" className="pl-7 text-sm">
+              {t('offlineVoices:preview' + previewState)}
+            </p>
+          )}
+
+          <OfflineVoiceSettings onChanged={refreshLocalVoices} voiceState={voiceState} />
 
           <div className="border-t border-border" />
 

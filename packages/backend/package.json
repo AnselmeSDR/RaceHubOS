@@ -33,7 +33,9 @@
     "multer": "^2.0.2",
     "react": "^19.2.3",
     "socket.io": "^4.6.0",
-    "socket.io-client": "^4.6.0"
+    "socket.io-client": "^4.6.0",
+    "tar": "^7.5.22",
+    "unbzip2-stream": "^1.4.3"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

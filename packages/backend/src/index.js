@@ -19,6 +19,7 @@ import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
 
 // Import routes
+import voiceRouter from './routes/voice.js';
 import driversRouter from './routes/drivers.js';
 import carsRouter from './routes/cars.js';
 import tracksRouter from './routes/tracks.js';
@@ -178,6 +179,7 @@ app.use('/api/records', recordsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/preferences', preferencesRouter);
+app.use('/api/voice', voiceRouter);
 app.use('/api/update', updateRouter);
 
 // SyncService endpoints (hardware control)

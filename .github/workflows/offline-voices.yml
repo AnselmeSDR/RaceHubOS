@@ -1,0 +1,67 @@
+name: Offline voice smoke test
+on:
+  push:
+    branches: [feat/piper-voices]
+  pull_request:
+    paths:
+      - '.github/workflows/offline-voices.yml'
+      - 'packages/backend/src/lib/piper*.js'
+      - 'packages/backend/src/lib/offlineVoices.js'
+      - 'packages/backend/src/data/offlineVoices.json'
+      - 'scripts/test-offline-voices.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: offline-voices-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthesize:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      # Explicit integration-test install in a temporary directory, never app startup.
+      - run: node scripts/test-offline-voices.js --install
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Use the upstream main as the rule-check baseline
+        run: git fetch --no-tags https://github.com/AnselmeSDR/RaceHubOS.git +main:refs/remotes/origin/main
+      - name: Install native build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libbluetooth-dev pulseaudio
+      - name: Provide a virtual audio output for real browser playback
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=racehubos_ci
+          pactl set-default-sink racehubos_ci
+      - run: npm ci
+      - run: npm run prisma:generate -w @racehubos/backend
+      - run: npm run check:push
+      - run: npm test -w @racehubos/backend
+      - run: npx playwright install --with-deps chromium firefox
+        working-directory: packages/frontend
+      - run: npm test -w @racehubos/frontend -- piper-voices.spec.js
+      - run: npm test -w @racehubos/frontend -- --config=playwright.firefox.config.js piper-voices.spec.js
+      - run: npm run build
