@@ -5,6 +5,7 @@ import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { useVoice } from '../context/VoiceContext'
 import { voicesByLanguage } from '../lib/speech'
+import PitAdviceSettings from '../components/race/PitAdviceSettings'
 import { LANGUAGES } from '../i18n'
 import {
   Wifi,
@@ -571,6 +572,7 @@ export default function Settings() {
         </Card>
       )}
 
+      <PitAdviceSettings />
       {/* Appearance & Admin */}
       <Card>
         <CardContent className=" space-y-4">

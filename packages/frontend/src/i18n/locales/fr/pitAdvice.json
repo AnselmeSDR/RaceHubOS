@@ -1,0 +1,18 @@
+{
+  "title": "Conseils de ravitaillement",
+  "enabled": "Activer les conseils de ravitaillement",
+  "places": "Places de ravitaillement simultanées",
+  "help": "Désactivé par défaut. Propose les voitures à 5/15 ou moins, niveau le plus bas en premier. Nécessite FUEL ON, des données CU de moins de cinq secondes et la télémétrie des stands.",
+  "limits": "Conseil uniquement : vérifier les places avant d’entrer. La CU indique la voie des stands, pas l’occupation individuelle gauche/droite. Aucun aiguillage ni ordre d’attente n’est commandé.",
+  "save": "Enregistrer",
+  "saved": "Conseils enregistrés.",
+  "failed": "Enregistrement impossible.",
+  "unavailable": "Données CU récentes et FUEL ON nécessaires.",
+  "recommended": "Vérifier les places avant le prochain groupe :",
+  "none": "Aucun arrêt conseillé.",
+  "inside": "{{count}} voiture(s) dans la voie des stands.",
+  "controller": "Manette {{number}}",
+  "reading": "{{fuel}}/15",
+  "urgent": "RAVITAILLER IMMÉDIATEMENT",
+  "remaining": "Puis {{count}} autre(s) voiture(s)."
+}
