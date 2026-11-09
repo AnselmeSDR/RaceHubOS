@@ -18,11 +18,13 @@ const emit = (event, payload) => act(() => socket.handlers[event](payload))
 let fetchMock
 let reload
 
-/** `routes` maps a path ending to an answer (a function to throw or vary). */
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+/** `routes` maps a path to an answer (a function to throw or vary); any other URL fails. */
 function stubApi(routes) {
   fetchMock = vi.fn(async (url, options = {}) => {
     const key = Object.keys(routes).find(
-      (path) => url.endsWith(path) && (routes[path].method ?? 'GET') === (options.method ?? 'GET')
+      (path) => url === `${API_URL}${path}` && (routes[path].method ?? 'GET') === (options.method ?? 'GET')
     )
     if (!key) throw new Error(`unexpected ${url}`)
     return routes[key].answer()
@@ -54,10 +56,10 @@ test('shows the version and that it is up to date', async () => {
   expect(io).toHaveBeenCalledWith(import.meta.env.VITE_WS_URL || '', { transports: ['websocket', 'polling'] })
 })
 
-test('without the update check, the version comes from /api/health', async () => {
+test('without the update check, the version comes from /health', async () => {
   stubApi({
     '/api/update/check': route(async () => Promise.reject(new Error('down'))),
-    '/api/health': route({ version: '1.25.7' }),
+    '/health': route({ version: '1.25.7' }),
   })
   render(<UpdateSection />)
   expect(await screen.findByText('1.25.7')).toBeInTheDocument()
@@ -66,7 +68,7 @@ test('without the update check, the version comes from /api/health', async () =>
 test('with neither, the version stays unknown', async () => {
   stubApi({
     '/api/update/check': route(async () => Promise.reject(new Error('down'))),
-    '/api/health': route(async () => Promise.reject(new Error('down'))),
+    '/health': route(async () => Promise.reject(new Error('down'))),
   })
   render(<UpdateSection />)
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
@@ -106,7 +108,7 @@ test('updating follows the progress, then reloads once the server is back', asyn
   stubApi({
     '/api/update/check': route(available),
     '/api/update/apply': route({ success: true }, 'POST'),
-    '/api/health': route(async () => (healthy ? json({}) : Promise.reject(new Error('restarting')))),
+    '/health': route(async () => (healthy ? json({}) : Promise.reject(new Error('restarting')))),
   })
   render(<UpdateSection />)
   await user.click(await screen.findByRole('button', { name: 'Update' }))
@@ -133,7 +135,7 @@ test('losing the server mid-update means it restarts: reload when it is back', a
   stubApi({
     '/api/update/check': route(available),
     '/api/update/apply': route({ success: true }, 'POST'),
-    '/api/health': route({}),
+    '/health': route({}),
   })
   render(<UpdateSection />)
   await user.click(await screen.findByRole('button', { name: 'Update' }))

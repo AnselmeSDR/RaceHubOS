@@ -11,7 +11,7 @@ const WS_URL = import.meta.env.VITE_WS_URL || ''
 /** Reloads the page once the server answers again, after the restart that ends an update. */
 function reloadWhenServerIsBack() {
   const tryReconnect = () => {
-    fetch(`${API_URL}/api/health`)
+    fetch(`${API_URL}/health`)
       .then(() => {
         window.location.reload()
       })
@@ -38,7 +38,7 @@ export default function UpdateSection() {
         if (d.success) setUpdateInfo(d.data)
       })
       .catch(() => {
-        fetch(`${API_URL}/api/health`)
+        fetch(`${API_URL}/health`)
           .then((r) => r.json())
           .then((d) => {
             setUpdateInfo({ currentVersion: d.version })
