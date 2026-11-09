@@ -8,6 +8,9 @@ export const getChampionship = (id) => getData(`/api/championships/${id}`)
 
 export const getChampionshipSessions = (id) => getData(`/api/sessions?championshipId=${id}`)
 
+/** An automatic championship's qualifying groups, merged ranking and race groups; null when unreadable. */
+export const getBracket = (id) => getData(`/api/championships/${id}/bracket`)
+
 /** The practice, qualifying and race standings of a championship, null when they can't be read. */
 export async function getStandings(id) {
   try {

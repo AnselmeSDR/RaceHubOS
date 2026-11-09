@@ -2,6 +2,7 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react
 import { ChampionshipMode } from '@racehubos/shared'
 import { finishChampionship, getChampionship, getChampionshipSessions, getStandings } from '@/lib/championshipApi'
 import { getReferenceData } from '@/lib/sessionApi'
+import { useWindowEvents } from './useWindowEvents'
 
 const EMPTY_STANDINGS = { practice: [], qualif: [], race: [] }
 const REFRESH_EVENTS = ['session:finished', 'session:status_changed', 'championship:races_assigned']
@@ -93,17 +94,10 @@ export function useChampionshipDetail(id) {
     loadAll().then(() => setLoadedId(id))
   }, [id])
 
-  const refresh = useEffectEvent(() => {
+  useWindowEvents(REFRESH_EVENTS, () => {
     reloadSessions()
     reloadStandings()
   })
-  useEffect(() => {
-    const onEvent = () => refresh()
-    for (const name of REFRESH_EVENTS) window.addEventListener(name, onEvent)
-    return () => {
-      for (const name of REFRESH_EVENTS) window.removeEventListener(name, onEvent)
-    }
-  }, [])
 
   return {
     championship,
