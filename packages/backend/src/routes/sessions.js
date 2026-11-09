@@ -1,9 +1,12 @@
 import express from 'express';
 import { attachExtras } from '../addons/extras.js';
-import SessionService from '../services/SessionService.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
-import { SessionStatus, SessionType } from '@racehubos/shared';
+import { SessionType } from '@racehubos/shared';
 import { idsFromQuery, sendWorkbook, sessionWorkbook, sessionsWorkbook } from '../lib/exportQueries.js';
+import { purgeSession, restoreSession } from '../lib/softDelete.js';
+import { ACTIONS, applyTransition, statusError, transitionError } from '../lib/sessions/lifecycle.js';
+import { isComputedSort, LIST_INCLUDE, listWhere, sortComputed, sortField } from '../lib/sessions/list.js';
+import { storedLeaderboard } from '../lib/sessions/storedLeaderboard.js';
 
 const router = express.Router();
 let sessionService;
@@ -12,222 +15,114 @@ export function setSessionService(service) {
   sessionService = service;
 }
 
-// Helper: get prisma instance
 const prisma = () => sessionService.prisma;
 
-/**
- * GET /api/sessions
- */
-router.get('/', async (req, res) => {
+const withPeople = { include: { driver: true, car: true } };
+/** A session as the actions return it: track, championship and entries. */
+const SESSION_INCLUDE = { track: true, championship: true, drivers: withPeople };
+
+const notFound = (res) => res.status(404).json({ success: false, error: 'Session not found' });
+const findSession = (id, include) => prisma().session.findUnique({ where: { id }, include });
+
+/** Runs `handler`, answering 500 with the error's message (or `failure`) when it throws. */
+const route = (label, handler, failure) => async (req, res) => {
   try {
-    const {
-      status,
-      championshipId,
-      trackId,
-      type,
-      deleted,
-      limit = '50',
-      offset = '0',
-      sortBy = 'updatedAt',
-      sortOrder = 'desc',
-    } = req.query;
-    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    if (status && status !== 'all') where.status = status.includes(',') ? { in: status.split(',') } : status;
-    if (trackId) where.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
-    if (type) where.type = type.includes(',') ? { in: type.split(',') } : type;
-    // Filter: only sessions with a championship
-    if (req.query.has_championship === 'true') {
-      where.championshipId = { not: null };
-    }
-    // Handle championshipId=null explicitly (free sessions)
-    if (championshipId) {
-      const ids = championshipId.split(',');
-      const hasNull = ids.includes('null');
-      const realIds = ids.filter((id) => id !== 'null');
-      if (hasNull && realIds.length) {
-        where.OR = [{ championshipId: null }, { championshipId: { in: realIds } }];
-      } else if (hasNull) {
-        where.championshipId = null;
-      } else {
-        where.championshipId = realIds.length > 1 ? { in: realIds } : realIds[0];
-      }
-    }
+    await handler(req, res);
+  } catch (error) {
+    console.error(`Error ${label}:`, error);
+    res.status(500).json({ success: false, error: failure ?? error.message });
+  }
+};
 
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
+// GET /api/sessions - filtered (status, trackId, type, championshipId, deleted), sorted and paginated
+router.get(
+  '/',
+  route('fetching sessions', async (req, res) => {
+    const { limit = '50', offset = '0', sortBy = 'updatedAt', sortOrder = 'desc' } = req.query;
+    const where = listWhere(req.query);
+    const field = sortField(sortBy);
+    const computed = isComputedSort(field);
+    const start = parseInt(offset);
+    const size = parseInt(limit);
 
-    const computedSorts = ['track', 'championship', 'drivers', 'laps', 'duration'];
-    const sortField = sortBy === 'date' ? 'createdAt' : sortBy;
-    const useDbSort = !computedSorts.includes(sortField);
-
-    const dbOrderBy = useDbSort
-      ? sortField === 'track'
-        ? { track: { name: sortOrder } }
-        : sortField === 'championship'
-          ? { championship: { name: sortOrder } }
-          : { [sortField]: sortOrder }
-      : undefined;
-
-    const [allSessions, total] = await Promise.all([
+    const [found, total] = await Promise.all([
       prisma().session.findMany({
         where,
-        include: {
-          track: true,
-          championship: true,
-          drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
-          _count: { select: { laps: { where: { deletedAt: null } } } },
-        },
-        orderBy: dbOrderBy,
-        ...(useDbSort ? { skip: parsedOffset, take: parsedLimit } : {}),
+        include: LIST_INCLUDE,
+        orderBy: computed ? undefined : { [field]: sortOrder },
+        ...(computed ? {} : { skip: start, take: size }),
       }),
       prisma().session.count({ where }),
     ]);
-
-    let sorted = allSessions;
-    if (!useDbSort) {
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      if (sortField === 'track') {
-        sorted = [...allSessions].sort((a, b) => dir * (a.track?.name || '').localeCompare(b.track?.name || ''));
-      } else if (sortField === 'championship') {
-        sorted = [...allSessions].sort(
-          (a, b) => dir * (a.championship?.name || '').localeCompare(b.championship?.name || '')
-        );
-      } else if (sortField === 'drivers') {
-        sorted = [...allSessions].sort((a, b) => dir * ((a.drivers?.length || 0) - (b.drivers?.length || 0)));
-      } else if (sortField === 'laps') {
-        sorted = [...allSessions].sort((a, b) => dir * ((a._count?.laps || 0) - (b._count?.laps || 0)));
-      } else if (sortField === 'duration') {
-        const dur = (s) => (s.startedAt && s.finishedAt ? new Date(s.finishedAt) - new Date(s.startedAt) : 0);
-        sorted = [...allSessions].sort((a, b) => dir * (dur(a) - dur(b)));
-      }
-    }
-
-    const sessions = useDbSort ? sorted : sorted.slice(parsedOffset, parsedOffset + parsedLimit);
-
+    const page = computed ? sortComputed(found, field, sortOrder).slice(start, start + size) : found;
     res.json({
       success: true,
-      data: await attachExtras(prisma(), 'session', sessions),
+      data: await attachExtras(prisma(), 'session', page),
       total,
-      hasMore: parsedOffset + parsedLimit < total,
+      hasMore: start + size < total,
     });
-  } catch (error) {
-    console.error('Error fetching sessions:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-/**
- * GET /api/sessions/export?ids=a,b,c
- * Excel workbook for a hand-picked set of sessions
- */
-router.get('/export', async (req, res) => {
-  try {
+// GET /api/sessions/export?ids=a,b,c - Excel workbook for a hand-picked set of sessions
+router.get(
+  '/export',
+  route('exporting sessions', async (req, res) => {
     const result = await sessionsWorkbook(prisma(), idsFromQuery(req.query.ids));
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'No session to export' });
-    }
-
+    if (!result) return res.status(404).json({ success: false, error: 'No session to export' });
     await sendWorkbook(res, result);
-  } catch (error) {
-    console.error('Error exporting sessions:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-/**
- * GET /api/sessions/:id
- */
-router.get('/:id', async (req, res) => {
-  try {
+router.get(
+  '/:id',
+  route('fetching session', async (req, res) => {
     const session = await prisma().session.findUnique({
       where: { id: req.params.id, deletedAt: null },
       include: {
         track: true,
         championship: true,
-        drivers: {
-          where: { deletedAt: null },
-          include: { driver: true, car: true },
-          orderBy: { controller: 'asc' },
-        },
-        laps: {
-          where: { deletedAt: null },
-          include: { driver: true },
-          orderBy: { timestamp: 'asc' },
-        },
+        drivers: { where: { deletedAt: null }, ...withPeople, orderBy: { controller: 'asc' } },
+        laps: { where: { deletedAt: null }, include: { driver: true }, orderBy: { timestamp: 'asc' } },
       },
     });
-
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
+    if (!session) return notFound(res);
     res.json({ success: true, data: await attachExtras(prisma(), 'session', session) });
-  } catch (error) {
-    console.error('Error fetching session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-/**
- * GET /api/sessions/:id/export
- * Excel workbook for one session
- */
-router.get('/:id/export', async (req, res) => {
-  try {
+// GET /api/sessions/:id/export - Excel workbook for one session
+router.get(
+  '/:id/export',
+  route('exporting session', async (req, res) => {
     const result = await sessionWorkbook(prisma(), req.params.id);
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
+    if (!result) return notFound(res);
     await sendWorkbook(res, result);
-  } catch (error) {
-    console.error('Error exporting session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-/**
- * POST /api/sessions
- * Create a standalone session (without championship)
- */
+// POST /api/sessions - a standalone session (without championship)
 router.post('/', async (req, res) => {
   try {
-    const session = await sessionService.createSession(req.body);
-    res.status(201).json({ success: true, data: session });
+    res.status(201).json({ success: true, data: await sessionService.createSession(req.body) });
   } catch (error) {
     console.error('Error creating session:', error);
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-/**
- * PUT /api/sessions/:id
- */
+const EDITABLE = ['name', 'type', 'trackId', 'fuelMode', 'order'];
+const NULLABLE_LIMITS = ['maxDuration', 'maxLaps', 'gracePeriod'];
+
 router.put('/:id', async (req, res) => {
   try {
-    const { name, type, trackId, championshipId, fuelMode, maxDuration, maxLaps, gracePeriod, order } = req.body;
+    const data = {};
+    for (const key of EDITABLE) if (req.body[key] !== undefined) data[key] = req.body[key];
+    for (const key of NULLABLE_LIMITS) if (req.body[key] !== undefined) data[key] = req.body[key] || null;
+    const { championshipId } = req.body;
+    if (championshipId !== undefined) data.championshipId = championshipId === '' ? null : championshipId;
 
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (type !== undefined) updateData.type = type;
-    if (trackId !== undefined) updateData.trackId = trackId;
-    if (championshipId !== undefined) updateData.championshipId = championshipId === '' ? null : championshipId;
-    if (fuelMode !== undefined) updateData.fuelMode = fuelMode;
-    if (maxDuration !== undefined) updateData.maxDuration = maxDuration || null;
-    if (maxLaps !== undefined) updateData.maxLaps = maxLaps || null;
-    if (gracePeriod !== undefined) updateData.gracePeriod = gracePeriod || null;
-    if (order !== undefined) updateData.order = order;
-
-    const session = await prisma().session.update({
-      where: { id: req.params.id },
-      data: updateData,
-      include: {
-        track: true,
-        championship: true,
-        drivers: { include: { driver: true, car: true } },
-      },
-    });
-
+    const session = await prisma().session.update({ where: { id: req.params.id }, data, include: SESSION_INCLUDE });
     res.json({ success: true, data: session });
   } catch (error) {
     console.error('Error updating session:', error);
@@ -238,417 +133,127 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/sessions/:id
- */
-router.delete('/:id', async (req, res) => {
-  try {
+// DELETE /api/sessions/:id - hidden through the service first, erased when already hidden
+router.delete(
+  '/:id',
+  route('deleting session', async (req, res) => {
     const { id } = req.params;
-
-    const exists = await prisma().session.findUnique({ where: { id } });
-    if (!exists) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    if (exists.deletedAt) {
-      // Hard delete cascade: laps → session drivers → session
-      await prisma().$transaction([
-        prisma().lap.deleteMany({ where: { sessionId: id } }),
-        prisma().sessionDriver.deleteMany({ where: { sessionId: id } }),
-        prisma().session.delete({ where: { id } }),
-      ]);
-    } else {
-      // Soft delete (via service for proper lifecycle handling)
-      await sessionService.deleteSession(id);
-    }
-
+    const session = await findSession(id);
+    if (!session) return notFound(res);
+    if (session.deletedAt) await purgeSession(prisma(), id);
+    else await sessionService.deleteSession(id);
     res.json({ success: true, message: 'Session deleted' });
-  } catch (error) {
-    console.error('Error deleting session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
+
+// PATCH /api/sessions/:id/restore - back with what its deletion hid
+router.patch(
+  '/:id/restore',
+  route(
+    'restoring session',
+    async (req, res) => {
+      if (!(await findSession(req.params.id))) return notFound(res);
+      await restoreSession(prisma(), req.params.id);
+      res.json({ success: true, message: 'Session restored' });
+    },
+    'Failed to restore session'
+  )
+);
 
 /**
- * PATCH /api/sessions/:id/restore - Restore soft-deleted session
+ * The line-up rows to store: those with a driver or a car (partial rows are fine in a draft) and a
+ * controller, on the grid in order unless placed. A balancing line-up belongs to `referenceId`, when set:
+ * balancing measures cars, whoever holds the controller.
  */
-router.patch('/:id/restore', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const entity = await prisma().session.findUnique({ where: { id } });
-    if (!entity) return res.status(404).json({ success: false, error: 'Session not found' });
+const lineupRows = (sessionId, drivers, referenceId) =>
+  drivers
+    .filter((d) => (d.driverId || d.carId) && d.controller !== undefined)
+    .map((d, index) => ({
+      sessionId,
+      driverId: referenceId ?? d.driverId ?? null,
+      carId: d.carId || null,
+      controller: Number(d.controller),
+      gridPos: d.gridPos ?? index + 1,
+    }));
 
-    // Restore cascade: session → session drivers → laps
-    await prisma().session.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
-
-    await prisma().sessionDriver.updateMany({
-      where: { sessionId: id, deletedAt: entity.deletedAt },
-      data: { deletedAt: null },
-    });
-
-    await prisma().lap.updateMany({
-      where: { sessionId: id, deletedAt: entity.deletedAt },
-      data: { deletedAt: null },
-    });
-    await prisma().trackRecord.updateMany({
-      where: { sessionId: id, deletedAt: entity.deletedAt },
-      data: { deletedAt: null },
-    });
-
-    res.json({ success: true, message: 'Session restored' });
-  } catch (error) {
-    console.error('Error restoring session:', error);
-    res.status(500).json({ success: false, error: 'Failed to restore session' });
-  }
-});
-
-/**
- * PUT /api/sessions/:id/drivers
- */
-router.put('/:id/drivers', async (req, res) => {
-  try {
+// PUT /api/sessions/:id/drivers - replaces the line-up
+router.put(
+  '/:id/drivers',
+  route('updating drivers', async (req, res) => {
     const { id } = req.params;
     const { drivers } = req.body;
+    if (!Array.isArray(drivers)) return res.status(400).json({ success: false, error: 'drivers must be an array' });
+    const session = await findSession(id);
+    if (!session) return notFound(res);
 
-    if (!Array.isArray(drivers)) {
-      return res.status(400).json({ success: false, error: 'drivers must be an array' });
-    }
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
-
-    // Balancing measures cars, not drivers: every entry belongs to the reference
-    // driver, whoever actually holds the controller. Without one configured, the
-    // chosen drivers are kept and the UI warns about it.
     const reference = session.type === SessionType.BALANCING ? await getReferenceDriver(prisma()) : null;
+    await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
+    const rows = lineupRows(id, drivers, reference?.id);
+    if (rows.length > 0) await prisma().sessionDriver.createMany({ data: rows });
 
-    // Accept partial configs (driver OR car) for draft sessions
-    const validDrivers = drivers.filter((d) => (d.driverId || d.carId) && d.controller !== undefined);
-    if (validDrivers.length > 0) {
-      await prisma().sessionDriver.createMany({
-        data: validDrivers.map((d, idx) => ({
-          sessionId: id,
-          driverId: reference?.id ?? d.driverId ?? null,
-          carId: d.carId || null,
-          controller: Number(d.controller),
-          gridPos: d.gridPos ?? idx + 1,
-        })),
-      });
-    }
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: {
-        track: true,
-        championship: true,
-        drivers: { include: { driver: true, car: true }, orderBy: { controller: 'asc' } },
-      },
+    const data = await findSession(id, {
+      ...SESSION_INCLUDE,
+      drivers: { ...withPeople, orderBy: { controller: 'asc' } },
     });
+    res.json({ success: true, data });
+  })
+);
 
-    res.json({ success: true, data: updatedSession });
-  } catch (error) {
-    console.error('Error updating drivers:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * PATCH /api/sessions/:id/status
- */
-router.patch('/:id/status', async (req, res) => {
-  try {
+// PATCH /api/sessions/:id/status - Body: { status }
+router.patch(
+  '/:id/status',
+  route('changing status', async (req, res) => {
     const { id } = req.params;
-    const { status: newStatus } = req.body;
+    const { status } = req.body;
+    const invalid = statusError(status);
+    if (invalid) return res.status(400).json({ success: false, error: invalid });
+    const session = await findSession(id);
+    if (!session) return notFound(res);
+    const refused = transitionError(session.status, status);
+    if (refused) return res.status(400).json({ success: false, error: refused });
 
-    const validStatuses = ['draft', 'active', 'paused', 'finishing', 'finished'];
-    if (!newStatus || !validStatuses.includes(newStatus)) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-      });
-    }
+    await applyTransition(sessionService, id, session.status, status);
+    res.json({ success: true, data: await findSession(id, SESSION_INCLUDE), message: `Status changed to '${status}'` });
+  })
+);
 
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { drivers: { include: { driver: true, car: true } } },
-    });
+// POST /api/sessions/:id/start | pause | resume | stop
+for (const [action, { from, run, refusal, message }] of Object.entries(ACTIONS)) {
+  router.post(
+    `/:id/${action}`,
+    route(`${action} session`, async (req, res) => {
+      const { id } = req.params;
+      const session = await findSession(id);
+      if (!session) return notFound(res);
+      if (!from.includes(session.status))
+        return res.status(400).json({ success: false, error: refusal(session.status) });
+      await run(sessionService, id);
+      res.json({ success: true, data: await findSession(id, SESSION_INCLUDE), message });
+    })
+  );
+}
 
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
+// POST /api/sessions/:id/reset - back to ready: practice laps hidden (kept for stats), others erased
+router.post(
+  '/:id/reset',
+  route('resetting session', async (req, res) => {
+    await sessionService.resetSession(req.params.id);
+    res.json({ success: true, data: await findSession(req.params.id, SESSION_INCLUDE), message: 'Session reset' });
+  })
+);
 
-    const currentStatus = session.status;
-    const allowedTransitions = {
-      'draft': ['active'],
-      'active': ['paused', 'finishing', 'finished'],
-      'paused': ['active', 'finished'],
-      'finishing': ['finished'],
-      'finished': ['draft'],
-    };
-
-    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
-      return res.status(400).json({
-        success: false,
-        error: `Cannot transition from '${currentStatus}' to '${newStatus}'`,
-      });
-    }
-
-    // Delegate to SessionService for lifecycle transitions
-    if (newStatus === 'active' && currentStatus === 'draft') {
-      await sessionService.startSession(id);
-    } else if (newStatus === 'paused' && currentStatus === 'active') {
-      await sessionService.pauseSession();
-    } else if (newStatus === 'active' && currentStatus === 'paused') {
-      await sessionService.resumeSession();
-    } else if (newStatus === 'finished') {
-      await sessionService.stopSession();
-    } else {
-      // Simple status update (finished -> draft)
-      const updateData = { status: newStatus };
-      if (newStatus === 'draft' && currentStatus === 'finished') {
-        updateData.startedAt = null;
-        updateData.finishingAt = null;
-        updateData.finishedAt = null;
-      }
-      await prisma().session.update({ where: { id }, data: updateData });
-    }
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: `Status changed to '${newStatus}'` });
-  } catch (error) {
-    console.error('Error changing status:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * POST /api/sessions/:id/start
- */
-router.post('/:id/start', async (req, res) => {
-  try {
+// GET /api/sessions/:id/leaderboard - live for the running session, from the stored laps otherwise
+router.get(
+  '/:id/leaderboard',
+  route('fetching leaderboard', async (req, res) => {
     const { id } = req.params;
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    if (session.status !== SessionStatus.DRAFT) {
-      return res.status(400).json({
-        success: false,
-        error: `Session must be 'draft' to start, current: ${session.status}`,
-      });
-    }
-
-    await sessionService.startSession(id);
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: 'Session started' });
-  } catch (error) {
-    console.error('Error starting session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * POST /api/sessions/:id/pause
- */
-router.post('/:id/pause', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    if (session.status !== SessionStatus.ACTIVE) {
-      return res.status(400).json({
-        success: false,
-        error: `Session must be 'active' to pause, current: ${session.status}`,
-      });
-    }
-
-    await sessionService.pauseSession();
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: 'Session paused' });
-  } catch (error) {
-    console.error('Error pausing session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * POST /api/sessions/:id/resume
- */
-router.post('/:id/resume', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    if (session.status !== SessionStatus.PAUSED) {
-      return res.status(400).json({
-        success: false,
-        error: `Session must be 'paused' to resume, current: ${session.status}`,
-      });
-    }
-
-    await sessionService.resumeSession();
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: 'Session resumed' });
-  } catch (error) {
-    console.error('Error resuming session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * POST /api/sessions/:id/stop
- */
-router.post('/:id/stop', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const session = await prisma().session.findUnique({ where: { id } });
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    if (!['active', 'paused', 'finishing'].includes(session.status)) {
-      return res.status(400).json({
-        success: false,
-        error: `Session must be active/paused/finishing to stop, current: ${session.status}`,
-      });
-    }
-
-    await sessionService.stopSession();
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: 'Session stopped' });
-  } catch (error) {
-    console.error('Error stopping session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * POST /api/sessions/:id/reset
- * Reset session to ready
- * - Practice: soft delete laps (for stats)
- * - Qualif/Race: hard delete laps
- */
-router.post('/:id/reset', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    await sessionService.resetSession(id);
-
-    const updatedSession = await prisma().session.findUnique({
-      where: { id },
-      include: { track: true, championship: true, drivers: { include: { driver: true, car: true } } },
-    });
-
-    res.json({ success: true, data: updatedSession, message: 'Session reset' });
-  } catch (error) {
-    console.error('Error resetting session:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-/**
- * GET /api/sessions/:id/leaderboard
- */
-router.get('/:id/leaderboard', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // If this is the active session, return live data
     if (sessionService.activeSessionId === id) {
       return res.json({ success: true, data: sessionService.getLeaderboard() });
     }
-
-    // Otherwise calculate from DB
-    const session = await prisma().session.findUnique({
-      where: { id },
-      include: { drivers: { include: { driver: true, car: true } } },
-    });
-
-    if (!session) {
-      return res.status(404).json({ success: false, error: 'Session not found' });
-    }
-
-    const entries = [];
-    for (const sd of session.drivers) {
-      const laps = await prisma().lap.findMany({
-        where: { sessionId: id, controller: sd.controller, deletedAt: null },
-        orderBy: { timestamp: 'desc' },
-      });
-
-      const entry = {
-        controller: sd.controller,
-        driverId: sd.driverId,
-        driver: sd.driver,
-        car: sd.car,
-        gridPos: sd.gridPos,
-        totalLaps: laps.length,
-        totalTime: laps.reduce((sum, lap) => sum + Math.round(lap.lapTime), 0),
-        bestLapTime: laps.length > 0 ? Math.min(...laps.map((l) => l.lapTime)) : null,
-        lastLapTime: laps.length > 0 ? laps[0].lapTime : null,
-      };
-
-      // Include lap history for balancing sessions (needed for chart)
-      if (session.type === SessionType.BALANCING) {
-        const sortedLaps = [...laps].sort((a, b) => a.lapNumber - b.lapNumber);
-        entry.laps = sortedLaps.map((l) => ({
-          lapNumber: l.lapNumber,
-          lapTime: Math.round(l.lapTime),
-        }));
-      }
-
-      entries.push(entry);
-    }
-
-    // Calculate gaps and positions
-    const sortedEntries = SessionService.calculateDriverGaps(entries, session.type);
-
-    res.json({ success: true, data: sortedEntries });
-  } catch (error) {
-    console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+    const session = await findSession(id, { drivers: withPeople });
+    if (!session) return notFound(res);
+    res.json({ success: true, data: await storedLeaderboard(prisma(), session) });
+  })
+);
 
 export default router;

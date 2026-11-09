@@ -265,3 +265,30 @@ export async function purgeChampionship(prisma, championshipId) {
     prisma.championship.delete({ where: { id: championshipId } }),
   ]);
 }
+
+/** Restore a session with its entries, laps and records hidden by the same deletion. */
+export async function restoreSession(prisma, sessionId) {
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) throw new Error('Session not found');
+  const { deletedAt } = session;
+  const restored = { deletedAt: null };
+  await prisma.$transaction([
+    prisma.session.update({ where: { id: sessionId }, data: restored }),
+    ...(deletedAt
+      ? [
+          prisma.sessionDriver.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+          prisma.lap.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+          prisma.trackRecord.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+        ]
+      : []),
+  ]);
+}
+
+/** Erase a session for good, its laps and entries first. */
+export async function purgeSession(prisma, sessionId) {
+  await prisma.$transaction([
+    prisma.lap.deleteMany({ where: { sessionId } }),
+    prisma.sessionDriver.deleteMany({ where: { sessionId } }),
+    prisma.session.delete({ where: { id: sessionId } }),
+  ]);
+}
