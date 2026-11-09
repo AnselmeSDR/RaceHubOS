@@ -1,5 +1,5 @@
 import { SessionStatus, SessionType } from '@racehubos/shared'
-import { isLiveStatus, leaderboardSortBy, toLeaderboardEntries } from './leaderboardEntries'
+import { fastestLapOf, isLiveStatus, leaderboardSortBy, maxLapsOf, toLeaderboardEntries } from './leaderboardEntries'
 
 test('a session is live while active, paused or finishing', () => {
   expect([SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.FINISHING].every(isLiveStatus)).toBe(true)
@@ -67,4 +67,21 @@ describe('toLeaderboardEntries', () => {
     const [entry] = toLeaderboardEntries([{ id: 'a', position: 1 }])
     expect(entry.hasFastestLap).toBeFalsy()
   })
+
+  test('position changes are kept for a live leaderboard only', () => {
+    const rows = [
+      { id: 'a', position: 1, positionDelta: 2 },
+      { id: 'b', position: 2 },
+    ]
+    expect(toLeaderboardEntries(rows).map((e) => e.positionDelta)).toEqual([0, 0])
+    expect(toLeaderboardEntries(rows, { liveDeltas: true }).map((e) => e.positionDelta)).toEqual([2, 0])
+  })
+})
+
+test('the most laps completed and the fastest lap, none before the first', () => {
+  expect(maxLapsOf([])).toBe(0)
+  expect(fastestLapOf([])).toBeNull()
+  const rows = [{ totalLaps: 4, bestLapTime: 9100 }, { totalLaps: 6, bestLapTime: 8900 }, { bestLapTime: 0 }]
+  expect(maxLapsOf(rows)).toBe(6)
+  expect(fastestLapOf(rows)).toBe(8900)
 })

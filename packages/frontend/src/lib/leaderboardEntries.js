@@ -4,10 +4,10 @@ import { RUNNING_SESSION_STATUSES, SessionType } from '@racehubos/shared'
 export const isLiveStatus = (status) => RUNNING_SESSION_STATUSES.includes(status)
 
 /**
- * A stored leaderboard turned into the entries the session context gives for a live session,
- * sorted by position (unplaced last), the fastest lap flagged.
+ * A leaderboard turned into the entries shown by the boards, sorted by position (unplaced last),
+ * the fastest lap flagged. Position changes are kept only for a live leaderboard (`liveDeltas`).
  */
-export function toLeaderboardEntries(leaderboard) {
+export function toLeaderboardEntries(leaderboard, { liveDeltas = false } = {}) {
   if (!leaderboard?.length) return []
   const allBestLaps = leaderboard.map((p) => p.bestLapTime).filter((t) => t && t > 0)
   const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
@@ -26,7 +26,7 @@ export function toLeaderboardEntries(leaderboard) {
         gap: p.gap ?? null,
       },
       position: p.position || 0,
-      positionDelta: 0,
+      positionDelta: liveDeltas ? p.positionDelta || 0 : 0,
       hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
       isDNF: p.isDNF || false,
       laps: p.laps || [],
@@ -38,4 +38,13 @@ export function toLeaderboardEntries(leaderboard) {
 export function leaderboardSortBy(sessionType, practiceSortBy) {
   if (sessionType === SessionType.PRACTICE) return practiceSortBy
   return sessionType === SessionType.QUALIF ? 'bestLap' : 'race'
+}
+
+/** The most laps any driver has completed, 0 before the first. */
+export const maxLapsOf = (leaderboard) => Math.max(0, ...leaderboard.map((p) => p.totalLaps || 0))
+
+/** The fastest lap of the leaderboard, null before the first. */
+export function fastestLapOf(leaderboard) {
+  const times = leaderboard.map((p) => p.bestLapTime).filter((t) => t && t > 0)
+  return times.length > 0 ? Math.min(...times) : null
 }
