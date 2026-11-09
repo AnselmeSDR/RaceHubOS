@@ -15,7 +15,8 @@ export default function CarFormModal({ car, onClose }) {
     initial: {
       brand: car?.brand || '',
       model: car?.model || '',
-      year: car?.year || new Date().getFullYear(),
+      // A new car starts at this year; an existing one keeps its year, even none
+      year: car ? (car.year ?? null) : new Date().getFullYear(),
       color: car?.color || '#22C55E',
       maxSpeed: car?.maxSpeed || 100,
       brakeForce: car?.brakeForce || 50,
@@ -53,7 +54,7 @@ export default function CarFormModal({ car, onClose }) {
         label={t('fields.year')}
         type="number"
         value={formData.year}
-        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
+        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || null }))}
       />
       <PhotoUploadField
         value={formData.img}

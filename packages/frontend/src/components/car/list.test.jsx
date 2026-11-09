@@ -139,8 +139,8 @@ describe('CarFormModal', () => {
 
     await user.type(field('Brand'), 'Ferrari')
     await user.type(field('Model'), 'F40')
-    // Emptying the year brings this year back: type over it instead
-    await user.type(field('Year'), '1987', { initialSelectionStart: 0, initialSelectionEnd: 4 })
+    await user.clear(field('Year'))
+    await user.type(field('Year'), '1987')
     await user.type(field('Motor'), 'S-Can')
     await user.type(field('Weight (g)'), '85')
     await user.type(field('Notes'), 'Fast')
@@ -166,10 +166,20 @@ describe('CarFormModal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  test('an empty year falls back to this year', async () => {
+  test('the year can be emptied, and is saved empty', async () => {
     render(<CarFormModal car={car} onClose={vi.fn()} />)
+    expect(field('Year')).toHaveValue(1973)
     await userEvent.clear(field('Year'))
-    expect(field('Year')).toHaveValue(new Date().getFullYear())
+    expect(field('Year')).toHaveValue(null)
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).year).toBeNull()
+  })
+
+  test('a car without a year is not given this one', async () => {
+    render(<CarFormModal car={{ ...car, year: null }} onClose={vi.fn()} />)
+    expect(field('Year')).toHaveValue(null)
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).year).toBeNull()
   })
 
   test('editing a car keeps its values and saves its settings', async () => {
