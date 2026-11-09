@@ -177,29 +177,6 @@
     "deletedTrack": "{{name}} (supprimé)",
     "finishedLocked": "Championnat terminé : la configuration est verrouillée. Rouvrez-le pour la modifier."
   },
-  "sessionConfigModal": {
-    "title": "Configuration Session",
-    "name": "Nom",
-    "type": "Type",
-    "duration": "Durée (minutes)",
-    "maxLaps": "Max tours",
-    "gracePeriod": "Grace period (sec)",
-    "controllerConfig": "Configuration Controllers",
-    "copyFromPractice": "Copier depuis EL",
-    "table": {
-      "ctrl": "Ctrl",
-      "driver": "Pilote",
-      "car": "Voiture",
-      "grid": "Grille"
-    },
-    "status": "Statut",
-    "draft": "Brouillon",
-    "incompleteConfig": "Configuration incomplète",
-    "incompleteDriverNoCar": "Ctrl {{n}}: pilote sans voiture",
-    "incompleteCarNoDriver": "Ctrl {{n}}: voiture sans pilote",
-    "completeToReady": "Complétez la config pour passer en \"Prêt\"",
-    "reset": "Réinitialiser"
-  },
   "wizard": {
     "title": "Nouveau championnat auto",
     "steps": {

@@ -177,29 +177,6 @@
     "deletedTrack": "{{name}} (gelöscht)",
     "finishedLocked": "Meisterschaft beendet: Die Konfiguration ist gesperrt. Öffne sie wieder, um Änderungen vorzunehmen."
   },
-  "sessionConfigModal": {
-    "title": "Sitzung konfigurieren",
-    "name": "Name",
-    "type": "Typ",
-    "duration": "Dauer (Minuten)",
-    "maxLaps": "Max. Runden",
-    "gracePeriod": "Nachlaufzeit (s)",
-    "controllerConfig": "Reglerzuordnung",
-    "copyFromPractice": "Aus Training übernehmen",
-    "table": {
-      "ctrl": "Regler",
-      "driver": "Fahrer",
-      "car": "Auto",
-      "grid": "Startplatz"
-    },
-    "status": "Status",
-    "draft": "Entwurf",
-    "incompleteConfig": "Zuordnung unvollständig",
-    "incompleteDriverNoCar": "Regler {{n}}: Fahrer ohne Auto",
-    "incompleteCarNoDriver": "Regler {{n}}: Auto ohne Fahrer",
-    "completeToReady": "Vervollständige die Zuordnung für den Status „Bereit“",
-    "reset": "Zurücksetzen"
-  },
   "wizard": {
     "title": "Neue automatische Meisterschaft",
     "steps": {

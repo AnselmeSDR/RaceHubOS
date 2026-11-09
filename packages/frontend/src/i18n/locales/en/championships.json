@@ -177,29 +177,6 @@
     "deletedTrack": "{{name}} (deleted)",
     "finishedLocked": "Championship finished: the configuration is locked. Reopen it to make changes."
   },
-  "sessionConfigModal": {
-    "title": "Session Configuration",
-    "name": "Name",
-    "type": "Type",
-    "duration": "Duration (minutes)",
-    "maxLaps": "Max laps",
-    "gracePeriod": "Grace period (sec)",
-    "controllerConfig": "Controllers Configuration",
-    "copyFromPractice": "Copy from FP",
-    "table": {
-      "ctrl": "Ctrl",
-      "driver": "Driver",
-      "car": "Car",
-      "grid": "Grid"
-    },
-    "status": "Status",
-    "draft": "Draft",
-    "incompleteConfig": "Incomplete configuration",
-    "incompleteDriverNoCar": "Ctrl {{n}}: driver without car",
-    "incompleteCarNoDriver": "Ctrl {{n}}: car without driver",
-    "completeToReady": "Complete the config to set as \"Ready\"",
-    "reset": "Reset"
-  },
   "wizard": {
     "title": "New auto championship",
     "steps": {
