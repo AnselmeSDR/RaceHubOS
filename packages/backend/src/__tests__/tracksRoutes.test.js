@@ -157,6 +157,29 @@ describe('DELETE and restore', () => {
     expect(await prisma.session.count({ where: { trackId: ring.id, deletedAt: null } })).toBe(2);
   });
 
+  test('a second delete erases a track with its championships, sessions and what they recorded', async () => {
+    const cup = await prisma.championship.create({ data: { name: 'Cup', season: '2026', trackId: ring.id } });
+    await prisma.championshipParticipant.create({ data: { championshipId: cup.id, driverId: ana.id } });
+    // A championship of Ring that also runs on Oval: that session goes with it
+    const away = await session(oval, { name: 'Away', championshipId: cup.id });
+    await lap(away, ben, gt, 9100);
+    await prisma.trackRecord.create({ data: { trackId: ring.id, driverId: ana.id, carId: gt.id, lapTime: 8100 } });
+    await prisma.controllerConfig.create({ data: { trackId: ring.id, controller: 0, driverId: ana.id, carId: gt.id } });
+    await api.delete(`/api/tracks/${ring.id}`);
+
+    const res = await api.delete(`/api/tracks/${ring.id}`);
+    expect(res.body).toEqual({ success: true, message: 'Track deleted successfully' });
+    expect(await prisma.track.findUnique({ where: { id: ring.id } })).toBeNull();
+    expect(await prisma.championship.count()).toBe(0);
+    expect(await prisma.championshipParticipant.count()).toBe(0);
+    expect(await prisma.trackRecord.count()).toBe(0);
+    expect(await prisma.controllerConfig.count()).toBe(0);
+    expect((await prisma.session.findMany({ orderBy: { name: 'asc' } })).map((s) => s.name)).toEqual(['Gone', 'S3']);
+    // Only S3's lap is left
+    expect(await prisma.lap.count()).toBe(1);
+    expect(await prisma.sessionDriver.count()).toBe(1);
+  });
+
   test('a second delete erases a track without records; 404 when missing; 500 on failure', async () => {
     await api.delete(`/api/tracks/${old.id}`);
     expect(await prisma.track.findUnique({ where: { id: old.id } })).toBeNull();

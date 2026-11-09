@@ -1,7 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { attachExtras } from '../addons/extras.js';
-import { softDeleteTrack, restoreTrack } from '../lib/softDelete.js';
+import { softDeleteTrack, restoreTrack, purgeTrack } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { findOr404, HttpError, route } from '../lib/http.js';
 import { addDeletionRoutes } from '../lib/entities/deletion.js';
@@ -86,7 +86,7 @@ addDeletionRoutes(router, {
   name: 'Track',
   model: prisma.track,
   hide: (id) => softDeleteTrack(prisma, id),
-  erase: (id) => prisma.track.delete({ where: { id } }),
+  erase: (id) => purgeTrack(prisma, id),
   restore: (id) => restoreTrack(prisma, id),
 });
 

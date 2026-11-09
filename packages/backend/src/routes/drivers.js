@@ -1,7 +1,7 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { attachExtras } from '../addons/extras.js';
-import { softDeleteDriver, restoreDriver } from '../lib/softDelete.js';
+import { softDeleteDriver, restoreDriver, purgeDriver } from '../lib/softDelete.js';
 import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
 import { uniqueConstraintFields } from '../lib/prismaErrors.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
@@ -166,7 +166,7 @@ addDeletionRoutes(router, {
   name: 'Driver',
   model: prisma.driver,
   hide: (id) => softDeleteDriver(prisma, id),
-  erase: (id) => prisma.driver.delete({ where: { id } }),
+  erase: (id) => purgeDriver(prisma, id),
   restore: (id) => restoreDriver(prisma, id),
 });
 

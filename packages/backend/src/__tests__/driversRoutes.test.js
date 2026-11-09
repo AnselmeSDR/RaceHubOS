@@ -237,6 +237,26 @@ describe('DELETE and restore', () => {
     expect(await prisma.lap.count({ where: { driverId: ana.id, deletedAt: null } })).toBe(2);
   });
 
+  test('a second delete erases a driver with everything recorded under them', async () => {
+    const championship = await prisma.championship.create({ data: { name: 'Cup', season: '2026' } });
+    await prisma.championshipParticipant.create({ data: { championshipId: championship.id, driverId: ana.id } });
+    await prisma.trackRecord.create({ data: { trackId: ring.id, driverId: ana.id, carId: gt.id, lapTime: 8100 } });
+    await prisma.controllerConfig.create({ data: { trackId: ring.id, controller: 0, driverId: ana.id, carId: gt.id } });
+    await api.delete(`/api/drivers/${ana.id}`);
+
+    const res = await api.delete(`/api/drivers/${ana.id}`);
+    expect(res.body).toEqual({ success: true, message: 'Driver deleted successfully' });
+    expect(await prisma.driver.findUnique({ where: { id: ana.id } })).toBeNull();
+    expect(await prisma.lap.count({ where: { driverId: ana.id } })).toBe(0);
+    expect(await prisma.sessionDriver.count({ where: { driverId: ana.id } })).toBe(0);
+    expect(await prisma.trackRecord.count()).toBe(0);
+    expect(await prisma.championshipParticipant.count()).toBe(0);
+    expect(await prisma.controllerConfig.count()).toBe(0);
+    // Ben's lap and entry stay
+    expect(await prisma.lap.count()).toBe(1);
+    expect(await prisma.sessionDriver.count()).toBe(1);
+  });
+
   test('a second delete erases a driver without records; 404 when missing; 500 on failure', async () => {
     await api.delete(`/api/drivers/${dan.id}`);
     expect(await prisma.driver.findUnique({ where: { id: dan.id } })).toBeNull();
