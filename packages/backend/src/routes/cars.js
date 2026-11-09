@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { attachExtras } from '../addons/extras.js';
 import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
@@ -49,7 +50,11 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: cars.map((c) => withImageUrl(c)),
+      data: await attachExtras(
+        prisma,
+        'car',
+        cars.map((c) => withImageUrl(c))
+      ),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -163,7 +168,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: withNestedImageUrls({ ...car, records }),
+      data: await attachExtras(prisma, 'car', withNestedImageUrls({ ...car, records })),
     });
   } catch (error) {
     console.error('Error fetching car:', error);

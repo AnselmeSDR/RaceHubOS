@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { attachExtras } from '../addons/extras.js';
 import { softDeleteTrack, restoreTrack } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
@@ -47,7 +48,11 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: tracks.map((t) => withImageUrl(t)),
+      data: await attachExtras(
+        prisma,
+        'track',
+        tracks.map((t) => withImageUrl(t))
+      ),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -124,7 +129,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: withNestedImageUrls(result),
+      data: await attachExtras(prisma, 'track', withNestedImageUrls(result)),
     });
   } catch (error) {
     console.error('Error fetching track:', error);

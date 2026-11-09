@@ -1,4 +1,5 @@
 import express from 'express';
+import { attachExtras } from '../addons/extras.js';
 import SessionService from '../services/SessionService.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
 import { SessionStatus, SessionType } from '@racehubos/shared';
@@ -103,7 +104,12 @@ router.get('/', async (req, res) => {
 
     const sessions = useDbSort ? sorted : sorted.slice(parsedOffset, parsedOffset + parsedLimit);
 
-    res.json({ success: true, data: sessions, total, hasMore: parsedOffset + parsedLimit < total });
+    res.json({
+      success: true,
+      data: await attachExtras(prisma(), 'session', sessions),
+      total,
+      hasMore: parsedOffset + parsedLimit < total,
+    });
   } catch (error) {
     console.error('Error fetching sessions:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -155,7 +161,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    res.json({ success: true, data: session });
+    res.json({ success: true, data: await attachExtras(prisma(), 'session', session) });
   } catch (error) {
     console.error('Error fetching session:', error);
     res.status(500).json({ success: false, error: error.message });

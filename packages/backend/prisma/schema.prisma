@@ -28,6 +28,7 @@ model Driver {
   controllerConfigs      ControllerConfig[]
   trackRecords           TrackRecord[]
   championshipParticipants ChampionshipParticipant[]
+  extras                   DriverExtra[]
 }
 
 model Car {
@@ -68,6 +69,7 @@ model Car {
   sessions                 SessionDriver[]
   controllerConfigs        ControllerConfig[]
   trackRecords             TrackRecord[]
+  extras                   CarExtra[]
 }
 
 model Track {
@@ -88,6 +90,7 @@ model Track {
   trackRecords      TrackRecord[]
   laps              Lap[]
   championships     Championship[]
+  extras            TrackExtra[]
 }
 
 model Team {
@@ -99,6 +102,7 @@ model Team {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   drivers   Driver[]
+  extras    TeamExtra[]
 }
 
 model Championship {
@@ -120,6 +124,7 @@ model Championship {
   sessions          Session[]
   participants      ChampionshipParticipant[]
   track             Track?                   @relation(fields: [trackId], references: [id])
+  extras            ChampionshipExtra[]
 }
 
 model Session {
@@ -154,6 +159,7 @@ model Session {
   track          Track           @relation(fields: [trackId], references: [id])
   drivers        SessionDriver[]
   trackRecords   TrackRecord[]
+  extras         SessionExtra[]
 }
 
 model SessionDriver {
@@ -270,4 +276,73 @@ model Preference {
   key       String   @id
   value     String   // JSON
   updatedAt DateTime @updatedAt
+}
+
+// Add-on fields on core records — docs/ADDONS.md § Extra fields on core records.
+// One row per record and per add-on, so an add-on can only ever overwrite its own fields.
+
+model DriverExtra {
+  driverId  String
+  addon     String   // add-on id
+  data      String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt DateTime @default(now()) @updatedAt
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@id([driverId, addon])
+  @@index([addon])
+}
+
+model CarExtra {
+  carId     String
+  addon     String   // add-on id
+  data      String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt DateTime @default(now()) @updatedAt
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@id([carId, addon])
+  @@index([addon])
+}
+
+model TrackExtra {
+  trackId   String
+  addon     String   // add-on id
+  data      String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt DateTime @default(now()) @updatedAt
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, addon])
+  @@index([addon])
+}
+
+model TeamExtra {
+  teamId    String
+  addon     String   // add-on id
+  data      String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt DateTime @default(now()) @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, addon])
+  @@index([addon])
+}
+
+model ChampionshipExtra {
+  championshipId String
+  addon          String       // add-on id
+  data           String       @default("{}") // JSON object: this add-on's fields only
+  updatedAt      DateTime     @default(now()) @updatedAt
+  championship   Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+
+  @@id([championshipId, addon])
+  @@index([addon])
+}
+
+model SessionExtra {
+  sessionId String
+  addon     String   // add-on id
+  data      String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt DateTime @default(now()) @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, addon])
+  @@index([addon])
 }

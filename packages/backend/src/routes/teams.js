@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { attachExtras } from '../addons/extras.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 
 const router = express.Router();
@@ -36,7 +37,11 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: teams.map((t) => withNestedImageUrls(t)),
+      data: await attachExtras(
+        prisma,
+        'team',
+        teams.map((t) => withNestedImageUrls(t))
+      ),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -74,7 +79,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: withNestedImageUrls(team),
+      data: await attachExtras(prisma, 'team', withNestedImageUrls(team)),
     });
   } catch (error) {
     console.error('Error fetching team:', error);

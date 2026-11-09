@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { attachExtras } from '../addons/extras.js';
 import { softDeleteDriver, restoreDriver } from '../lib/softDelete.js';
 import { getReferenceDriver, setReferenceDriver, createStig, migrateBalancingLaps } from '../lib/referenceDriver.js';
 import { uniqueConstraintFields } from '../lib/prismaErrors.js';
@@ -61,7 +62,11 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: drivers.map((d) => withNestedImageUrls(d)),
+      data: await attachExtras(
+        prisma,
+        'driver',
+        drivers.map((d) => withNestedImageUrls(d))
+      ),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -238,7 +243,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: withNestedImageUrls({ ...driver, records }),
+      data: await attachExtras(prisma, 'driver', withNestedImageUrls({ ...driver, records })),
     });
   } catch (error) {
     console.error('Error fetching driver:', error);

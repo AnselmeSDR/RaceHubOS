@@ -291,14 +291,14 @@ car_42   pit-advice      {"tankSize":15}
 
 ```js
 const { tyre } = await ctx.extra.get('car', carId) // {} when nothing is stored
-await ctx.extra.set('car', carId, { grip: 4 }) // merged into this add-on's fields
+await ctx.extra.set('car', carId, { grip: 4 }) // merged: nested objects too, null removes a field
 await ctx.extra.remove('car', carId) // this add-on's row only
 const byCar = await ctx.extra.all('car') // { [carId]: data } for this add-on
 ```
 
 - **Each add-on only touches its own rows.** `ctx.extra` fills in the add-on id itself. `ctx.prisma` also adds `addon = <id>` to every query on the `*Extra` tables, so even a careless `deleteMany()` can't erase another add-on's fields.
-- **The fields follow the record.** Deleting a car deletes its extras, the core backups include them, and the core API returns them with the record: `GET /api/cars/:id` → `{ …, extras: { "tyre-catalog": { … } } }`.
-- **From the web side**, read them from that `extras` field and write them with `PUT /api/addons/<id>/extras/car/:carId` (JSON body, merged like `set`).
+- **The fields follow the record.** A car deleted for good takes its extras with it, while a car in the bin keeps them so it can be restored. The core backups include them, and the core API returns them with the record, in lists and details: `GET /api/cars/:id` → `{ …, extras: { "tyre-catalog": { … } } }`.
+- **From the web side**, read them from that `extras` field. Write them with `PUT /api/addons/<id>/extras/car/:carId` (JSON body, merged like `set`), and delete them with `DELETE` on the same path.
 - **No index on these fields.** That's fine for tens or hundreds of records. For data you need to search or sort quickly, use your own database.
 
 The record types are `car`, `driver`, `track`, `team`, `session` and `championship`.

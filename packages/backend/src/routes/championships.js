@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
+import { attachExtras } from '../addons/extras.js';
 import { withImageUrl } from '../utils/imageUrl.js';
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared';
 import { championshipWorkbook, championshipsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
@@ -81,7 +82,7 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      data: championships,
+      data: await attachExtras(prisma, 'championship', championships),
       total,
       hasMore: parsedOffset + parsedLimit < total,
     });
@@ -178,7 +179,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       success: true,
-      data: championship,
+      data: await attachExtras(prisma, 'championship', championship),
     });
   } catch (error) {
     console.error('Error fetching championship:', error);
