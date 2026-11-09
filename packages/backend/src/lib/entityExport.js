@@ -1,19 +1,19 @@
-import ExcelJS from 'exceljs';
-import { CAR_NUMBER_SPECS, CAR_TEXT_SPECS, SessionType, toLevel } from '@racehubos/shared';
+import { SessionType, toLevel } from '@racehubos/shared';
 import {
   DATE_FORMAT,
   DURATION_FORMAT,
-  SESSION_TYPE_LABELS,
-  TAB_COLORS,
   addField,
+  addFields,
   addTable,
   appVersion,
   duration,
   newSheet,
+  newWorkbook,
   sheetNameOf,
   title,
-  CAR_SPEC_LABELS,
-} from './excelExport.js';
+} from './excel/format.js';
+import { CAR_SPECS, CAR_SPEC_LABELS, SESSION_TYPE_LABELS, TAB_COLORS, carLabel } from './excel/labels.js';
+import { averagePosition, emptyRecord, tallyEntry } from './excel/record.js';
 
 /**
  * Excel export centred on one driver or one car.
@@ -26,53 +26,37 @@ import {
  * carry each session's best lap: the laps themselves are never loaded.
  */
 
-const EMPTY = {
-  sessions: 0,
-  races: 0,
-  wins: 0,
-  podiums: 0,
-  dnf: 0,
-  laps: 0,
-  totalTime: 0,
-  bestLap: null,
-  positions: [],
-};
-
-function accumulate(target, entry, session) {
-  target.sessions += 1;
-  target.laps += entry.totalLaps ?? 0;
-  target.totalTime += entry.totalTime ?? 0;
-  if (entry.isDNF) target.dnf += 1;
-  if (entry.bestLapTime && (target.bestLap == null || entry.bestLapTime < target.bestLap)) {
-    target.bestLap = entry.bestLapTime;
+/** Adds an entry to `record`, its best lap included. */
+function accumulate(record, entry) {
+  tallyEntry(record, entry, entry.session);
+  if (entry.bestLapTime && (record.bestLap == null || entry.bestLapTime < record.bestLap)) {
+    record.bestLap = entry.bestLapTime;
   }
-  if (session.type === SessionType.RACE) {
-    target.races += 1;
-    if (entry.finalPos != null) target.positions.push(entry.finalPos);
-    if (entry.finalPos === 1) target.wins += 1;
-    if (entry.finalPos != null && entry.finalPos <= 3) target.podiums += 1;
-  }
-  return target;
+  return record;
 }
 
-/** Groups entries by something, and totals each group. */
+/** Groups entries by something, and totals each group, most wins first. */
 function groupBy(entries, keyOf, labelOf) {
   const groups = new Map();
-
   for (const entry of entries) {
     const key = keyOf(entry);
     if (key == null) continue;
-
-    if (!groups.has(key)) {
-      groups.set(key, { label: labelOf(entry), ...structuredClone(EMPTY) });
-    }
-    accumulate(groups.get(key), entry, entry.session);
+    if (!groups.has(key)) groups.set(key, { label: labelOf(entry), ...emptyRecord() });
+    accumulate(groups.get(key), entry);
   }
   return [...groups.values()].sort((a, b) => b.wins - a.wins || b.sessions - a.sessions);
 }
 
-const averagePosition = (s) =>
-  s.positions.length ? s.positions.reduce((a, b) => a + b, 0) / s.positions.length : null;
+/** The breakdowns a record splits into: heading, grouping key, group label, column header. */
+const BY_CHAMPIONSHIP = [
+  'Par championnat',
+  (e) => e.session.championshipId ?? 'hors-championnat',
+  (e) => e.session.championship?.name ?? 'Hors championnat',
+  'Championnat',
+];
+const BY_TRACK = ['Par circuit', (e) => e.session.trackId, (e) => e.session.track?.name ?? null, 'Circuit'];
+const BY_CAR = ['Par voiture', (e) => e.carId, (e) => carLabel(e.car), 'Voiture'];
+const BY_DRIVER = ['Par pilote', (e) => e.driverId, (e) => e.driver?.name ?? null, 'Pilote'];
 
 /** The record columns shared by every breakdown table. */
 const recordColumns = (label, width = 26) => [
@@ -87,26 +71,18 @@ const recordColumns = (label, width = 26) => [
   { header: 'Meilleur tour', value: (g) => duration(g.bestLap), width: 13, numFmt: DURATION_FORMAT },
 ];
 
+const sessionDate = (session) => new Date(session.startedAt ?? session.createdAt);
+
 /** One line per session: where, when, in what, and how it ended. */
 function addSessionList(sheet, entries, partnerHeader, partnerOf, ownerHeader = null) {
   title(sheet, `Sessions (${entries.length})`);
-
-  const sorted = [...entries].sort((a, b) => {
-    const left = a.session.startedAt ?? a.session.createdAt;
-    const right = b.session.startedAt ?? b.session.createdAt;
-    return new Date(right) - new Date(left);
-  });
+  const sorted = [...entries].sort((a, b) => sessionDate(b.session) - sessionDate(a.session));
 
   addTable(
     sheet,
     [
       ...(ownerHeader ? [{ header: ownerHeader, value: (e) => e.owner ?? null, width: 24 }] : []),
-      {
-        header: 'Date',
-        value: (e) => (e.session.startedAt ? new Date(e.session.startedAt) : new Date(e.session.createdAt)),
-        width: 18,
-        numFmt: DATE_FORMAT,
-      },
+      { header: 'Date', value: (e) => sessionDate(e.session), width: 18, numFmt: DATE_FORMAT },
       { header: 'Session', value: (e) => e.session.name ?? SESSION_TYPE_LABELS[e.session.type] ?? null, width: 22 },
       { header: 'Type', value: (e) => SESSION_TYPE_LABELS[e.session.type] ?? e.session.type, width: 14 },
       { header: 'Championnat', value: (e) => e.session.championship?.name ?? null, width: 24 },
@@ -125,17 +101,17 @@ function addSessionList(sheet, entries, partnerHeader, partnerOf, ownerHeader = 
   );
 }
 
+/** The overall record of `entries`, with where and when the best lap was set. */
 function addRecord(sheet, entries) {
-  const overall = entries.reduce((acc, e) => accumulate(acc, e, e.session), structuredClone(EMPTY));
+  const overall = entries.reduce(accumulate, emptyRecord());
   const bestLapEntry = entries.reduce(
     (best, e) => (e.bestLapTime && (!best || e.bestLapTime < best.bestLapTime) ? e : best),
     null
   );
-
   const championships = new Set(entries.map((e) => e.session.championshipId).filter(Boolean));
   const byType = (type) => entries.filter((e) => e.session.type === type).length;
 
-  for (const [label, value, numFmt] of [
+  addFields(sheet, [
     ['Sessions', overall.sessions],
     ['dont essais libres', byType(SessionType.PRACTICE)],
     ['dont qualifications', byType(SessionType.QUALIF)],
@@ -151,22 +127,18 @@ function addRecord(sheet, entries) {
     ['Meilleur tour', duration(overall.bestLap), DURATION_FORMAT],
     ['signé sur', bestLapEntry?.session.track?.name ?? null],
     ['le', bestLapEntry?.session.startedAt ? new Date(bestLapEntry.session.startedAt) : null, DATE_FORMAT],
-  ]) {
-    addField(sheet, label, value, numFmt);
-  }
-  return overall;
+  ]);
 }
 
-const carLabel = (car) => (car ? `${car.brand} ${car.model}` : null);
+/**
+ * The sheet of a driver or a car (`owner`): its identity `fields`, its record, then how it breaks
+ * down. Returns the entries it covers.
+ */
+function addOwnerSheet(workbook, taken, { name, fields, entries, breakdowns }) {
+  const sheet = newSheet(workbook, sheetNameOf(name, taken), TAB_COLORS.reference);
 
-/** A driver's own sheet: identity, record, then how it breaks down. */
-function addDriverSheet(workbook, driver, taken) {
-  const entries = (driver.sessions ?? []).filter((e) => e.session);
-  const sheet = newSheet(workbook, sheetNameOf(driver.name, taken), TAB_COLORS.reference);
-
-  title(sheet, driver.name);
-  addField(sheet, 'Numéro', driver.number ?? null);
-  addField(sheet, 'Équipe', driver.team?.name ?? null);
+  title(sheet, name);
+  addFields(sheet, fields);
   addField(sheet, 'Exporté le', new Date(), DATE_FORMAT);
   addField(sheet, 'Version RaceHubOS', appVersion());
   sheet.addRow([]);
@@ -177,146 +149,78 @@ function addDriverSheet(workbook, driver, taken) {
   sheet.getColumn(2).width = 30;
   sheet.addRow([]);
 
-  const breakdowns = [
-    [
-      'Par championnat',
-      groupBy(
-        entries,
-        (e) => e.session.championshipId ?? 'hors-championnat',
-        (e) => e.session.championship?.name ?? 'Hors championnat'
-      ),
-      'Championnat',
-    ],
-    [
-      'Par circuit',
-      groupBy(
-        entries,
-        (e) => e.session.trackId,
-        (e) => e.session.track?.name ?? null
-      ),
-      'Circuit',
-    ],
-    [
-      'Par voiture',
-      groupBy(
-        entries,
-        (e) => e.carId,
-        (e) => carLabel(e.car)
-      ),
-      'Voiture',
-    ],
-  ];
-  for (const [heading, groups, label] of breakdowns) {
+  for (const [heading, keyOf, labelOf, header] of breakdowns) {
+    const groups = groupBy(entries, keyOf, labelOf);
     if (groups.length === 0) continue;
     title(sheet, heading);
-    addTable(sheet, recordColumns(label), groups);
+    addTable(sheet, recordColumns(header), groups);
     sheet.addRow([]);
   }
+}
 
-  return entries;
+/**
+ * One sheet per owner (`sheetOf` describes it), then a single list holding every session, each
+ * with its `partner` — the car a driver drove, the driver who drove a car.
+ */
+function buildOwnersWorkbook(owners, sheetOf, { partnerHeader, partnerOf, ownerHeader }) {
+  const workbook = newWorkbook();
+  const taken = new Set();
+  const all = owners.flatMap((owner) => {
+    const sheet = sheetOf(owner);
+    const entries = (owner.sessions ?? []).filter((e) => e.session);
+    addOwnerSheet(workbook, taken, { ...sheet, entries });
+    return entries.map((entry) => ({ ...entry, owner: sheet.name }));
+  });
+
+  const list = newSheet(workbook, sheetNameOf('Sessions', taken), TAB_COLORS.default);
+  addSessionList(list, all, partnerHeader, partnerOf, owners.length > 1 ? ownerHeader : null);
+  return workbook;
+}
+
+const driverSheet = (driver) => ({
+  name: driver.name,
+  fields: [
+    ['Numéro', driver.number ?? null],
+    ['Équipe', driver.team?.name ?? null],
+  ],
+  breakdowns: [BY_CHAMPIONSHIP, BY_TRACK, BY_CAR],
+});
+
+const carSheet = (car) => ({
+  name: carLabel(car),
+  fields: [
+    ['Année', car.year ?? null],
+    ['Vitesse', `${toLevel(car.maxSpeed)}/10`],
+    ['Freinage', `${toLevel(car.brakeForce)}/10`],
+    ['Réservoir', `${toLevel(car.fuelCapacity)}/10`],
+    // Ce qui est monté sur la voiture, quand c'est renseigné
+    ...CAR_SPECS.map((field) => [CAR_SPEC_LABELS[field] ?? field, car[field] ?? null]),
+  ],
+  breakdowns: [BY_DRIVER, BY_CHAMPIONSHIP, BY_TRACK],
+});
+
+/** One sheet per driver, then a single list holding every session. */
+export function buildDriversWorkbook(drivers) {
+  return buildOwnersWorkbook(drivers, driverSheet, {
+    partnerHeader: 'Voiture',
+    partnerOf: (e) => carLabel(e.car),
+    ownerHeader: 'Pilote',
+  });
 }
 
 export function buildDriverWorkbook(driver) {
   return buildDriversWorkbook([driver]);
 }
 
-/** One sheet per driver, then a single list holding every session. */
-export function buildDriversWorkbook(drivers) {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = `RaceHubOS ${appVersion()}`;
-  workbook.created = new Date();
-
-  const taken = new Set();
-  const all = drivers.flatMap((driver) =>
-    addDriverSheet(workbook, driver, taken).map((entry) => ({ ...entry, owner: driver.name }))
-  );
-
-  const list = newSheet(workbook, sheetNameOf('Sessions', taken), TAB_COLORS.default);
-  addSessionList(list, all, 'Voiture', (e) => carLabel(e.car), drivers.length > 1 ? 'Pilote' : null);
-
-  return workbook;
-}
-
-function addCarSheet(workbook, car, taken) {
-  const entries = (car.sessions ?? []).filter((e) => e.session);
-  const label = carLabel(car);
-  const sheet = newSheet(workbook, sheetNameOf(label, taken), TAB_COLORS.reference);
-
-  title(sheet, label);
-  addField(sheet, 'Année', car.year ?? null);
-  addField(sheet, 'Vitesse', `${toLevel(car.maxSpeed)}/10`);
-  addField(sheet, 'Freinage', `${toLevel(car.brakeForce)}/10`);
-  addField(sheet, 'Réservoir', `${toLevel(car.fuelCapacity)}/10`);
-  // Ce qui est monté sur la voiture, quand c'est renseigné
-  for (const field of [...CAR_TEXT_SPECS, ...CAR_NUMBER_SPECS]) {
-    addField(sheet, CAR_SPEC_LABELS[field] ?? field, car[field] ?? null);
-  }
-  addField(sheet, 'Exporté le', new Date(), DATE_FORMAT);
-  addField(sheet, 'Version RaceHubOS', appVersion());
-  sheet.addRow([]);
-
-  title(sheet, 'Palmarès');
-  addRecord(sheet, entries);
-  sheet.getColumn(1).width = 24;
-  sheet.getColumn(2).width = 30;
-  sheet.addRow([]);
-
-  const breakdowns = [
-    [
-      'Par pilote',
-      groupBy(
-        entries,
-        (e) => e.driverId,
-        (e) => e.driver?.name ?? null
-      ),
-      'Pilote',
-    ],
-    [
-      'Par championnat',
-      groupBy(
-        entries,
-        (e) => e.session.championshipId ?? 'hors-championnat',
-        (e) => e.session.championship?.name ?? 'Hors championnat'
-      ),
-      'Championnat',
-    ],
-    [
-      'Par circuit',
-      groupBy(
-        entries,
-        (e) => e.session.trackId,
-        (e) => e.session.track?.name ?? null
-      ),
-      'Circuit',
-    ],
-  ];
-  for (const [heading, groups, header] of breakdowns) {
-    if (groups.length === 0) continue;
-    title(sheet, heading);
-    addTable(sheet, recordColumns(header), groups);
-    sheet.addRow([]);
-  }
-
-  return entries;
+/** One sheet per car, then a single list holding every session. */
+export function buildCarsWorkbook(cars) {
+  return buildOwnersWorkbook(cars, carSheet, {
+    partnerHeader: 'Pilote',
+    partnerOf: (e) => e.driver?.name ?? null,
+    ownerHeader: 'Voiture',
+  });
 }
 
 export function buildCarWorkbook(car) {
   return buildCarsWorkbook([car]);
-}
-
-/** One sheet per car, then a single list holding every session. */
-export function buildCarsWorkbook(cars) {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = `RaceHubOS ${appVersion()}`;
-  workbook.created = new Date();
-
-  const taken = new Set();
-  const all = cars.flatMap((car) =>
-    addCarSheet(workbook, car, taken).map((entry) => ({ ...entry, owner: carLabel(car) }))
-  );
-
-  const list = newSheet(workbook, sheetNameOf('Sessions', taken), TAB_COLORS.default);
-  addSessionList(list, all, 'Pilote', (e) => e.driver?.name ?? null, cars.length > 1 ? 'Voiture' : null);
-
-  return workbook;
 }

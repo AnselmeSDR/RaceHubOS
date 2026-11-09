@@ -617,3 +617,114 @@ describe('caractéristiques des voitures engagées', () => {
     expect(header[header.length - 1]).toBe('Abandon');
   });
 });
+
+/** Une base ancienne ou une session à peine créée : rien de ce qui manque ne doit faire échouer l'export. */
+describe('données clairsemées', () => {
+  it("nomme une session sans nom ni type connu, et dit ce qu'elle ne sait pas", async () => {
+    const workbook = await reread(
+      buildSessionWorkbook({
+        id: 's-x',
+        name: '',
+        type: 'mystery',
+        status: 'odd',
+        fuelMode: 'ON',
+        track: null,
+        championship: null,
+      })
+    );
+    const sheet = workbook.getWorksheet('Session');
+
+    expect(rowValues(sheet, 1)[0]).toBe('Session');
+    expect(rowValues(sheet, findRow(sheet, 'Type'))[1]).toBe('mystery');
+    expect(rowValues(sheet, findRow(sheet, 'Statut'))[1]).toBe('odd');
+    expect(rowValues(sheet, findRow(sheet, 'Carburant'))[1]).toBe('activé');
+    expect(rowValues(sheet, findRow(sheet, 'Version Control Unit'))[1]).toBe('non communiquée');
+    expect(findRow(sheet, 'Circuit')).toBeNull();
+    expect(workbook.getWorksheet('Référence').rowCount).toBe(0);
+  });
+
+  it('laisse vides le pilote et la voiture absents, place sur la grille par manette', async () => {
+    const workbook = await reread(
+      buildSessionWorkbook(
+        session({
+          trackId: 'track-1',
+          track: null,
+          drivers: [
+            { id: 'a', controller: 3, totalLaps: 0, totalTime: 0, driver: null, car: null },
+            { id: 'b', controller: 1, gridPos: null, totalLaps: 1, totalTime: 9_000, driverId: 'd-9', carId: 'c-9' },
+          ],
+          laps: [
+            { id: 'l', lapNumber: 1, controller: 1, lapTime: 0, driverId: 'd-9', carId: 'c-9' },
+            { id: 'm', lapNumber: 2, controller: 1, lapTime: 9_000, driver: null, car: null },
+          ],
+        })
+      )
+    );
+    const sheet = workbook.getWorksheet('14h00');
+    const first = findRow(sheet, 'Engagements') + 3;
+
+    expect(rowValues(sheet, first).slice(0, 4)).toEqual([2, undefined, undefined, undefined]);
+    expect(rowValues(sheet, first + 1)[0]).toBe(4);
+    expect(rowValues(sheet, findRow(sheet, 'Tours') + 4).slice(0, 4)).toEqual([2, 2, undefined, undefined]);
+  });
+
+  it("donne au circuit le tour le plus rapide, sans voiture quand il n'en a pas", async () => {
+    const lap = (id, lapTime, carOf) => ({ id, lapNumber: 1, controller: 0, lapTime, driver: null, car: carOf });
+    const workbook = await reread(
+      buildSessionsWorkbook([
+        session({ laps: [lap('x', 0, null), lap('y', 9_000, null), lap('z', 9_500, car('c-1', 'R8 LMS'))] }),
+        session({ id: 's-2', name: 'Sans circuit', track: null, trackId: null }),
+      ])
+    );
+    const sheet = workbook.getWorksheet('Référence');
+    const row = rowValues(sheet, findRow(sheet, 'Circuits') + 3);
+
+    expect(row.slice(4, 6)).toEqual([1, 2]);
+    expect(row.slice(7)).toEqual([]);
+  });
+
+  it('lit un championnat sans nom, sans sessions, aux participants en partie inconnus', async () => {
+    const workbook = await reread(
+      buildChampionshipWorkbook({
+        id: 'c',
+        name: '',
+        season: '2026',
+        status: 'weird',
+        mode: 'manual',
+        participants: [{ driver: { name: 'Zoé' } }, { driver: null }],
+      })
+    );
+    const sheet = workbook.getWorksheet('Championnat');
+
+    expect(rowValues(sheet, findRow(sheet, 'Statut'))[1]).toBe('weird');
+    expect(rowValues(sheet, findRow(sheet, 'Mode'))[1]).toBe('manuel');
+    expect(rowValues(sheet, findRow(sheet, 'Participants (1)'))[1]).toBe('Zoé');
+    expect(rowValues(sheet, findRow(sheet, 'Sessions'))[1]).toBe(0);
+    expect(findRow(sheet, 'Classement pilotes')).toBeNull();
+  });
+
+  it('liste les réglages quand les sessions en ont couru plusieurs, garde ceux déclarés', async () => {
+    const workbook = await reread(
+      buildChampionshipWorkbook({
+        id: 'c',
+        name: 'Mixte',
+        season: '2026',
+        status: 'active',
+        mode: 'auto',
+        qualifMaxLaps: 5,
+        qualifMaxDuration: 120_000,
+        sessions: [
+          session({ id: 'r1', maxDuration: 300_000, maxLaps: 10 }),
+          session({ id: 'r2', name: 'R2', maxDuration: 600_000, maxLaps: 10 }),
+        ],
+      })
+    );
+    const sheet = workbook.getWorksheet('Mixte');
+
+    expect(rowValues(sheet, findRow(sheet, 'Durée de course'))[1]).toBe('300000, 600000');
+    expect(rowValues(sheet, findRow(sheet, 'Tours de course'))[1]).toBe(10);
+    expect(rowValues(sheet, findRow(sheet, 'Tours de qualification'))[1]).toBe(5);
+    expect(sheet.getRow(findRow(sheet, 'Durée de qualification')).getCell(2).numFmt).toBe('[m]:ss.000');
+    expect(rowValues(sheet, findRow(sheet, 'Mode'))[1]).toBe('automatique');
+  });
+});

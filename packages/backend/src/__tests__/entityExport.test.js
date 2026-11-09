@@ -243,3 +243,48 @@ describe("caractéristiques dans l'export", () => {
     expect(findRow(sheet, 'Poids (g)')).toBeNull();
   });
 });
+
+/** Une fiche à peine créée, ou des sessions dont il manque une partie. */
+describe('données clairsemées', () => {
+  it("donne une feuille à un pilote qui n'a jamais couru", async () => {
+    const workbook = await reread(buildDriverWorkbook({ id: 'd-2', name: 'Novice' }));
+    const sheet = workbook.getWorksheet('Novice');
+
+    expect(fieldValue(sheet, 'Sessions')).toBe(0);
+    expect(findRow(sheet, 'Numéro')).toBeNull();
+    expect(findRow(sheet, 'Par circuit')).toBeNull();
+    expect(rowValues(workbook.getWorksheet('Sessions'), 1)[0]).toBe('Sessions (0)');
+  });
+
+  it('range une session sans circuit, championnat, nom ni départ', async () => {
+    const bare = entry({
+      finalPos: null,
+      bestLapTime: null,
+      car: null,
+      carId: null,
+      driver: null,
+      driverId: null,
+      session: { id: 's-9', type: 'mystery', createdAt: new Date('2026-01-01T10:00:00Z') },
+    });
+    const workbook = await reread(buildDriverWorkbook(driver([bare, entry({ id: 2 })])));
+    const sheet = workbook.getWorksheet('Anselme SDR');
+
+    expect(rowValues(sheet, findRow(sheet, 'Par championnat') + 3)[0]).toBe('RING RUSH');
+    expect(rowValues(sheet, findRow(sheet, 'Par championnat') + 4)[0]).toBe('Hors championnat');
+    expect(rowValues(sheet, findRow(sheet, 'Par circuit') + 4)[0]).toBeUndefined();
+
+    const list = workbook.getWorksheet('Sessions');
+    expect(rowValues(list, 5).slice(1, 7)).toEqual([undefined, 'mystery', undefined, undefined, undefined, 1]);
+  });
+
+  it("une voiture sans année ni pilote connu n'a pas de ventilation par pilote", async () => {
+    const workbook = await reread(
+      buildCarWorkbook({ ...car('c-1', 'R8 LMS'), year: null, sessions: [entry({ driverId: null, driver: null })] })
+    );
+    const sheet = workbook.getWorksheet('Audi R8 LMS');
+
+    expect(findRow(sheet, 'Année')).toBeNull();
+    expect(findRow(sheet, 'Par pilote')).toBeNull();
+    expect(rowValues(workbook.getWorksheet('Sessions'), 4)[5]).toBeUndefined();
+  });
+});
