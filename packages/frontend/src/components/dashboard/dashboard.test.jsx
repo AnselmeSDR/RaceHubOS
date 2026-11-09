@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import i18n from '@/i18n'
-import { jsonReply } from '@/test/helpers'
+import { routeFetch as stubFetch } from '@/test/helpers'
 import ActiveSessionBanner from './ActiveSessionBanner'
 import DriverAvatar from './DriverAvatar'
 import DriverLeaderboardCard from './DriverLeaderboardCard'
@@ -31,19 +31,6 @@ function renderAt(ui) {
       <Location />
     </MemoryRouter>
   )
-}
-
-/** fetch answering each URL starting with a key of `routes` with its body (a 404 otherwise). */
-function stubFetch(routes) {
-  const mock = vi.fn(async (url) => {
-    const key = Object.keys(routes).find((k) => url.startsWith(k))
-    if (!key) return jsonReply({}, 404)
-    const body = routes[key]
-    if (body instanceof Error) throw body
-    return typeof body === 'number' ? jsonReply({}, body) : jsonReply(body)
-  })
-  vi.stubGlobal('fetch', mock)
-  return mock
 }
 
 const ana = { id: 1, name: 'Ana', color: '#FF0000' }
