@@ -34,7 +34,6 @@ export default function ChampionshipFormModal({ tracks, initialData, onFormChang
           name: formData.name,
           trackId: formData.trackId,
           season: new Date().getFullYear().toString(),
-          pointsSystem: '{}',
           sessionNames: sessionNames(),
         }),
       })

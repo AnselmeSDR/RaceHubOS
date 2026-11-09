@@ -124,9 +124,9 @@ describe('ChampionshipFormModal', () => {
       name: 'Cup',
       trackId: 't1',
       season: String(new Date().getFullYear()),
-      pointsSystem: '{}',
     })
     expect(body.sessionNames).toBeDefined()
+    expect(body).not.toHaveProperty('pointsSystem')
     expect(screen.getByText('Championship created successfully')).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
     act(() => vi.advanceTimersByTime(1500))
