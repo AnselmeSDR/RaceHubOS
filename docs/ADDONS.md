@@ -255,7 +255,7 @@ Everything in the frontend is importable through `@/`:
 | `@racehubos/shared`                             | session types, statuses, car specs                          |
 | `@addon/…`                                      | your own add-on's root (`@addon/web/components/Foo.jsx`)    |
 
-`useServerSocket(events, onEvent)` opens a socket that reconnects on its own and calls `onEvent(event, data)` for each listed event. Declare `events` once, outside the component (`const EVENTS = ['car-service:due']`): a new array on each render reopens the socket.
+`useServerSocket(events, onEvent)` opens a socket that reconnects on its own and calls `onEvent(event, data)` for each listed event. Declare `events` once, outside the component (`const EVENTS = ['car-service:due']`): a new array on each render reopens the socket. A third argument, `false`, keeps it closed (a panel that listens only while open).
 
 Style pages with Tailwind and the theme tokens (`bg-card`, `text-muted-foreground`, `border-border`…), so that dark mode and the theme follow. Tailwind classes used in add-ons are generated like core ones.
 
