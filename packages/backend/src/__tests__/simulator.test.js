@@ -222,13 +222,47 @@ describe('the race', () => {
 });
 
 describe('settings and resets', () => {
-  test('speed and fuel are clamped to 0-15 for a known car only', async () => {
+  test('the manual speed is clamped to 0-15 for a known car only', async () => {
     await sim.connect();
     sim.setCarSpeed(1, 20);
-    sim.setFuel(2, -3);
     sim.setCarSpeed(9, 5);
-    sim.setFuel(9, 5);
-    expect([sim.cars[0].speed, sim.cars[1].fuel]).toEqual([15, 0]);
+    expect(sim.cars[0].speed).toBe(15);
+  });
+
+  test('speed, brake and fuel set the car on CU controller 0-5, within the CU bounds', async () => {
+    await sim.connect();
+    expect(sim.setSpeed(0, 7)).toEqual({ success: true });
+    sim.setBrake(2, 4);
+    sim.setFuel(5, 3);
+    expect(sim.cars.map((c) => [c.maxSpeed, c.brake, c.fuel])).toEqual([
+      [7, 15, 15],
+      [15, 15, 15],
+      [15, 4, 15],
+      [15, 15, 15],
+      [15, 15, 15],
+      [15, 15, 3],
+    ]);
+    // The fuel shows at once in the CU status
+    expect(sim.getCuStatus().fuel[5]).toBe(3);
+
+    // Controllers 6 and 7 exist on the CU, without a car here
+    expect(sim.setSpeed(7, 1)).toEqual({ success: true });
+    expect(() => sim.setSpeed(8, 1)).toThrow('Address out of range');
+    expect(() => sim.setBrake(0, 16)).toThrow('Value out of range');
+    expect(() => sim.setFuel(-1, 5)).toThrow('Address out of range');
+  });
+
+  test('the speed setting caps the car, and 0 keeps it on the grid', async () => {
+    await sim.connect();
+    sim.setSpeed(0, 6);
+    sim.setSpeed(1, 0);
+    sim.raceActive = true;
+    sim.tick();
+    expect([sim.cars[0].speed, sim.cars[1].speed, sim.cars[2].speed]).toEqual([6, 0, 10]);
+
+    for (let i = 0; i < 100; i++) sim.tick();
+    expect(timers.some((t) => t.controller === 1)).toBe(false);
+    expect(timers.some((t) => t.controller === 0)).toBe(true);
   });
 
   test('a reset stops the loop and puts every car back on the grid', async () => {

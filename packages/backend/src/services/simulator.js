@@ -32,6 +32,11 @@ export const SIMULATOR_ADDRESS = 'SIMULATOR';
 
 const clamp = (value) => Math.max(0, Math.min(15, value));
 
+/** Same bounds and messages as the Control Unit's `setword`. */
+function check(value, min, max, name) {
+  if (value < min || value > max) throw new Error(`${name} out of range`);
+}
+
 /** Distance from the start line (ms) of the car at grid `index`: cars start before the line. */
 const startDistanceOf = (index) => 200 + index * 80 + Math.random() * 50;
 
@@ -139,6 +144,9 @@ export class CarreraSimulator extends EventEmitter {
       position: i + 1,
       fuel: 15, // 0-15 scale
       speed: 0,
+      // Controller settings, as setSpeed / setBrake would set them on the CU (0-15)
+      maxSpeed: 15,
+      brake: 15,
       inPit: false,
       // Performance factor: 0.85 (fast) to 1.15 (slow) - creates gaps between cars
       performance: 0.85 + Math.random() * 0.3,
@@ -202,8 +210,13 @@ export class CarreraSimulator extends EventEmitter {
     this.raceTime += this.tickRate;
 
     this.cars.forEach((car) => {
-      // Simulate speed variation (realistic racing)
-      car.speed = clamp(8 + Math.random() * 4); // 8-12 speed units
+      // A controller set to speed 0 has no power: the car stands still
+      if (car.maxSpeed === 0) {
+        car.speed = 0;
+        return;
+      }
+      // Simulate speed variation (realistic racing), capped by the controller's setting
+      car.speed = Math.min(car.maxSpeed, clamp(8 + Math.random() * 4)); // 8-12 speed units
 
       // Simulate sector progression
       this.simulateSectorProgress(car);
@@ -549,14 +562,31 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Set fuel for a controller
+   * Sets a controller setting like the CU: `address` 0-7 (the car on controller 0-5, none beyond),
+   * `value` 0-15. Throws on a value the CU would refuse.
    */
-  setFuel(controller, value) {
-    const car = this.cars.find((c) => c.id === controller);
-    if (car) {
-      car.fuel = clamp(value);
-      this.emitCuStatus();
-    }
+  setCarSetting(field, address, value) {
+    check(address, 0, 7, 'Address');
+    check(value, 0, 15, 'Value');
+    const car = this.cars[address];
+    if (car) car[field] = value;
+    return { success: true };
+  }
+
+  /** Caps the speed of the car on controller `address`; 0 stops it. */
+  setSpeed(address, value) {
+    return this.setCarSetting('maxSpeed', address, value);
+  }
+
+  setBrake(address, value) {
+    return this.setCarSetting('brake', address, value);
+  }
+
+  /** Fills the tank of the car on controller `address`. */
+  setFuel(address, value) {
+    const result = this.setCarSetting('fuel', address, value);
+    this.emitCuStatus();
+    return result;
   }
 
   /**
