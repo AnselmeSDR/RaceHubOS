@@ -1,806 +1,210 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
-import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { SessionType } from '@racehubos/shared';
+import { carStats, driverStats, trackStats } from '../lib/stats/entities.js';
+import { sessionFilterOf } from '../lib/stats/figures.js';
+import { bestLapsOf, LAP_INCLUDE, lapOrderBy, lapRow, lapTimesWhere } from '../lib/stats/lapTimes.js';
+import { overallLeaderboard, sessionLeaderboard, teamLeaderboard } from '../lib/stats/leaderboards.js';
+import { lapRecord, mostEntries } from '../lib/stats/records.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
 
-// GET /api/stats/drivers - Get driver statistics
-router.get('/drivers', async (req, res) => {
+/** Runs `handler`, answering 500 with `failure` when it throws. */
+const route = (failure, handler) => async (req, res) => {
   try {
-    const { championshipId, trackId, has_championship } = req.query;
-    const onlyChampionship = has_championship === 'true';
+    await handler(req, res);
+  } catch (error) {
+    console.error(`${failure}:`, error);
+    res.status(500).json({ success: false, error: failure });
+  }
+};
 
-    const sessionFilter = {
-      ...(championshipId && { championshipId }),
-      ...(trackId && { trackId }),
-      ...(onlyChampionship && { championshipId: { not: null } }),
-    };
-    const hasFilter = championshipId || trackId || onlyChampionship;
+const withSession = { include: { session: true } };
 
-    // Base query for drivers with their stats
+// GET /api/stats/drivers?championshipId=&trackId=&has_championship=
+router.get(
+  '/drivers',
+  route('Failed to fetch driver statistics', async (req, res) => {
+    const filter = sessionFilterOf(req.query);
     const drivers = await prisma.driver.findMany({
       include: {
-        laps: hasFilter
-          ? {
-              where: { session: sessionFilter },
-            }
-          : true,
-        sessions: {
-          where: hasFilter ? { session: sessionFilter } : undefined,
-          include: { session: true },
-        },
+        laps: filter ? { where: { session: filter } } : true,
+        sessions: { where: filter ? { session: filter } : undefined, ...withSession },
         team: true,
       },
     });
-
-    // Calculate statistics for each driver
-    const stats = drivers.map((driver) => {
-      const allLaps = driver.laps || [];
-      const validLaps = allLaps.filter((lap) => !lap.deletedAt);
-
-      // Calculate best lap
-      const bestLap = validLaps.length > 0 ? Math.min(...validLaps.map((lap) => lap.lapTime)) : null;
-
-      // Calculate average lap time
-      const avgLapTime =
-        validLaps.length > 0 ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length : null;
-
-      // Count races, wins, podiums
-      const sessions = driver.sessions || [];
-      const races = sessions.filter((sd) => sd.session.type === SessionType.RACE);
-      const wins = races.filter((sd) => sd.finalPos === 1).length;
-      const podiums = races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
-
-      return {
-        id: driver.id,
-        name: driver.name,
-        number: driver.number,
-        color: driver.color,
-        ...withImageUrl({ img: driver.img }),
-        team: withImageUrl(driver.team),
-        statistics: {
-          totalRaces: races.length,
-          totalLaps: allLaps.length,
-          wins,
-          podiums,
-          bestLap,
-          avgLapTime,
-          dnf: races.filter((sd) => !sd.finalPos).length,
-          polePositions: races.filter((sd) => sd.gridPos === 1).length,
-        },
-      };
-    });
-
-    // Sort by wins, then podiums, then total races
-    stats.sort((a, b) => {
-      if (b.statistics.wins !== a.statistics.wins) {
-        return b.statistics.wins - a.statistics.wins;
-      }
-      if (b.statistics.podiums !== a.statistics.podiums) {
-        return b.statistics.podiums - a.statistics.podiums;
-      }
-      return b.statistics.totalRaces - a.statistics.totalRaces;
-    });
-
-    res.json({
-      success: true,
-      data: stats,
-      filters: { championshipId, trackId },
-    });
-  } catch (error) {
-    console.error('Error fetching driver statistics:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch driver statistics',
-    });
-  }
-});
-
-// GET /api/stats/cars - Get car statistics
-router.get('/cars', async (req, res) => {
-  try {
     const { championshipId, trackId } = req.query;
+    res.json({ success: true, data: driverStats(drivers), filters: { championshipId, trackId } });
+  })
+);
 
+// GET /api/stats/cars?championshipId=&trackId=
+router.get(
+  '/cars',
+  route('Failed to fetch car statistics', async (req, res) => {
+    const { championshipId, trackId } = req.query;
+    const filter = sessionFilterOf({ championshipId, trackId });
     const cars = await prisma.car.findMany({
       include: {
-        laps:
-          championshipId || trackId
-            ? {
-                where: {
-                  session: {
-                    ...(championshipId && { championshipId }),
-                    ...(trackId && { trackId }),
-                  },
-                },
-              }
-            : true,
-        sessions:
-          championshipId || trackId
-            ? {
-                where: {
-                  session: {
-                    ...(championshipId && { championshipId }),
-                    ...(trackId && { trackId }),
-                  },
-                },
-                include: {
-                  session: true,
-                },
-              }
-            : {
-                include: {
-                  session: true,
-                },
-              },
+        laps: filter ? { where: { session: filter } } : true,
+        sessions: filter ? { where: { session: filter }, ...withSession } : withSession,
       },
     });
+    res.json({ success: true, data: carStats(cars), filters: { championshipId, trackId } });
+  })
+);
 
-    const stats = cars.map((car) => {
-      const allLaps = car.laps || [];
-      const validLaps = allLaps.filter((lap) => !lap.deletedAt);
-
-      const bestLap = validLaps.length > 0 ? Math.min(...validLaps.map((lap) => lap.lapTime)) : null;
-
-      const avgLapTime =
-        validLaps.length > 0 ? validLaps.reduce((sum, lap) => sum + lap.lapTime, 0) / validLaps.length : null;
-
-      const sessions = car.sessions || [];
-      const races = sessions.filter((sd) => sd.session.type === SessionType.RACE);
-      const wins = races.filter((sd) => sd.finalPos === 1).length;
-
-      return {
-        id: car.id,
-        brand: car.brand,
-        model: car.model,
-        year: car.year,
-        color: car.color,
-        ...withImageUrl({ img: car.img }),
-        statistics: {
-          totalRaces: races.length,
-          totalLaps: allLaps.length,
-          wins,
-          bestLap,
-          avgLapTime,
-          reliability: races.length > 0 ? (races.filter((sd) => sd.finalPos).length / races.length) * 100 : 0,
-        },
-      };
-    });
-
-    stats.sort((a, b) => b.statistics.wins - a.statistics.wins);
-
-    res.json({
-      success: true,
-      data: stats,
-      filters: { championshipId, trackId },
-    });
-  } catch (error) {
-    console.error('Error fetching car statistics:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch car statistics',
-    });
-  }
-});
-
-// GET /api/stats/tracks - Get track statistics
-router.get('/tracks', async (req, res) => {
-  try {
+// GET /api/stats/tracks
+router.get(
+  '/tracks',
+  route('Failed to fetch track statistics', async (req, res) => {
     const tracks = await prisma.track.findMany({
       include: {
         sessions: {
-          include: {
-            laps: {
-              orderBy: {
-                lapTime: 'asc',
-              },
-              take: 1,
-            },
-            _count: {
-              select: {
-                laps: true,
-              },
-            },
-          },
+          include: { laps: { orderBy: { lapTime: 'asc' }, take: 1 }, _count: { select: { laps: true } } },
         },
       },
     });
+    res.json({ success: true, data: trackStats(tracks) });
+  })
+);
 
-    const stats = tracks.map((track) => {
-      const sessions = track.sessions || [];
-      const allLaps = sessions.flatMap((s) => s.laps || []);
-      const bestLap = allLaps.length > 0 ? Math.min(...allLaps.map((lap) => lap.lapTime)) : track.bestLap;
-
-      return {
-        id: track.id,
-        name: track.name,
-        color: track.color,
-        ...withImageUrl({ img: track.img }),
-        length: track.length,
-        corners: track.corners,
-        statistics: {
-          totalSessions: sessions.length,
-          totalLaps: sessions.reduce((sum, s) => sum + s._count.laps, 0),
-          bestLap,
-          bestLapBy: track.bestLapBy,
-          avgSessionDuration:
-            sessions.length > 0
-              ? sessions.reduce((sum, s) => {
-                  if (s.startedAt && s.finishedAt) {
-                    return sum + (new Date(s.finishedAt) - new Date(s.startedAt));
-                  }
-                  return sum;
-                }, 0) /
-                sessions.length /
-                60000 // Convert to minutes
-              : null,
-        },
-      };
-    });
-
-    stats.sort((a, b) => b.statistics.totalSessions - a.statistics.totalSessions);
-
-    res.json({
-      success: true,
-      data: stats,
-    });
-  } catch (error) {
-    console.error('Error fetching track statistics:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch track statistics',
-    });
-  }
-});
-
-// GET /api/stats/leaderboard/drivers - Get driver leaderboard
-router.get('/leaderboard/drivers', async (req, res) => {
-  try {
+// GET /api/stats/leaderboard/drivers?sessionId=&phase= | ?championshipId= | ?limit=
+router.get(
+  '/leaderboard/drivers',
+  route('Failed to fetch driver leaderboard', async (req, res) => {
     const { sessionId, championshipId, phase, limit = 10 } = req.query;
-
     let leaderboard = [];
 
     if (sessionId) {
-      // Get leaderboard for a specific session
-      const sessionDrivers = await prisma.sessionDriver.findMany({
+      const entries = await prisma.sessionDriver.findMany({
         where: { sessionId, deletedAt: null },
         include: {
           driver: true,
           car: true,
-          session: {
-            include: {
-              laps: {
-                where: {
-                  sessionId,
-                  ...(phase && { phase }),
-                },
-              },
-            },
-          },
+          session: { include: { laps: { where: { sessionId, ...(phase && { phase }) } } } },
         },
         orderBy: [{ finalPos: 'asc' }, { position: 'asc' }],
       });
-
-      leaderboard = sessionDrivers.map((sd) => {
-        const driverLaps = sd.session.laps.filter((lap) => lap.driverId === sd.driverId);
-        const bestLap = driverLaps.length > 0 ? Math.min(...driverLaps.map((lap) => lap.lapTime)) : null;
-
-        return {
-          position: sd.finalPos || sd.position || null,
-          driver: withImageUrl(sd.driver),
-          car: withImageUrl(sd.car),
-          laps: driverLaps.length,
-          bestLap,
-          lastLap: driverLaps.length > 0 ? driverLaps[driverLaps.length - 1].lapTime : null,
-          gap: null, // Calculate gap to leader if needed
-        };
-      });
-
-      // Sort by best lap for practice/qualif, by laps and best lap for race
-      if (phase === SessionType.PRACTICE || phase === SessionType.QUALIF) {
-        leaderboard = leaderboard
-          .filter((entry) => entry.bestLap !== null)
-          .sort((a, b) => a.bestLap - b.bestLap)
-          .map((entry, index) => ({ ...entry, position: index + 1 }));
-      } else if (phase === SessionType.RACE) {
-        leaderboard = leaderboard
-          .sort((a, b) => {
-            if (b.laps !== a.laps) return b.laps - a.laps;
-            if (a.bestLap === null) return 1;
-            if (b.bestLap === null) return -1;
-            return a.bestLap - b.bestLap;
-          })
-          .map((entry, index) => ({ ...entry, position: index + 1 }));
-      }
-    } else if (championshipId) {
-      // Championship standings are now calculated on-demand via GET /championships/:id/standings?type=
-      // This endpoint returns empty for backwards compatibility
-      leaderboard = [];
-    } else {
-      // Get overall leaderboard based on all-time stats
+      leaderboard = sessionLeaderboard(entries, phase);
+    } else if (!championshipId) {
+      // A championship's standings live at GET /championships/:id/standings: empty here, kept for compatibility
       const drivers = await prisma.driver.findMany({
-        include: {
-          sessions: {
-            where: {
-              session: {
-                type: SessionType.RACE,
-              },
-            },
-          },
-        },
+        include: { sessions: { where: { session: { type: SessionType.RACE } } } },
         take: parseInt(limit),
       });
-
-      const driverStats = drivers.map((driver) => {
-        const races = driver.sessions || [];
-        const wins = races.filter((sd) => sd.finalPos === 1).length;
-        const podiums = races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
-
-        return {
-          driver,
-          wins,
-          podiums,
-          races: races.length,
-        };
-      });
-
-      driverStats.sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        if (b.podiums !== a.podiums) return b.podiums - a.podiums;
-        return b.races - a.races;
-      });
-
-      leaderboard = driverStats.map((stat, index) => ({
-        position: index + 1,
-        driver: withImageUrl(stat.driver),
-        wins: stat.wins,
-        podiums: stat.podiums,
-        races: stat.races,
-      }));
+      leaderboard = overallLeaderboard(drivers);
     }
 
-    res.json({
-      success: true,
-      data: leaderboard,
-      filters: { sessionId, championshipId, limit },
-    });
-  } catch (error) {
-    console.error('Error fetching driver leaderboard:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch driver leaderboard',
-    });
-  }
-});
+    res.json({ success: true, data: leaderboard, filters: { sessionId, championshipId, limit } });
+  })
+);
 
-// GET /api/stats/leaderboard/teams - Get team leaderboard
-router.get('/leaderboard/teams', async (req, res) => {
-  try {
+// GET /api/stats/leaderboard/teams?championshipId=
+router.get(
+  '/leaderboard/teams',
+  route('Failed to fetch team leaderboard', async (req, res) => {
     const { championshipId } = req.query;
-
+    const races = { type: SessionType.RACE, ...(championshipId && { championshipId }) };
     const teams = await prisma.team.findMany({
-      include: {
-        drivers: {
-          include: {
-            sessions: championshipId
-              ? {
-                  where: {
-                    session: {
-                      championshipId,
-                      type: SessionType.RACE,
-                    },
-                  },
-                }
-              : {
-                  where: {
-                    session: {
-                      type: SessionType.RACE,
-                    },
-                  },
-                },
-          },
-        },
-      },
+      include: { drivers: { include: { sessions: { where: { session: races } } } } },
     });
+    res.json({ success: true, data: teamLeaderboard(teams), filters: { championshipId } });
+  })
+);
 
-    const teamStats = teams.map((team) => {
-      let totalPoints = 0;
-      let totalWins = 0;
-      let totalPodiums = 0;
-      let totalRaces = 0;
+// GET /api/stats/laptimes - every lap, or each driver, car and track's best (unique=true, the default)
+router.get(
+  '/laptimes',
+  route('Failed to fetch lap times', async (req, res) => {
+    const { driverId, carId, trackId, sessionType } = req.query;
+    const { limit = 50, offset = 0, sortBy = 'lapTime', sortOrder = 'asc', unique = 'true' } = req.query;
+    const start = parseInt(offset);
+    const size = parseInt(limit);
+    const where = lapTimesWhere(req.query);
+    const orderBy = lapOrderBy(sortBy, sortOrder);
 
-      team.drivers.forEach((driver) => {
-        const races = driver.sessions || [];
-        totalRaces += races.length;
-        totalWins += races.filter((sd) => sd.finalPos === 1).length;
-        totalPodiums += races.filter((sd) => sd.finalPos && sd.finalPos <= 3).length;
-
-        // Simple point calculation (can be improved with actual championship points)
-        races.forEach((sd) => {
-          if (sd.finalPos === 1) totalPoints += 25;
-          else if (sd.finalPos === 2) totalPoints += 18;
-          else if (sd.finalPos === 3) totalPoints += 15;
-          else if (sd.finalPos === 4) totalPoints += 12;
-          else if (sd.finalPos === 5) totalPoints += 10;
-          else if (sd.finalPos === 6) totalPoints += 8;
-          else if (sd.finalPos === 7) totalPoints += 6;
-          else if (sd.finalPos === 8) totalPoints += 4;
-          else if (sd.finalPos === 9) totalPoints += 2;
-          else if (sd.finalPos === 10) totalPoints += 1;
-        });
-      });
-
-      return {
-        team,
-        points: totalPoints,
-        wins: totalWins,
-        podiums: totalPodiums,
-        races: totalRaces,
-      };
-    });
-
-    teamStats.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      return b.podiums - a.podiums;
-    });
-
-    const leaderboard = teamStats.map((stat, index) => ({
-      position: index + 1,
-      team: withImageUrl(stat.team),
-      points: stat.points,
-      wins: stat.wins,
-      podiums: stat.podiums,
-      races: stat.races,
-      gap: index > 0 ? teamStats[0].points - stat.points : null,
-    }));
-
-    res.json({
-      success: true,
-      data: leaderboard,
-      filters: { championshipId },
-    });
-  } catch (error) {
-    console.error('Error fetching team leaderboard:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch team leaderboard',
-    });
-  }
-});
-
-// GET /api/stats/laptimes - Get all lap times with filters
-router.get('/laptimes', async (req, res) => {
-  try {
-    const {
-      driverId,
-      carId,
-      trackId,
-      sessionType,
-      limit = 50,
-      offset = 0,
-      sortBy = 'lapTime',
-      sortOrder = 'asc',
-      unique = 'true',
-    } = req.query;
-
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
-
-    // Build where clause
-    const where = req.query.deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-
-    if (driverId) where.driverId = driverId.includes(',') ? { in: driverId.split(',') } : driverId;
-    if (carId) where.carId = carId.includes(',') ? { in: carId.split(',') } : carId;
-
-    // Build session filter
-    const sessionFilter = {};
-    if (trackId) sessionFilter.trackId = trackId.includes(',') ? { in: trackId.split(',') } : trackId;
-    if (sessionType) sessionFilter.type = sessionType.includes(',') ? { in: sessionType.split(',') } : sessionType;
-
-    // 'none' selects laps outside any championship (free race, practice, balancing)
-    const championshipId = req.query.championshipId;
-    if (championshipId) {
-      const requested = championshipId.split(',');
-      const ids = requested.filter((id) => id !== 'none');
-      const wantsNone = requested.includes('none');
-
-      if (wantsNone && ids.length) {
-        sessionFilter.OR = [{ championshipId: { in: ids } }, { championshipId: null }];
-      } else if (wantsNone) {
-        sessionFilter.championshipId = null;
-      } else {
-        sessionFilter.championshipId = ids.length > 1 ? { in: ids } : ids[0];
-      }
-    }
-
-    if (req.query.has_championship === 'true') sessionFilter.championshipId = { not: null };
-    if (Object.keys(sessionFilter).length > 0) {
-      where.session = sessionFilter;
-    }
-
-    // Build orderBy
-    const sortByMap = {
-      lapTime: { lapTime: sortOrder },
-      timestamp: { timestamp: sortOrder },
-      driver: { driver: { name: sortOrder } },
-      car: { car: { brand: sortOrder } },
-      track: { session: { track: { name: sortOrder } } },
-      sessionType: { session: { type: sortOrder } },
-      championship: { session: { championship: { name: sortOrder } } },
-      date: { session: { createdAt: sortOrder } },
-    };
-    const orderBy = sortByMap[sortBy] || { lapTime: 'asc' };
-
-    const shouldGroup = unique === 'true';
-
-    const lapInclude = {
-      driver: {
-        select: { id: true, name: true, color: true, img: true, number: true },
-      },
-      car: {
-        select: { id: true, brand: true, model: true, color: true, img: true },
-      },
-      session: {
-        select: {
-          id: true,
-          type: true,
-          createdAt: true,
-          track: {
-            select: { id: true, name: true, color: true, img: true },
-          },
-          championship: {
-            select: { id: true, name: true },
-          },
-        },
-      },
-    };
-
-    let bestLaps;
-    let hasMore;
-    let total;
-
-    if (shouldGroup) {
-      // Fetch all to deduplicate, then paginate
-      const laps = await prisma.lap.findMany({
-        where,
-        orderBy,
-        include: lapInclude,
-      });
-
-      const bestLapsMap = new Map();
-      for (const lap of laps) {
-        const key = `${lap.driverId}-${lap.carId}-${lap.session.track?.id}`;
-        if (!bestLapsMap.has(key) || lap.lapTime < bestLapsMap.get(key).lapTime) {
-          bestLapsMap.set(key, lap);
-        }
-      }
-      const sortFns = {
-        lapTime: (a, b) => a.lapTime - b.lapTime,
-        timestamp: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
-        driver: (a, b) => (a.driver?.name || '').localeCompare(b.driver?.name || ''),
-        car: (a, b) => `${a.car?.brand} ${a.car?.model}`.localeCompare(`${b.car?.brand} ${b.car?.model}`),
-        track: (a, b) => (a.session.track?.name || '').localeCompare(b.session.track?.name || ''),
-        sessionType: (a, b) => (a.session.type || '').localeCompare(b.session.type || ''),
-        championship: (a, b) => (a.session.championship?.name || '').localeCompare(b.session.championship?.name || ''),
-        date: (a, b) => new Date(a.session.createdAt) - new Date(b.session.createdAt),
-      };
-      const compareFn = sortFns[sortBy] || sortFns.lapTime;
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      const allUnique = Array.from(bestLapsMap.values()).sort((a, b) => dir * compareFn(a, b));
-
-      total = allUnique.length;
-      bestLaps = allUnique.slice(parsedOffset, parsedOffset + parsedLimit);
-      hasMore = parsedOffset + parsedLimit < allUnique.length;
+    let page, hasMore, total;
+    if (unique === 'true') {
+      // Every lap is read to keep the best of each, then the page is cut
+      const laps = await prisma.lap.findMany({ where, orderBy, include: LAP_INCLUDE });
+      const best = bestLapsOf(laps, sortBy, sortOrder);
+      total = best.length;
+      page = best.slice(start, start + size);
+      hasMore = start + size < total;
     } else {
       const [laps, count] = await Promise.all([
-        prisma.lap.findMany({
-          where,
-          orderBy,
-          skip: parsedOffset,
-          take: parsedLimit + 1,
-          include: lapInclude,
-        }),
+        prisma.lap.findMany({ where, orderBy, skip: start, take: size + 1, include: LAP_INCLUDE }),
         prisma.lap.count({ where }),
       ]);
-
-      hasMore = laps.length > parsedLimit;
-      bestLaps = hasMore ? laps.slice(0, parsedLimit) : laps;
+      hasMore = laps.length > size;
+      page = laps.slice(0, size);
       total = count;
     }
 
-    const result = bestLaps.map((lap) => ({
-      id: lap.id,
-      lapTime: lap.lapTime,
-      timestamp: lap.timestamp,
-      sessionType: lap.session.type,
-      driver: withImageUrl(lap.driver),
-      car: withImageUrl(lap.car),
-      track: withImageUrl(lap.session.track),
-      championship: lap.session.championship,
-      sessionId: lap.session.id,
-      sessionDate: lap.session.createdAt,
-    }));
-
     res.json({
       success: true,
-      data: result,
+      data: page.map(lapRow),
       total,
       hasMore,
       filters: { driverId, carId, trackId, sessionType, limit, offset, sortBy, sortOrder, unique },
     });
-  } catch (error) {
-    console.error('Error fetching lap times:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch lap times',
-    });
-  }
-});
+  })
+);
 
-// GET /api/stats/records - Get all-time records
-router.get('/records', async (req, res) => {
-  try {
-    const onlyChampionship = req.query.has_championship === 'true';
-    const champFilter = onlyChampionship ? { championshipId: { not: null } } : {};
-
-    // Get fastest lap ever
+// GET /api/stats/records?has_championship= - fastest lap, most wins, podiums and pole positions
+router.get(
+  '/records',
+  route('Failed to fetch records', async (req, res) => {
+    const inChampionships = req.query.has_championship === 'true' ? { championshipId: { not: null } } : {};
     const fastestLap = await prisma.lap.findFirst({
-      where: {
-        deletedAt: null,
-        session: champFilter,
-      },
-      orderBy: {
-        lapTime: 'asc',
-      },
-      include: {
-        driver: true,
-        car: true,
-        session: {
-          include: {
-            track: true,
-          },
-        },
-      },
+      where: { deletedAt: null, session: inChampionships },
+      orderBy: { lapTime: 'asc' },
+      include: { driver: true, car: true, session: { include: { track: true } } },
     });
-
-    // Get most wins
-    const driversWithWins = await prisma.driver.findMany({
-      include: {
-        sessions: {
-          where: {
-            finalPos: 1,
-            session: {
-              type: SessionType.RACE,
-              ...champFilter,
-            },
-          },
-        },
-      },
-    });
-
-    const mostWinsDriver = driversWithWins.reduce((max, driver) => {
-      const wins = driver.sessions.length;
-      return wins > (max?.wins || 0) ? { driver, wins } : max;
-    }, null);
-
-    // Get most podiums
-    const driversWithPodiums = await prisma.driver.findMany({
-      include: {
-        sessions: {
-          where: {
-            finalPos: {
-              in: [1, 2, 3],
-            },
-            session: {
-              type: SessionType.RACE,
-              ...champFilter,
-            },
-          },
-        },
-      },
-    });
-
-    const mostPodiumsDriver = driversWithPodiums.reduce((max, driver) => {
-      const podiums = driver.sessions.length;
-      return podiums > (max?.podiums || 0) ? { driver, podiums } : max;
-    }, null);
-
-    // Get most pole positions
-    const driversWithPoles = await prisma.driver.findMany({
-      include: {
-        sessions: {
-          where: {
-            gridPos: 1,
-            session: {
-              type: SessionType.RACE,
-              ...champFilter,
-            },
-          },
-        },
-      },
-    });
-
-    const mostPolesDriver = driversWithPoles.reduce((max, driver) => {
-      const poles = driver.sessions.length;
-      return poles > (max?.poles || 0) ? { driver, poles } : max;
-    }, null);
+    const driversWith = (entry) =>
+      prisma.driver.findMany({
+        include: { sessions: { where: { ...entry, session: { type: SessionType.RACE, ...inChampionships } } } },
+      });
 
     res.json({
       success: true,
       data: {
-        fastestLap: fastestLap
-          ? {
-              time: fastestLap.lapTime,
-              driver: withImageUrl(fastestLap.driver),
-              car: withImageUrl(fastestLap.car),
-              track: withImageUrl(fastestLap.session.track),
-              date: fastestLap.timestamp,
-            }
-          : null,
-        mostWins: mostWinsDriver
-          ? {
-              driver: withImageUrl(mostWinsDriver.driver),
-              count: mostWinsDriver.wins,
-            }
-          : null,
-        mostPodiums: mostPodiumsDriver
-          ? {
-              driver: withImageUrl(mostPodiumsDriver.driver),
-              count: mostPodiumsDriver.podiums,
-            }
-          : null,
-        mostPolePositions: mostPolesDriver
-          ? {
-              driver: withImageUrl(mostPolesDriver.driver),
-              count: mostPolesDriver.poles,
-            }
-          : null,
+        fastestLap: lapRecord(fastestLap),
+        mostWins: mostEntries(await driversWith({ finalPos: 1 })),
+        mostPodiums: mostEntries(await driversWith({ finalPos: { in: [1, 2, 3] } })),
+        mostPolePositions: mostEntries(await driversWith({ gridPos: 1 })),
       },
     });
-  } catch (error) {
-    console.error('Error fetching records:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch records',
-    });
-  }
-});
+  })
+);
 
-// DELETE /api/stats/laps/:id - Soft or hard delete a lap
-router.delete('/laps/:id', async (req, res) => {
-  try {
+// DELETE /api/stats/laps/:id - hidden first, erased when already hidden
+router.delete(
+  '/laps/:id',
+  route('Failed to delete lap', async (req, res) => {
     const { id } = req.params;
     const lap = await prisma.lap.findUnique({ where: { id } });
     if (!lap) return res.status(404).json({ success: false, error: 'Lap not found' });
 
-    if (lap.deletedAt) {
-      await prisma.lap.delete({ where: { id } });
-    } else {
-      await prisma.lap.update({ where: { id }, data: { deletedAt: new Date() } });
-    }
-
+    if (lap.deletedAt) await prisma.lap.delete({ where: { id } });
+    else await prisma.lap.update({ where: { id }, data: { deletedAt: new Date() } });
     res.json({ success: true, message: 'Lap deleted' });
-  } catch (error) {
-    console.error('Error deleting lap:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete lap' });
-  }
-});
+  })
+);
 
-// PATCH /api/stats/laps/:id/restore - Restore soft-deleted lap
-router.patch('/laps/:id/restore', async (req, res) => {
-  try {
+// PATCH /api/stats/laps/:id/restore
+router.patch(
+  '/laps/:id/restore',
+  route('Failed to restore lap', async (req, res) => {
     const { id } = req.params;
-    const lap = await prisma.lap.findUnique({ where: { id } });
-    if (!lap) return res.status(404).json({ success: false, error: 'Lap not found' });
-
+    if (!(await prisma.lap.findUnique({ where: { id } }))) {
+      return res.status(404).json({ success: false, error: 'Lap not found' });
+    }
     await prisma.lap.update({ where: { id }, data: { deletedAt: null } });
     res.json({ success: true, message: 'Lap restored' });
-  } catch (error) {
-    console.error('Error restoring lap:', error);
-    res.status(500).json({ success: false, error: 'Failed to restore lap' });
-  }
-});
+  })
+);
 
 export default router;
