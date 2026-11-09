@@ -1,7 +1,4 @@
-import { useEffect, useEffectEvent } from 'react'
-import { io } from 'socket.io-client'
-
-const WS_URL = import.meta.env.VITE_WS_URL || ''
+import { useServerSocket } from '@/hooks/useServerSocket'
 
 // Server events the pages listen to as window events, after the context has handled them
 export const FORWARDED_EVENTS = [
@@ -26,19 +23,8 @@ export const SESSION_EVENTS = [
 
 /** One socket for the app's lifetime; each event goes to `handlers[event]`, as they are at that moment. */
 export function useSessionSocket(handlers) {
-  const handle = useEffectEvent((event, data) => {
+  useServerSocket(SESSION_EVENTS, (event, data) => {
     handlers[event]?.(data)
     if (FORWARDED_EVENTS.includes(event)) window.dispatchEvent(new CustomEvent(event, { detail: data }))
   })
-
-  useEffect(() => {
-    const socket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    })
-    for (const event of SESSION_EVENTS) socket.on(event, (data) => handle(event, data))
-    return () => socket.disconnect()
-  }, [])
 }

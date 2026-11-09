@@ -1,135 +1,94 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { io } from 'socket.io-client'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
-const WS_URL = import.meta.env.VITE_WS_URL || ''
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useServerSocket } from '../hooks/useServerSocket'
+import * as requests from './device/deviceRequests'
 
 export const SIMULATOR_ADDRESS = 'SIMULATOR'
+
+const DEVICE_EVENTS = [
+  'connect',
+  'disconnect',
+  'cu:connected',
+  'cu:disconnected',
+  'cu:status',
+  'cu:timer',
+  'cu:connection',
+]
 
 const DeviceContext = createContext(null)
 
 export function DeviceProvider({ children }) {
-  // Connection state
   const [connected, setConnected] = useState(false)
   const [deviceType, setDeviceType] = useState(null)
   const [deviceAddress, setDeviceAddress] = useState(null)
-
-  // Devices from DB
   const [devices, setDevices] = useState([])
-
-  // Scan results (temporary, not persisted)
+  // The last scan's devices: temporary, not kept
   const [scanResults, setScanResults] = useState([])
-
-  // CU/Simulator status
-  const [cuStatus, setCuStatus] = useState({ start: 8 })
+  const [cuStatus, setCuStatus] = useState(requests.IDLE_STATUS)
   const [lastTimer, setLastTimer] = useState(null)
-
-  // Loading states
   const [scanning, setScanning] = useState(false)
   const [connecting, setConnecting] = useState(false)
-
-  // Socket
-  const socketRef = useRef(null)
   const [socketConnected, setSocketConnected] = useState(false)
 
-  // Initialize socket and load state
-  useEffect(() => {
-    const socket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    })
-    socketRef.current = socket
+  const forgetDevice = useCallback(() => {
+    setConnected(false)
+    setDeviceType(null)
+    setDeviceAddress(null)
+  }, [])
 
-    socket.on('connect', () => {
-      setSocketConnected(true)
-    })
-
-    socket.on('disconnect', () => {
-      setSocketConnected(false)
-    })
-
-    socket.on('cu:connected', () => {
-      setConnected(true)
-    })
-
-    socket.on('cu:disconnected', () => {
-      setConnected(false)
-      setDeviceType(null)
-      setDeviceAddress(null)
-    })
-
-    socket.on('cu:status', (status) => {
-      if (status.connected !== undefined) {
-        setConnected(status.connected)
-      }
+  const handlers = {
+    connect: () => setSocketConnected(true),
+    disconnect: () => setSocketConnected(false),
+    'cu:connected': () => setConnected(true),
+    'cu:disconnected': forgetDevice,
+    'cu:status': (status) => {
+      if (status.connected !== undefined) setConnected(status.connected)
       setCuStatus(status)
-    })
-
-    socket.on('cu:timer', (data) => {
-      setLastTimer(data)
-    })
-
-    socket.on('cu:connection', (data) => {
+    },
+    'cu:timer': setLastTimer,
+    'cu:connection': (data) => {
       setConnected(data.status === 'connected')
-      if (data.device) {
-        setDeviceAddress(data.device.id)
-      }
-    })
+      if (data.device) setDeviceAddress(data.device.id)
+    },
+  }
+  useServerSocket(DEVICE_EVENTS, (event, data) => handlers[event](data))
 
+  const loadStatus = useCallback(
+    () =>
+      requests
+        .getStatus()
+        .then((data) => {
+          setConnected(data.connected || false)
+          setDeviceType(data.deviceType || null)
+          setDeviceAddress(data.deviceAddress || null)
+          setCuStatus(data.lastStatus || requests.IDLE_STATUS)
+        })
+        .catch((error) => console.error('[DeviceContext] Error loading status:', error)),
+    []
+  )
+
+  const loadDevices = useCallback(
+    () =>
+      requests
+        .getDevices()
+        .then((data) => {
+          if (data.success) setDevices(data.data || [])
+        })
+        .catch((error) => console.error('[DeviceContext] Error loading devices:', error)),
+    []
+  )
+
+  useEffect(() => {
     loadStatus()
     loadDevices()
+  }, [loadStatus, loadDevices])
 
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
-  // Load current connection status
-  const loadStatus = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/bluetooth/status`)
-      const data = await response.json()
-
-      setConnected(data.connected || false)
-      setDeviceType(data.deviceType || null)
-      setDeviceAddress(data.deviceAddress || null)
-      setCuStatus(data.lastStatus || { start: 8 })
-    } catch (error) {
-      console.error('[DeviceContext] Error loading status:', error)
-    }
-  }, [])
-
-  // Load devices from DB
-  const loadDevices = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/devices`)
-      const data = await response.json()
-      if (data.success) {
-        setDevices(data.data || [])
-      }
-    } catch (error) {
-      console.error('[DeviceContext] Error loading devices:', error)
-    }
-  }, [])
-
-  // Scan for BLE devices (returns temporary list, not persisted)
   const scan = useCallback(async (timeout = 10000) => {
     setScanning(true)
     try {
-      const response = await fetch(`${API_URL}/api/bluetooth/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeout }),
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setScanResults(data.devices || [])
-        return data.devices
-      }
-      return []
+      const data = await requests.scanDevices(timeout)
+      if (!data.success) return []
+      setScanResults(data.devices || [])
+      return data.devices
     } catch (error) {
       console.error('[DeviceContext] Scan error:', error)
       return []
@@ -138,30 +97,18 @@ export function DeviceProvider({ children }) {
     }
   }, [])
 
-  // Connect to a device (persisted to DB on success by backend)
   const connect = useCallback(
     async (address) => {
       setConnecting(true)
       try {
-        const response = await fetch(`${API_URL}/api/bluetooth/connect`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address }),
-        })
-        const data = await response.json()
-
-        if (data.success) {
-          setConnected(true)
-          setDeviceType(data.deviceType)
-          setDeviceAddress(address)
-
-          // Reload devices (backend persisted the device)
-          await loadDevices()
-
-          return { success: true, deviceType: data.deviceType }
-        }
-
-        return { success: false, error: data.error }
+        const data = await requests.connectDevice(address)
+        if (!data.success) return { success: false, error: data.error }
+        setConnected(true)
+        setDeviceType(data.deviceType)
+        setDeviceAddress(address)
+        // The server has kept the device
+        await loadDevices()
+        return { success: true, deviceType: data.deviceType }
       } catch (error) {
         console.error('[DeviceContext] Connect error:', error)
         return { success: false, error: error.message }
@@ -172,38 +119,22 @@ export function DeviceProvider({ children }) {
     [loadDevices]
   )
 
-  // Disconnect current device
   const disconnect = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/bluetooth/disconnect`, {
-        method: 'POST',
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setConnected(false)
-        setDeviceType(null)
-        setDeviceAddress(null)
-      }
-
+      const data = await requests.disconnectDevice()
+      if (data.success) forgetDevice()
       return data
     } catch (error) {
       console.error('[DeviceContext] Disconnect error:', error)
       return { success: false, error: error.message }
     }
-  }, [])
+  }, [forgetDevice])
 
-  // Remove a device from DB
   const removeDevice = useCallback(
     async (deviceId) => {
       try {
-        const response = await fetch(`${API_URL}/api/devices/${deviceId}`, {
-          method: 'DELETE',
-        })
-        const data = await response.json()
-        if (data.success) {
-          await loadDevices()
-        }
+        const data = await requests.deleteDevice(deviceId)
+        if (data.success) await loadDevices()
         return data
       } catch (error) {
         console.error('[DeviceContext] Remove device error:', error)
@@ -213,51 +144,21 @@ export function DeviceProvider({ children }) {
     [loadDevices]
   )
 
-  // Start race
-  const startRace = useCallback(async () => {
+  // The server's answer to a Control Unit command, or the reason it could not be sent
+  const command = useCallback(async (name) => {
     try {
-      const response = await fetch(`${API_URL}/api/bluetooth/start-race`, {
-        method: 'POST',
-      })
-      return await response.json()
+      return await requests.cuCommand(name)
     } catch (error) {
-      console.error('[DeviceContext] Start race error:', error)
+      console.error(`[DeviceContext] ${name} error:`, error)
       return { success: false, error: error.message }
     }
   }, [])
 
-  // Press ESC
-  const pressEsc = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/bluetooth/esc`, {
-        method: 'POST',
-      })
-      return await response.json()
-    } catch (error) {
-      console.error('[DeviceContext] ESC error:', error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Press button
-  const pressButton = useCallback(async (buttonId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/bluetooth/button/${buttonId}`, {
-        method: 'POST',
-      })
-      return await response.json()
-    } catch (error) {
-      console.error('[DeviceContext] Button error:', error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Derived state
-  const isInLightsSequence = cuStatus?.start >= 1 && cuStatus?.start <= 7
-  const isRacing = cuStatus?.start === 0
+  const startRace = useCallback(() => command('start-race'), [command])
+  const pressEsc = useCallback(() => command('esc'), [command])
+  const pressButton = useCallback((buttonId) => command(`button/${buttonId}`), [command])
 
   const value = {
-    // State
     connected,
     deviceType,
     deviceAddress,
@@ -267,15 +168,13 @@ export function DeviceProvider({ children }) {
     lastTimer,
     socketConnected,
 
-    // Derived state
-    isInLightsSequence,
-    isRacing,
+    // Lights 1 to 5, false start or go: the start sequence is on
+    isInLightsSequence: cuStatus?.start >= 1 && cuStatus?.start <= 7,
+    isRacing: cuStatus?.start === 0,
 
-    // Loading states
     scanning,
     connecting,
 
-    // Actions
     scan,
     connect,
     disconnect,
