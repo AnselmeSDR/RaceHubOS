@@ -38,26 +38,6 @@
     "gap": "Abstand",
     "total": "Gesamt"
   },
-  "resultsModal": {
-    "title": "Ergebnisse",
-    "colPos": "Platz",
-    "colDriver": "Fahrer",
-    "colLaps": "Runden",
-    "colBest": "Bestzeit",
-    "backToFreePractice": "Zurück zum freien Training"
-  },
-  "sessionHeader": {
-    "elapsed": "Vergangen",
-    "remaining": "Verbleibend",
-    "cuOk": "CU verbunden",
-    "cuOff": "CU getrennt"
-  },
-  "cancelConfirmModal": {
-    "title": "Sitzung abbrechen?",
-    "message": "Die laufende Sitzung wird abgebrochen.",
-    "back": "Zurück",
-    "confirm": "Sitzung abbrechen"
-  },
   "sessionModal": {
     "nameLabel": "Sitzungsname",
     "durationLabel": "Dauer (Min.)",
@@ -103,23 +83,6 @@
     "falseStart": "FEHLSTART",
     "go": "LOS!",
     "start": "START"
-  },
-  "session": {
-    "noSession": "Keine Sitzung ausgewählt",
-    "typePractice": "Freies Training",
-    "typeQualif": "Qualifikation",
-    "typeRace": "Rennen",
-    "elapsed": "Vergangen",
-    "remaining": "Verbleibend",
-    "cuOk": "CU verbunden",
-    "cuOff": "CU getrennt",
-    "connectCu": "Control Unit verbinden",
-    "start": "Starten",
-    "pause": "Pause",
-    "finish": "Beenden",
-    "resume": "Fortsetzen",
-    "lastLapInProgress": "Letzte Runde läuft …",
-    "viewResults": "Ergebnisse anzeigen"
   },
   "controllerSlot": {
     "controller": "Regler {{number}}",

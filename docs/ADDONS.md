@@ -249,11 +249,13 @@ Everything in the frontend is importable through `@/`:
 | Import                                          | For                                                         |
 | ----------------------------------------------- | ----------------------------------------------------------- |
 | `@/components/ui/*`                             | shadcn components (`Button`, `Card`, `Dialog`, `Badge`…)    |
-| `@/hooks` (`useFetch`, `useWebSocket`)          | API calls and socket events                                 |
+| `@/hooks` (`useFetch`, `useServerSocket`)       | API calls and socket events                                 |
 | `@/context/SessionContext` (`useSession`)       | the running session, live                                   |
 | `@/context/AppContext` (`useApp`)               | device and app state                                        |
 | `@racehubos/shared`                             | session types, statuses, car specs                          |
 | `@addon/…`                                      | your own add-on's root (`@addon/web/components/Foo.jsx`)    |
+
+`useServerSocket(events, onEvent)` opens a socket that reconnects on its own and calls `onEvent(event, data)` for each listed event. Declare `events` once, outside the component (`const EVENTS = ['car-service:due']`): a new array on each render reopens the socket.
 
 Style pages with Tailwind and the theme tokens (`bg-card`, `text-muted-foreground`, `border-border`…), so that dark mode and the theme follow. Tailwind classes used in add-ons are generated like core ones.
 

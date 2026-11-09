@@ -38,26 +38,6 @@
     "gap": "Gap",
     "total": "Total"
   },
-  "resultsModal": {
-    "title": "Results",
-    "colPos": "Pos",
-    "colDriver": "Driver",
-    "colLaps": "Laps",
-    "colBest": "Best",
-    "backToFreePractice": "Back to free practice"
-  },
-  "sessionHeader": {
-    "elapsed": "Elapsed",
-    "remaining": "Remaining",
-    "cuOk": "CU OK",
-    "cuOff": "CU Off"
-  },
-  "cancelConfirmModal": {
-    "title": "Cancel the session?",
-    "message": "This will cancel the current session.",
-    "back": "Back",
-    "confirm": "Cancel the session"
-  },
   "sessionModal": {
     "nameLabel": "Session name",
     "durationLabel": "Duration (min)",
@@ -103,23 +83,6 @@
     "falseStart": "FALSE START",
     "go": "GO!",
     "start": "START"
-  },
-  "session": {
-    "noSession": "No session selected",
-    "typePractice": "Free practice",
-    "typeQualif": "Qualifying",
-    "typeRace": "Race",
-    "elapsed": "Elapsed",
-    "remaining": "Remaining",
-    "cuOk": "CU OK",
-    "cuOff": "CU Off",
-    "connectCu": "Connect a CU",
-    "start": "Start",
-    "pause": "Pause",
-    "finish": "Finish",
-    "resume": "Resume",
-    "lastLapInProgress": "Last lap in progress...",
-    "viewResults": "View Results"
   },
   "controllerSlot": {
     "controller": "Controller {{number}}",
