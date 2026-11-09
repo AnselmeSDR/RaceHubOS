@@ -370,6 +370,12 @@ const addons = await loadAddons({
   coreDatabasePath: getDatabasePath(),
 });
 
+// An unknown API route answers 404 in JSON, never the app's page: a removed add-on,
+// a typo or an old client must get an error it can read
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `Not found: ${req.method} ${req.originalUrl}` });
+});
+
 // Serve frontend build (production mode)
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {

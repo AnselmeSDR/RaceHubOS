@@ -30,3 +30,9 @@ test('a page with layout: false is shown without the sidebar', async ({ page }) 
   await expect(page.getByTestId('e2e-hello-screen')).toBeVisible()
   await expect(page.getByTestId('page-header')).toHaveCount(0)
 })
+
+test('the API of an add-on that is not there answers 404 in JSON, not the app page', async ({ request }) => {
+  const res = await request.get('http://localhost:3101/api/addons/not-installed/hello')
+  expect(res.status()).toBe(404)
+  expect(await res.json()).toEqual({ success: false, error: 'Not found: GET /api/addons/not-installed/hello' })
+})
