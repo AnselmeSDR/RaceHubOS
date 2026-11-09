@@ -98,6 +98,13 @@ test('the first session selected, its stored leaderboard and the standings besid
   expect(screen.getByText('General Standings')).toBeInTheDocument()
 })
 
+test('the practice sort chosen is kept', async () => {
+  await loaded()
+  await waitFor(() => expect(received.SessionLeaderboard).toBeDefined())
+  act(() => received.SessionLeaderboard.onSortChange('bestLap'))
+  expect(received.SessionLeaderboard.sortBy).toBe('bestLap')
+})
+
 test('selecting a running session follows it live', async () => {
   await loaded()
   act(() => received.ChampionshipHeader.onSelectSession(race))

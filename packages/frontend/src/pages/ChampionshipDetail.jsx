@@ -5,9 +5,9 @@ import ChampionshipBracketPanel from '../components/championship/ChampionshipBra
 import ChampionshipConfigModal from '../components/championship/ChampionshipConfigModal'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
 import ChampionshipResults from '../components/championship/ChampionshipResults'
-import ChampionshipSessionView from '../components/championship/ChampionshipSessionView'
 import ChampionshipStandingsPanel from '../components/championship/ChampionshipStandingsPanel'
 import SessionSection from '../components/championship/SessionSection'
+import SessionBoard from '../components/race/SessionBoard'
 import { useStandingsTab } from '../components/championship/useStandingsTab'
 import { useApp } from '../context/AppContext'
 import { useDevice } from '../context/DeviceContext'
@@ -30,6 +30,7 @@ export default function ChampionshipDetail() {
   const [showChampionshipConfig, setShowChampionshipConfig] = useState(false)
   const [showBracket, setShowBracket] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [practiceSortBy, setPracticeSortBy] = useState('laps')
 
   if (detail.loading) {
     return (
@@ -108,11 +109,13 @@ export default function ChampionshipDetail() {
                 onDelete={actions.remove}
                 onReset={actions.reset}
               />
-              <ChampionshipSessionView
+              <SessionBoard
                 session={selectedSession}
                 entries={entries}
                 maxLaps={maxLaps}
                 expanded={!showStandings}
+                practiceSortBy={practiceSortBy}
+                onPracticeSortChange={setPracticeSortBy}
               />
             </div>
 

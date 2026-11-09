@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '@/context/SessionContext'
-import { getSessionLeaderboard } from '@/lib/championshipApi'
+import { getSessionLeaderboard } from '@/lib/sessionApi'
 import { isLiveStatus, toLeaderboardEntries } from '@/lib/leaderboardEntries'
 
 /**

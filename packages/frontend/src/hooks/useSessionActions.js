@@ -1,5 +1,5 @@
 import { useSession } from '@/context/SessionContext'
-import { deleteSession, saveSessionConfig } from '@/lib/championshipApi'
+import { deleteSession, saveSessionConfig } from '@/lib/sessionApi'
 
 /**
  * What the session panel of a championship can do to its sessions, each reloading the sessions (and the

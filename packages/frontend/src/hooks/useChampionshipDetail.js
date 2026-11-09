@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { ChampionshipMode } from '@racehubos/shared'
-import {
-  finishChampionship,
-  getChampionship,
-  getChampionshipSessions,
-  getReferenceData,
-  getStandings,
-} from '@/lib/championshipApi'
+import { finishChampionship, getChampionship, getChampionshipSessions, getStandings } from '@/lib/championshipApi'
+import { getReferenceData } from '@/lib/sessionApi'
 
 const EMPTY_STANDINGS = { practice: [], qualif: [], race: [] }
 const REFRESH_EVENTS = ['session:finished', 'session:status_changed', 'championship:races_assigned']
