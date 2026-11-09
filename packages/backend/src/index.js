@@ -17,6 +17,9 @@ import { createPrismaClient } from './lib/prisma.js';
 import { CarreraSimulator } from './services/simulator.js';
 import { SyncService } from './services/SyncService.js';
 import { ControlUnit } from './services/controlUnit.js';
+import { mirrorEmits } from './addons/events.js';
+import { loadAddons } from './addons/loader.js';
+import { getDatabasePath } from './lib/database-url.js';
 
 // Import routes
 import driversRouter from './routes/drivers.js';
@@ -62,6 +65,9 @@ const io = new Server(httpServer, {
   pingTimeout: 60000,
   pingInterval: 25000,
 });
+
+// Everything the core sends to the browsers also reaches the add-ons (ctx.events)
+const coreEvents = mirrorEmits(io);
 
 // Initialize services
 const sessionService = new SessionService(io);
@@ -339,6 +345,25 @@ io.on('connection', (socket) => {
   });
 });
 
+// Add-ons: after the core routes, before the SPA fallback — docs/ADDONS.md
+const addons = await loadAddons({
+  rootDir,
+  app,
+  io,
+  events: coreEvents,
+  prisma,
+  services: {
+    session: sessionService,
+    championship: championshipService,
+    config: configService,
+    sync: syncService,
+    controlUnit,
+    simulator,
+  },
+  version: APP_VERSION,
+  coreDatabasePath: getDatabasePath(),
+});
+
 // Serve frontend build (production mode)
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
@@ -402,6 +427,7 @@ function gracefulShutdown(signal) {
   console.log(`\n⚠️  ${signal} received, closing server...`);
 
   try {
+    addons.unload().catch(() => {});
     syncService.close();
     simulator.disconnect();
     controlUnit.disconnect();

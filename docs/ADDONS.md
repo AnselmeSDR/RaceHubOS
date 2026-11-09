@@ -106,7 +106,7 @@ To test with race data, connect the **Simulator** in Settings. You don't need a 
 ```
 addons/<id>/
 ├── racehubos-addon.json     required: the manifest
-├── package.json             optional: the add-on's own npm dependencies
+├── package.json             optional: the add-on's own npm dependencies, with "type": "module"
 ├── server/index.js          optional: server entry, exports register(ctx)
 ├── web/
 │   ├── index.jsx            optional: web entry, exports { routes, nav }
@@ -257,7 +257,7 @@ Style pages with Tailwind and the theme tokens (`bg-card`, `text-muted-foregroun
 
 ### Dependencies
 
-Put your own dependencies in the add-on's `package.json`. They are installed with `npm install --omit=dev` in the add-on folder.
+Put your own dependencies in the add-on's `package.json`, with `"type": "module"`: add-on code is made of ES modules. They are installed with `npm install --omit=dev` in the add-on folder.
 
 Don't add what the core already provides: `react`, `react-dom`, `react-router-dom`, `i18next`, `react-i18next`, `socket.io-client`, `lucide-react`, `express`, `@prisma/client`, `better-sqlite3`. These must exist only once in the app. A second React copy breaks hooks. You can list them under `peerDependencies` for documentation.
 
@@ -484,7 +484,7 @@ Add-ons are trusted, so the app doesn't try to stop them at runtime. It does mak
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Installing or updating an add-on fails (clone, npm, build) | The add-on goes back to its previous state, or is removed if it was a new install. The app is untouched. |
 | A core update's build fails on an add-on file              | That add-on is disabled and the build retried. The core update goes through.                         |
-| `register()` throws at startup                             | The add-on is disabled, the app starts, and the Add-ons page shows the error.                        |
+| `register()` throws at startup                             | The add-on is disabled, the app starts, and the Add-ons page shows the error. A developer's folder is only skipped for this run. |
 | An add-on page crashes                                     | Its error boundary shows the error. The rest of the app works.                                       |
 | A `ctx.events` listener throws                             | The error is logged. The event still reaches the browsers.                                           |
 | An add-on damages data                                     | Restore the backup taken before its install or update, from `packages/backend/prisma/db-old/`.         |

@@ -65,3 +65,9 @@ packages/backend/public/uploads-remote-backup/
 
 # Exports de classement (données de course, pas du code)
 *.xlsx
+
+# Add-ons: installed or developed locally, never part of the core (docs/ADDONS.md)
+addons/*
+!addons/catalog.json
+!addons/README.md
+!addons/package.json
