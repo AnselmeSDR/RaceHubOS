@@ -1,20 +1,15 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, RefreshCw, Pencil, Zap, Flame, FlaskConical } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import DeleteButton from '../components/ui/DeleteButton'
-import ExportButton from '../components/ui/ExportButton'
-import { formatLevel } from '@racehubos/shared'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
 import { RecordsList } from '../components/RecordDisplays'
 import { CarFormModal } from './Cars'
-import LapTime from '../components/race/LapTime'
-import { getImgUrl } from '../utils/image'
-import { sessionBadgeClass } from '@/lib/colors'
 import CarSpecsCard from '../components/car/CarSpecsCard'
+import CarIdentity from '../components/car/CarIdentity'
+import CarProfileActions from '../components/car/CarProfileActions'
+import CarRecentSessions from '../components/car/CarRecentSessions'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -77,8 +72,6 @@ export default function CarProfile() {
     )
   }
 
-  const carColor = car.color || '#22C55E'
-
   // Deleting from the profile: the entity is soft-deleted, then we leave the page
   async function handleDelete() {
     try {
@@ -96,70 +89,15 @@ export default function CarProfile() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/cars')}>
             <ArrowLeft className="size-4" />
           </Button>
-          {car.img ? (
-            <div
-              className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
-              style={{ '--tw-ring-color': carColor }}
-            >
-              <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
-              style={{ backgroundColor: carColor }}
-            >
-              {car.brand.charAt(0)}
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-black text-lg" style={{ color: carColor }}>
-                {car.brand} {car.model}
-              </h1>
-              {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
-            </div>
-            <div className="text-xs text-muted-foreground flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <Zap className="size-3 text-green-500" />
-                {formatLevel(car.maxSpeed)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Flame className="size-3 text-red-500" />
-                {formatLevel(car.brakeForce)}
-              </span>
-              <span className="flex items-center gap-1">
-                <FlaskConical className="size-3 text-blue-500" />
-                {formatLevel(car.fuelCapacity)}
-              </span>
-              <span>
-                {car._count?.sessions || 0} {t('glossary:session', { count: car._count?.sessions || 0 })}
-              </span>
-              {car.bestLap && (
-                <span className="flex items-center gap-1">
-                  {t('common:record')} <LapTime time={car.bestLap} size="sm" />
-                </span>
-              )}
-            </div>
-          </div>
+          <CarIdentity car={car} />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowResetConfirm(true)}
-            disabled={resetting}
-            className="text-orange-600 dark:text-orange-400"
-          >
-            <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
-          </Button>
-          <div className="flex items-center gap-2">
-            <ExportButton url={`/api/cars/${car.id}/export`} />
-            <DeleteButton variant="outline" onDelete={handleDelete} />
-          </div>
-        </div>
+        <CarProfileActions
+          car={car}
+          resetting={resetting}
+          onEdit={() => setShowEdit(true)}
+          onResetStats={() => setShowResetConfirm(true)}
+          onDelete={handleDelete}
+        />
       </div>
 
       {showEdit && (
@@ -196,49 +134,7 @@ export default function CarProfile() {
             showTrack={true}
           />
 
-          {/* Recent Sessions */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-semibold">{t('common:recentSessions')}</h3>
-              </div>
-              {car.sessions?.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {car.sessions.slice(0, 8).map((sd) => (
-                    <Link
-                      key={sd.id}
-                      to={`/sessions/${sd.session?.id || sd.sessionId}`}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(sd.session?.type)}`}
-                        >
-                          {sd.session?.type
-                            ? t(`glossary:sessionType.${sd.session.type}`, { defaultValue: sd.session.type })
-                            : ''}
-                        </Badge>
-                        <span className="text-sm text-foreground truncate">
-                          {sd.session?.track?.name || t('common:unknownTrack')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        {sd.finalPos && (
-                          <span className="font-black text-base" style={{ color: carColor }}>
-                            P{sd.finalPos}
-                          </span>
-                        )}
-                        {sd.bestLapTime && <LapTime time={sd.bestLapTime} size="sm" />}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">{t('common:noSessions')}</div>
-              )}
-            </CardContent>
-          </Card>
+          <CarRecentSessions car={car} />
         </div>
       </div>
     </div>

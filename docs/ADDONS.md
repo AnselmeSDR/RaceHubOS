@@ -397,7 +397,7 @@ Rules:
 
 Say you want to add a button among the actions of a page header, or a column in a table, and that piece is written inline in a 300-line page. Don't override the whole page. **Open a pull request on the core that moves that piece into its own file.** Then wrap that small file from your add-on.
 
-- **One piece per PR.** The piece moves to its own file, and the page imports it. For example, the action buttons of `pages/TrackProfile.jsx` move to `components/tracks/TrackActions.jsx`.
+- **One piece per PR.** The piece moves to its own file, and the page imports it. For example, the action buttons of `pages/TrackProfile.jsx` moved to `components/track/TrackProfileActions.jsx`.
 - **No visible change, no behavior change.** The markup is the same, and the new component receives what it needs explicitly as props.
 - **The props are the contract.** Pass what an add-on will need: the whole `track`, not just `track.id`.
 - **Commit `refactor: extract <piece> from <file>`.** In the PR description, name the add-on that needs the split.
@@ -527,12 +527,12 @@ racehubos-track-planner/
 │   ├── index.jsx                      routes '' (track list) and ':trackId' (editor)
 │   ├── pages/Editor.jsx
 │   └── locales/{en,fr,de}.json
-└── overrides/packages/frontend/src/components/tracks/TrackActions.jsx   phase 2
+└── overrides/packages/frontend/src/components/track/TrackProfileActions.jsx   phase 2
 ```
 
 - **No server code needed.** The core API already reads and writes the layout: `GET /api/tracks/:id`, and `PUT /api/tracks/:id` with `{ layout }`. Store the layout as JSON text (`carrera-track-layout/v1`).
 - **Theme and language** come for free: the planner runs inside the app, so it uses the same Tailwind theme and `i18next` instance. No bridge or `postMessage` is needed.
-- **"Edit layout" button on the track page** (phase 2): the track actions are currently written inline in `pages/TrackProfile.jsx`. Moving them to `components/tracks/TrackActions.jsx` is the kind of small core refactor described in [split it in the core](#the-spot-you-need-is-inside-a-big-file-split-it-in-the-core). The add-on then wraps it:
+- **"Edit layout" button on the track page** (phase 2): the track actions live in their own file, `components/track/TrackProfileActions.jsx`, which receives the whole `track`. They were split out of `pages/TrackProfile.jsx` exactly as described in [split it in the core](#the-spot-you-need-is-inside-a-big-file-split-it-in-the-core). The add-on wraps them:
 
 ```jsx
 export * from '@base'
@@ -541,16 +541,16 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
-export default function TrackActions(props) {
+export default function TrackProfileActions(props) {
   const navigate = useNavigate()
   const { t } = useTranslation('track-planner')
   return (
-    <>
+    <div className="flex items-center gap-2">
       <Button variant="outline" size="sm" onClick={() => navigate(`/addons/track-planner/${props.track.id}`)}>
         {t('editLayout')}
       </Button>
       <Base {...props} />
-    </>
+    </div>
   )
 }
 ```

@@ -74,3 +74,8 @@ export const STATUS_DOTS = {
 
 // Fastest lap highlight
 export const FASTEST_LAP_COLOR = 'text-fastest-lap'
+
+// Colour of a car, track or driver profile when the record has none of its own
+export const carColor = (car) => car.color || '#22C55E'
+export const trackColor = (track) => track.color || '#9333EA'
+export const driverColor = (driver) => driver.color || '#3B82F6'
