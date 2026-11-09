@@ -175,7 +175,9 @@
       "lapsUnit": "laps"
     },
     "deletedTrack": "{{name}} (deleted)",
-    "finishedLocked": "Championship finished: the configuration is locked. Reopen it to make changes."
+    "finishedLocked": "Championship finished: the configuration is locked. Reopen it to make changes.",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "wizard": {
     "title": "New auto championship",

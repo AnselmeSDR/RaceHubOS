@@ -175,7 +175,9 @@
       "lapsUnit": "tours"
     },
     "deletedTrack": "{{name}} (supprimé)",
-    "finishedLocked": "Championnat terminé : la configuration est verrouillée. Rouvrez-le pour la modifier."
+    "finishedLocked": "Championnat terminé : la configuration est verrouillée. Rouvrez-le pour la modifier.",
+    "moveUp": "Monter",
+    "moveDown": "Descendre"
   },
   "wizard": {
     "title": "Nouveau championnat auto",

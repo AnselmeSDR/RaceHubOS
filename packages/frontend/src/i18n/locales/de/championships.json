@@ -175,7 +175,9 @@
       "lapsUnit": "Runden"
     },
     "deletedTrack": "{{name}} (gelöscht)",
-    "finishedLocked": "Meisterschaft beendet: Die Konfiguration ist gesperrt. Öffne sie wieder, um Änderungen vorzunehmen."
+    "finishedLocked": "Meisterschaft beendet: Die Konfiguration ist gesperrt. Öffne sie wieder, um Änderungen vorzunehmen.",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten"
   },
   "wizard": {
     "title": "Neue automatische Meisterschaft",
