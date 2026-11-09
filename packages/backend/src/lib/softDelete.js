@@ -266,6 +266,19 @@ export async function purgeChampionship(prisma, championshipId) {
   ]);
 }
 
+/** Delete a session with its entries, laps and records, all at one timestamp. */
+export async function softDeleteSession(prisma, sessionId) {
+  const deletedAt = new Date();
+  await prisma.$transaction([
+    prisma.lap.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    prisma.sessionDriver.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    // A record stands for one lap of this session: hiding the lap hides it too
+    prisma.trackRecord.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    prisma.session.update({ where: { id: sessionId }, data: { deletedAt } }),
+  ]);
+  return { deletedAt };
+}
+
 /** Restore a session with its entries, laps and records hidden by the same deletion. */
 export async function restoreSession(prisma, sessionId) {
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
