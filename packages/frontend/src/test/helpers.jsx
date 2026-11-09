@@ -24,6 +24,11 @@ export function sortValue(columns, id, original) {
 /** A fetch mock answering `{ ok, json }` with `body`, recording every call. */
 export const jsonReply = (body, status = 200) => ({ ok: status < 400, status, json: async () => body })
 
+const REPLY = Symbol('reply')
+
+// A body answered with an error status: routeFetch({ 'PUT /api/x': withStatus(409, { error: '...' }) })
+export const withStatus = (status, body) => ({ [REPLY]: jsonReply(body, status) })
+
 /**
  * Stubs fetch with `routes`: `'[METHOD ]/path'` → a body, an error status, an Error to throw, or a function
  * of `(url, init)` returning one. The longest key the URL starts with answers; anything else gets a 404.
@@ -40,6 +45,7 @@ export function routeFetch(routes) {
     if (!key) return jsonReply({}, 404)
     const reply = typeof routes[key] === 'function' ? routes[key](url, init) : routes[key]
     if (reply instanceof Error) throw reply
+    if (reply?.[REPLY]) return reply[REPLY]
     return typeof reply === 'number' ? jsonReply({}, reply) : jsonReply(reply)
   })
   vi.stubGlobal('fetch', mock)

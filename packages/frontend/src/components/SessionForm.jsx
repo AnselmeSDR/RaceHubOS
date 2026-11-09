@@ -1,168 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Plus, Trash2 } from 'lucide-react'
-import { FuelMode, STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey } from '@racehubos/shared'
+import { X } from 'lucide-react'
+import SessionGeneralFields from './sessionForm/SessionGeneralFields'
+import SessionLineUp from './sessionForm/SessionLineUp'
+import { completeRows, initialFormData, loadSessionFormData, saveSession } from './sessionForm/sessionFormData'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const EMPTY_CHOICES = { tracks: [], championships: [], drivers: [], cars: [], availableSlots: 6 }
 
+/** Creates a session, or edits `session`: its settings and its line-up. */
 export default function SessionForm({ session, onClose, onSaved }) {
   const { t } = useTranslation('sessions')
-  const [formData, setFormData] = useState({
-    name: '',
-    type: SessionType.PRACTICE,
-    trackId: '',
-    championshipId: '',
-    duration: null,
-    maxLaps: null,
-    fuelMode: FuelMode.OFF,
-    drivers: [],
-  })
-
-  const [tracks, setTracks] = useState([])
-  const [championships, setChampionships] = useState([])
-  const [drivers, setDrivers] = useState([])
-  const [cars, setCars] = useState([])
+  const [formData, setFormData] = useState(() => initialFormData(session))
+  const [choices, setChoices] = useState(EMPTY_CHOICES)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [availableSlots, setAvailableSlots] = useState(6) // Nombre de slots disponibles
 
   useEffect(() => {
-    loadData()
-  }, [])
-
-  useEffect(() => {
-    if (session) {
-      setFormData({
-        name: session.name || '',
-        type: session.type || SessionType.PRACTICE,
-        trackId: session.trackId || '',
-        championshipId: session.championshipId || '',
-        duration: session.duration || null,
-        maxLaps: session.maxLaps || null,
-        fuelMode: session.fuelMode || 'OFF',
-        drivers:
-          session.drivers?.map((sd) => ({
-            driverId: sd.driverId,
-            carId: sd.carId,
-            controller: sd.controller || '',
-            gridPos: sd.gridPos || null,
-            position: sd.position || null,
-          })) || [],
+    loadSessionFormData()
+      .then(setChoices)
+      .catch((err) => {
+        console.error('Error loading data:', err)
+        setError(t('form.loadError'))
       })
-    }
-  }, [session])
+      .finally(() => setLoading(false))
+  }, [t])
 
-  async function loadData() {
-    try {
-      const [tracksRes, championshipsRes, driversRes, carsRes, simulatorRes] = await Promise.all([
-        fetch(`${API_URL}/tracks`),
-        fetch(`${API_URL}/championships`),
-        fetch(`${API_URL}/drivers`),
-        fetch(`${API_URL}/cars`),
-        fetch(`${API_URL}/simulator`), // Récupérer les infos du simulateur/CU
-      ])
-
-      const tracksData = await tracksRes.json()
-      const chipsData = await championshipsRes.json()
-      const driversData = await driversRes.json()
-      const carsData = await carsRes.json()
-      const simulatorData = await simulatorRes.json()
-
-      setTracks(tracksData.data || [])
-      setChampionships(chipsData.data || [])
-      setDrivers(driversData.data || [])
-      setCars(carsData.data || [])
-
-      // Récupérer le nombre de slots disponibles
-      if (simulatorData.isMockDevice) {
-        // Mode simulateur
-        setAvailableSlots(simulatorData.cars?.length || 6)
-      } else if (simulatorData.cuNumCars) {
-        // Mode Control Unit réel
-        setAvailableSlots(simulatorData.cuNumCars)
-      } else {
-        // Par défaut
-        setAvailableSlots(6)
-      }
-    } catch (err) {
-      console.error('Error loading data:', err)
-      setError(t('form.loadError'))
-    } finally {
-      setLoading(false)
-    }
-  }
+  const setField = (field, value) => setFormData((f) => ({ ...f, [field]: value }))
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!formData.trackId) {
+      setError(t('form.trackRequired'))
+      return
+    }
+    // Incomplete rows are left out; a line-up of incomplete rows only is refused
+    const drivers = completeRows(formData.drivers)
+    if (formData.drivers.length > 0 && drivers.length === 0) {
+      setError(t('form.driverRequired'))
+      return
+    }
     try {
-      // Validation
-      if (!formData.trackId) {
-        setError(t('form.trackRequired'))
-        return
-      }
-
-      // Valider les drivers - filtrer les drivers incomplets
-      const validDrivers = formData.drivers.filter((d) => d.driverId && d.carId && d.controller)
-
-      if (formData.drivers.length > 0 && validDrivers.length === 0) {
-        setError(t('form.driverRequired'))
-        return
-      }
-
-      const dataToSend = {
-        ...formData,
-        drivers: validDrivers,
-      }
-
-      const method = session ? 'PUT' : 'POST'
-      const url = session ? `${API_URL}/sessions/${session.id}` : `${API_URL}/sessions`
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || t('common:saveError'))
-      }
-
-      const result = await response.json()
-      onSaved(result.data)
+      onSaved(await saveSession(session, { ...formData, drivers }, t('common:saveError')))
       onClose()
     } catch (err) {
       console.error('Error saving session:', err)
       setError(err.message || t('common:saveError'))
     }
-  }
-
-  function addDriver() {
-    // Trouver le prochain contrôleur disponible
-    const usedControllers = formData.drivers.map((d) => d.controller)
-    const nextController =
-      Array.from({ length: availableSlots }, (_, i) => String(i + 1)).find((c) => !usedControllers.includes(c)) || ''
-
-    setFormData({
-      ...formData,
-      drivers: [
-        ...formData.drivers,
-        { driverId: '', carId: '', controller: nextController, gridPos: null, position: null },
-      ],
-    })
-  }
-
-  function removeDriver(index) {
-    setFormData({
-      ...formData,
-      drivers: formData.drivers.filter((_, i) => i !== index),
-    })
-  }
-
-  function updateDriver(index, field, value) {
-    const updated = [...formData.drivers]
-    updated[index] = { ...updated[index], [field]: value }
-    setFormData({ ...formData, drivers: updated })
   }
 
   if (loading) {
@@ -201,217 +84,19 @@ export default function SessionForm({ session, onClose, onSaved }) {
               {error}
             </div>
           )}
-
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">{t('form.generalInfo')}</h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('form.name')}
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder={t('form.namePlaceholder')}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('form.type')}
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  {STANDARD_SESSION_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(sessionTypeFullKey(type))}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('glossary:track', { count: 1 })}
-                </label>
-                <select
-                  required
-                  value={formData.trackId}
-                  onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">{t('form.selectTrack')}</option>
-                  {tracks.map((track) => (
-                    <option key={track.id} value={track.id}>
-                      {track.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('form.championshipOptional')}
-                </label>
-                <select
-                  value={formData.championshipId}
-                  onChange={(e) => setFormData({ ...formData, championshipId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">{t('form.none')}</option>
-                  {championships.map((champ) => (
-                    <option key={champ.id} value={champ.id}>
-                      {champ.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('form.fuel')}
-                </label>
-                <select
-                  value={formData.fuelMode}
-                  onChange={(e) => setFormData({ ...formData, fuelMode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="OFF">{t('form.fuelOff')}</option>
-                  <option value="ON">{t('form.fuelOn')}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('form.duration')}
-                </label>
-                <input
-                  type="number"
-                  value={formData.duration || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, duration: e.target.value ? parseInt(e.target.value) : null })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder={t('form.durationPlaceholder')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('form.maxLaps')}
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxLaps || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxLaps: e.target.value ? parseInt(e.target.value) : null })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  placeholder={t('form.maxLapsPlaceholder')}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Drivers */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">{t('glossary:driver', { count: 2 })}</h3>
-                <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full font-medium">
-                  {t('form.slots', { count: formData.drivers.length, total: availableSlots })}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={addDriver}
-                disabled={formData.drivers.length >= availableSlots}
-                className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/70 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" />
-                {t('common:add')}
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {formData.drivers.map((driver, index) => (
-                <div key={index} className="flex gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <select
-                    value={driver.driverId}
-                    onChange={(e) => updateDriver(index, 'driverId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                  >
-                    <option value="">{t('glossary:driver', { count: 1 })}</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={driver.carId}
-                    onChange={(e) => updateDriver(index, 'carId', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                  >
-                    <option value="">{t('glossary:car', { count: 1 })}</option>
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.brand} {c.model}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={driver.controller}
-                    onChange={(e) => updateDriver(index, 'controller', e.target.value)}
-                    className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                  >
-                    <option value="">{t('form.controllerShort')}</option>
-                    {Array.from({ length: availableSlots }, (_, i) => i + 1).map((slot) => {
-                      const isUsed = formData.drivers.some((d, idx) => idx !== index && d.controller === String(slot))
-                      return (
-                        <option key={slot} value={slot} disabled={isUsed}>
-                          {slot} {isUsed ? t('form.controllerUsed') : ''}
-                        </option>
-                      )
-                    })}
-                  </select>
-
-                  <input
-                    type="number"
-                    value={driver.gridPos || ''}
-                    onChange={(e) => updateDriver(index, 'gridPos', e.target.value ? parseInt(e.target.value) : null)}
-                    placeholder={t('form.gridPlaceholder')}
-                    className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => removeDriver(index)}
-                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
-
-              {formData.drivers.length === 0 && (
-                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">{t('form.noDriversAdded')}</p>
-              )}
-            </div>
-          </div>
+          <SessionGeneralFields
+            formData={formData}
+            setField={setField}
+            tracks={choices.tracks}
+            championships={choices.championships}
+          />
+          <SessionLineUp
+            rows={formData.drivers}
+            onRowsChange={(rows) => setField('drivers', rows)}
+            drivers={choices.drivers}
+            cars={choices.cars}
+            availableSlots={choices.availableSlots}
+          />
         </form>
 
         {/* Actions Footer */}
