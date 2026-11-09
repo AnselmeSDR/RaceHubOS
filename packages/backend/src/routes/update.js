@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { refreshDesktopInstaller } from '../lib/desktopInstaller.js';
+import { buildApp } from '../addons/build.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,9 +125,12 @@ router.post('/apply', async (req, res) => {
       emitProgress(3, 'Installation des dépendances...');
       await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
 
-      // Build frontend
+      // Build frontend. A build failing on an add-on file disables that add-on
+      // instead of rolling the core back — docs/ADDONS.md § When something breaks
       emitProgress(4, 'Build du frontend...');
-      await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
+      const { disabled } = await buildApp(rootDir);
+      if (disabled.length > 0)
+        console.warn(`[update] Add-ons désactivés, leur build échouait : ${disabled.join(', ')}`);
     } catch (error) {
       await rollback(previousCommit, error.message);
       throw new Error(`Mise à jour annulée, version précédente restaurée (${error.message})`);

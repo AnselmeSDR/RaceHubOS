@@ -332,9 +332,9 @@ A missing or broken add-on database must never stop the app.
 
 ### What happens to the data
 
-- **Before every install, update or uninstall of an add-on**, the core database is saved to `packages/backend/prisma/db-old/` (reason `addon-<id>`), and `addons/.data/` is copied with it.
+- **Before every install, update or uninstall of an add-on**, the core database is saved to `packages/backend/prisma/db-old/` (reason `addon-<id>`), and `addons/.data/` is copied next to it (`<backup>.addons-data/`).
 - **Updating or disabling an add-on** keeps its data.
-- **Uninstalling an add-on** deletes its data (its `*Extra` rows and `addons/.data/<id>/`) only if the user asks for it.
+- **Uninstalling an add-on** deletes its data only if the user asks for it: its `*Extra` rows at once, `addons/.data/<id>/` at the restart that follows (its database may still be open until then).
 
 ---
 
@@ -564,7 +564,7 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
 **Repository**
 
 - `.gitignore`: `addons/*`, except `addons/catalog.json` and `addons/README.md`.
-- `addons/.data/state.json`: disabled add-ons (with the reason) and how each add-on was installed (repo, ref).
+- `addons/.data/state.json`: disabled add-ons (with the reason), how each add-on was installed (repo, ref, version) and the data folders to delete at the next start.
 
 **Discovery** (shared by the Vite plugin and the backend)
 
@@ -594,14 +594,16 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
   - `import()` each `server/index.js` and `await register(ctx)`. On an exception, disable the add-on in `state.json`, log it, and go on;
   - mount the routers at `/api/addons/<id>`;
   - call the returned cleanup functions in `gracefulShutdown`.
-- Routes `/api/addons`:
-  - `GET` lists the installed add-ons, the catalog and the available updates (`git ls-remote --tags`);
+- Routes `/api/addon-manager` (`routes/addonManager.js`, actions in `addons/manager.js`). Not under `/api/addons`: each add-on owns `/api/addons/<id>`, and its own `POST /update` must never meet a core route.
+  - `GET` lists the add-ons (with their available update, `git ls-remote --tags`), the catalog and the override stacks with their warnings;
   - `POST /install` takes `{ id }` (catalog) or `{ repo }` (link);
   - `POST /:id/update`, `POST /:id/enable`, `POST /:id/disable`;
   - `DELETE /:id`, with `delete_data=1` as an option.
 
-  Progress goes out on `addons:progress` (same shape as `update:progress`). Each action ends with `process.exit(42)`, which makes the launcher restart.
+  An action answers `202` once checked (`4xx` when refused: unknown id, already installed, a developer's folder…), one at a time. Its steps go out on `addons:progress`: `{ action, addon, step, status, error }`, `step` being `download`, `backup`, `dependencies`, `build`, then `restart` (`status: 'complete'`) or `error`. A success ends with `process.exit(42)`, which makes the launcher restart.
+- Catalog (`addons/catalog.js`): read from `main` on GitHub, the local `addons/catalog.json` when offline. `RACEHUBOS_CATALOG_URL` replaces the address; empty, only the local copy is read.
+- Build (`addons/build.js`): `npm run build`; when the output names a file of an enabled add-on, that add-on is disabled (reason `build failed: …`) and the build retried. Used by the add-on actions and by the core update.
 - `routes/update.js`: if the core build fails on a file under `addons/<id>/`, disable that add-on and rebuild instead of rolling back.
-- Before every add-on install, update or uninstall: `backupDatabase({ reason: 'addon-<id>' })`, which also copies `addons/.data/`. Uninstalling with `delete_data=1` also deletes the add-on's rows in the `*Extra` tables.
+- Before every add-on install, update or uninstall: `backupDatabase({ reason: 'addon-<id>' })`, plus a copy of `addons/.data/`. Uninstalling with `delete_data=1` deletes the add-on's rows in the `*Extra` tables and schedules `addons/.data/<id>/` in `state.json` (`purge`), deleted by the loader at the next start.
 
 **Add-ons page** (`/addons`): Market, Install from a link, Installed. The Installed tab shows, for each overridden file, its stack, and warns when a replacement (an override without `@base`) hides a layer below it.

@@ -18,6 +18,8 @@ import {
   readState,
   realPosix,
   recordInstall,
+  schedulePurge,
+  takePurges,
   toPosix,
   validateManifest,
   writeState,
@@ -140,17 +142,17 @@ describe('add-on state', () => {
   });
 
   test('a missing state means nothing disabled and nothing installed', () => {
-    expect(readState(root)).toEqual({ disabled: {}, installed: {} });
+    expect(readState(root)).toEqual({ disabled: {}, installed: {}, purge: [] });
   });
 
   test('a damaged state is ignored instead of stopping the app', () => {
     writeFile(root, 'addons/.data/state.json', '{ not json');
-    expect(readState(root)).toEqual({ disabled: {}, installed: {} });
+    expect(readState(root)).toEqual({ disabled: {}, installed: {}, purge: [] });
   });
 
   test('a partial state is completed', () => {
     writeFile(root, 'addons/.data/state.json', { disabled: { a: { reason: 'x' } } });
-    expect(readState(root)).toEqual({ disabled: { a: { reason: 'x' } }, installed: {} });
+    expect(readState(root)).toEqual({ disabled: { a: { reason: 'x' } }, installed: {}, purge: [] });
   });
 
   test('disable, enable, record and forget', () => {
@@ -168,7 +170,22 @@ describe('add-on state', () => {
     expect(readState(root).installed.b).toMatchObject({ source: 'catalog', ref: 'v1.0.0' });
 
     forgetAddon(root, 'b');
-    expect(readState(root)).toEqual({ disabled: {}, installed: {} });
+    expect(readState(root)).toEqual({ disabled: {}, installed: {}, purge: [] });
+  });
+
+  test('purges are scheduled once each, then taken once', () => {
+    schedulePurge(root, 'a');
+    schedulePurge(root, 'a');
+    schedulePurge(root, 'b');
+    expect(readState(root).purge).toEqual(['a', 'b']);
+    expect(takePurges(root)).toEqual(['a', 'b']);
+    expect(takePurges(root)).toEqual([]);
+    expect(readState(root).purge).toEqual([]);
+  });
+
+  test('a hand-edited purge list keeps only ids', () => {
+    writeFile(root, 'addons/.data/state.json', { purge: ['a', 3, null] });
+    expect(readState(root).purge).toEqual(['a']);
   });
 
   test('writes atomically, without leftovers', () => {

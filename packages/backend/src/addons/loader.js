@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import express from 'express';
-import { addonPaths, disableAddon, discoverAddons } from '@racehubos/shared/addons';
+import { ADDON_ID_PATTERN, addonPaths, disableAddon, discoverAddons, takePurges } from '@racehubos/shared/addons';
 import { createAddonDatabase } from './database.js';
 import { createAddonEvents } from './events.js';
 import { createExtras, createExtrasRouter, scopePrisma } from './extras.js';
@@ -92,6 +92,20 @@ export function createAddonContext({
  * @param {Console} [options.logger]
  * @param {(url: string) => Promise<object>} [options.importModule] for tests
  */
+/**
+ * Deletes the data of add-ons uninstalled with their data, before anything opens it.
+ * Done at the start: the previous run may have held their database open (Windows).
+ */
+export function purgeAddonData(rootDir, logger = console) {
+  const { dataDir } = addonPaths(rootDir);
+  for (const id of takePurges(rootDir)) {
+    // state.json can be edited by hand: never a path outside .data/
+    if (!ADDON_ID_PATTERN.test(id)) continue;
+    fs.rmSync(path.join(dataDir, id), { recursive: true, force: true });
+    logger.log(`[addon:${id}] data deleted`);
+  }
+}
+
 export async function loadAddons({
   rootDir,
   app,
@@ -106,6 +120,7 @@ export async function loadAddons({
 }) {
   const loaded = [];
   const failed = [];
+  purgeAddonData(rootDir, logger);
 
   for (const addon of discoverAddons(rootDir)) {
     if (!addon.enabled) continue;

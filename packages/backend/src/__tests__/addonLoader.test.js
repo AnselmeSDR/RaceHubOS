@@ -4,12 +4,12 @@ import path from 'path';
 import express from 'express';
 import request from 'supertest';
 import { prisma } from './setup.js';
-import { readState, recordInstall, disableAddon } from '@racehubos/shared/addons';
+import { addonPaths, readState, recordInstall, disableAddon, schedulePurge } from '@racehubos/shared/addons';
 import { getDatabasePath } from '../lib/database-url.js';
 import { createAddonEvents, mirrorEmits } from '../addons/events.js';
 import { createAddonDatabase } from '../addons/database.js';
 import { createAddonLog, loadAddons } from '../addons/loader.js';
-import { makeAddon, makeRoot, removeRoot } from './helpers/addonFixtures.js';
+import { makeAddon, makeRoot, removeRoot, writeFile } from './helpers/addonFixtures.js';
 
 const quietLogger = () => ({ log: jest.fn(), warn: jest.fn(), error: jest.fn() });
 
@@ -226,6 +226,25 @@ describe('loadAddons', () => {
     logger = quietLogger();
   });
   afterEach(() => removeRoot(root));
+
+  test('deletes the data of add-ons uninstalled with their data, before loading', async () => {
+    writeFile(root, 'addons/.data/gone/gone.db', 'x');
+    writeFile(root, 'addons/.data/kept/kept.db', 'x');
+    schedulePurge(root, 'gone');
+    await load();
+    const { dataDir } = addonPaths(root);
+    expect(fs.existsSync(path.join(dataDir, 'gone'))).toBe(false);
+    expect(fs.existsSync(path.join(dataDir, 'kept/kept.db'))).toBe(true);
+    expect(readState(root).purge).toEqual([]);
+    expect(logger.log).toHaveBeenCalledWith('[addon:gone] data deleted');
+  });
+
+  test('a hand-edited purge never deletes outside the data folder', async () => {
+    writeFile(root, 'outside/keep.txt', 'x');
+    writeFile(root, 'addons/.data/state.json', { purge: ['../../outside'] });
+    await load();
+    expect(fs.existsSync(path.join(root, 'outside/keep.txt'))).toBe(true);
+  });
 
   test('loads an add-on and hands it a complete ctx', async () => {
     makeAddon(root, 'hello', {

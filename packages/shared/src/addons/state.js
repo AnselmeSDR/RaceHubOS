@@ -19,16 +19,18 @@ export function addonPaths(rootDir) {
   };
 }
 
-const emptyState = () => ({ disabled: {}, installed: {} });
+const emptyState = () => ({ disabled: {}, installed: {}, purge: [] });
 
 /**
  * `disabled`: { [id]: { reason, at } } — set by the user or after a crash.
- * `installed`: { [id]: { source, repo, ref, at } } — absent for a developer's folder.
+ * `installed`: { [id]: { source, repo, ref, version, at } } — absent for a developer's folder.
+ * `purge`: ids whose data folder goes at the next start, once nothing holds its database open.
  */
 export function readState(rootDir) {
   try {
     const raw = JSON.parse(fs.readFileSync(addonPaths(rootDir).stateFile, 'utf-8'));
-    return { disabled: { ...raw.disabled }, installed: { ...raw.installed } };
+    const purge = Array.isArray(raw.purge) ? raw.purge.filter((id) => typeof id === 'string') : [];
+    return { disabled: { ...raw.disabled }, installed: { ...raw.installed }, purge };
   } catch {
     // A missing or damaged state must never stop the app: every add-on is then enabled
     return emptyState();
@@ -74,4 +76,18 @@ export function forgetAddon(rootDir, id) {
     delete state.installed[id];
     delete state.disabled[id];
   });
+}
+
+/** Deletes `.data/<id>/` at the next start: the running add-on may still hold its database open (Windows). */
+export function schedulePurge(rootDir, id) {
+  return updateState(rootDir, (state) => {
+    if (!state.purge.includes(id)) state.purge.push(id);
+  });
+}
+
+/** The ids scheduled for purge, cleared from the state. */
+export function takePurges(rootDir) {
+  const { purge } = readState(rootDir);
+  if (purge.length > 0) updateState(rootDir, (state) => (state.purge = []));
+  return purge;
 }

@@ -37,6 +37,8 @@ import uploadRouter from './routes/upload.js';
 import devicesRouter from './routes/devices.js';
 import preferencesRouter from './routes/preferences.js';
 import updateRouter, { setUpdateIo } from './routes/update.js';
+import { createAddonManagerRouter } from './routes/addonManager.js';
+import { createAddonManager } from './addons/manager.js';
 
 // Import services
 import { SessionService } from './services/SessionService.js';
@@ -185,6 +187,10 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/preferences', preferencesRouter);
 app.use('/api/update', updateRouter);
+app.use(
+  '/api/addon-manager',
+  createAddonManagerRouter({ manager: createAddonManager({ rootDir, prisma }), io }).router
+);
 
 // SyncService endpoints (hardware control)
 app.get('/api/sync/state', (req, res) => {
