@@ -88,6 +88,7 @@ describe('in a real Vite server', () => {
   // A tiny repository: a core module, a core page using it, and two add-ons wrapping it
   const setup = async () => {
     write(root, 'packages/frontend/src/board.js', "export default () => ['core']\nexport const name = 'board'")
+    write(root, 'packages/frontend/src/helper.js', "export const helper = 'helper from the core folder'")
     write(
       root,
       'packages/frontend/src/page.js',
@@ -100,7 +101,14 @@ describe('in a real Vite server', () => {
     write(
       root,
       'addons/sectors/overrides/packages/frontend/src/board.js',
-      "export * from '@base'\nimport base from '@base'\nimport label from '@addon/web/label.js'\nexport default () => [...base(), label]"
+      [
+        "export * from '@base'",
+        "import base from '@base'",
+        "import label from '@addon/web/label.js'",
+        // relative to the core file's folder, as if the override sat in its place
+        "import { helper } from './helper.js'",
+        'export default () => [...base(), label, helper]',
+      ].join('\n')
     )
     write(root, 'addons/sectors/web/label.js', "export default 'sectors'")
     write(root, 'addons/sectors/web/index.js', 'export default { routes: [], nav: [] }')
@@ -132,7 +140,7 @@ describe('in a real Vite server', () => {
   test('the app gets the top of the stack, each layer wraps the one below', async () => {
     await setup()
     const page = await server.ssrLoadModule('/src/page.js')
-    expect(page.default()).toEqual({ rows: ['core', 'sectors', 'pits'], name: 'board' })
+    expect(page.default()).toEqual({ rows: ['core', 'sectors', 'helper from the core folder', 'pits'], name: 'board' })
   })
 
   test('the virtual module lists the add-ons with web code or translations', async () => {
@@ -166,7 +174,7 @@ describe('in a real Vite server', () => {
     write(root, 'addons/.data/state.json', { disabled: { pits: { reason: 'off' } }, installed: {} })
     await setup()
     const page = await server.ssrLoadModule('/src/page.js')
-    expect(page.default().rows).toEqual(['core', 'sectors'])
+    expect(page.default().rows).toEqual(['core', 'sectors', 'helper from the core folder'])
   })
 
   test('without overrides, imports resolve as usual', async () => {

@@ -415,7 +415,7 @@ app imports Leaderboard.jsx
   → core Leaderboard.jsx
 ```
 
-Stacks are sorted by the manifest's `order` (lower is closer to the core), then by `id`. The app always sees the top of the stack. To import another core module, not your own `@base`, use its normal path (`@/…`, `@racehubos/backend/src/…`). You then get the top of that module's stack, the same version the rest of the app uses.
+Stacks are sorted by the manifest's `order` (lower is closer to the core), then by `id`. The app always sees the top of the stack. To import another core module, not your own `@base`, use its normal path (`@/…`, `@racehubos/backend/src/…`) or a relative path: **a relative import in an override starts from the core file's folder**, as if the override sat in its place, so imports copied from the core file keep working. Either way you get the top of that module's stack, the same version the rest of the app uses. Your add-on's own files are reached through `@addon/…`.
 
 ### The one real conflict: replacement
 
@@ -578,13 +578,14 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
 - `resolveId`:
   1. `@base` imported from an override → the layer below it, or the core file;
   2. `@addon/…` → the importer's add-on root;
-  3. any id that resolves to a core file with overrides → the top layer.
+  3. a relative import in an override → resolved from the core file's folder;
+  4. any id that resolves to a core file with overrides → the top layer.
 - `resolve.dedupe` for the packages listed in [Dependencies](#dependencies), and `server.fs.allow` includes `addons/`.
 - `index.css`: `@source "../../../addons";` so Tailwind sees add-on classes.
 
 **Backend**
 
-- Resolve hook (`module.register`, loaded with `node --import` in the `dev` and `start` scripts): the same three rules as `resolveId`.
+- Resolve hook (`src/addons/hooks.js`, `module.register`): `src/addons/preload.js` is loaded with `node --import` by the `dev` and `start` scripts, and registers it only when an add-on is enabled. Same rules as `resolveId`.
 - One core migration adds the six `*Extra` tables: `<type>Id`, `addon`, `data` (JSON text), primary key on the record and the add-on, foreign key to the record with `onDelete: Cascade`. The core routes return `extras` with each record.
 - Loader called from `index.js` after the core routes and **before** the SPA fallback:
   - build `ctx`. `ctx.prisma` is the core client wrapped with `$extends`, which adds `addon = <id>` to every `where` and `data` on the `*Extra` models. `ctx.openDatabase()` attaches the core database as `core`. `ctx.migrate()` applies the steps beyond `PRAGMA user_version` in one transaction;

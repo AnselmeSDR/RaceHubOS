@@ -397,6 +397,13 @@ describe('overrides', () => {
     expect(resolver.isLayer(core)).toBe(false);
   });
 
+  test('core: the file a layer overrides, where its relative imports start', () => {
+    const { resolver } = setup();
+    expect(resolver.core(layer('pit-advice'))).toBe(toPosix(core));
+    expect(resolver.core(layer('sector-timing'))).toBe(toPosix(core));
+    expect(resolver.core(core)).toBeNull();
+  });
+
   test('a disabled add-on leaves the stack', () => {
     disableAddon(root, 'pit-advice');
     const { resolver } = setup();

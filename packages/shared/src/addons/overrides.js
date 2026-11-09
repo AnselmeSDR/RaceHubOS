@@ -66,7 +66,7 @@ export function buildOverrideStacks(rootDir, addons) {
 }
 
 /**
- * Answers the three questions both resolvers (Vite, Node) ask.
+ * Answers the questions both resolvers (Vite, Node) ask.
  *
  * @param {{ addons: Array<{ id: string, dir: string }>, stacks: Map }} options
  */
@@ -100,6 +100,11 @@ export function createOverrideResolver({ addons, stacks }) {
 
     isLayer(file) {
       return layers.has(toPosix(file));
+    },
+
+    /** The core file `file` overrides, or null if `file` is no override: relative imports start from there. */
+    core(file) {
+      return layers.get(toPosix(file))?.core ?? null;
     },
   };
 }

@@ -3,6 +3,7 @@
 export default {
   rootDir: '..',
   roots: ['<rootDir>/backend'],
+  coverageDirectory: '<rootDir>/backend/coverage',
   testEnvironment: 'node',
   transform: {},
   testMatch: ['**/__tests__/**/*.test.js'],

@@ -15,7 +15,8 @@ import {
  * - `virtual:racehubos-addons`: every add-on with web code or translations
  * - `@addon/…`: the importing add-on's own folder
  * - overrides: an import of an overridden core file gets the top of its stack,
- *   and `@base` inside a layer gets the layer below
+ *   `@base` inside a layer gets the layer below, and a relative import inside a layer
+ *   starts from the core file's folder
  */
 
 export const VIRTUAL_ID = 'virtual:racehubos-addons'
@@ -121,7 +122,9 @@ export default function racehubosAddons({ rootDir }) {
 
       // Any other import: if it lands on an overridden core file, the app gets the top layer
       if (!hasOverrides) return null
-      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
+      // A relative import in an override starts from the core file's folder, as if the override sat in its place
+      const core = source.startsWith('.') ? resolver.core(from) : null
+      const resolved = await this.resolve(source, core ?? importer, { ...options, skipSelf: true })
       if (!resolved || resolved.external) return resolved
       const [file, query] = resolved.id.split('?')
       const top = resolver.top(file)

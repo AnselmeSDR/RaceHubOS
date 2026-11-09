@@ -35,7 +35,7 @@ export default defineConfig({
     {
       // The database is built before the server boots: Playwright starts
       // webServers in parallel with globalSetup, so the schema is created here.
-      command: 'node ../frontend/tests/prepare-e2e-db.js && node src/index.js',
+      command: 'node ../frontend/tests/prepare-e2e-db.js && node --import ./src/addons/preload.js src/index.js',
       cwd: path.resolve(import.meta.dirname, '../backend'),
       url: `http://localhost:${BACKEND_PORT}/health`,
       // never reuse a running server: it would be pointed at the real database
