@@ -4,17 +4,7 @@ import { SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
 import StandingsTabs from '../StandingsTabs'
 import StandingStats from './StandingStats'
-import {
-  formatGapSeconds,
-  gapToLeader,
-  lapCount,
-  podiumBadge,
-  podiumRow,
-  raceLaps,
-  raceTime,
-  rankingTime,
-  standingsFor,
-} from './standingsOrder'
+import { gapToLeader, lapCount, raceLaps, raceTime, rankingTime, standingsFor } from './standingsOrder'
 
 const ana = { id: 'd1', name: 'Ana', color: '#e10600', img: '/uploads/ana.png' }
 const ben = { id: 'd2', name: 'Ben' }
@@ -77,14 +67,6 @@ describe('order', () => {
     expect(gapToLeader({ totalLaps: 10 }, leader, SessionType.RACE)).toBeNull()
     expect(gapToLeader({ points: 1 }, { points: 2 }, SessionType.RACE)).toBeNull()
     expect(gapToLeader({ bestTime: 9000 }, leader, SessionType.BALANCING)).toBeNull()
-  })
-
-  test('formats and podium styles', () => {
-    expect(formatGapSeconds(1500)).toBe('+1.500')
-    expect(podiumRow(1)).toContain('yellow')
-    expect(podiumRow(4)).toBe('')
-    expect(podiumBadge(3)).toContain('orange')
-    expect(podiumBadge(5)).toBe('text-muted-foreground')
   })
 })
 

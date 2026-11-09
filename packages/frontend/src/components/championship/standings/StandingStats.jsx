@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { STANDARD_SESSION_TYPES, SessionType } from '@racehubos/shared'
 import { GAP_COLORS } from '@/lib/colors'
 import LapTime from '../../race/LapTime'
-import { formatGapSeconds, raceLaps, raceTime, rankingTime } from './standingsOrder'
+import { formatGapSeconds } from '@/lib/podium'
+import { raceLaps, raceTime, rankingTime } from './standingsOrder'
 
 const GAP = 'font-mono text-xs text-muted-foreground w-16 text-right'
 

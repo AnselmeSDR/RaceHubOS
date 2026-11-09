@@ -44,15 +44,3 @@ export function gapToLeader(standing, leader, tab) {
   const time = rankingTime(standing, tab)
   return leaderTime && time ? { type: 'time', value: time - leaderTime } : null
 }
-
-export const formatGapSeconds = (ms) => `+${(ms / 1000).toFixed(3)}`
-
-const PODIUM_ROWS = [
-  'bg-gradient-to-r from-yellow-500/40 to-transparent border-l-4 border-yellow-400',
-  'bg-gradient-to-r from-gray-400/30 to-transparent border-l-4 border-gray-300',
-  'bg-gradient-to-r from-orange-500/30 to-transparent border-l-4 border-orange-400',
-]
-const PODIUM_BADGES = ['bg-yellow-400 text-yellow-950', 'bg-gray-300 text-gray-800', 'bg-orange-400 text-orange-950']
-
-export const podiumRow = (position) => PODIUM_ROWS[position - 1] || ''
-export const podiumBadge = (position) => PODIUM_BADGES[position - 1] || 'text-muted-foreground'

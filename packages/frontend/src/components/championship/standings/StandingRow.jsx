@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { SessionType } from '@racehubos/shared'
 import { getImgUrl } from '@/utils/image'
 import StandingStats from './StandingStats'
-import { lapCount, podiumBadge, podiumRow } from './standingsOrder'
+import { podiumBadge, podiumRow } from '@/lib/podium'
+import { lapCount } from './standingsOrder'
 
 // A driver's place, avatar, car and laps, then the tab's figures
 export default function StandingRow({ standing, driver, position, gap, tab }) {
