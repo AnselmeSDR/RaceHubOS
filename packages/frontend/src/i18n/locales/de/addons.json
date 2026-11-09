@@ -1,0 +1,7 @@
+{
+  "error": {
+    "title": "Das Add-on „{{addon}}“ ist auf dieser Seite abgestürzt",
+    "hint": "Der Rest der App funktioniert weiter. Tritt der Fehler erneut auf, deaktiviere das Add-on auf der Add-ons-Seite.",
+    "retry": "Erneut versuchen"
+  }
+}

@@ -97,6 +97,8 @@ Then run `npm run dev` from the repository root. **Hello** appears in the sideba
 
 Restart `npm run dev` when you add an add-on or a new override file. Editing existing files reloads on its own: the web side through Vite hot reload, the server side through `node --watch`.
 
+Already working in your own repository? Link it instead of copying it: `ln -s ~/dev/hello addons/hello` (Windows: `mklink /D addons\hello C:\dev\hello`). A linked folder is an add-on like any other.
+
 To test with race data, connect the **Simulator** in Settings. You don't need a Control Unit.
 
 ---

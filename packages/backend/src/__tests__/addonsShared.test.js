@@ -16,6 +16,7 @@ import {
   isLocalizedText,
   localized,
   readState,
+  realPosix,
   recordInstall,
   toPosix,
   validateManifest,
@@ -128,6 +129,16 @@ describe('add-on state', () => {
     });
   });
 
+  test('RACEHUBOS_ADDONS_DIR moves the add-ons folder, relative to the root', () => {
+    process.env.RACEHUBOS_ADDONS_DIR = 'tests/fixtures/addons';
+    try {
+      expect(addonPaths(root).addonsDir).toBe(path.join(root, 'tests/fixtures/addons'));
+      expect(addonPaths(root).dataDir).toBe(path.join(root, 'tests/fixtures/addons/.data'));
+    } finally {
+      delete process.env.RACEHUBOS_ADDONS_DIR;
+    }
+  });
+
   test('a missing state means nothing disabled and nothing installed', () => {
     expect(readState(root)).toEqual({ disabled: {}, installed: {} });
   });
@@ -182,6 +193,20 @@ describe('discoverAddons', () => {
     writeFile(root, 'addons/catalog.json', { addons: [] });
     writeFile(root, 'addons/README.md', '#');
     expect(discoverAddons(root)).toEqual([]);
+  });
+
+  test('a working copy linked into addons/ is an add-on, a link to a file or to nothing is not', () => {
+    const elsewhere = makeRoot('racehubos-linked-');
+    try {
+      const copy = makeAddon(elsewhere, 'linked');
+      fs.mkdirSync(path.join(root, 'addons'));
+      fs.symlinkSync(copy, path.join(root, 'addons/linked'), 'dir');
+      fs.symlinkSync(writeFile(elsewhere, 'notes.txt'), path.join(root, 'addons/notes'));
+      fs.symlinkSync(path.join(elsewhere, 'gone'), path.join(root, 'addons/gone'));
+      expect(discoverAddons(root).map((addon) => [addon.id, addon.valid])).toEqual([['linked', true]]);
+    } finally {
+      removeRoot(elsewhere);
+    }
   });
 
   test('describes a complete add-on', () => {
@@ -389,9 +414,53 @@ describe('overrides', () => {
     ]);
   });
 
+  test('compares real paths: a linked repository root or add-on folder', () => {
+    const elsewhere = makeRoot('racehubos-linked-');
+    const link = `${root}-link`;
+    try {
+      const copy = makeAddon(elsewhere, 'linked', {
+        manifest: { order: 300 },
+        files: { [`overrides/${leaderboard}`]: "export * from '@base'" },
+      });
+      fs.symlinkSync(copy, path.join(root, 'addons/linked'), 'dir');
+      fs.symlinkSync(root, link, 'dir');
+
+      const addons = enabledAddons(link);
+      const { stacks } = buildOverrideStacks(link, addons);
+      const resolver = createOverrideResolver({ addons, stacks });
+      const linkedLayer = toPosix(path.join(copy, 'overrides', leaderboard));
+
+      expect([...stacks.keys()]).toEqual([toPosix(core)]);
+      expect(resolver.top(core)).toBe(linkedLayer);
+      expect(resolver.base(linkedLayer)).toBe(layer('pit-advice'));
+      expect(resolver.addonRoot(linkedLayer)).toBe(toPosix(copy));
+    } finally {
+      fs.rmSync(link, { force: true });
+      removeRoot(elsewhere);
+    }
+  });
+
   test('a lone replacement hides only the core file', () => {
     const stacks = new Map([['/core.jsx', [{ id: 'a', file: '/a.jsx' }]]]);
     expect(findReplacements(stacks, () => 'export default 1')).toEqual([{ core: '/core.jsx', id: 'a', hides: [] }]);
+  });
+});
+
+describe('realPosix', () => {
+  let root;
+  beforeEach(() => {
+    root = makeRoot();
+  });
+  afterEach(() => removeRoot(root));
+
+  test('follows links', () => {
+    const file = writeFile(root, 'real/file.js');
+    fs.symlinkSync(path.join(root, 'real'), path.join(root, 'link'), 'dir');
+    expect(realPosix(path.join(root, 'link/file.js'))).toBe(toPosix(file));
+  });
+
+  test('a path that does not exist stays as it is', () => {
+    expect(realPosix(path.join(root, 'missing.js'))).toBe(toPosix(path.join(root, 'missing.js')));
   });
 });
 

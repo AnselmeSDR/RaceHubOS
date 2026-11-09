@@ -1,0 +1,7 @@
+{
+  "error": {
+    "title": "L'add-on « {{addon}} » a planté sur cette page",
+    "hint": "Le reste de l'application fonctionne. Si l'erreur revient, désactivez l'add-on depuis la page Add-ons.",
+    "retry": "Réessayer"
+  }
+}

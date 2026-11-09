@@ -2,9 +2,12 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-/** A throwaway repository root, with its own `addons/` folder. */
+/**
+ * A throwaway repository root, with its own `addons/` folder.
+ * Its real path: on macOS the temp folder is a link (/var → /private/var).
+ */
 export function makeRoot(prefix = 'racehubos-addons-') {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
 }
 
 export function removeRoot(root) {

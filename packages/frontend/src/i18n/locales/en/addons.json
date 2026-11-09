@@ -1,0 +1,7 @@
+{
+  "error": {
+    "title": "The \"{{addon}}\" add-on crashed on this page",
+    "hint": "The rest of the app keeps working. If the error comes back, disable the add-on from the Add-ons page.",
+    "retry": "Try again"
+  }
+}

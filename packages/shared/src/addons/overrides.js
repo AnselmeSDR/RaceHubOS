@@ -9,7 +9,9 @@ import path from 'path';
  * inside a layer is the layer just below it (the core file at the bottom).
  *
  * Paths are compared in absolute posix form (`C:/x/y` on Windows): that is what Vite
- * uses for module ids, and what `pathToFileURL` accepts on every platform.
+ * uses for module ids, and what `pathToFileURL` accepts on every platform. They are also
+ * real paths: Vite and Node name a module after its target when a folder is a link
+ * (an add-on linked into addons/, /var → /private/var on macOS).
  */
 
 export const BASE_SPECIFIER = '@base';
@@ -17,6 +19,15 @@ export const ADDON_SPECIFIER = '@addon/';
 
 export function toPosix(file) {
   return path.resolve(file).split(path.sep).join('/');
+}
+
+/** `toPosix` of the real path, links followed; the path itself when it does not exist. */
+export function realPosix(file) {
+  try {
+    return toPosix(fs.realpathSync(file));
+  } catch {
+    return toPosix(file);
+  }
 }
 
 function walk(dir) {
@@ -42,12 +53,12 @@ export function buildOverrideStacks(rootDir, addons) {
       const target = path.relative(addon.overridesDir, file);
       const core = path.join(rootDir, target);
       if (!fs.existsSync(core)) {
-        orphans.push({ id: addon.id, file: toPosix(file), target: target.split(path.sep).join('/') });
+        orphans.push({ id: addon.id, file: realPosix(file), target: target.split(path.sep).join('/') });
         continue;
       }
-      const key = toPosix(core);
+      const key = realPosix(core);
       if (!stacks.has(key)) stacks.set(key, []);
-      stacks.get(key).push({ id: addon.id, file: toPosix(file) });
+      stacks.get(key).push({ id: addon.id, file: realPosix(file) });
     }
   }
 
@@ -64,7 +75,7 @@ export function createOverrideResolver({ addons, stacks }) {
   for (const [core, stack] of stacks) {
     stack.forEach((layer, index) => layers.set(layer.file, { core, index }));
   }
-  const roots = addons.map((addon) => toPosix(addon.dir) + '/');
+  const roots = addons.map((addon) => realPosix(addon.dir) + '/');
 
   return {
     /** The file the app gets for `file`: the top of its stack, or null when nothing overrides it. */

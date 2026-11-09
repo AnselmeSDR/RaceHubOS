@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AppSidebar from './AppSidebar'
 import BackendStatusPopup from './BackendStatusPopup'
-import { allNavItems, navLabel } from '../lib/navItems'
+import { allNavItems, findNavItem, navLabel } from '../lib/navItems'
 import { useDevice, SIMULATOR_ADDRESS } from '../context/DeviceContext'
 import { useApp } from '../context/AppContext'
 import { PageHeaderProvider, usePageHeader } from '../context/PageHeaderContext'
@@ -27,8 +27,7 @@ function cuStateLabel(t, start) {
 function useDefaultPageTitle() {
   const { t } = useTranslation('layout')
   const { pathname } = useLocation()
-  const basePath = '/' + (pathname.split('/')[1] || '')
-  const item = allNavItems.find((n) => (n.to === '/' ? pathname === '/' : basePath === n.to))
+  const item = findNavItem(allNavItems, pathname)
   return item ? navLabel(t, item) : 'RaceHubOS'
 }
 

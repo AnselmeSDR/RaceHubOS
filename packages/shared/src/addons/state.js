@@ -4,9 +4,12 @@ import path from 'path';
 /**
  * Where add-ons live — docs/ADDONS.md § Folder layout.
  * `addons/.data/` survives core and add-on updates: it holds the data and the state.
+ * RACEHUBOS_ADDONS_DIR points elsewhere, for the end-to-end tests and their fixture add-ons.
  */
 export function addonPaths(rootDir) {
-  const addonsDir = path.join(rootDir, 'addons');
+  const addonsDir = process.env.RACEHUBOS_ADDONS_DIR
+    ? path.resolve(rootDir, process.env.RACEHUBOS_ADDONS_DIR)
+    : path.join(rootDir, 'addons');
   const dataDir = path.join(addonsDir, '.data');
   return {
     addonsDir,

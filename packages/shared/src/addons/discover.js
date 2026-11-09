@@ -3,6 +3,15 @@ import path from 'path';
 import { DEFAULT_ORDER, MANIFEST_FILE, validateManifest } from './manifest.js';
 import { addonPaths, readState } from './state.js';
 
+// A developer may link their working copy into addons/: a link to a folder counts as a folder
+function isFolder(file) {
+  try {
+    return fs.statSync(file).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 function existing(dir, ...candidates) {
   for (const candidate of candidates) {
     const file = path.join(dir, candidate);
@@ -40,7 +49,7 @@ export function discoverAddons(rootDir) {
   try {
     folders = fs
       .readdirSync(addonsDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+      .filter((entry) => !entry.name.startsWith('.') && isFolder(path.join(addonsDir, entry.name)))
       .map((entry) => entry.name);
   } catch {
     return [];

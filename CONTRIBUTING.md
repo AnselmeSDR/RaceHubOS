@@ -33,7 +33,8 @@ Both are checked by `npm run check`.
 Every PR that changes code comes with tests covering the change:
 
 - business rules: backend, `npm test -w @racehubos/backend` — always through this script, which points the tests at a throwaway database
-- interface: Playwright, `npm test -w @racehubos/frontend`, with selectors on `data-testid`
+- interface, unit: [Vitest](https://vitest.dev) and Testing Library, `npm test -w @racehubos/frontend` (`npm run test:coverage -w @racehubos/frontend` for the coverage)
+- interface, end to end: Playwright, `npm run test:e2e -w @racehubos/frontend`, with selectors on `data-testid`
 
 A test must fail when the rule it protects is broken.
 
@@ -52,6 +53,7 @@ Don't reformat files you don't need to change (e.g. `package.json` rewritten wit
 ```bash
 npm run check
 npm test -w @racehubos/backend
+npm test -w @racehubos/frontend
 ```
 
 - One PR = one topic, based on the latest `main`.

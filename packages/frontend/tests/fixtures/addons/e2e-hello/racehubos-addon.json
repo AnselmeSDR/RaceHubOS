@@ -1,0 +1,6 @@
+{
+  "id": "e2e-hello",
+  "name": { "en": "E2E hello", "fr": "Bonjour E2E", "de": "Hallo E2E" },
+  "version": "0.1.0",
+  "description": "Add-on used by the Playwright tests: a page, a menu entry, translations, an API route, a crash and a full-screen page."
+}

@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar'
 import { useApp } from '../context/AppContext'
-import { allNavItems, navLabel } from '../lib/navItems'
+import { allNavItems, findNavItem, navLabel } from '../lib/navItems'
 
 export default function AppSidebar({ backendConnected, backendVersion, onStatusClick, ...props }) {
   const { t } = useTranslation('layout')
@@ -23,10 +23,8 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
 
   const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin)
 
-  const isActive = (to) => {
-    if (to === '/') return location.pathname === '/'
-    return location.pathname === to || location.pathname.startsWith(to + '/')
-  }
+  // One active entry, the closest: /addons/x/screen lights up its own entry, not /addons/x too
+  const activeItem = findNavItem(navItems, location.pathname)
 
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
@@ -59,8 +57,8 @@ export default function AppSidebar({ backendConnected, backendVersion, onStatusC
                 const label = navLabel(t, item)
                 return (
                   <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={label}>
-                      <Link to={item.to}>
+                    <SidebarMenuButton asChild isActive={item === activeItem} tooltip={label}>
+                      <Link to={item.to} data-testid={`nav-${item.to}`}>
                         <item.Icon />
                         <span>{label}</span>
                       </Link>

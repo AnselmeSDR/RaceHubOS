@@ -1,6 +1,8 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
+import addons from 'virtual:racehubos-addons'
+import { registerAddonLocales } from '@/addons/registry'
 
 export const LANGUAGES = [
   { code: 'de', label: 'Deutsch' },
@@ -42,5 +44,8 @@ i18n
       caches: ['localStorage'],
     },
   })
+
+// Each add-on's texts live in the namespace named after it — docs/ADDONS.md § Translations
+registerAddonLocales(i18n, addons, NAMESPACES)
 
 export default i18n

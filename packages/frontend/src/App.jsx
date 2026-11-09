@@ -6,6 +6,9 @@ import { AppProvider } from './context/AppContext'
 import { VoiceProvider } from './context/VoiceContext'
 import { TooltipProvider } from './components/ui/tooltip'
 import Layout from './components/Layout'
+import addons from 'virtual:racehubos-addons'
+import { addonRoutes } from './addons/registry'
+import AddonPage from './addons/AddonPage'
 
 // Lazy load all pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -27,6 +30,16 @@ const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
 const BalancingPage = lazy(() => import('./pages/BalancingPage'))
 const Championships = lazy(() => import('./pages/Championships'))
 const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'))
+
+// Pages brought by add-ons — docs/ADDONS.md § Web side
+const addonPages = addonRoutes(addons)
+const addonRoute = (route) => (
+  <Route
+    key={route.key}
+    path={route.path}
+    element={<AddonPage addonId={route.addonId} Component={route.Component} />}
+  />
+)
 
 function App() {
   return (
@@ -204,9 +217,11 @@ function App() {
                         </Suspense>
                       }
                     />
+                    {addonPages.filter((route) => route.layout).map(addonRoute)}
                   </Route>
 
                   {/* Routes without sidebar */}
+                  {addonPages.filter((route) => !route.layout).map(addonRoute)}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </TooltipProvider>

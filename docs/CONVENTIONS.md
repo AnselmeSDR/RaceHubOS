@@ -9,7 +9,7 @@ npm run check        # avant de développer, et pendant
 npm run check:push   # avant de pousser (ajoute les règles de version et d'installeur)
 ```
 
-**Avant de développer** : lire les règles du domaine concerné. **Avant de pousser** : `npm run check:push` et `npm test -w @racehubos/backend`.
+**Avant de développer** : lire les règles du domaine concerné. **Avant de pousser** : `npm run check:push`, `npm test -w @racehubos/backend` et `npm test -w @racehubos/frontend`.
 
 ---
 
@@ -167,9 +167,9 @@ Contrôlé sur `main` uniquement : la version se monte au merge, jamais dans une
 
 `src/__tests__/setup.js` vide toutes les tables. Lancé sur `dev.db`, il efface les vraies courses — c'est déjà arrivé. Toujours `npm test -w @racehubos/backend`, qui fixe `DATABASE_URL` sur `test.db`, recréée à chaque lancement puis supprimée.
 
-### Playwright sert à tester l'interface, rien d'autre
+### L'interface se teste en Vitest et en Playwright, jamais une règle métier
 
-Une règle métier se teste côté serveur, sur base de test. Les sélecteurs s'appuient sur des `data-testid`, jamais sur une classe CSS ou une position — les tests avaient cassé sur un `.bg-white` disparu et sur « la dernière carte ».
+Une règle métier se teste côté serveur, sur base de test. Côté interface, les fonctions et les composants se testent unitairement avec Vitest et Testing Library (`npm test -w @racehubos/frontend`), les parcours de bout en bout avec Playwright (`npm run test:e2e -w @racehubos/frontend`). Les sélecteurs s'appuient sur des `data-testid`, jamais sur une classe CSS ou une position — les tests avaient cassé sur un `.bg-white` disparu et sur « la dernière carte ».
 
 ### Un test doit échouer quand la règle est violée
 
@@ -177,7 +177,7 @@ Un test qui passe avant et après le bug ne protège rien. Après avoir écrit u
 
 ### Une PR arrive avec ses tests
 
-Toute PR qui change du code ajoute ou adapte les tests qui le couvrent : règle métier côté serveur, interface en Playwright. Le mainteneur intègre un code qu'il n'a pas écrit : sans test, rien ne prouve qu'il marche, ni qu'il marchera encore après le changement suivant.
+Toute PR qui change du code ajoute ou adapte les tests qui le couvrent : règle métier côté serveur, interface en Vitest et en Playwright. Le mainteneur intègre un code qu'il n'a pas écrit : sans test, rien ne prouve qu'il marche, ni qu'il marchera encore après le changement suivant.
 
 ---
 

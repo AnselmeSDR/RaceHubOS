@@ -6,6 +6,8 @@ import { defineConfig } from '@playwright/test'
 const BACKEND_PORT = 3101
 const FRONTEND_PORT = 5175
 const E2E_DB = path.resolve(import.meta.dirname, '../backend/prisma/e2e.db')
+// Both servers load the test add-ons, never the developer's own addons/ folder
+const E2E_ADDONS = path.resolve(import.meta.dirname, 'tests/fixtures/addons')
 
 export default defineConfig({
   testDir: './tests',
@@ -43,6 +45,7 @@ export default defineConfig({
         DATABASE_URL: `file:${E2E_DB}`,
         PORT: String(BACKEND_PORT),
         USE_MOCK_DEVICE: 'true',
+        RACEHUBOS_ADDONS_DIR: E2E_ADDONS,
       },
     },
     {
@@ -50,7 +53,7 @@ export default defineConfig({
       url: `http://localhost:${FRONTEND_PORT}`,
       reuseExistingServer: false,
       timeout: 60000,
-      env: { BACKEND_PORT: String(BACKEND_PORT) },
+      env: { BACKEND_PORT: String(BACKEND_PORT), RACEHUBOS_ADDONS_DIR: E2E_ADDONS },
     },
   ],
 })
