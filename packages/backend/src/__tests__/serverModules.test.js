@@ -272,6 +272,12 @@ describe('core routes', () => {
     expect((await api.get('/api/img/secrets/ana.png')).status).toBe(400);
   });
 
+  test('an image path never leaves the folder of its type', async () => {
+    fs.writeFileSync(path.join(uploadsDir, 'secret.db'), 'data');
+    const res = await api.get('/api/img/drivers/..%2Fsecret.db');
+    expect([res.status, res.body]).toEqual([404, { error: 'Image not found' }]);
+  });
+
   test('health check and API listing carry the version', async () => {
     expect((await api.get('/health')).body).toMatchObject({ status: 'ok', version: '9.9.9' });
     const { body } = await api.get('/api');

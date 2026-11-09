@@ -30,7 +30,7 @@ import bluetoothRouter from './routes/bluetooth.js';
 import sessionsRouter from './routes/sessions.js';
 import configRouter from './routes/config.js';
 import recordsRouter from './routes/records.js';
-import uploadRouter from './routes/upload.js';
+import { createUploadRouter } from './routes/upload.js';
 import devicesRouter from './routes/devices.js';
 import preferencesRouter from './routes/preferences.js';
 import updateRouter from './routes/update.js';
@@ -79,7 +79,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-addCoreRoutes(app, { version: APP_VERSION, uploadsDir: path.join(__dirname, '../public/uploads') });
+const uploadsDir = path.join(__dirname, '../public/uploads');
+addCoreRoutes(app, { version: APP_VERSION, uploadsDir });
 
 // Mount API routes
 app.use('/api/drivers', driversRouter);
@@ -93,7 +94,7 @@ app.use('/api/bluetooth', bluetoothRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/records', recordsRouter);
-app.use('/api/upload', uploadRouter);
+app.use('/api/upload', createUploadRouter(uploadsDir));
 app.use('/api/devices', devicesRouter);
 app.use('/api/preferences', preferencesRouter);
 app.use('/api/update', updateRouter);

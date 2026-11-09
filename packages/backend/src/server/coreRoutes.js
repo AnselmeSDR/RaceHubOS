@@ -1,6 +1,6 @@
 import path from 'path';
 
-const IMAGE_TYPES = ['drivers', 'cars', 'tracks', 'teams'];
+export const IMAGE_TYPES = ['drivers', 'cars', 'tracks', 'teams'];
 
 /** The endpoints every API listing points to. */
 const ENDPOINTS = {
@@ -25,7 +25,8 @@ export function addCoreRoutes(app, { version, uploadsDir }) {
   app.get('/api/img/:type/:filename', (req, res) => {
     const { type, filename } = req.params;
     if (!IMAGE_TYPES.includes(type)) return res.status(400).json({ error: 'Invalid image type' });
-    res.sendFile(path.join(uploadsDir, type, filename), (err) => {
+    // basename: a decoded %2F must not climb out of the uploads
+    res.sendFile(path.join(uploadsDir, type, path.basename(filename)), (err) => {
       if (err) res.status(404).json({ error: 'Image not found' });
     });
   });
