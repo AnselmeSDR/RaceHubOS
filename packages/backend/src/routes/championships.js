@@ -16,6 +16,7 @@ import {
 } from '../lib/championships/participants.js';
 import { championshipResults } from '../lib/championships/results.js';
 import { championshipStandings, standingsInclude, STANDINGS_TYPES } from '../lib/championships/standings.js';
+import { route } from '../lib/http.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -27,16 +28,6 @@ export function setChampionshipService(service) {
 }
 
 const notFound = (res) => res.status(404).json({ success: false, error: 'Championship not found' });
-
-/** Runs `handler`, answering 500 with `failure` (or the error's message) when it throws. */
-const route = (failure, handler) => async (req, res) => {
-  try {
-    await handler(req, res);
-  } catch (error) {
-    console.error(`${failure ?? 'Championship route failed'}:`, error);
-    res.status(500).json({ success: false, error: failure ?? error.message });
-  }
-};
 
 // GET /api/championships - list, filtered (deleted, trackId, status), sorted and paginated
 router.get(
@@ -194,16 +185,18 @@ router.patch(
 );
 
 // POST /api/championships/:id/sessions - Body: { type, name, duration, maxLaps, order, gridFromQualifying }
-router.post('/:id/sessions', async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!(await prisma.championship.findUnique({ where: { id } }))) return notFound(res);
-    res.json({ success: true, data: await championshipService.createSession(id, req.body) });
-  } catch (error) {
-    console.error('Error creating session:', error);
-    res.status(400).json({ success: false, error: error.message });
-  }
-});
+router.post(
+  '/:id/sessions',
+  route(
+    null,
+    async (req, res) => {
+      const { id } = req.params;
+      if (!(await prisma.championship.findUnique({ where: { id } }))) return notFound(res);
+      res.json({ success: true, data: await championshipService.createSession(id, req.body) });
+    },
+    400
+  )
+);
 
 // GET /api/championships/:id/results - podium, race standings and awards
 router.get(

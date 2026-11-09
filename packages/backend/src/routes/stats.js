@@ -6,19 +6,10 @@ import { sessionFilterOf } from '../lib/stats/figures.js';
 import { bestLapsOf, LAP_INCLUDE, lapOrderBy, lapRow, lapTimesWhere } from '../lib/stats/lapTimes.js';
 import { overallLeaderboard, sessionLeaderboard, teamLeaderboard } from '../lib/stats/leaderboards.js';
 import { lapRecord, mostEntries } from '../lib/stats/records.js';
+import { route } from '../lib/http.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
-
-/** Runs `handler`, answering 500 with `failure` when it throws. */
-const route = (failure, handler) => async (req, res) => {
-  try {
-    await handler(req, res);
-  } catch (error) {
-    console.error(`${failure}:`, error);
-    res.status(500).json({ success: false, error: failure });
-  }
-};
 
 const withSession = { include: { session: true } };
 

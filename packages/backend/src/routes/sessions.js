@@ -7,6 +7,8 @@ import { purgeSession, restoreSession } from '../lib/softDelete.js';
 import { ACTIONS, applyTransition, statusError, transitionError } from '../lib/sessions/lifecycle.js';
 import { isComputedSort, LIST_INCLUDE, listWhere, sortComputed, sortField } from '../lib/sessions/list.js';
 import { storedLeaderboard } from '../lib/sessions/storedLeaderboard.js';
+import { HttpError, route } from '../lib/http.js';
+import { changesFrom, kept, orNull } from '../lib/entities/fields.js';
 
 const router = express.Router();
 let sessionService;
@@ -24,20 +26,10 @@ const SESSION_INCLUDE = { track: true, championship: true, drivers: withPeople }
 const notFound = (res) => res.status(404).json({ success: false, error: 'Session not found' });
 const findSession = (id, include) => prisma().session.findUnique({ where: { id }, include });
 
-/** Runs `handler`, answering 500 with the error's message (or `failure`) when it throws. */
-const route = (label, handler, failure) => async (req, res) => {
-  try {
-    await handler(req, res);
-  } catch (error) {
-    console.error(`Error ${label}:`, error);
-    res.status(500).json({ success: false, error: failure ?? error.message });
-  }
-};
-
 // GET /api/sessions - filtered (status, trackId, type, championshipId, deleted), sorted and paginated
 router.get(
   '/',
-  route('fetching sessions', async (req, res) => {
+  route(null, async (req, res) => {
     const { limit = '50', offset = '0', sortBy = 'updatedAt', sortOrder = 'desc' } = req.query;
     const where = listWhere(req.query);
     const field = sortField(sortBy);
@@ -67,7 +59,7 @@ router.get(
 // GET /api/sessions/export?ids=a,b,c - Excel workbook for a hand-picked set of sessions
 router.get(
   '/export',
-  route('exporting sessions', async (req, res) => {
+  route(null, async (req, res) => {
     const result = await sessionsWorkbook(prisma(), idsFromQuery(req.query.ids));
     if (!result) return res.status(404).json({ success: false, error: 'No session to export' });
     await sendWorkbook(res, result);
@@ -76,7 +68,7 @@ router.get(
 
 router.get(
   '/:id',
-  route('fetching session', async (req, res) => {
+  route(null, async (req, res) => {
     const session = await prisma().session.findUnique({
       where: { id: req.params.id, deletedAt: null },
       include: {
@@ -94,7 +86,7 @@ router.get(
 // GET /api/sessions/:id/export - Excel workbook for one session
 router.get(
   '/:id/export',
-  route('exporting session', async (req, res) => {
+  route(null, async (req, res) => {
     const result = await sessionWorkbook(prisma(), req.params.id);
     if (!result) return notFound(res);
     await sendWorkbook(res, result);
@@ -102,41 +94,49 @@ router.get(
 );
 
 // POST /api/sessions - a standalone session (without championship)
-router.post('/', async (req, res) => {
-  try {
-    res.status(201).json({ success: true, data: await sessionService.createSession(req.body) });
-  } catch (error) {
-    console.error('Error creating session:', error);
-    res.status(400).json({ success: false, error: error.message });
-  }
-});
+router.post(
+  '/',
+  route(
+    null,
+    async (req, res) => {
+      res.status(201).json({ success: true, data: await sessionService.createSession(req.body) });
+    },
+    400
+  )
+);
 
-const EDITABLE = ['name', 'type', 'trackId', 'fuelMode', 'order'];
-const NULLABLE_LIMITS = ['maxDuration', 'maxLaps', 'gracePeriod'];
+const EDITABLE = {
+  name: kept,
+  type: kept,
+  trackId: kept,
+  fuelMode: kept,
+  order: kept,
+  maxDuration: orNull,
+  maxLaps: orNull,
+  gracePeriod: orNull,
+  championshipId: (id) => (id === '' ? null : id),
+};
 
-router.put('/:id', async (req, res) => {
-  try {
-    const data = {};
-    for (const key of EDITABLE) if (req.body[key] !== undefined) data[key] = req.body[key];
-    for (const key of NULLABLE_LIMITS) if (req.body[key] !== undefined) data[key] = req.body[key] || null;
-    const { championshipId } = req.body;
-    if (championshipId !== undefined) data.championshipId = championshipId === '' ? null : championshipId;
+/** A track or championship that doesn't exist is a 400, not a server failure. */
+function refuseBadLink(error) {
+  if (error.code === 'P2003') throw new HttpError(400, 'Invalid trackId or championshipId');
+  throw error;
+}
 
-    const session = await prisma().session.update({ where: { id: req.params.id }, data, include: SESSION_INCLUDE });
+router.put(
+  '/:id',
+  route(null, async (req, res) => {
+    const session = await prisma()
+      .session.update({ where: { id: req.params.id }, data: changesFrom(req.body, EDITABLE), include: SESSION_INCLUDE })
+      .catch(refuseBadLink);
     res.json({ success: true, data: session });
-  } catch (error) {
-    console.error('Error updating session:', error);
-    if (error.code === 'P2003') {
-      return res.status(400).json({ success: false, error: 'Invalid trackId or championshipId' });
-    }
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
 // DELETE /api/sessions/:id - hidden through the service first, erased when already hidden
 router.delete(
   '/:id',
-  route('deleting session', async (req, res) => {
+  route(null, async (req, res) => {
     const { id } = req.params;
     const session = await findSession(id);
     if (!session) return notFound(res);
@@ -149,15 +149,11 @@ router.delete(
 // PATCH /api/sessions/:id/restore - back with what its deletion hid
 router.patch(
   '/:id/restore',
-  route(
-    'restoring session',
-    async (req, res) => {
-      if (!(await findSession(req.params.id))) return notFound(res);
-      await restoreSession(prisma(), req.params.id);
-      res.json({ success: true, message: 'Session restored' });
-    },
-    'Failed to restore session'
-  )
+  route('Failed to restore session', async (req, res) => {
+    if (!(await findSession(req.params.id))) return notFound(res);
+    await restoreSession(prisma(), req.params.id);
+    res.json({ success: true, message: 'Session restored' });
+  })
 );
 
 /**
@@ -179,7 +175,7 @@ const lineupRows = (sessionId, drivers, referenceId) =>
 // PUT /api/sessions/:id/drivers - replaces the line-up
 router.put(
   '/:id/drivers',
-  route('updating drivers', async (req, res) => {
+  route(null, async (req, res) => {
     const { id } = req.params;
     const { drivers } = req.body;
     if (!Array.isArray(drivers)) return res.status(400).json({ success: false, error: 'drivers must be an array' });
@@ -202,7 +198,7 @@ router.put(
 // PATCH /api/sessions/:id/status - Body: { status }
 router.patch(
   '/:id/status',
-  route('changing status', async (req, res) => {
+  route(null, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     const invalid = statusError(status);
@@ -221,7 +217,7 @@ router.patch(
 for (const [action, { from, run, refusal, message }] of Object.entries(ACTIONS)) {
   router.post(
     `/:id/${action}`,
-    route(`${action} session`, async (req, res) => {
+    route(null, async (req, res) => {
       const { id } = req.params;
       const session = await findSession(id);
       if (!session) return notFound(res);
@@ -236,7 +232,7 @@ for (const [action, { from, run, refusal, message }] of Object.entries(ACTIONS))
 // POST /api/sessions/:id/reset - back to ready: practice laps hidden (kept for stats), others erased
 router.post(
   '/:id/reset',
-  route('resetting session', async (req, res) => {
+  route(null, async (req, res) => {
     await sessionService.resetSession(req.params.id);
     res.json({ success: true, data: await findSession(req.params.id, SESSION_INCLUDE), message: 'Session reset' });
   })
@@ -245,7 +241,7 @@ router.post(
 // GET /api/sessions/:id/leaderboard - live for the running session, from the stored laps otherwise
 router.get(
   '/:id/leaderboard',
-  route('fetching leaderboard', async (req, res) => {
+  route(null, async (req, res) => {
     const { id } = req.params;
     if (sessionService.activeSessionId === id) {
       return res.json({ success: true, data: sessionService.getLeaderboard() });

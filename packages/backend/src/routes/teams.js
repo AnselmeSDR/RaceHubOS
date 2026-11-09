@@ -1,252 +1,79 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { attachExtras } from '../addons/extras.js';
-import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
+import { withNestedImageUrls } from '../utils/imageUrl.js';
+import { findOr404, HttpError, route } from '../lib/http.js';
+import { addDeletionRoutes } from '../lib/entities/deletion.js';
+import { changesFrom, kept, trimmed } from '../lib/entities/fields.js';
+import { listPage } from '../lib/entities/list.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
 
-// GET /api/teams - List all teams
-router.get('/', async (req, res) => {
-  try {
-    const { deleted, limit = '50', offset = '0', sortBy = 'name', sortOrder = 'asc' } = req.query;
-    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
+const notDeleted = { where: { deletedAt: null } };
+const LIST = {
+  sortBy: 'name',
+  include: { drivers: { ...notDeleted, orderBy: { name: 'asc' } }, _count: { select: { drivers: notDeleted } } },
+  counts: ['drivers'],
+};
 
-    const [teams, total] = await Promise.all([
-      prisma.team.findMany({
-        where,
-        include: {
-          drivers: {
-            where: { deletedAt: null },
-            orderBy: { name: 'asc' },
-          },
-          _count: {
-            select: {
-              drivers: { where: { deletedAt: null } },
-            },
-          },
-        },
-        orderBy: sortBy === 'drivers' ? { drivers: { _count: sortOrder } } : { [sortBy]: sortOrder },
-        skip: parsedOffset,
-        take: parsedLimit,
-      }),
-      prisma.team.count({ where }),
-    ]);
+// GET /api/teams - filtered (deleted), sorted and paginated, with their current drivers
+router.get(
+  '/',
+  route('Failed to fetch teams', async (req, res) => {
+    const { page, ...rest } = await listPage(prisma.team, req.query, LIST);
+    res.json({ success: true, data: await attachExtras(prisma, 'team', page.map(withNestedImageUrls)), ...rest });
+  })
+);
 
-    res.json({
-      success: true,
-      data: await attachExtras(
-        prisma,
-        'team',
-        teams.map((t) => withNestedImageUrls(t))
-      ),
-      total,
-      hasMore: parsedOffset + parsedLimit < total,
-    });
-  } catch (error) {
-    console.error('Error fetching teams:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch teams',
-    });
-  }
-});
+router.get(
+  '/:id',
+  route('Failed to fetch team', async (req, res) => {
+    const team = await findOr404(prisma.team, req.params.id, 'Team', { drivers: { orderBy: { name: 'asc' } } });
+    res.json({ success: true, data: await attachExtras(prisma, 'team', withNestedImageUrls(team)) });
+  })
+);
 
-// GET /api/teams/:id - Get team by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const team = await prisma.team.findUnique({
-      where: { id },
-      include: {
-        drivers: {
-          orderBy: {
-            name: 'asc',
-          },
-        },
-      },
-    });
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        error: 'Team not found',
-      });
-    }
-
-    res.json({
-      success: true,
-      data: await attachExtras(prisma, 'team', withNestedImageUrls(team)),
-    });
-  } catch (error) {
-    console.error('Error fetching team:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch team',
-    });
-  }
-});
-
-// POST /api/teams - Create new team
-router.post('/', async (req, res) => {
-  try {
+router.post(
+  '/',
+  route('Failed to create team', async (req, res) => {
     const { name, color, img } = req.body;
-
-    // Validation
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name is required',
-      });
-    }
-
+    if (!name?.trim()) throw new HttpError(400, 'Name is required');
     const team = await prisma.team.create({
-      data: {
-        name: name.trim(),
-        color: color || null,
-        img: img || null,
-      },
-      include: {
-        drivers: true,
-      },
+      data: { name: name.trim(), color: color || null, img: img || null },
+      include: { drivers: true },
     });
+    res.status(201).json({ success: true, data: withNestedImageUrls(team) });
+  })
+);
 
-    res.status(201).json({
-      success: true,
-      data: withNestedImageUrls(team),
-    });
-  } catch (error) {
-    console.error('Error creating team:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create team',
-    });
-  }
-});
-
-// PUT /api/teams/:id - Update team
-router.put('/:id', async (req, res) => {
-  try {
+router.put(
+  '/:id',
+  route('Failed to update team', async (req, res) => {
     const { id } = req.params;
-    const { name, color, img } = req.body;
+    await findOr404(prisma.team, id, 'Team');
+    const data = changesFrom(req.body, { name: trimmed, color: kept, img: kept });
+    const team = await prisma.team.update({ where: { id }, data, include: { drivers: true } });
+    res.json({ success: true, data: withNestedImageUrls(team) });
+  })
+);
 
-    // Check if team exists
-    const exists = await prisma.team.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Team not found',
-      });
+addDeletionRoutes(router, {
+  name: 'Team',
+  model: prisma.team,
+  hide: (id) => prisma.team.update({ where: { id }, data: { deletedAt: new Date() } }),
+  // A team is erased once empty: its drivers, even deleted ones, go elsewhere first
+  erase: async (id) => {
+    const drivers = await prisma.driver.count({ where: { teamId: id } });
+    if (drivers > 0) {
+      throw new HttpError(
+        400,
+        `Cannot delete team with ${drivers} driver(s). Please reassign or delete drivers first.`
+      );
     }
-
-    // Build update data
-    const updateData = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (color !== undefined) updateData.color = color;
-    if (img !== undefined) updateData.img = img;
-
-    const team = await prisma.team.update({
-      where: { id },
-      data: updateData,
-      include: {
-        drivers: true,
-      },
-    });
-
-    res.json({
-      success: true,
-      data: withNestedImageUrls(team),
-    });
-  } catch (error) {
-    console.error('Error updating team:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update team',
-    });
-  }
-});
-
-// DELETE /api/teams/:id - Soft delete or hard delete team
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check if team exists
-    const exists = await prisma.team.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: {
-            drivers: true,
-          },
-        },
-      },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Team not found',
-      });
-    }
-
-    if (exists.deletedAt) {
-      // Hard delete
-      // Warn if team has drivers
-      if (exists._count.drivers > 0) {
-        return res.status(400).json({
-          success: false,
-          error: `Cannot delete team with ${exists._count.drivers} driver(s). Please reassign or delete drivers first.`,
-        });
-      }
-
-      await prisma.team.delete({
-        where: { id },
-      });
-    } else {
-      // Soft delete
-      await prisma.team.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Team deleted successfully',
-    });
-  } catch (error) {
-    console.error('Error deleting team:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete team',
-    });
-  }
-});
-
-// PATCH /api/teams/:id/restore - Restore soft-deleted team
-router.patch('/:id/restore', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const entity = await prisma.team.findUnique({ where: { id } });
-    if (!entity) return res.status(404).json({ success: false, error: 'Team not found' });
-
-    await prisma.team.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
-
-    res.json({ success: true, message: 'Team restored' });
-  } catch (error) {
-    console.error('Error restoring team:', error);
-    res.status(500).json({ success: false, error: 'Failed to restore team' });
-  }
+    await prisma.team.delete({ where: { id } });
+  },
+  restore: (id) => prisma.team.update({ where: { id }, data: { deletedAt: null } }),
 });
 
 export default router;

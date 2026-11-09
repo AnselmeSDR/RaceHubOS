@@ -292,3 +292,14 @@ export async function purgeSession(prisma, sessionId) {
     prisma.session.delete({ where: { id: sessionId } }),
   ]);
 }
+
+/** Erase a car for good, with every entry, lap, controller setting and record under it. */
+export async function purgeCar(prisma, carId) {
+  await prisma.$transaction([
+    prisma.sessionDriver.deleteMany({ where: { carId } }),
+    prisma.lap.deleteMany({ where: { carId } }),
+    prisma.controllerConfig.deleteMany({ where: { carId } }),
+    prisma.trackRecord.deleteMany({ where: { carId } }),
+    prisma.car.delete({ where: { id: carId } }),
+  ]);
+}

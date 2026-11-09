@@ -3,155 +3,49 @@ import { createPrismaClient } from '../lib/prisma.js';
 import { attachExtras } from '../addons/extras.js';
 import { softDeleteTrack, restoreTrack } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
+import { findOr404, HttpError, route } from '../lib/http.js';
+import { addDeletionRoutes } from '../lib/entities/deletion.js';
+import { changesFrom, kept, trimmed } from '../lib/entities/fields.js';
+import { byBestLap, listPage } from '../lib/entities/list.js';
+import { bestLapRecords } from '../lib/entities/records.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
 
-// GET /api/tracks - List all tracks
-router.get('/', async (req, res) => {
-  try {
-    const { deleted, limit = '50', offset = '0', sortBy = 'name', sortOrder = 'asc' } = req.query;
-    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
+const LIST = {
+  sortBy: 'name',
+  include: { _count: { select: { sessions: { where: { deletedAt: null } } } } },
+  counts: ['sessions'],
+  computed: { bestLap: byBestLap },
+};
 
-    const isComputedSort = sortBy === 'bestLap';
-    const dbOrderBy =
-      sortBy === 'sessions'
-        ? { sessions: { _count: sortOrder } }
-        : isComputedSort
-          ? undefined
-          : { [sortBy]: sortOrder };
+// GET /api/tracks - filtered (deleted), sorted and paginated
+router.get(
+  '/',
+  route('Failed to fetch tracks', async (req, res) => {
+    const { page, ...rest } = await listPage(prisma.track, req.query, LIST);
+    res.json({ success: true, data: await attachExtras(prisma, 'track', page.map(withImageUrl)), ...rest });
+  })
+);
 
-    const [allTracks, total] = await Promise.all([
-      prisma.track.findMany({
-        where,
-        include: {
-          _count: {
-            select: {
-              sessions: { where: { deletedAt: null } },
-            },
-          },
-        },
-        orderBy: dbOrderBy,
-        ...(!isComputedSort ? { skip: parsedOffset, take: parsedLimit } : {}),
-      }),
-      prisma.track.count({ where }),
-    ]);
-
-    let sorted = allTracks;
-    if (isComputedSort) {
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      sorted = [...allTracks].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
-    }
-    const tracks = isComputedSort ? sorted.slice(parsedOffset, parsedOffset + parsedLimit) : sorted;
-
-    res.json({
-      success: true,
-      data: await attachExtras(
-        prisma,
-        'track',
-        tracks.map((t) => withImageUrl(t))
-      ),
-      total,
-      hasMore: parsedOffset + parsedLimit < total,
+// GET /api/tracks/:id - with latest sessions, session count and best lap per driver and car
+router.get(
+  '/:id',
+  route('Failed to fetch track', async (req, res) => {
+    const track = await findOr404(prisma.track, req.params.id, 'Track', {
+      sessions: { orderBy: { createdAt: 'desc' }, take: 10, include: { _count: { select: { drivers: true } } } },
+      _count: { select: { sessions: true } },
     });
-  } catch (error) {
-    console.error('Error fetching tracks:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch tracks',
-    });
-  }
-});
+    const records = await bestLapRecords(prisma, 'track', track.id);
+    res.json({ success: true, data: await attachExtras(prisma, 'track', withNestedImageUrls({ ...track, records })) });
+  })
+);
 
-// GET /api/tracks/:id - Get track by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const track = await prisma.track.findUnique({
-      where: { id },
-      include: {
-        sessions: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 10,
-          include: {
-            _count: { select: { drivers: true } },
-          },
-        },
-        _count: {
-          select: { sessions: true },
-        },
-      },
-    });
-
-    if (!track) {
-      return res.status(404).json({
-        success: false,
-        error: 'Track not found',
-      });
-    }
-
-    // Get best laps per driver x car combo on this track (top 10)
-    const bestLaps = await prisma.lap.findMany({
-      where: { trackId: id },
-      orderBy: { lapTime: 'asc' },
-      distinct: ['driverId', 'carId'],
-      take: 10,
-      include: {
-        driver: {
-          select: { id: true, name: true, color: true, img: true },
-        },
-        car: {
-          select: { id: true, brand: true, model: true, color: true, img: true },
-        },
-        session: {
-          select: { type: true },
-        },
-      },
-    });
-
-    const records = bestLaps.map((lap) => ({
-      id: lap.id,
-      lapTime: lap.lapTime,
-      driver: lap.driver,
-      car: lap.car,
-      sessionType: lap.session?.type,
-    }));
-
-    const result = {
-      ...track,
-      records,
-    };
-
-    res.json({
-      success: true,
-      data: await attachExtras(prisma, 'track', withNestedImageUrls(result)),
-    });
-  } catch (error) {
-    console.error('Error fetching track:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch track',
-    });
-  }
-});
-
-// POST /api/tracks - Create new track
-router.post('/', async (req, res) => {
-  try {
+router.post(
+  '/',
+  route('Failed to create track', async (req, res) => {
     const { name, img, layout, length, corners, color } = req.body;
-
-    // Validation
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name is required',
-      });
-    }
+    if (!name?.trim()) throw new HttpError(400, 'Name is required');
 
     const track = await prisma.track.create({
       data: {
@@ -163,172 +57,56 @@ router.post('/', async (req, res) => {
         color: color || '#9333ea',
       },
     });
+    res.status(201).json({ success: true, data: withImageUrl(track) });
+  })
+);
 
-    res.status(201).json({
-      success: true,
-      data: withImageUrl(track),
-    });
-  } catch (error) {
-    console.error('Error creating track:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create track',
-    });
-  }
+const EDITABLE = {
+  name: trimmed,
+  img: kept,
+  layout: kept,
+  length: kept,
+  corners: kept,
+  color: kept,
+  bestLap: kept,
+  bestLapBy: kept,
+};
+
+router.put(
+  '/:id',
+  route('Failed to update track', async (req, res) => {
+    const { id } = req.params;
+    await findOr404(prisma.track, id, 'Track');
+    const track = await prisma.track.update({ where: { id }, data: changesFrom(req.body, EDITABLE) });
+    res.json({ success: true, data: withImageUrl(track) });
+  })
+);
+
+addDeletionRoutes(router, {
+  name: 'Track',
+  model: prisma.track,
+  hide: (id) => softDeleteTrack(prisma, id),
+  erase: (id) => prisma.track.delete({ where: { id } }),
+  restore: (id) => restoreTrack(prisma, id),
 });
 
-// PUT /api/tracks/:id - Update track
-router.put('/:id', async (req, res) => {
-  try {
+// POST /api/tracks/:id/reset-stats - erases its records and laps, clears the best lap
+router.post(
+  '/:id/reset-stats',
+  route('Failed to reset track statistics', async (req, res) => {
     const { id } = req.params;
-    const { name, img, layout, length, corners, color, bestLap, bestLapBy } = req.body;
-
-    // Check if track exists
-    const exists = await prisma.track.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Track not found',
-      });
-    }
-
-    // Build update data
-    const updateData = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (img !== undefined) updateData.img = img;
-    if (layout !== undefined) updateData.layout = layout;
-    if (length !== undefined) updateData.length = length;
-    if (corners !== undefined) updateData.corners = corners;
-    if (color !== undefined) updateData.color = color;
-    if (bestLap !== undefined) updateData.bestLap = bestLap;
-    if (bestLapBy !== undefined) updateData.bestLapBy = bestLapBy;
-
-    const track = await prisma.track.update({
-      where: { id },
-      data: updateData,
-    });
-
-    res.json({
-      success: true,
-      data: withImageUrl(track),
-    });
-  } catch (error) {
-    console.error('Error updating track:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update track',
-    });
-  }
-});
-
-// DELETE /api/tracks/:id - Soft delete or hard delete track
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check if track exists
-    const exists = await prisma.track.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Track not found',
-      });
-    }
-
-    if (exists.deletedAt) {
-      // Hard delete
-      await prisma.track.delete({
-        where: { id },
-      });
-    } else {
-      // Soft delete
-      // Cascade: everything recorded under this track is hidden with it
-      await softDeleteTrack(prisma, id);
-    }
-
-    res.json({
-      success: true,
-      message: 'Track deleted successfully',
-    });
-  } catch (error) {
-    console.error('Error deleting track:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete track',
-    });
-  }
-});
-
-// PATCH /api/tracks/:id/restore - Restore soft-deleted track
-router.patch('/:id/restore', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const entity = await prisma.track.findUnique({ where: { id } });
-    if (!entity) return res.status(404).json({ success: false, error: 'Track not found' });
-
-    await restoreTrack(prisma, id);
-
-    res.json({ success: true, message: 'Track restored' });
-  } catch (error) {
-    console.error('Error restoring track:', error);
-    res.status(500).json({ success: false, error: 'Failed to restore track' });
-  }
-});
-
-// POST /api/tracks/:id/reset-stats - Reset track statistics
-router.post('/:id/reset-stats', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const exists = await prisma.track.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Track not found',
-      });
-    }
-
-    // Delete related data and reset stats in a transaction
+    await findOr404(prisma.track, id, 'Track');
     const track = await prisma.$transaction(async (tx) => {
-      // Delete track records
       await tx.trackRecord.deleteMany({ where: { trackId: id } });
-      // Delete laps on this track
       await tx.lap.deleteMany({ where: { trackId: id } });
-
-      // Reset stats fields
       return tx.track.update({
         where: { id },
-        data: {
-          bestLap: null,
-          bestLapBy: null,
-        },
-        include: {
-          _count: { select: { sessions: true } },
-        },
+        data: { bestLap: null, bestLapBy: null },
+        include: { _count: { select: { sessions: true } } },
       });
     });
-
-    res.json({
-      success: true,
-      data: withImageUrl(track),
-      message: 'Statistics reset successfully',
-    });
-  } catch (error) {
-    console.error('Error resetting track stats:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to reset track statistics',
-    });
-  }
-});
+    res.json({ success: true, data: withImageUrl(track), message: 'Statistics reset successfully' });
+  })
+);
 
 export default router;
