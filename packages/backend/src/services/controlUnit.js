@@ -1,14 +1,25 @@
 import EventEmitter from 'events';
-import { BLEService } from './ble.js';
+import { BLEService, addressOf } from './ble.js';
 import * as protocol from './protocol.js';
+
+/** A status message, then the variant with two more bytes before the checksum. */
+const STATUS_FORMATS = ['2x8YYYBYC', '2x8YYYBYxxC'];
+
+const NO_INFO = { version: null, fuelMode: false, realMode: false, pitLane: false, lapCounter: false, numCars: 6 };
+
+function check(value, min, max, name) {
+  if (value < min || value > max) throw new Error(`${name} out of range`);
+}
 
 /**
  * Interface vers le Control Unit Carrera Digital 124/132
  * Équivalent Node.js de carreralib.ControlUnit
  * Dérivé de carreralib (MIT, Thomas Kemmer) — voir THIRD_PARTY_NOTICES.md
+ *
+ * Events: connected, disconnected, error, reconnect-failed (from the Bluetooth link), timer
+ * (a car crossing a sensor) and status.
  */
 export class ControlUnit extends EventEmitter {
-  // IDs des boutons du Control Unit
   static PACE_CAR_ESC_BUTTON_ID = 1;
   static START_ENTER_BUTTON_ID = 2;
   static SPEED_BUTTON_ID = 5;
@@ -16,7 +27,6 @@ export class ControlUnit extends EventEmitter {
   static FUEL_BUTTON_ID = 7;
   static CODE_BUTTON_ID = 8;
 
-  // Masques de mode
   static FUEL_MODE = 0x1;
   static REAL_MODE = 0x2;
   static PIT_LANE_MODE = 0x4;
@@ -25,68 +35,40 @@ export class ControlUnit extends EventEmitter {
   constructor() {
     super();
     this.ble = new BLEService();
-    this.responseQueue = [];
     this.waitingForResponse = null;
     this.connected = false;
     this._requestBusy = false;
 
-    // Écouter les événements BLE
     this.ble.on('ready', () => {
       this.connected = true;
       this.emit('connected');
     });
-
     this.ble.on('disconnect', () => {
       this.connected = false;
       this.emit('disconnected');
     });
-
-    this.ble.on('data', (data) => {
-      this.handleData(data);
-    });
-
-    this.ble.on('error', (error) => {
-      this.emit('error', error);
-    });
-
-    this.ble.on('reconnect-failed', () => {
-      this.emit('reconnect-failed');
-    });
+    this.ble.on('data', (data) => this.handleData(data));
+    for (const event of ['error', 'reconnect-failed']) {
+      this.ble.on(event, (...args) => this.emit(event, ...args));
+    }
   }
 
-  /**
-   * Scanner pour trouver le Control Unit
-   * @param {number} timeout - Timeout en ms
-   * @returns {Promise<string>} Adresse du peripheral
-   */
+  /** Finds the Control Unit; its address (on macOS, its uuid). */
   async scan(timeout = 10000) {
-    const peripheral = await this.ble.scan(timeout);
-    // Sur macOS, l'adresse peut être vide, utiliser uuid comme fallback
-    return peripheral.address || peripheral.uuid || peripheral.id;
+    return addressOf(await this.ble.scan(timeout));
   }
 
-  /**
-   * Se connecter au Control Unit
-   * @param {string} address - Adresse du peripheral (optionnel)
-   */
   async connect(address = null) {
     await this.ble.connect(address);
-    const p = this.ble.peripheral;
-    this.address = address || p?.address || p?.uuid || p?.id || null;
+    this.address = address || (this.ble.peripheral && addressOf(this.ble.peripheral)) || null;
   }
 
-  /**
-   * Se déconnecter du Control Unit
-   */
   async disconnect() {
     await this.ble.disconnect();
     this.connected = false;
   }
 
-  /**
-   * Gérer les données reçues
-   * @param {Buffer} data - Données reçues
-   */
+  /** The answer a request waits for, or else an event. */
   handleData(data) {
     console.log(
       '📨 CU Data received:',
@@ -94,135 +76,55 @@ export class ControlUnit extends EventEmitter {
       '| ASCII:',
       data.toString('ascii').replace(/[^\x20-\x7E]/g, '.')
     );
-
-    // Si on attend une réponse spécifique
-    if (this.waitingForResponse) {
-      const { expectedPrefix, resolve } = this.waitingForResponse;
-
-      // Vérifier si c'est la réponse attendue
-      if (data[0] === expectedPrefix) {
-        this.waitingForResponse = null;
-        resolve(data);
-        return;
-      }
+    const waiting = this.waitingForResponse;
+    if (waiting && waiting.expectedPrefix === data[0]) {
+      this.waitingForResponse = null;
+      return waiting.resolve(data);
     }
-
-    // Sinon, ajouter à la queue ou traiter comme événement
     this.processMessage(data);
   }
 
-  /**
-   * Traiter un message du Control Unit
-   * @param {Buffer} data - Message reçu
-   */
+  /** Emits a `?` message as a status (`?:`) or a timer event, and returns it. */
   processMessage(data) {
+    if (data[0] !== 0x3f) return undefined;
     try {
-      // Timer event (voiture passe sur la ligne)
-      if (data[0] === 0x3f) {
-        // '?'
-        if (data[1] === 0x3a) {
-          // '?:'
-          // Status message
-          const status = this.parseStatus(data);
-          this.emit('status', status);
-        } else {
-          // Timer event
-          const timer = this.parseTimer(data);
-          this.emit('timer', timer);
-        }
-      }
+      const [event, message] = data[1] === 0x3a ? ['status', this.parseStatus(data)] : ['timer', this.parseTimer(data)];
+      this.emit(event, message);
+      return message;
     } catch (error) {
       this.emit('error', error);
     }
   }
 
-  /**
-   * Parser un événement Timer
-   * @param {Buffer} data - Données brutes
-   * @returns {Object} Timer event
-   */
   parseTimer(data) {
-    // Format: "xYIYC" => skip 1 byte, address (4 bits), timestamp (32 bits), sector (4 bits), checksum
     const [address, timestamp, sector] = protocol.unpack('xYIYC', data);
-
-    return {
-      controller: address - 1, // 0-indexed
-      timestamp,
-      sector,
-    };
+    return { controller: address - 1, timestamp, sector };
   }
 
-  /**
-   * Parser un Status
-   * @param {Buffer} data - Données brutes
-   * @returns {Object} Status
-   */
   parseStatus(data) {
+    let parts;
     try {
-      // Format: "2x8YYYBYC"
-      const parts = protocol.unpack('2x8YYYBYC', data);
-      const fuel = parts.slice(0, 8);
-      const [start, mode, pitmask, display] = parts.slice(8);
-
-      // Convertir le pitmask en tableau de booléens
-      const pit = [];
-      for (let i = 0; i < 8; i++) {
-        pit.push((pitmask & (1 << i)) !== 0);
-      }
-
-      return {
-        fuel,
-        start,
-        mode,
-        pit,
-        display,
-      };
-    } catch (error) {
-      // Essayer le format alternatif
-      const parts = protocol.unpack('2x8YYYBYxxC', data);
-      const fuel = parts.slice(0, 8);
-      const [start, mode, pitmask, display] = parts.slice(8);
-
-      const pit = [];
-      for (let i = 0; i < 8; i++) {
-        pit.push((pitmask & (1 << i)) !== 0);
-      }
-
-      return {
-        fuel,
-        start,
-        mode,
-        pit,
-        display,
-      };
+      parts = protocol.unpack(STATUS_FORMATS[0], data);
+    } catch {
+      parts = protocol.unpack(STATUS_FORMATS[1], data);
     }
+    const [start, mode, pitmask, display] = parts.slice(8);
+    const pit = Array.from({ length: 8 }, (_, i) => (pitmask & (1 << i)) !== 0);
+    return { fuel: parts.slice(0, 8), start, mode, pit, display };
   }
 
-  /**
-   * Envoyer une requête et attendre une réponse (sérialisé via queue)
-   * @param {Buffer} buffer - Données à envoyer
-   * @param {number} timeout - Timeout en ms
-   * @returns {Promise<Buffer>} Réponse reçue
-   */
+  /** Sends a request and waits for the answer starting with the same letter, one request at a time. */
   async request(buffer, timeout = 5000) {
-    if (!this.connected) {
-      throw new Error('Not connected to Control Unit');
-    }
-
-    // Wait for any pending request to finish
-    while (this._requestBusy) {
-      await new Promise((r) => setTimeout(r, 10));
-    }
+    if (!this.connected) throw new Error('Not connected to Control Unit');
+    while (this._requestBusy) await new Promise((r) => setTimeout(r, 10));
 
     this._requestBusy = true;
-
     try {
       return await new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           this.waitingForResponse = null;
           reject(new Error('Request timeout'));
         }, timeout);
-
         this.waitingForResponse = {
           expectedPrefix: buffer[0],
           resolve: (data) => {
@@ -230,7 +132,6 @@ export class ControlUnit extends EventEmitter {
             resolve(data);
           },
         };
-
         this.ble.send(buffer).catch((err) => {
           clearTimeout(timeoutId);
           reject(err);
@@ -241,113 +142,68 @@ export class ControlUnit extends EventEmitter {
     }
   }
 
-  /**
-   * Polling pour récupérer les événements en attente
-   * @returns {Promise<Object>} Status ou Timer
-   */
+  /** Asks for the next pending message: a timer event, else the status. */
   async poll() {
-    const response = await this.request(Buffer.from('?'));
-    return this.processMessage(response);
+    return this.processMessage(await this.request(Buffer.from('?')));
   }
 
-  /**
-   * Récupérer la version du Control Unit
-   * @returns {Promise<string>} Version
-   */
   async version() {
-    const response = await this.request(Buffer.from('0'));
-    const [version] = protocol.unpack('x4sC', response);
+    const [version] = protocol.unpack('x4sC', await this.request(Buffer.from('0')));
     return version.toString('ascii');
   }
 
-  /**
-   * Récupérer toutes les infos du Control Unit
-   * @returns {Promise<Object>} Infos complètes
-   */
+  /** Version, and the modes when the poll answers with a status. */
   async getInfo() {
     try {
       const version = await this.version();
       const status = await this.poll();
-
-      // Extraire les bits du mode si c'est un status
-      let info = {
+      if (status?.mode === undefined) return { ...NO_INFO, version };
+      return {
         version,
-        fuelMode: false,
-        realMode: false,
-        pitLane: false,
-        lapCounter: false,
-        numCars: 6,
+        fuelMode: (status.mode & ControlUnit.FUEL_MODE) !== 0,
+        realMode: (status.mode & ControlUnit.REAL_MODE) !== 0,
+        pitLane: (status.mode & ControlUnit.PIT_LANE_MODE) !== 0,
+        lapCounter: (status.mode & ControlUnit.LAP_COUNTER_MODE) !== 0,
+        numCars: status.display || 6,
       };
-
-      if (status && status.type === 'status') {
-        const mode = status.mode || 0;
-        info.fuelMode = (mode & ControlUnit.FUEL_MODE) !== 0;
-        info.realMode = (mode & ControlUnit.REAL_MODE) !== 0;
-        info.pitLane = (mode & ControlUnit.PIT_LANE_MODE) !== 0;
-        info.lapCounter = (mode & ControlUnit.LAP_COUNTER_MODE) !== 0;
-        info.numCars = status.display || 6;
-      }
-
-      return info;
     } catch (error) {
       console.error('Erreur lors de la récupération des infos CU:', error);
-      return {
-        version: null,
-        fuelMode: false,
-        realMode: false,
-        pitLane: false,
-        lapCounter: false,
-        numCars: 6,
-      };
+      return { ...NO_INFO };
     }
   }
 
-  /**
-   * Simuler l'appui sur un bouton du Control Unit
-   * @param {number} buttonId - ID du bouton
-   */
   async press(buttonId) {
-    const buffer = protocol.pack('cYC', Buffer.from('T'), buttonId);
-    await this.request(buffer);
+    await this.request(protocol.pack('cYC', Buffer.from('T'), buttonId));
     return { success: true, buttonId };
   }
 
-  /**
-   * Démarrer la séquence de départ
-   */
-  async start() {
+  start() {
     return this.press(ControlUnit.START_ENTER_BUTTON_ID);
   }
 
-  /**
-   * Réinitialiser le timer
-   */
+  /** Used by SyncService.pressButton. */
+  pressButton(buttonId) {
+    return this.press(buttonId);
+  }
+
+  pressEsc() {
+    return this.press(ControlUnit.PACE_CAR_ESC_BUTTON_ID);
+  }
+
+  /** Resets the timer. */
   async reset() {
-    const buffer = protocol.pack('cYYC', Buffer.from('='), 1, 0);
-    await this.request(buffer);
+    await this.request(protocol.pack('cYYC', Buffer.from('='), 1, 0));
     return { success: true };
   }
 
   /**
-   * Définir un mot de commande
-   * @param {number} word - Mot de commande (0-31)
-   * @param {number} address - Adresse du contrôleur (0-7)
-   * @param {number} value - Valeur (0-15)
-   * @param {number} repeat - Nombre de répétitions (1-15)
+   * Sets a command word (0-31) of a controller (0-7) to a value (0-15), sent `repeat` (1-15) times.
    */
   async setword(word, address, value, repeat = 1) {
-    if (word < 0 || word > 31) {
-      throw new Error('Command word out of range');
-    }
-    if (address < 0 || address > 7) {
-      throw new Error('Address out of range');
-    }
-    if (value < 0 || value > 15) {
-      throw new Error('Value out of range');
-    }
-    if (repeat < 1 || repeat > 15) {
-      throw new Error('Repeat count out of range');
-    }
+    check(word, 0, 31, 'Command word');
+    check(address, 0, 7, 'Address');
+    check(value, 0, 15, 'Value');
+    check(repeat, 1, 15, 'Repeat count');
 
     const buffer = protocol.pack('cBYYC', Buffer.from('J'), word | (address << 5), value, repeat);
     console.log(
@@ -357,91 +213,40 @@ export class ControlUnit extends EventEmitter {
     return { success: true };
   }
 
-  /**
-   * Définir la vitesse d'un contrôleur
-   * @param {number} address - Adresse du contrôleur (0-7)
-   * @param {number} value - Valeur de vitesse (0-15)
-   */
-  async setSpeed(address, value) {
+  setSpeed(address, value) {
     return this.setword(0, address, value, 2);
   }
 
-  /**
-   * Définir le frein d'un contrôleur
-   * @param {number} address - Adresse du contrôleur (0-7)
-   * @param {number} value - Valeur de frein (0-15)
-   */
-  async setBrake(address, value) {
+  setBrake(address, value) {
     return this.setword(1, address, value, 2);
   }
 
-  /**
-   * Définir le carburant d'un contrôleur
-   * @param {number} address - Adresse du contrôleur (0-7)
-   * @param {number} value - Valeur de carburant (0-15)
-   */
-  async setFuel(address, value) {
+  setFuel(address, value) {
     return this.setword(2, address, value, 2);
   }
 
-  /**
-   * Définir la position d'un contrôleur sur la Position Tower
-   * @param {number} address - Adresse du contrôleur (0-7)
-   * @param {number} position - Position (1-8)
-   */
+  /** Shows a controller at a position (1-8) on the Position Tower. */
   async setPosition(address, position) {
-    if (position < 1 || position > 8) {
-      throw new Error('Position out of range');
-    }
+    check(position, 1, 8, 'Position');
     return this.setword(6, address, position);
   }
 
-  /**
-   * Effacer l'affichage de la Position Tower
-   */
-  async clearPosition() {
+  clearPosition() {
     return this.setword(6, 0, 9);
   }
 
-  /**
-   * Generic button press (used by SyncService.pressButton)
-   */
-  async pressButton(buttonId) {
-    return this.press(buttonId);
-  }
-
-  /**
-   * Press ESC/Pace Car button
-   */
-  async pressEsc() {
-    return this.press(ControlUnit.PACE_CAR_ESC_BUTTON_ID);
-  }
-
-  /**
-   * Stop race: cut power to all 6 car slots
-   */
+  /** Cuts the power of all six car slots. */
   async stopCars() {
-    for (let addr = 0; addr < 6; addr++) {
-      await this.setSpeed(addr, 0);
-    }
+    for (let address = 0; address < 6; address++) await this.setSpeed(address, 0);
     return { success: true };
   }
 
-  /**
-   * Ignorer certains contrôleurs
-   * Fire-and-forget pour éviter les conflits avec le polling
-   * @param {number} mask - Masque de bits des contrôleurs à ignorer
-   */
+  /** Ignores the controllers of a bit mask. */
   async ignore(mask) {
-    const buffer = protocol.pack('cBC', Buffer.from(':'), mask);
-    await this.request(buffer);
+    await this.request(protocol.pack('cBC', Buffer.from(':'), mask));
     return { success: true };
   }
 
-  /**
-   * État de la connexion
-   * @returns {boolean} Connecté ou non
-   */
   isConnected() {
     return this.connected;
   }
