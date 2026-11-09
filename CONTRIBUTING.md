@@ -58,6 +58,12 @@ npm test -w @racehubos/backend
 - Every translation key exists in every language (`fr`, `en`, `de`…), checked by `npm run check`.
 - Enable **Allow edits by maintainers**, so small fixes can be made directly on your branch.
 
+## Add-ons
+
+A feature doesn't have to live in the core: an add-on adds pages, API routes and even changes to existing pages from its own repository. See [docs/ADDONS.md](docs/ADDONS.md).
+
+Is the piece your add-on needs to change written inline in a big page? Open a pull request that only moves it into its own file, with no visible change: `refactor: extract <piece> from <file>`. These PRs are welcome. See [split it in the core](docs/ADDONS.md#the-spot-you-need-is-inside-a-big-file-split-it-in-the-core).
+
 ## License
 
 RaceHubOS is licensed under [AGPL-3.0](LICENSE), and also offered under a commercial license for closed-source use. By opening a PR, you agree that your contribution is released under AGPL-3.0 and that the maintainer may also distribute it under a commercial license. Your name stays on your commits.
