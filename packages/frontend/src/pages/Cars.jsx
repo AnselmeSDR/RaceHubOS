@@ -1,252 +1,45 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import DeleteButton from '../components/ui/DeleteButton'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Car, Flag, Zap, Flame, FlaskConical, Pencil, Trash2 } from 'lucide-react'
-import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '../components/crud'
+import { Car } from 'lucide-react'
 import { ListPage } from '@/components/ui/list-page'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { getImgUrl } from '../utils/image'
-import { formatLevel, levelPercent } from '@racehubos/shared'
-import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
-import { FormSection } from '@/components/crud/FormModal'
+import CarCard from '@/components/car/CarCard'
+import CarFormModal from '@/components/car/CarFormModal'
+import { carColumns } from '@/components/car/carColumns'
+import { usePagedList } from '@/hooks/usePagedList'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-
-/**
- * The Control Unit only knows 10 levels per setting (manual 30352), sent as a
- * 4-bit value. Stepping by 10 keeps the familiar percentage while making every
- * position match one real level: 70 % is level 7, and nothing exists between.
- */
-function RangeField({ label, value, onChange, min = 10, max = 100, step = 10, color = 'var(--color-primary)' }) {
-  const level = Math.round(value / 10)
-  // The filled part follows the thumb, so the track reads as a gauge
-  const filled = ((value - min) / (max - min)) * 100
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
-      <div className="flex items-center gap-3">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(parseInt(e.target.value))}
-          className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
-          style={{
-            accentColor: color,
-            background: `linear-gradient(to right, ${color} 0%, ${color} ${filled}%, var(--color-muted) ${filled}%, var(--color-muted) 100%)`,
-          }}
-        />
-        <span className="text-sm font-medium w-12 text-right tabular-nums">
-          {level}
-          <span className="text-muted-foreground">/10</span>
-        </span>
-      </div>
-    </div>
-  )
-}
 
 export default function Cars() {
   const { t } = useTranslation('cars')
   const navigate = useNavigate()
-  const [cars, setCars] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
-  const [showForm, setShowForm] = useState(false)
-  const [editingCar, setEditingCar] = useState(null)
-  const [sort, setSort] = useState(null)
-  const [filters, setFilters] = useState({ deleted: false })
+  const list = usePagedList('/api/cars')
+  // null: closed; { car: null }: a new car; { car }: editing it
+  const [form, setForm] = useState(null)
 
-  useEffect(() => {
-    loadData(0)
-  }, [filters, sort])
-
-  const hasLoadedOnce = useRef(false)
-
-  async function loadData(offset) {
-    const isFirst = offset === 0
-    if (isFirst && !hasLoadedOnce.current) setLoading(true)
-    else if (!isFirst) setLoadingMore(true)
-    try {
-      const params = new URLSearchParams()
-      if (filters.deleted) params.append('deleted', 'true')
-      if (sort) {
-        params.append('sortBy', sort.id)
-        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
-      }
-      params.append('offset', String(offset))
-      params.append('limit', '50')
-      const res = await fetch(`${API_URL}/api/cars?${params}`)
-      const data = await res.json()
-      if (data.success) {
-        setCars((prev) => (isFirst ? data.data : [...prev, ...data.data]))
-        setHasMore(data.hasMore ?? false)
-        if (isFirst) setTotalCount(data.total ?? 0)
-      }
-    } catch (err) {
-      console.error('Failed to load cars:', err)
-    } finally {
-      if (isFirst) {
-        setLoading(false)
-        hasLoadedOnce.current = true
-      } else setLoadingMore(false)
-    }
-  }
-
-  const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'brand',
-        header: t('fields.brand'),
-        cell: ({ row }) => <span className="font-semibold">{row.original.brand}</span>,
-      },
-      {
-        accessorKey: 'model',
-        header: t('fields.model'),
-        cell: ({ row }) => {
-          const car = row.original
-          return (
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: car.color || '#22C55E' }}
-              >
-                {car.img ? (
-                  <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  car.brand?.charAt(0)
-                )}
-              </div>
-              <span className="font-medium">{car.model}</span>
-            </div>
-          )
-        },
-      },
-      {
-        id: 'year',
-        accessorKey: 'year',
-        header: t('fields.year'),
-        cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
-      },
-      {
-        id: 'maxSpeed',
-        accessorKey: 'maxSpeed',
-        header: t('fields.speed'),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-muted rounded-full h-2 w-20">
-              <div
-                className="bg-green-500 h-2 rounded-full"
-                style={{ width: `${levelPercent(row.original.maxSpeed)}%` }}
-              />
-            </div>
-            <span className="text-muted-foreground w-12 text-right tabular-nums">
-              {formatLevel(row.original.maxSpeed)}
-            </span>
-          </div>
-        ),
-      },
-      {
-        id: 'brakeForce',
-        accessorKey: 'brakeForce',
-        header: t('fields.braking'),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-muted rounded-full h-2 w-20">
-              <div
-                className="bg-red-500 h-2 rounded-full"
-                style={{ width: `${levelPercent(row.original.brakeForce)}%` }}
-              />
-            </div>
-            <span className="text-muted-foreground w-12 text-right tabular-nums">
-              {formatLevel(row.original.brakeForce)}
-            </span>
-          </div>
-        ),
-      },
-      {
-        id: 'fuelCapacity',
-        accessorKey: 'fuelCapacity',
-        header: t('fields.fuel'),
-        cell: ({ row }) => (
-          <span className="text-muted-foreground tabular-nums">{formatLevel(row.original.fuelCapacity)}</span>
-        ),
-      },
-      {
-        id: 'bestLap',
-        accessorFn: (row) => row.bestLap || Infinity,
-        header: t('common:record'),
-        cell: ({ row }) => (
-          <span className="font-mono font-bold">
-            {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
-          </span>
-        ),
-      },
-      {
-        id: 'sessions',
-        accessorFn: (row) => row._count?.sessions || 0,
-        header: t('glossary:session', { count: 2 }),
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Flag className="w-4 h-4" />
-            {row.original._count?.sessions || 0}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        enableSorting: false,
-        enableHiding: false,
-        cell: ({ row }) => (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setEditingCar(row.original)
-              setShowForm(true)
-            }}
-            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Pencil className="size-3.5" />
-          </button>
-        ),
-      },
-    ],
-    [t]
-  )
+  const columns = useMemo(() => carColumns(t, { onEdit: (car) => setForm({ car }) }), [t])
 
   // Deletion is confirmed inside the button itself, then the list reloads
   async function handleDelete(id) {
     try {
       await fetch(`${API_URL}/api/cars/${id}`, { method: 'DELETE' })
     } finally {
-      loadData(0)
+      list.reload()
     }
   }
 
   return (
     <ListPage
+      {...list.listProps}
       title={t('glossary:car', { count: 2 })}
       icon={<Car />}
       color="green"
       preferenceKey="cars"
-      data={cars}
-      totalCount={totalCount}
       columns={columns}
-      loading={loading}
       searchPlaceholder={t('searchPlaceholder')}
       addLabel={t('addLabel')}
-      onAdd={() => {
-        setEditingCar(null)
-        setShowForm(true)
-      }}
-      onRowClick={(row) => !filters.deleted && navigate(`/cars/${row.id}`)}
-      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
+      onAdd={() => setForm({ car: null })}
+      onRowClick={(row) => !list.showDeleted && navigate(`/cars/${row.id}`)}
       renderGrid={(data) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((car) => (
@@ -254,10 +47,7 @@ export default function Cars() {
               key={car.id}
               car={car}
               onClick={() => navigate(`/cars/${car.id}`)}
-              onEdit={() => {
-                setEditingCar(car)
-                setShowForm(true)
-              }}
+              onEdit={() => setForm({ car })}
               onDelete={() => handleDelete(car.id)}
             />
           ))}
@@ -265,271 +55,18 @@ export default function Cars() {
       )}
       deleteEndpoint="/api/cars"
       exportEndpoint="/api/cars/export"
-      onDeleted={() => loadData(0)}
-      hasMore={hasMore}
-      loadingMore={loadingMore}
-      onLoadMore={() => loadData(cars.length)}
-      onSortChange={setSort}
-      hasActiveFilters={filters.deleted}
       emptyTitle={t('emptyTitle')}
       emptyMessage={t('emptyMessage')}
-      options={[
-        {
-          key: 'deleted',
-          label: t('common:showDeleted'),
-          checked: filters.deleted,
-          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
-        },
-      ]}
     >
-      {showForm && (
+      {form && (
         <CarFormModal
-          car={editingCar}
+          car={form.car}
           onClose={() => {
-            setShowForm(false)
-            setEditingCar(null)
-            loadData(0)
+            setForm(null)
+            list.reload()
           }}
         />
       )}
     </ListPage>
-  )
-}
-
-function CarCard({ car, onClick, onEdit, onDelete }) {
-  const { t } = useTranslation('cars')
-  const carColor = car.color || '#22C55E'
-
-  return (
-    <Card
-      data-testid="entity-card"
-      data-entity-id={car.id}
-      onClick={onClick}
-      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
-      style={{ background: `linear-gradient(135deg, ${carColor}10 0%, ${carColor}05 100%)` }}
-    >
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onEdit()
-          }}
-          className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors"
-          aria-label={t('common:edit')}
-        >
-          <Pencil className="size-3.5" />
-        </button>
-        <DeleteButton onDelete={onDelete} />
-      </div>
-      <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: carColor }} />
-
-      <div className="relative p-6 pb-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: carColor }} />
-            <div
-              className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${carColor} 0%, ${carColor}CC 100%)` }}
-            >
-              {car.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="drop-shadow-lg">{car.brand?.charAt(0)}</span>
-              )}
-            </div>
-          </div>
-          {car.year && (
-            <Badge variant="secondary" className="shadow-md">
-              {car.year}
-            </Badge>
-          )}
-        </div>
-        <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{car.brand}</h3>
-        <p className="font-bold text-lg" style={{ color: carColor }}>
-          {car.model}
-        </p>
-        <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: carColor }} />
-      </div>
-
-      <div className="relative px-6 pb-6 space-y-3">
-        {[
-          { icon: <Zap className="w-4 h-4" />, label: t('fields.speed'), value: car.maxSpeed, color: '#22C55E' },
-          { icon: <Flame className="w-4 h-4" />, label: t('fields.braking'), value: car.brakeForce, color: '#EF4444' },
-          {
-            icon: <FlaskConical className="w-4 h-4" />,
-            label: t('fields.tank'),
-            value: car.fuelCapacity,
-            color: '#3B82F6',
-            display: car.fuelCapacity,
-          },
-        ].map((spec) => (
-          <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
-            <div className="flex items-center gap-2">
-              <span style={{ color: spec.color }}>{spec.icon}</span>
-              <span className="text-xs font-medium text-muted-foreground uppercase">{spec.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-20 bg-muted rounded-full h-2">
-                <div
-                  className="h-2 rounded-full"
-                  style={{ width: `${levelPercent(spec.value)}%`, backgroundColor: spec.color }}
-                />
-              </div>
-              <span className="text-sm font-black w-12 text-right tabular-nums" style={{ color: spec.color }}>
-                {formatLevel(spec.display ?? spec.value)}
-              </span>
-            </div>
-          </div>
-        ))}
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase">{t('glossary:race', { count: 2 })}</span>
-            <span className="text-lg font-black" style={{ color: carColor }}>
-              {car._count?.sessions || 0}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Card>
-  )
-}
-
-export function CarFormModal({ car, onClose }) {
-  const { t } = useTranslation('cars')
-  const [formData, setFormData] = useState({
-    brand: car?.brand || '',
-    model: car?.model || '',
-    year: car?.year || new Date().getFullYear(),
-    color: car?.color || '#22C55E',
-    maxSpeed: car?.maxSpeed || 100,
-    brakeForce: car?.brakeForce || 50,
-    fuelCapacity: car?.fuelCapacity || 100,
-    img: car?.img || '',
-    ...Object.fromEntries(CAR_SPECS.map((field) => [field, car?.[field] ?? ''])),
-  })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
-  async function handleSubmit() {
-    setSaving(true)
-    setError('')
-    try {
-      const url = car ? `${API_URL}/api/cars/${car.id}` : `${API_URL}/api/cars`
-      const res = await fetch(url, {
-        method: car ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (res.ok) {
-        setSuccess(t('form.saved'))
-        setTimeout(() => onClose(), 1500)
-      } else {
-        const data = await res.json()
-        setError(data.error || t('common:saveError'))
-      }
-    } catch {
-      setError(t('common:connectionError'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <FormModal
-      open
-      onClose={onClose}
-      title={car ? t('form.editTitle') : t('form.createTitle')}
-      icon={<Car className="w-5 h-5 text-primary" />}
-      onSubmit={handleSubmit}
-      isEditing={!!car}
-      saving={saving}
-      error={error}
-      success={success}
-    >
-      <div className="grid grid-cols-2 gap-4">
-        <TextField
-          label={t('fields.brand')}
-          value={formData.brand}
-          onChange={(v) => setFormData((f) => ({ ...f, brand: v }))}
-          placeholder={t('form.brandPlaceholder')}
-          required
-        />
-        <TextField
-          label={t('fields.model')}
-          value={formData.model}
-          onChange={(v) => setFormData((f) => ({ ...f, model: v }))}
-          placeholder={t('form.modelPlaceholder')}
-          required
-        />
-      </div>
-      <TextField
-        label={t('fields.year')}
-        type="number"
-        value={formData.year}
-        onChange={(v) => setFormData((f) => ({ ...f, year: parseInt(v) || new Date().getFullYear() }))}
-      />
-      <PhotoUploadField
-        value={formData.img}
-        onChange={(img) => setFormData((f) => ({ ...f, img }))}
-        shape="rect"
-        onError={setError}
-        uploadType="cars"
-      />
-      <ColorPickerField value={formData.color} onChange={(color) => setFormData((f) => ({ ...f, color }))} />
-      <RangeField
-        label={t('fields.maxSpeed')}
-        value={formData.maxSpeed}
-        onChange={(v) => setFormData((f) => ({ ...f, maxSpeed: v }))}
-        color="#22C55E"
-      />
-      <RangeField
-        label={t('fields.brakeForce')}
-        value={formData.brakeForce}
-        onChange={(v) => setFormData((f) => ({ ...f, brakeForce: v }))}
-        color="#EF4444"
-      />
-      <RangeField
-        label={t('fields.fuelCapacity')}
-        value={formData.fuelCapacity}
-        onChange={(v) => setFormData((f) => ({ ...f, fuelCapacity: v }))}
-        color="#3B82F6"
-      />
-
-      <FormSection title={t('fields.equipment')}>
-        <div className="grid grid-cols-2 gap-4">
-          {CAR_TEXT_SPECS.filter((field) => field !== 'notes').map((field) => (
-            <TextField
-              key={field}
-              label={t(`fields.${field}`)}
-              value={formData[field]}
-              onChange={(v) => setFormData((f) => ({ ...f, [field]: v }))}
-              placeholder={t(`form.${field}Placeholder`, '')}
-            />
-          ))}
-        </div>
-      </FormSection>
-
-      <FormSection title={t('fields.measurements')}>
-        <div className="grid grid-cols-3 gap-4">
-          {CAR_NUMBER_SPECS.map((field) => (
-            <TextField
-              key={field}
-              label={t(`fields.${field}`)}
-              type="number"
-              value={formData[field]}
-              onChange={(v) => setFormData((f) => ({ ...f, [field]: v }))}
-            />
-          ))}
-        </div>
-      </FormSection>
-
-      <TextField
-        label={t('fields.notes')}
-        value={formData.notes}
-        onChange={(v) => setFormData((f) => ({ ...f, notes: v }))}
-        multiline
-      />
-    </FormModal>
   )
 }
