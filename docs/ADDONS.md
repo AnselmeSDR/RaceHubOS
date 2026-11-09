@@ -186,7 +186,7 @@ export default async function register(ctx) {
 | `router`          | An Express router mounted at `/api/addons/<id>`.                                                                                 |
 | `app`             | The Express app itself, for anything the router can't do.                                                                        |
 | `io`              | The socket.io server. Prefix your events with `<id>:`.                                                                           |
-| `events`          | Receives every event the core emits to clients (`race:leaderboard`, `race:sector`, `race:pitStop`, `race:carData`, `session:*`, `cu:*`…). An exception in a listener is caught and logged, so it can't crash the server. |
+| `events`          | Receives every event the core emits to clients (`race:leaderboard`, `race:sector`, `race:carData`, `session:*`, `cu:*`…). An exception in a listener is caught and logged, so it can't crash the server. |
 | `prisma`          | The Prisma client of the core database. Queries on the `*Extra` tables are limited to this add-on's rows. See [Data](#data).     |
 | `extra`           | The add-on's own fields on core records (`get`, `set`, `remove`, `all`). See [extra fields](#extra-fields-on-core-records).       |
 | `services`        | The core's running instances: `session`, `championship`, `config`, `sync`, `controlUnit`, `simulator`. `session` also emits `sessionFinished`, `sessionReset` and `sessionDeleted`. Unlike `ctx.events` listeners, your listeners on these services are not wrapped: catch your own errors. |
