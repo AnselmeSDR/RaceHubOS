@@ -29,12 +29,13 @@ export function backupDatabase({ reason = 'backup', keep = DEFAULT_KEEP } = {}) 
   const backupDir = path.join(path.dirname(dbPath), BACKUP_DIR_NAME);
   fs.mkdirSync(backupDir, { recursive: true });
 
-  const safeReason = reason.replace(/[^a-z0-9-]/gi, '-');
-  const target = path.join(backupDir, `${timestamp()}_${safeReason}.db`);
+  // Two backups within the same second are numbered: VACUUM INTO refuses an existing file
+  const name = `${timestamp()}_${reason.replace(/[^a-z0-9-]/gi, '-')}`;
+  let target = path.join(backupDir, `${name}.db`);
+  for (let n = 2; fs.existsSync(target); n++) target = path.join(backupDir, `${name}-${n}.db`);
 
   const db = new Database(dbPath, { readonly: true });
   try {
-    // VACUUM INTO refuses to overwrite, so the target is always fresh.
     // The path must be a SQL string literal: single quotes, doubled inside.
     db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
   } finally {
