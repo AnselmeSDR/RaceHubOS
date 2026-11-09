@@ -260,15 +260,38 @@ describe('once connected', () => {
     expect(ble.reconnectAttempts).toBe(0);
   });
 
-  test('a requested disconnection still schedules a reconnection (as before), a second one cancels it', async () => {
+  test('a requested disconnection stays down', async () => {
     jest.useFakeTimers();
+    const connect = jest.spyOn(ble, 'connect');
     await ble.disconnect();
     expect(ble.isConnected()).toBe(false);
+    expect(ble.reconnectTimer).toBeNull();
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(connect).not.toHaveBeenCalled();
+    expect(events.map(([e]) => e)).toEqual(['disconnect']);
+  });
+
+  test('disconnecting cancels a pending reconnection', async () => {
+    jest.useFakeTimers();
+    cu.emit('disconnect');
     expect(ble.reconnectTimer).not.toBeNull();
     await ble.disconnect();
     expect(ble.reconnectTimer).toBeNull();
     await jest.advanceTimersByTimeAsync(3000);
-    expect(events.map(([e]) => e)).toEqual(['disconnect']);
+    expect(ble.isConnected()).toBe(false);
+  });
+
+  test('once connected again, a lost link reconnects again', async () => {
+    jest.useFakeTimers();
+    await ble.disconnect();
+    const connect = ble.connect('AA');
+    await discover(cu);
+    await connect;
+    expect(ble.isConnected()).toBe(true);
+
+    cu.emit('disconnect');
+    await jest.advanceTimersByTimeAsync(3000);
+    expect(ble.isConnected()).toBe(true);
   });
 });
 

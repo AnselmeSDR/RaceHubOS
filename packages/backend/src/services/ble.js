@@ -34,6 +34,8 @@ export class BLEService extends EventEmitter {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
     this.reconnectDelay = 3000;
+    // Set by disconnect(): the link goes down on purpose, no reconnection
+    this.disconnectRequested = false;
   }
 
   /** Finds the Control Unit, once the adapter is on; resolves with its peripheral. */
@@ -120,6 +122,7 @@ export class BLEService extends EventEmitter {
 
     try {
       this.connecting = true;
+      this.disconnectRequested = false;
       this.emit('connecting');
 
       const cached = this.lastFoundPeripheral;
@@ -220,7 +223,10 @@ export class BLEService extends EventEmitter {
     }
   }
 
-  /** The link is lost: tries to reconnect every `reconnectDelay`, up to `maxReconnectAttempts` times. */
+  /**
+   * The link is down. Lost, it tries to reconnect every `reconnectDelay`, up to
+   * `maxReconnectAttempts` times; asked for by disconnect(), it stays down.
+   */
   handleDisconnect() {
     console.log('⚠️  Disconnected from Control Unit');
     this.connected = false;
@@ -230,6 +236,10 @@ export class BLEService extends EventEmitter {
     this.peripheral = null; // lastFoundPeripheral stays, for the reconnection
     this.emit('disconnect');
 
+    if (this.disconnectRequested) {
+      this.reconnectAttempts = 0;
+      return;
+    }
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('❌ Max reconnection attempts reached');
       this.reconnectAttempts = 0;
@@ -247,6 +257,7 @@ export class BLEService extends EventEmitter {
   }
 
   async disconnect() {
+    this.disconnectRequested = true;
     clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
 
