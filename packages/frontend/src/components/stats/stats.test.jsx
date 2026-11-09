@@ -2,11 +2,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
-import { EMPTY_LAP_FILTERS, hasLapFilters, lapFilterParams } from './lapFilters'
-import LinkCell from './LinkCell'
-import StatsFilterHeader from './StatsFilterHeader'
+import ColumnFilterHeader from '@/components/crud/ColumnFilterHeader'
 import { statsColumns } from './statsColumns'
-import { StatsFilterContext } from './statsFilterContext'
 
 const t = i18n.getFixedT('en', 'stats')
 const lap = {
@@ -29,35 +26,6 @@ function cell(id, original = lap, index = 5, onOpen = vi.fn()) {
 beforeAll(() => i18n.changeLanguage('en'))
 afterEach(cleanup)
 
-describe('lap filters', () => {
-  test('only the selected filters are sent, the best-lap option always', () => {
-    expect(lapFilterParams(EMPTY_LAP_FILTERS)).toEqual({ unique: 'true' })
-    expect(
-      lapFilterParams({ ...EMPTY_LAP_FILTERS, driverId: ['d1', 'd2'], sessionType: [SessionType.RACE], unique: false })
-    ).toEqual({ driverId: 'd1,d2', sessionType: SessionType.RACE, unique: 'false' })
-  })
-
-  test('the best-lap option alone does not count as a filter', () => {
-    expect(hasLapFilters({ ...EMPTY_LAP_FILTERS, unique: false })).toBe(false)
-    expect(hasLapFilters({ ...EMPTY_LAP_FILTERS, championshipId: ['none'] })).toBe(true)
-  })
-})
-
-test('a link cell opens its page without selecting the row', async () => {
-  const onOpen = vi.fn()
-  const onRowClick = vi.fn()
-  render(
-    <div onClick={onRowClick}>
-      <LinkCell to="/drivers/d1" onOpen={onOpen}>
-        Ana
-      </LinkCell>
-    </div>
-  )
-  await userEvent.click(screen.getByText('Ana'))
-  expect(onOpen).toHaveBeenCalledWith('/drivers/d1')
-  expect(onRowClick).not.toHaveBeenCalled()
-})
-
 describe('statsColumns', () => {
   test('the columns, filterable ones by their filter key', () => {
     const columns = statsColumns(t, { lang: 'en', onOpen: vi.fn() })
@@ -71,7 +39,7 @@ describe('statsColumns', () => {
       'sessionType',
       'date',
     ])
-    expect(columns.filter((c) => c.header === StatsFilterHeader).map((c) => c.meta)).toEqual([
+    expect(columns.filter((c) => c.header === ColumnFilterHeader).map((c) => c.meta)).toEqual([
       { label: 'Driver', filter: 'driverId' },
       { label: 'Car', filter: 'carId' },
       { label: 'Track', filter: 'trackId' },
@@ -146,42 +114,5 @@ describe('statsColumns', () => {
   test('the date in the language of the interface', () => {
     cell('date')
     expect(screen.getByText(new Date(lap.sessionDate).toLocaleDateString('en'))).toBeInTheDocument()
-  })
-})
-
-describe('StatsFilterHeader', () => {
-  const column = { columnDef: { meta: { filter: 'driverId', label: 'Driver' } }, getCanSort: () => false }
-
-  function header(context) {
-    render(
-      <StatsFilterContext.Provider value={context}>
-        <StatsFilterHeader column={column} />
-      </StatsFilterContext.Provider>
-    )
-  }
-
-  test('the filter of its column, from the context', async () => {
-    const setFilter = vi.fn()
-    header({
-      filters: { driverId: ['d1'] },
-      setFilter,
-      options: {
-        driverId: [
-          { value: 'd1', label: 'Ana' },
-          { value: 'd2', label: 'Ben' },
-        ],
-      },
-    })
-    expect(screen.getByText('Driver')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button'))
-    expect(await screen.findByRole('menuitemcheckbox', { name: 'Ana' })).toHaveAttribute('aria-checked', 'true')
-    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Ben' }))
-    expect(setFilter).toHaveBeenCalledWith('driverId', ['d1', 'd2'])
-  })
-
-  test('nothing selected and no choices by default', async () => {
-    header({ filters: {}, setFilter: vi.fn(), options: {} })
-    await userEvent.click(screen.getByRole('button'))
-    expect(screen.queryByRole('menuitemcheckbox', { name: 'Ana' })).not.toBeInTheDocument()
   })
 })

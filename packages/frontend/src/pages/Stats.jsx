@@ -3,20 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BarChart3 } from 'lucide-react'
 import { ListPage } from '@/components/ui/list-page'
-import { EMPTY_LAP_FILTERS, hasLapFilters, lapFilterParams } from '../components/stats/lapFilters'
+import { ColumnFilterContext } from '../components/crud/columnFilterContext'
 import { statsColumns } from '../components/stats/statsColumns'
-import { StatsFilterContext } from '../components/stats/statsFilterContext'
 import { usePagedList } from '../hooks/usePagedList'
+import { filterParams, hasColumnFilters } from '../lib/listFilters'
 import { getData, getReferenceData } from '../lib/sessionApi'
 import { sessionTypeOptions } from '../utils/sessionTypes'
+
+// Nothing selected; the best lap per driver and car only
+const EMPTY_FILTERS = { driverId: [], carId: [], trackId: [], championshipId: [], sessionType: [], unique: true }
 
 /** Every recorded lap, fastest first, filtered by driver, car, track, championship and session type. */
 export default function Stats() {
   const { t, i18n } = useTranslation('stats')
   const navigate = useNavigate()
-  const [filters, setFilters] = useState(EMPTY_LAP_FILTERS)
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [lists, setLists] = useState({ drivers: [], cars: [], tracks: [], championships: [] })
-  const list = usePagedList('/api/stats/laptimes', lapFilterParams(filters))
+  const list = usePagedList('/api/stats/laptimes', filterParams(filters))
 
   useEffect(() => {
     Promise.all([getReferenceData(), getData('/api/championships')]).then(([reference, championships]) => {
@@ -53,7 +56,7 @@ export default function Stats() {
   )
 
   return (
-    <StatsFilterContext.Provider value={filterContext}>
+    <ColumnFilterContext.Provider value={filterContext}>
       <ListPage
         {...list.listProps}
         title={t('title')}
@@ -62,7 +65,7 @@ export default function Stats() {
         preferenceKey="stats"
         columns={columns}
         searchPlaceholder={t('common:search')}
-        hasActiveFilters={hasLapFilters(filters) || list.showDeleted}
+        hasActiveFilters={hasColumnFilters(filters) || list.showDeleted}
         emptyTitle={t('emptyTitle')}
         emptyMessage={t('emptyMessage')}
         deleteEndpoint="/api/stats/laps"
@@ -76,6 +79,6 @@ export default function Stats() {
           ...list.listProps.options,
         ]}
       />
-    </StatsFilterContext.Provider>
+    </ColumnFilterContext.Provider>
   )
 }

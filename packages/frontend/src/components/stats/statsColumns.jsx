@@ -2,8 +2,8 @@ import { Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
 import { getImgUrl } from '@/utils/image'
-import LinkCell from './LinkCell'
-import StatsFilterHeader from './StatsFilterHeader'
+import LinkCell from '@/components/crud/LinkCell'
+import { filteredColumn as filtered } from '@/components/crud/filteredColumn'
 
 const PODIUM_BACKGROUNDS = ['bg-yellow-500', 'bg-gray-400', 'bg-orange-500']
 
@@ -14,17 +14,9 @@ function formatTime(ms) {
 
 /**
  * The columns of the laps table. The driver, car, track, championship and session columns filter on
- * the matching key of the filter context; `onOpen(path)` opens an entity's page.
+ * the matching key of the column filter context; `onOpen(path)` opens an entity's page.
  */
 export function statsColumns(t, { lang, onOpen }) {
-  const filtered = (id, filter, label, accessorFn, cell) => ({
-    id,
-    accessorFn,
-    meta: { label, filter },
-    header: StatsFilterHeader,
-    cell,
-  })
-
   return [
     {
       id: 'position',
