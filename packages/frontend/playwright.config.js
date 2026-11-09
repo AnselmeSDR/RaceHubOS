@@ -46,6 +46,8 @@ export default defineConfig({
         PORT: String(BACKEND_PORT),
         USE_MOCK_DEVICE: 'true',
         RACEHUBOS_ADDONS_DIR: E2E_ADDONS,
+        // The catalog of tests/fixtures/addons, never the one on GitHub
+        RACEHUBOS_CATALOG_URL: '',
       },
     },
     {

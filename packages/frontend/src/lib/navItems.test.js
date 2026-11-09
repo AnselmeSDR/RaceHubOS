@@ -31,11 +31,13 @@ describe('findNavItem', () => {
     ['/addons/planner', '/addons/planner'],
     ['/addons/planner/track-1', '/addons/planner'],
     ['/addons/planner/screen', '/addons/planner/screen'],
+    ['/addons', '/addons'],
+    ['/addons/other', '/addons'],
   ])('%s belongs to %s', (pathname, to) => {
     expect(findNavItem(items, pathname).to).toBe(to)
   })
 
-  test.each(['/sessions/3', '/driversx', '/addons/other'])('%s belongs to nothing', (pathname) => {
+  test.each(['/sessions/3', '/driversx', '/addonsx'])('%s belongs to nothing', (pathname) => {
     expect(findNavItem(items, pathname)).toBeUndefined()
   })
 })

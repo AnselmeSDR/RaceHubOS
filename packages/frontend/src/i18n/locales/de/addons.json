@@ -3,5 +3,79 @@
     "title": "Das Add-on „{{addon}}“ ist auf dieser Seite abgestürzt",
     "hint": "Der Rest der App funktioniert weiter. Tritt der Fehler erneut auf, deaktiviere das Add-on auf der Add-ons-Seite.",
     "retry": "Erneut versuchen"
+  },
+  "page": {
+    "loadError": "Die Add-ons konnten nicht geladen werden: {{error}}"
+  },
+  "tabs": {
+    "installed": "Installiert",
+    "market": "Katalog",
+    "link": "Über einen Link installieren"
+  },
+  "installed": {
+    "empty": "Noch kein Add-on. Im Katalog findest du eines.",
+    "by": "von {{author}}",
+    "source": {
+      "catalog": "Katalog",
+      "link": "Link",
+      "local": "Lokaler Ordner"
+    },
+    "localHint": "Von Hand in addons/ abgelegt: Die App aktualisiert oder entfernt es nie.",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "invalid": "Ungültig",
+    "disabledReason": "Deaktiviert: {{reason}}",
+    "update": "Auf {{ref}} aktualisieren",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "uninstall": "Deinstallieren"
+  },
+  "uninstall": {
+    "title": "{{name}} deinstallieren?",
+    "deleteData": "Auch seine Daten löschen",
+    "deleteDataHint": "Seine Felder bei Fahrern, Autos, Strecken… und seine eigene Datenbank. Sonst bleiben sie erhalten: Bei einer Neuinstallation ist alles wieder da.",
+    "confirm": "Deinstallieren",
+    "cancel": "Abbrechen"
+  },
+  "market": {
+    "empty": "Der Katalog ist noch leer.",
+    "offline": "GitHub ist nicht erreichbar: Das ist der mit der App ausgelieferte Katalog.",
+    "install": "Installieren",
+    "installed": "Installiert",
+    "source": "Quellcode"
+  },
+  "link": {
+    "label": "Git-Repository",
+    "placeholder": "https://github.com/…/racehubos-…",
+    "warning": "Dieses Add-on wurde nicht geprüft. Es hat Zugriff auf ganz RaceHubOS: Installiere nur Add-ons von Personen, denen du vertraust.",
+    "install": "Installieren"
+  },
+  "overrides": {
+    "title": "Von Add-ons geänderte Kerndateien",
+    "core": "Kern",
+    "replacement": "{{addon}} ersetzt {{file}}: Die Änderungen von {{hidden}} sind verdeckt.",
+    "replacementAlone": "{{addon}} ersetzt {{file}} vollständig.",
+    "orphan": "{{addon}} ändert {{file}}, die es im Kern nicht mehr gibt: Diese Änderung bewirkt nichts.",
+    "hint": "Deaktiviere eines dieser Add-ons oder bitte seinen Autor, die Datei mit @base zu umhüllen."
+  },
+  "progress": {
+    "install": "{{addon}} wird installiert",
+    "update": "{{addon}} wird aktualisiert",
+    "enable": "{{addon}} wird aktiviert",
+    "disable": "{{addon}} wird deaktiviert",
+    "uninstall": "{{addon}} wird deinstalliert",
+    "newAddon": "Das Add-on",
+    "restarting": "Fertig. RaceHubOS startet neu…",
+    "failed": "Fehlgeschlagen: {{error}}",
+    "dismiss": "Schließen"
+  },
+  "step": {
+    "starting": "Start…",
+    "download": "Herunterladen…",
+    "backup": "Datenbank wird gesichert…",
+    "dependencies": "Seine Abhängigkeiten werden installiert…",
+    "build": "App wird gebaut…",
+    "restart": "Neustart…",
+    "error": "Fehler"
   }
 }

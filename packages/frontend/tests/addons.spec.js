@@ -11,6 +11,29 @@ test('an add-on brings its menu entry, page, translations and API route', async 
   await expect(page.getByTestId('e2e-hello-greeting')).toHaveText('Bonjour depuis un add-on')
   await expect(page.getByTestId('e2e-hello-server')).toHaveText('e2e-hello')
   await expect(page.getByTestId('nav-/addons/e2e-hello')).toHaveAttribute('data-active', 'true')
+  await expect(page.getByTestId('nav-/addons')).toHaveAttribute('data-active', 'false')
+})
+
+// Only looks: an action would rebuild the app and restart the test server
+test('the Add-ons page lists the add-ons, the catalog and the install from a link', async ({ page }) => {
+  await page.goto('/')
+  await page.getByTestId('nav-/addons').click()
+  await expect(page.getByTestId('page-header').getByRole('heading')).toHaveText('Add-ons')
+
+  const hello = page.getByTestId('addon-e2e-hello')
+  await expect(hello).toContainText('Bonjour E2E')
+  await expect(hello).toContainText('Dossier local')
+  await expect(hello.getByRole('button', { name: 'Désactiver' })).toBeVisible()
+  await expect(hello.getByRole('button', { name: 'Désinstaller' })).toHaveCount(0)
+
+  await page.getByTestId('addons-tab-market').click()
+  const market = page.getByTestId('market-e2e-market')
+  await expect(market).toContainText('Catalogue E2E')
+  await expect(market.getByRole('button', { name: 'Installer' })).toBeEnabled()
+
+  await page.getByTestId('addons-tab-link').click()
+  await expect(page.getByTestId('link-warning')).toContainText("n'a pas été vérifié")
+  await expect(page.getByTestId('link-install')).toBeDisabled()
 })
 
 test('a crashing add-on page shows an error, the rest of the app keeps working', async ({ page }) => {

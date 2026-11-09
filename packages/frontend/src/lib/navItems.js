@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Scale,
   Terminal,
+  Puzzle,
   Settings,
 } from 'lucide-react'
 import addons from 'virtual:racehubos-addons'
@@ -30,6 +31,7 @@ export const coreNavItems = [
   { to: '/balancing', labelKey: 'nav.balancing', Icon: Scale },
   { to: '/displays', labelKey: 'nav.displays', Icon: LayoutGrid, adminOnly: true },
   { to: '/test', labelKey: 'nav.test', Icon: Terminal, adminOnly: true },
+  { to: '/addons', labelKey: 'nav.addons', Icon: Puzzle },
   { to: '/settings', labelKey: 'nav.settings', Icon: Settings },
 ]
 

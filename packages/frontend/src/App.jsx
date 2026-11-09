@@ -30,6 +30,7 @@ const FreeSessionPage = lazy(() => import('./pages/FreeSessionPage'))
 const BalancingPage = lazy(() => import('./pages/BalancingPage'))
 const Championships = lazy(() => import('./pages/Championships'))
 const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'))
+const Addons = lazy(() => import('./pages/Addons'))
 
 // Pages brought by add-ons — docs/ADDONS.md § Web side
 const addonPages = addonRoutes(addons)
@@ -190,6 +191,14 @@ function App() {
                       element={
                         <Suspense>
                           <Settings />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="addons"
+                      element={
+                        <Suspense>
+                          <Addons />
                         </Suspense>
                       }
                     />
