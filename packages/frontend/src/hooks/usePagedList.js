@@ -5,8 +5,8 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 const PAGE_SIZE = 50
 
 /** One page of `endpoint` (`{ data, hasMore, total }`), or null when it can't be read. */
-async function fetchPage(endpoint, { showDeleted, sort }, offset) {
-  const params = new URLSearchParams()
+async function fetchPage(endpoint, { query, showDeleted, sort }, offset) {
+  const params = new URLSearchParams(query)
   if (showDeleted) params.append('deleted', 'true')
   if (sort) {
     params.append('sortBy', sort.id)
@@ -26,12 +26,15 @@ async function fetchPage(endpoint, { showDeleted, sort }, offset) {
 
 /**
  * A list read 50 records at a time from `endpoint`, with the "show deleted" option and the column sort.
+ * `params` are more query parameters (filters), as an object of strings.
  *
- * Changing either reloads from the start; the loading screen only shows the first time, so the
+ * Changing any of them reloads from the start; the loading screen only shows the first time, so the
  * list doesn't flash. `listProps` are the matching props of `ListPage`.
  */
-export function usePagedList(endpoint) {
+export function usePagedList(endpoint, params) {
   const { t } = useTranslation('common')
+  // Compared as a string, so a new object with the same filters doesn't reload
+  const query = new URLSearchParams(params).toString()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -42,7 +45,7 @@ export function usePagedList(endpoint) {
   const [reloads, setReloads] = useState(0)
 
   useEffect(() => {
-    fetchPage(endpoint, { showDeleted, sort }, 0).then((page) => {
+    fetchPage(endpoint, { query, showDeleted, sort }, 0).then((page) => {
       if (page) {
         setItems(page.data)
         setHasMore(page.hasMore ?? false)
@@ -50,11 +53,11 @@ export function usePagedList(endpoint) {
       }
       setLoading(false)
     })
-  }, [endpoint, showDeleted, sort, reloads])
+  }, [endpoint, query, showDeleted, sort, reloads])
 
   function loadMore() {
     setLoadingMore(true)
-    fetchPage(endpoint, { showDeleted, sort }, items.length).then((page) => {
+    fetchPage(endpoint, { query, showDeleted, sort }, items.length).then((page) => {
       if (page) {
         setItems((prev) => [...prev, ...page.data])
         setHasMore(page.hasMore ?? false)

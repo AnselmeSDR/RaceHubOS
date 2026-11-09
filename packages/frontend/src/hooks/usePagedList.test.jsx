@@ -119,3 +119,25 @@ test('reload and onDeleted fetch the first page again', async () => {
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
   expect(query(2)).toMatchObject({ offset: '0' })
 })
+
+describe('query parameters', () => {
+  test('are sent with every page', async () => {
+    const { result } = renderHook(() => usePagedList('/api/laps', { driverId: 'd1,d2', unique: 'true' }))
+    await waitFor(() => expect(ids(result)).toEqual(['a', 'b']))
+    expect(query(0)).toEqual({ driverId: 'd1,d2', unique: 'true', offset: '0', limit: '50' })
+    act(() => result.current.listProps.onLoadMore())
+    expect(query(1)).toMatchObject({ driverId: 'd1,d2', offset: '2' })
+  })
+
+  test('reload the list when they change, not when they are only rebuilt', async () => {
+    const { result, rerender } = renderHook(({ params }) => usePagedList('/api/laps', params), {
+      initialProps: { params: { unique: 'true' } },
+    })
+    await waitFor(() => expect(result.current.listProps.loading).toBe(false))
+    rerender({ params: { unique: 'true' } })
+    expect(fetchMock).toHaveBeenCalledOnce()
+    rerender({ params: { unique: 'false' } })
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(query(1)).toMatchObject({ unique: 'false', offset: '0' })
+  })
+})
