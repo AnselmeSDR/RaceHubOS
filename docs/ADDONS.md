@@ -578,12 +578,13 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
 - Virtual module `virtual:racehubos-addons`: `[{ id, manifest, web }]` for enabled add-ons with a `web/index.jsx`. `App.jsx` mounts their routes under `/addons/<id>/` inside `<Layout>` (outside it for `layout: false`), each wrapped in `<Suspense>` and an error boundary. `navItems` appends their entries.
 - Locales: each `addons/<id>/web/locales/<lang>.json` is added with `i18n.addResourceBundle(lang, id, …)`.
 - `resolveId`:
-  1. `@base` imported from an override → the layer below it, or the core file;
+  1. `@base` imported from an override → the layer below it, or the core file with a `?racehubos-base` query. Under its plain URL, the core file would be the top layer again whenever that URL is resolved on its own, with no importer: Vitest's module cache does it, and so does a browser asking a server that just restarted. The override would then wrap itself and loop forever;
   2. `@addon/…` → the importer's add-on root;
   3. a relative import in an override → resolved from the core file's folder;
   4. any id that resolves to a core file with overrides → the top layer;
   5. a package an add-on doesn't carry → the core's, so that an add-on linked from elsewhere finds `@racehubos/shared` and the core's dependencies.
-- `resolve.dedupe` for the packages listed in [Dependencies](#dependencies), and `server.fs.allow` includes `addons/`.
+- `resolve.dedupe` for the packages listed in [Dependencies](#dependencies), and `server.fs.allow` includes `addons/` and every add-on linked from outside the repository.
+- `configureVitest` adds the enabled add-ons and their stacks to the key of Vitest's module cache: a module transformed with one set of add-ons is never served to a run with another, such as the core's tests after an add-on's tests.
 - `src/index.css` gets one `@source "<add-on folder>"` per enabled add-on, through the plugin's `transform`. A single `@source` on `addons/` wouldn't do: Tailwind skips the files git ignores, and `addons/*` is ignored. The dev server sees add-on classes anyway; only the build missed them.
 
 **Backend**

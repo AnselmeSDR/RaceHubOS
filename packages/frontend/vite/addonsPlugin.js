@@ -21,6 +21,7 @@ import {
  *   starts from the core file's folder
  * - a package an add-on doesn't carry comes from the core, even for an add-on linked from elsewhere
  * - Tailwind scans each add-on folder: `addons/` is ignored by git, which Tailwind would skip
+ * - Vitest's module cache is kept apart for each set of enabled add-ons
  */
 
 export const VIRTUAL_ID = 'virtual:racehubos-addons'
@@ -79,6 +80,11 @@ export function virtualModuleCode(addons) {
 /** A module id without its query (`?v=…`, `?import`). */
 const fileOf = (id) => id.split('?')[0]
 
+// Marks the core file under a stack: by its plain URL, resolved again on its own (Vitest's module
+// cache does, so does a browser asking a fresh server), it would be the top layer and wrap itself
+const BASE_QUERY = 'racehubos-base'
+const isBelowStack = (id) => new URLSearchParams(id.split('?')[1]).has(BASE_QUERY)
+
 /**
  * @param {{ rootDir: string }} options repository root
  */
@@ -90,11 +96,18 @@ export default function racehubosAddons({ rootDir }) {
   // Where a package import resolves from when the add-on has no copy of its own
   const coreImporter = path.join(rootDir, 'packages/frontend/src/main.jsx')
 
+  let cacheKey = ''
+
   const discover = () => {
     addons = enabledAddons(rootDir)
     const { stacks } = buildOverrideStacks(rootDir, addons)
     hasOverrides = stacks.size > 0
     resolver = createOverrideResolver({ addons, stacks })
+    cacheKey = JSON.stringify({
+      base: BASE_QUERY,
+      addons: addons.map((addon) => realPosix(addon.dir)),
+      stacks: [...stacks],
+    })
   }
 
   return {
@@ -103,10 +116,18 @@ export default function racehubosAddons({ rootDir }) {
 
     config() {
       discover()
+      // An add-on linked from elsewhere is served too
+      const repository = `${realPosix(rootDir)}/`
+      const outside = addons.map((addon) => realPosix(addon.dir)).filter((dir) => !`${dir}/`.startsWith(repository))
       return {
         resolve: { dedupe: SHARED_PACKAGES },
-        server: { fs: { allow: [rootDir] } },
+        server: { fs: { allow: [rootDir, ...outside] } },
       }
+    },
+
+    // Every transform depends on the enabled add-ons: Vitest's module cache must not serve one made for others
+    configureVitest({ defineCacheKeyGenerator }) {
+      defineCacheKeyGenerator(() => cacheKey)
     },
 
     configResolved(config) {
@@ -121,7 +142,7 @@ export default function racehubosAddons({ rootDir }) {
       if (source === BASE_SPECIFIER) {
         const below = resolver.base(from)
         if (!below) this.error(`"@base" can only be imported from an override (in ${from})`)
-        return below
+        return resolver.isLayer(below) ? below : `${below}?${BASE_QUERY}`
       }
 
       if (source.startsWith(ADDON_SPECIFIER)) {
@@ -140,7 +161,7 @@ export default function racehubosAddons({ rootDir }) {
       // Not in the add-on's own packages: the core's (a linked add-on sits outside the repository)
       if (!resolved && packageInAddon)
         resolved = await this.resolve(source, coreImporter, { ...options, skipSelf: true })
-      if (!resolved || resolved.external) return resolved
+      if (!resolved || resolved.external || isBelowStack(resolved.id)) return resolved
       const [file, query] = resolved.id.split('?')
       const top = resolver.top(file)
       return top ? { ...resolved, id: query ? `${top}?${query}` : top } : resolved

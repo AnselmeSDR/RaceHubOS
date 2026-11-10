@@ -4,7 +4,7 @@ import os from 'os'
 import path from 'path'
 import { build, createServer } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
-import { toPosix } from '@racehubos/shared/addons'
+import { realPosix, toPosix } from '@racehubos/shared/addons'
 import racehubosAddons, { localeFiles, SHARED_PACKAGES, VIRTUAL_ID, virtualModuleCode } from './addonsPlugin.js'
 
 function write(root, relative, content) {
@@ -76,6 +76,40 @@ describe('plugin config', () => {
     const plugin = racehubosAddons({ rootDir: root })
     expect(plugin.config()).toEqual({ resolve: { dedupe: SHARED_PACKAGES }, server: { fs: { allow: [root] } } })
     expect(SHARED_PACKAGES).toContain('react')
+  })
+
+  test('serves an add-on linked from outside the repository', () => {
+    const elsewhere = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'racehubos-linked-')))
+    try {
+      write(elsewhere, 'racehubos-addon.json', manifest('linked'))
+      write(root, 'addons/inside/racehubos-addon.json', manifest('inside'))
+      fs.symlinkSync(elsewhere, path.join(root, 'addons/linked'))
+      expect(racehubosAddons({ rootDir: root }).config().server.fs.allow).toEqual([root, elsewhere])
+    } finally {
+      fs.rmSync(elsewhere, { recursive: true, force: true })
+    }
+  })
+
+  test("Vitest's module cache is kept apart for each set of add-ons and overrides", () => {
+    const keyOf = () => {
+      const plugin = racehubosAddons({ rootDir: root })
+      plugin.config()
+      const generators = []
+      plugin.configureVitest({ defineCacheKeyGenerator: (generator) => generators.push(generator) })
+      return generators.map((generator) => generator({ id: '/src/page.js', sourceCode: '' })).join()
+    }
+    write(root, 'packages/frontend/src/board.js', 'export default 1')
+    const none = keyOf()
+    write(root, 'addons/sectors/racehubos-addon.json', manifest('sectors'))
+    const pagesOnly = keyOf()
+    write(root, 'addons/sectors/overrides/packages/frontend/src/board.js', "export * from '@base'")
+    const overriding = keyOf()
+    write(root, 'addons/.data/state.json', { disabled: { sectors: { reason: 'off' } }, installed: {} })
+    const disabled = keyOf()
+
+    expect(new Set([none, pagesOnly, overriding]).size).toBe(3)
+    expect(disabled).toBe(none)
+    expect(keyOf()).toBe(disabled)
   })
 
   test('load ignores other modules', () => {
@@ -218,6 +252,18 @@ describe('in a real Vite server', () => {
     } finally {
       fs.rmSync(elsewhere, { recursive: true, force: true })
     }
+  })
+
+  test('the address @base gives leads back to the core file, even resolved on its own', async () => {
+    await setup()
+    await server.ssrLoadModule('/src/page.js')
+    const { moduleGraph, pluginContainer } = server.environments.ssr
+    const core = realPosix(path.join(root, 'packages/frontend/src/board.js'))
+    const sectors = realPosix(path.join(root, 'addons/sectors/overrides/packages/frontend/src/board.js'))
+    const below = [...moduleGraph.getModuleById(sectors).importedModules].find((mod) => mod.file === core)
+    // Vitest's module cache resolves it again by its URL alone, without the layer that imported it
+    const resolved = await pluginContainer.resolveId(below.url)
+    expect(resolved.id.split('?')[0]).toBe(core)
   })
 
   test('a query on an overridden file is kept', async () => {
