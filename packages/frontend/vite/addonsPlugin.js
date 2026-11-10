@@ -6,6 +6,8 @@ import {
   buildOverrideStacks,
   createOverrideResolver,
   enabledAddons,
+  isBareSpecifier,
+  realPosix,
   toPosix,
 } from '@racehubos/shared/addons'
 
@@ -17,6 +19,8 @@ import {
  * - overrides: an import of an overridden core file gets the top of its stack,
  *   `@base` inside a layer gets the layer below, and a relative import inside a layer
  *   starts from the core file's folder
+ * - a package an add-on doesn't carry comes from the core, even for an add-on linked from elsewhere
+ * - Tailwind scans each add-on folder: `addons/` is ignored by git, which Tailwind would skip
  */
 
 export const VIRTUAL_ID = 'virtual:racehubos-addons'
@@ -82,6 +86,9 @@ export default function racehubosAddons({ rootDir }) {
   let addons = []
   let hasOverrides = false
   let resolver = createOverrideResolver({ addons, stacks: new Map() })
+  let cssEntry = null
+  // Where a package import resolves from when the add-on has no copy of its own
+  const coreImporter = path.join(rootDir, 'packages/frontend/src/main.jsx')
 
   const discover = () => {
     addons = enabledAddons(rootDir)
@@ -100,6 +107,10 @@ export default function racehubosAddons({ rootDir }) {
         resolve: { dedupe: SHARED_PACKAGES },
         server: { fs: { allow: [rootDir] } },
       }
+    },
+
+    configResolved(config) {
+      cssEntry = realPosix(path.join(config.root, 'src/index.css'))
     },
 
     async resolveId(source, importer, options) {
@@ -121,14 +132,24 @@ export default function racehubosAddons({ rootDir }) {
       }
 
       // Any other import: if it lands on an overridden core file, the app gets the top layer
-      if (!hasOverrides) return null
+      const packageInAddon = isBareSpecifier(source) && resolver.addonRoot(from) !== null
+      if (!hasOverrides && !packageInAddon) return null
       // A relative import in an override starts from the core file's folder, as if the override sat in its place
       const core = source.startsWith('.') ? resolver.core(from) : null
-      const resolved = await this.resolve(source, core ?? importer, { ...options, skipSelf: true })
+      let resolved = await this.resolve(source, core ?? importer, { ...options, skipSelf: true })
+      // Not in the add-on's own packages: the core's (a linked add-on sits outside the repository)
+      if (!resolved && packageInAddon)
+        resolved = await this.resolve(source, coreImporter, { ...options, skipSelf: true })
       if (!resolved || resolved.external) return resolved
       const [file, query] = resolved.id.split('?')
       const top = resolver.top(file)
       return top ? { ...resolved, id: query ? `${top}?${query}` : top } : resolved
+    },
+
+    transform(code, id) {
+      if (fileOf(id) !== cssEntry || addons.length === 0) return null
+      const sources = addons.map((addon) => `@source ${JSON.stringify(realPosix(addon.dir))};`)
+      return { code: `${code}\n/* add-ons (docs/ADDONS.md) */\n${sources.join('\n')}\n`, map: null }
     },
 
     load(id) {

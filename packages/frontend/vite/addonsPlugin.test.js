@@ -2,7 +2,8 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { createServer } from 'vite'
+import { build, createServer } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import { toPosix } from '@racehubos/shared/addons'
 import racehubosAddons, { localeFiles, SHARED_PACKAGES, VIRTUAL_ID, virtualModuleCode } from './addonsPlugin.js'
 
@@ -193,10 +194,81 @@ describe('in a real Vite server', () => {
     expect(plain.default).toBe('content')
   })
 
+  test("a package the add-on doesn't carry comes from the core, even for an add-on linked from elsewhere", async () => {
+    write(root, 'node_modules/core-pkg/package.json', { name: 'core-pkg', type: 'module', main: 'index.js' })
+    write(root, 'node_modules/core-pkg/index.js', "export default 'from the core'")
+    // The add-on's own copy wins over the core's
+    write(root, 'node_modules/own-pkg/package.json', { name: 'own-pkg', type: 'module', main: 'index.js' })
+    write(root, 'node_modules/own-pkg/index.js', "export default 'core copy'")
+    const elsewhere = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'racehubos-linked-')))
+    try {
+      write(elsewhere, 'racehubos-addon.json', manifest('linked'))
+      write(elsewhere, 'node_modules/own-pkg/package.json', { name: 'own-pkg', type: 'module', main: 'index.js' })
+      write(elsewhere, 'node_modules/own-pkg/index.js', "export default 'its own copy'")
+      const entry = write(
+        elsewhere,
+        'web/index.js',
+        "import core from 'core-pkg'\nimport own from 'own-pkg'\nexport default [core, own]"
+      )
+      fs.mkdirSync(path.join(root, 'addons'), { recursive: true })
+      fs.symlinkSync(elsewhere, path.join(root, 'addons/linked'))
+      await setup()
+      const loaded = await server.ssrLoadModule(entry)
+      expect(loaded.default).toEqual(['from the core', 'its own copy'])
+    } finally {
+      fs.rmSync(elsewhere, { recursive: true, force: true })
+    }
+  })
+
   test('a query on an overridden file is kept', async () => {
     await setup()
     write(root, 'packages/frontend/src/raw.js', "import source from './board.js?raw'\nexport default source")
     const raw = await server.ssrLoadModule('/src/raw.js')
     expect(raw.default).toContain("'pits'")
+  })
+})
+
+describe('Tailwind', () => {
+  // Inside the frontend's node_modules, so that tailwindcss resolves; that folder is also one
+  // Tailwind never scans by itself, like the git-ignored addons/ folder of a real install
+  const cacheDir = path.resolve(import.meta.dirname, '../node_modules/.cache')
+  let repo, elsewhere
+
+  beforeEach(() => {
+    fs.mkdirSync(cacheDir, { recursive: true })
+    repo = fs.realpathSync(fs.mkdtempSync(path.join(cacheDir, 'racehubos-tailwind-')))
+    elsewhere = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'racehubos-linked-')))
+  })
+  afterEach(() => {
+    fs.rmSync(repo, { recursive: true, force: true })
+    fs.rmSync(elsewhere, { recursive: true, force: true })
+  })
+
+  const page = (className) => `export default () => <p className="${className}" />`
+
+  test('the build generates the classes of every enabled add-on, installed or linked, and of none other', async () => {
+    write(repo, 'packages/frontend/index.html', '<script type="module" src="/src/main.js"></script>')
+    write(repo, 'packages/frontend/src/main.js', "import './index.css'")
+    write(repo, 'packages/frontend/src/index.css', "@import 'tailwindcss';")
+    write(repo, 'addons/installed/racehubos-addon.json', manifest('installed'))
+    write(repo, 'addons/installed/web/Page.jsx', page('tracking-[7px]'))
+    write(repo, 'addons/off/racehubos-addon.json', manifest('off'))
+    write(repo, 'addons/off/web/Page.jsx', page('tracking-[9px]'))
+    write(repo, 'addons/.data/state.json', { disabled: { off: { reason: 'off' } }, installed: {} })
+    write(elsewhere, 'racehubos-addon.json', manifest('linked'))
+    write(elsewhere, 'web/Page.jsx', page('tracking-[8px]'))
+    fs.symlinkSync(elsewhere, path.join(repo, 'addons/linked'))
+
+    const output = await build({
+      configFile: false,
+      root: path.join(repo, 'packages/frontend'),
+      plugins: [racehubosAddons({ rootDir: repo }), tailwindcss()],
+      build: { write: false },
+      logLevel: 'silent',
+    })
+    const css = output.output.find((file) => file.fileName.endsWith('.css')).source
+    expect(css).toContain('letter-spacing:7px')
+    expect(css).toContain('letter-spacing:8px')
+    expect(css).not.toContain('letter-spacing:9px')
   })
 })

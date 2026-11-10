@@ -13,6 +13,7 @@ import {
   findReplacements,
   forgetAddon,
   importsBase,
+  isBareSpecifier,
   isLocalizedText,
   localized,
   readState,
@@ -485,6 +486,24 @@ describe('realPosix', () => {
 
   test('a path that does not exist stays as it is', () => {
     expect(realPosix(path.join(root, 'missing.js'))).toBe(toPosix(path.join(root, 'missing.js')));
+  });
+});
+
+describe('isBareSpecifier', () => {
+  test.each([
+    ['react', true],
+    ['@racehubos/shared/addons', true],
+    ['lodash/fp', true],
+    ['./board.js', false],
+    ['../lib/x.js', false],
+    ['/abs/x.js', false],
+    ['node:fs', false],
+    ['file:///x.js', false],
+    ['C:/core/x.js', false],
+    ['#internal', false],
+    ['\0virtual', false],
+  ])('%s → %s', (specifier, bare) => {
+    expect(isBareSpecifier(specifier)).toBe(bare);
   });
 });
 

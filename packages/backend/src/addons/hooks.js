@@ -7,6 +7,7 @@ import {
   buildOverrideStacks,
   createOverrideResolver,
   enabledAddons,
+  isBareSpecifier,
 } from '@racehubos/shared/addons';
 
 /**
@@ -16,6 +17,7 @@ import {
  * - `@addon/…` → the importing add-on's own folder
  * - a relative import in an override → from the core file's folder, as if the override sat in its place
  * - any import landing on an overridden core file → the top of its stack
+ * - a package an add-on doesn't carry → the core's, even for an add-on linked from elsewhere
  *
  * Registered by `preload.js` (`node --import`) before the server's first import.
  */
@@ -30,8 +32,15 @@ export function loadOverrides(rootDir) {
   return { addons, stacks, resolver: createOverrideResolver({ addons, stacks }) };
 }
 
-/** The `resolve` hook over a resolver (see createOverrideResolver). */
-export function createResolveHook(resolver) {
+/** Where a package import resolves from when the add-on has no copy of its own. */
+export const corePackagesURL = (rootDir) => pathToFileURL(path.join(rootDir, 'packages/backend/package.json')).href;
+
+/**
+ * The `resolve` hook over a resolver (see createOverrideResolver).
+ *
+ * @param {string|null} [packagesURL] where an add-on's package imports fall back to (corePackagesURL)
+ */
+export function createResolveHook(resolver, packagesURL = null) {
   const toTop = (resolved) => {
     const file = fileOf(resolved.url);
     const top = file && resolver.top(file);
@@ -57,7 +66,17 @@ export function createResolveHook(resolver) {
 
     const core = importer && isRelative(specifier) ? resolver.core(importer) : null;
     const from = core ? { ...context, parentURL: pathToFileURL(core).href } : context;
-    return toTop(await nextResolve(specifier, from));
+    try {
+      return toTop(await nextResolve(specifier, from));
+    } catch (error) {
+      // Not in the add-on's own packages: the core's (a linked add-on sits outside the repository)
+      const packageInAddon = packagesURL && importer && isBareSpecifier(specifier) && resolver.addonRoot(importer);
+      if (!packageInAddon || error?.code !== 'ERR_MODULE_NOT_FOUND') throw error;
+      // Missing from both: the add-on's own error, which names the file that imports it
+      const fromCore = await nextResolve(specifier, { ...context, parentURL: packagesURL }).catch(() => null);
+      if (!fromCore) throw error;
+      return toTop(fromCore);
+    }
   };
 }
 
@@ -65,7 +84,7 @@ let hook = null;
 
 /** Runs in the hooks thread, with the data given to `register`. */
 export function initialize({ rootDir }) {
-  hook = createResolveHook(loadOverrides(rootDir).resolver);
+  hook = createResolveHook(loadOverrides(rootDir).resolver, corePackagesURL(rootDir));
 }
 
 export function resolve(specifier, context, nextResolve) {

@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import { spawnSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createResolveHook, initialize, loadOverrides, registerAddonHooks, resolve } from '../addons/hooks.js';
@@ -163,6 +164,38 @@ describe('hooks in a real Node process', () => {
       rows: ['core', 'sectors', 'helper from the core folder', 'pits'],
       name: 'board',
     });
+  });
+
+  test("a package the add-on doesn't carry comes from the core, even for an add-on linked from elsewhere", () => {
+    const pkg = (dir, name, value) => {
+      writeFile(dir, `node_modules/${name}/package.json`, { name, type: 'module', main: 'index.js' });
+      writeFile(dir, `node_modules/${name}/index.js`, `export default ${JSON.stringify(value)};`);
+    };
+    pkg(root, 'core-pkg', 'from the core');
+    pkg(root, 'own-pkg', 'core copy');
+    const elsewhere = makeRoot('racehubos-linked-');
+    try {
+      writeFile(elsewhere, 'racehubos-addon.json', { id: 'linked', name: 'linked', version: '0.1.0' });
+      // The add-on's own copy wins over the core's
+      pkg(elsewhere, 'own-pkg', 'its own copy');
+      writeFile(
+        elsewhere,
+        'server/index.js',
+        "import core from 'core-pkg';\nimport own from 'own-pkg';\nconsole.log(JSON.stringify([core, own]));"
+      );
+      fs.mkdirSync(path.join(root, 'addons'), { recursive: true });
+      fs.symlinkSync(elsewhere, path.join(root, 'addons/linked'));
+      const { stdout } = runWithHooks(path.join(root, 'addons/linked/server/index.js'));
+      expect(JSON.parse(stdout)).toEqual(['from the core', 'its own copy']);
+
+      // Nowhere to be found: the error names the add-on file, not the core
+      const missing = writeFile(elsewhere, 'server/missing.js', "import 'nowhere-pkg';");
+      expect(() => runWithHooks(path.join(root, 'addons/linked/server/missing.js'))).toThrow(
+        `Cannot find package 'nowhere-pkg' imported from ${missing}`
+      );
+    } finally {
+      removeRoot(elsewhere);
+    }
   });
 
   test('without add-ons, no hooks and the core as it is', () => {

@@ -4,8 +4,7 @@
 @import '@fontsource-variable/inter';
 
 @source "../node_modules/@radix-ui";
-/* Tailwind classes used by add-ons (docs/ADDONS.md) */
-@source "../../../addons";
+/* The add-on folders are added by vite/addonsPlugin.js */
 
 @custom-variant dark (&:is(.dark *));
 

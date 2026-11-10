@@ -22,6 +22,14 @@ export function toPosix(file) {
 }
 
 /** `toPosix` of the real path, links followed; the path itself when it does not exist. */
+/**
+ * A package import (`react`, `@racehubos/shared/addons`), as opposed to a relative or absolute path,
+ * a URL (`node:fs`, `file:…`, `C:/…`) or a subpath import (`#x`).
+ */
+export function isBareSpecifier(specifier) {
+  return !/^(\.{0,2}\/|#|\0|[a-z][a-z\d+.-]*:)/i.test(specifier);
+}
+
 export function realPosix(file) {
   try {
     return toPosix(fs.realpathSync(file));

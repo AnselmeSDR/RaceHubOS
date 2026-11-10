@@ -16,6 +16,10 @@ export default function HelloPage() {
     <div className="p-6">
       <p data-testid="e2e-hello-greeting">{t(GREETING_KEY)}</p>
       <p data-testid="e2e-hello-server">{server}</p>
+      {/* A Tailwind class no core file uses: generated only if the add-on's files are scanned */}
+      <p data-testid="e2e-hello-styled" className="tracking-[7px]">
+        styled
+      </p>
     </div>
   )
 }

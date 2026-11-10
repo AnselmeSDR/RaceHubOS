@@ -581,13 +581,14 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
   1. `@base` imported from an override → the layer below it, or the core file;
   2. `@addon/…` → the importer's add-on root;
   3. a relative import in an override → resolved from the core file's folder;
-  4. any id that resolves to a core file with overrides → the top layer.
+  4. any id that resolves to a core file with overrides → the top layer;
+  5. a package an add-on doesn't carry → the core's, so that an add-on linked from elsewhere finds `@racehubos/shared` and the core's dependencies.
 - `resolve.dedupe` for the packages listed in [Dependencies](#dependencies), and `server.fs.allow` includes `addons/`.
-- `index.css`: `@source "../../../addons";` so Tailwind sees add-on classes.
+- `src/index.css` gets one `@source "<add-on folder>"` per enabled add-on, through the plugin's `transform`. A single `@source` on `addons/` wouldn't do: Tailwind skips the files git ignores, and `addons/*` is ignored. The dev server sees add-on classes anyway; only the build missed them.
 
 **Backend**
 
-- Resolve hook (`src/addons/hooks.js`, `module.register`): `src/addons/preload.js` is loaded with `node --import` by the `dev` and `start` scripts, and registers it only when an add-on is enabled. Same rules as `resolveId`.
+- Resolve hook (`src/addons/hooks.js`, `module.register`): `src/addons/preload.js` is loaded with `node --import` by the `dev` and `start` scripts, and registers it only when an add-on is enabled. Same rules as `resolveId`, including the fallback to the core's packages (from `packages/backend/`) when the add-on has no copy of its own.
 - One core migration adds the six `*Extra` tables: `<type>Id`, `addon`, `data` (JSON text), primary key on the record and the add-on, foreign key to the record with `onDelete: Cascade`. The core routes return `extras` with each record.
 - Loader called from `index.js` after the core routes and **before** the SPA fallback:
   - build `ctx`. `ctx.prisma` is the core client wrapped with `$extends`, which adds `addon = <id>` to every `where` and `data` on the `*Extra` models. `ctx.openDatabase()` attaches the core database as `core`. `ctx.migrate()` applies the steps beyond `PRAGMA user_version` in one transaction;

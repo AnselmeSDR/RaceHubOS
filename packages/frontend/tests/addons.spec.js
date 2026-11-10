@@ -14,6 +14,11 @@ test('an add-on brings its menu entry, page, translations and API route', async 
   await expect(page.getByTestId('nav-/addons')).toHaveAttribute('data-active', 'false')
 })
 
+test("an add-on's Tailwind classes are generated like the core's", async ({ page }) => {
+  await page.goto('/addons/e2e-hello')
+  await expect(page.getByTestId('e2e-hello-styled')).toHaveCSS('letter-spacing', '7px')
+})
+
 // Only looks: an action would rebuild the app and restart the test server
 test('the Add-ons page lists the add-ons, the catalog and the install from a link', async ({ page }) => {
   await page.goto('/')
