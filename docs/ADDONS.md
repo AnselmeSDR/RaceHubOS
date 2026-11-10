@@ -80,12 +80,16 @@ export default function HelloPage() {
   const { t } = useTranslation('hello')
   const { data: tracks = [] } = useFetch('/api/tracks')
   return (
-    <Card>
-      <CardContent className="p-6">{t('trackCount', { count: tracks.length })}</CardContent>
-    </Card>
+    <div className="p-4 space-y-4">
+      <Card>
+        <CardContent>{t('trackCount', { count: tracks.length })}</CardContent>
+      </Card>
+    </div>
   )
 }
 ```
+
+The layout gives a page no padding: like the core pages, start with `<div className="p-4 space-y-4">`. A table goes in a `<Card className="py-0">`, so that it touches the card's edges.
 
 `addons/hello/web/locales/en.json`:
 
