@@ -39,7 +39,7 @@
   },
   "market": {
     "empty": "Der Katalog ist noch leer.",
-    "offline": "GitHub ist nicht erreichbar: Das ist der mit der App ausgelieferte Katalog.",
+    "offline": "Der Online-Katalog konnte nicht gelesen werden: Das ist der mit der App ausgelieferte Katalog.",
     "install": "Installieren",
     "installed": "Installiert",
     "source": "Quellcode"

@@ -39,7 +39,7 @@
   },
   "market": {
     "empty": "Le catalogue est vide pour le moment.",
-    "offline": "GitHub est injoignable : voici le catalogue livré avec l'application.",
+    "offline": "Le catalogue en ligne n'a pas pu être lu : voici celui livré avec l'application.",
     "install": "Installer",
     "installed": "Installé",
     "source": "Code source"

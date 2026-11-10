@@ -39,7 +39,7 @@
   },
   "market": {
     "empty": "The catalog is empty for now.",
-    "offline": "GitHub can't be reached: this is the catalog shipped with the app.",
+    "offline": "The online catalog couldn't be read: this is the one shipped with the app.",
     "install": "Install",
     "installed": "Installed",
     "source": "Source code"

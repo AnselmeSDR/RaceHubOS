@@ -253,7 +253,7 @@ describe('market', () => {
     expect(timing.getByRole('link', { name: /Source code/ })).toHaveAttribute('href', 'https://x/timing.git')
     expect(within(screen.getByTestId('market-planner')).getByText('Installed')).toBeInTheDocument()
     expect(within(screen.getByTestId('market-local-only')).queryByRole('link')).toBeNull()
-    expect(screen.queryByText(/GitHub can't be reached/)).toBeNull()
+    expect(screen.queryByText(/online catalog couldn't be read/)).toBeNull()
 
     await userEvent.click(timing.getByRole('button', { name: 'Install' }))
     expect(actions()).toEqual([['POST', '/api/addon-manager/install', { id: 'timing' }]])
@@ -264,7 +264,7 @@ describe('market', () => {
     serve({ ...listing, catalog: { source: 'local', addons: [] } })
     render(<Addons />)
     await userEvent.click(await screen.findByTestId('addons-tab-market'))
-    expect(screen.getByText(/GitHub can't be reached/)).toBeInTheDocument()
+    expect(screen.getByText(/online catalog couldn't be read/)).toBeInTheDocument()
     expect(screen.getByText('The catalog is empty for now.')).toBeInTheDocument()
   })
 })
