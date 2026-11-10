@@ -392,6 +392,29 @@ export class SessionService extends Base {
 }
 ```
 
+A list's columns work the same way. Each list has its columns in `components/<record>/<record>Columns.jsx` (`carColumns`, `driverColumns`, `trackColumns`…): call the function below yours and add a column.
+
+```jsx
+// addons/car-service/overrides/packages/frontend/src/components/car/carColumns.jsx
+export * from '@base'
+import { carColumns as baseColumns } from '@base'
+import ServiceBadge from '@addon/web/ServiceBadge.jsx'
+
+export function carColumns(t, options) {
+  const columns = baseColumns(t, options)
+  const service = {
+    id: 'car-service',
+    header: t('car-service:listColumn'),
+    enableSorting: false,
+    cell: ({ row }) => <ServiceBadge carId={row.original.id} link={false} />,
+  }
+  // Before the edit column, which comes last
+  return columns.toSpliced(columns.filter((column) => column.id !== 'actions').length, 0, service)
+}
+```
+
+A cell renders once per row: read your data once for the whole list (one request and a shared store), not once per cell.
+
 Rules:
 
 1. **Start with `export * from '@base'`.** Then re-export the default and replace only what you change. A local export takes precedence over the one coming from `export *`. The rest of the app still finds every name it imports.
