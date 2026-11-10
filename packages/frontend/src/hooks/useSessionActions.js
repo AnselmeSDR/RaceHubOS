@@ -1,11 +1,11 @@
 import { useSession } from '@/context/SessionContext'
-import { deleteSession, saveSessionConfig } from '@/lib/sessionApi'
+import { saveSessionConfig } from '@/lib/sessionApi'
 
 /**
  * What the session panel of a championship can do to its sessions, each reloading the sessions (and the
  * standings when results change) once done. `detail` is what `useChampionshipDetail` returns.
  */
-export function useSessionActions({ selectedSession, selectSession, reloadSessions, reloadStandings }) {
+export function useSessionActions({ selectedSession, reloadSessions, reloadStandings }) {
   const { loadSession, startSession, pauseSession, resumeSession, stopSession, resetSession } = useSession()
 
   // A session context action on the selected session
@@ -29,17 +29,6 @@ export function useSessionActions({ selectedSession, selectSession, reloadSessio
     }
   }
 
-  async function remove(sessionId) {
-    try {
-      await deleteSession(sessionId)
-      reloadSessions()
-      reloadStandings()
-      if (selectedSession?.id === sessionId) selectSession(null)
-    } catch (err) {
-      console.error('Failed to delete the session:', err)
-    }
-  }
-
   async function reset(sessionId) {
     const r = await resetSession(sessionId)
     if (!r.success) return
@@ -53,7 +42,6 @@ export function useSessionActions({ selectedSession, selectSession, reloadSessio
     resume: control(resumeSession),
     stop: control(stopSession, { standings: true }),
     saveConfig,
-    remove,
     reset,
   }
 }

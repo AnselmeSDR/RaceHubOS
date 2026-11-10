@@ -106,7 +106,6 @@ export default function ChampionshipDetail() {
                 onStop={actions.stop}
                 onTriggerCuStart={triggerCuStart}
                 onSaveConfig={actions.saveConfig}
-                onDelete={actions.remove}
                 onReset={actions.reset}
               />
               <SessionBoard

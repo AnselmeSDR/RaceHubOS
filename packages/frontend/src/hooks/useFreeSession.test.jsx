@@ -34,7 +34,6 @@ beforeEach(() => {
     findOrCreateFreeSession: vi.fn(async () => ({ id: 'found', drivers: [] })),
     createSession: vi.fn(async () => ({ success: true, data: { id: 'new' } })),
     loadSession: vi.fn(async () => {}),
-    clearSession: vi.fn(),
     startSession: ok,
     pauseSession: ok,
     resumeSession: ok,
@@ -231,27 +230,5 @@ describe('saving the configuration', () => {
     await act(() => result.current.saveConfig({ maxLaps: 5 }))
     expect(context.loadSession).not.toHaveBeenCalled()
     expect(console.error).toHaveBeenCalledWith('Error saving session config:', expect.any(Error))
-  })
-})
-
-describe('deleting', () => {
-  test('the session is replaced by the free session of the same track and type', async () => {
-    context.session = { id: 'cur', drivers: lineUp }
-    const mock = routeFetch({ 'DELETE /api/sessions': { success: true }, 'PUT /api/sessions': { success: true } })
-    const { result } = await opened()
-    context.findOrCreateFreeSession.mockClear()
-    await act(() => result.current.remove('cur'))
-    expect(mock).toHaveBeenCalledWith('/api/sessions/cur', { method: 'DELETE' })
-    expect(context.clearSession).toHaveBeenCalled()
-    expect(context.findOrCreateFreeSession).toHaveBeenCalledOnce()
-    expect(result.current.loading).toBe(false)
-  })
-
-  test('a failed deletion keeps the session', async () => {
-    routeFetch({ 'DELETE /api/sessions': new Error('offline') })
-    const { result } = await opened()
-    await act(() => result.current.remove('cur'))
-    expect(context.clearSession).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith('Error deleting session:', expect.any(Error))
   })
 })

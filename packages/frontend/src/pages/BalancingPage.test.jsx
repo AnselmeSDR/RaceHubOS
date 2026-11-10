@@ -57,7 +57,6 @@ beforeEach(() => {
     findOrCreateFreeSession: vi.fn(async () => draft),
     createSession: vi.fn(async () => ({ success: true, data: { id: 'new' } })),
     loadSession: vi.fn(async () => {}),
-    clearSession: vi.fn(),
     startSession: ok,
     pauseSession: ok,
     resumeSession: ok,

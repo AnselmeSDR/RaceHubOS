@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { STANDARD_SESSION_TYPES, SessionStatus } from '@racehubos/shared'
 import { useSession } from '@/context/SessionContext'
 import { isLiveStatus } from '@/lib/leaderboardEntries'
-import {
-  deleteSession,
-  driverAssignments,
-  saveSessionConfig,
-  setSessionDrivers,
-  shareFreeSessionDrivers,
-} from '@/lib/sessionApi'
+import { driverAssignments, saveSessionConfig, setSessionDrivers, shareFreeSessionDrivers } from '@/lib/sessionApi'
 
 /**
  * Opens the free session of a track and type, created when there is none. A new session without drivers
@@ -35,7 +29,7 @@ async function openFreeSession({ trackId, type, previousDrivers, findOrCreateFre
 export function useFreeSession({ trackId, type, reloadStandings }) {
   const { t } = useTranslation('freeSession')
   const context = useSession()
-  const { session, createSession, loadSession, clearSession } = context
+  const { session, createSession, loadSession } = context
   const [openedKey, setOpenedKey] = useState(null)
   const [busy, setBusy] = useState(false)
   const key = trackId && type ? `${trackId}:${type}` : null
@@ -105,20 +99,6 @@ export function useFreeSession({ trackId, type, reloadStandings }) {
     }
   }
 
-  // The deleted session is replaced by the free session of the same track and type
-  async function remove(sessionId) {
-    try {
-      await deleteSession(sessionId)
-      clearSession()
-      setBusy(true)
-      await open()
-    } catch (err) {
-      console.error('Error deleting session:', err)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function reset(sessionId) {
     const result = await context.resetSession(sessionId)
     if (result.success) await reloadStandings()
@@ -134,7 +114,6 @@ export function useFreeSession({ trackId, type, reloadStandings }) {
     resume: control(context.resumeSession),
     stop,
     saveConfig,
-    remove,
     reset,
   }
 }

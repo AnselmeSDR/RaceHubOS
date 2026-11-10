@@ -29,7 +29,7 @@ beforeEach(() => {
     stopSession: ok,
     resetSession: ok,
   })
-  detail = { selectSession: vi.fn(), reloadSessions: vi.fn(), reloadStandings: vi.fn() }
+  detail = { reloadSessions: vi.fn(), reloadStandings: vi.fn() }
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 afterEach(() => {
@@ -81,28 +81,6 @@ test('a failed save reloads nothing', async () => {
   await run((a) => a.saveConfig({ name: 'Heat 1' }))
   expect(detail.reloadSessions).not.toHaveBeenCalled()
   expect(console.error).toHaveBeenCalled()
-})
-
-test('deleting the selected session clears the selection', async () => {
-  const mock = routeFetch({ 'DELETE /api/sessions': { success: true } })
-  await run((a) => a.remove('s1'))
-  expect(mock).toHaveBeenCalledWith('/api/sessions/s1', { method: 'DELETE' })
-  expect(detail.reloadSessions).toHaveBeenCalledOnce()
-  expect(detail.reloadStandings).toHaveBeenCalledOnce()
-  expect(detail.selectSession).toHaveBeenCalledWith(null)
-})
-
-test('deleting another session keeps the selection', async () => {
-  routeFetch({ 'DELETE /api/sessions': { success: true } })
-  await run((a) => a.remove('s2'))
-  expect(detail.selectSession).not.toHaveBeenCalled()
-})
-
-test('a failed deletion changes nothing', async () => {
-  routeFetch({ 'DELETE /api/sessions': new Error('offline') })
-  await run((a) => a.remove('s1'))
-  expect(detail.reloadSessions).not.toHaveBeenCalled()
-  expect(detail.selectSession).not.toHaveBeenCalled()
 })
 
 test('resetting a session reloads the sessions and the standings', async () => {

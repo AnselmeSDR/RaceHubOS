@@ -55,7 +55,6 @@ export default function FreeSessionPage() {
                   onStop={free.stop}
                   onTriggerCuStart={triggerCuStart}
                   onSaveConfig={free.saveConfig}
-                  onDelete={free.remove}
                   onReset={free.reset}
                 />
                 <SessionBoard
