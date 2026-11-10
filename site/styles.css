@@ -135,11 +135,6 @@ html {
   }
 }
 
-/* Never the English text first: hidden until translated (see the script in the head of the page) */
-html[data-translating] body {
-  visibility: hidden;
-}
-
 body {
   margin: 0;
   background: var(--bg);
@@ -360,18 +355,20 @@ h3 {
   background: var(--raised);
 }
 
-.langs button {
+.langs a {
   padding: 4px 8px;
-  border: 0;
   border-radius: 7px;
-  background: none;
   color: var(--faint);
   font-size: 0.75rem;
   font-weight: 600;
-  cursor: pointer;
+  text-decoration: none;
 }
 
-.langs button[aria-pressed='true'] {
+.langs a:hover {
+  color: var(--text);
+}
+
+.langs a[aria-current='page'] {
   box-shadow: var(--shadow);
   background: var(--pressed);
   color: var(--text);
@@ -1282,6 +1279,8 @@ h3 {
 .tour,
 .addons,
 .install,
+.news,
+.faq,
 .open {
   padding-top: clamp(72px, 10vw, 128px);
 }
@@ -1455,6 +1454,40 @@ h3 {
   }
 }
 
+/* ---------- Add-ons: the catalog of the app ---------- */
+
+.copy h3 {
+  margin-top: 28px;
+}
+
+.catalog {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog li {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.catalog a {
+  text-decoration: none;
+}
+
+.catalog a:hover b {
+  text-decoration: underline;
+}
+
+.copy .catalog p {
+  margin-top: 4px;
+  font-size: 0.95rem;
+}
+
 /* ---------- Install: three steps, numbered in the colors of the podium ---------- */
 
 .steps {
@@ -1520,6 +1553,78 @@ h3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 40px;
   }
+}
+
+/* ---------- What's new: the changes of the version offered ---------- */
+
+.when {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.news-body .muted {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+.changes {
+  display: grid;
+  gap: 28px;
+  margin-top: 32px;
+}
+
+.change ul {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding-left: 1.2em;
+  color: var(--muted);
+}
+
+.change code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--raised);
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.news .all {
+  margin-top: 32px;
+}
+
+@media (min-width: 900px) {
+  .changes {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 40px;
+  }
+}
+
+/* ---------- Questions before you start ---------- */
+
+.questions {
+  max-width: 820px;
+  margin-top: 28px;
+}
+
+.questions details {
+  border-bottom: 1px solid var(--line);
+}
+
+.questions summary {
+  padding: 16px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.questions summary:hover {
+  color: var(--link);
+}
+
+.questions p {
+  max-width: 60ch;
+  padding-bottom: 18px;
+  color: var(--muted);
 }
 
 /* ---------- Open source ---------- */

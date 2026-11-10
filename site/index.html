@@ -12,16 +12,20 @@
     <meta name="theme-color" content="#fafaf9" />
     <meta name="color-scheme" content="light" />
     <meta property="og:title" content="RaceHubOS" />
-    <meta property="og:description" content="Race management for Carrera Digital 132 and 124. Free and open source." />
+    <meta
+      property="og:description"
+      data-i18n-content="meta.description"
+      content="Free, open source software for your Carrera Digital 132 and 124 races."
+    />
     <meta property="og:image" content="https://anselmesdr.github.io/RaceHubOS/img/en/race.webp" />
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/inter-italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <script>
-      // Before the first paint: night mode when the visitor picked it, and the language of the page (?lang=, then the
-      // visitor's choice, then the browser). The page is written in English: in another language it stays hidden
-      // until main.js has translated it, 1.5 s at most should a script fail.
+      // Before the first paint: night mode when the visitor picked it. The English page is the home of the site: a
+      // visitor who wants French or German (?lang=, then their choice, then the browser) goes to that page, before the
+      // browser has read any of the English one.
       (() => {
         const root = document.documentElement;
         const stored = (key) => {
@@ -32,13 +36,11 @@
           }
         };
         if (stored('racehubos-site-theme') === 'dark') root.dataset.theme = 'dark';
+        if (root.lang !== 'en') return;
         const browser = (navigator.languages || [navigator.language]).map((tag) => String(tag).toLowerCase().split('-')[0]);
         const wanted = [new URLSearchParams(location.search).get('lang'), stored('racehubos-site-lang'), ...browser];
-        root.lang = wanted.find((tag) => ['en', 'fr', 'de'].includes(tag)) || 'en';
-        if (root.lang !== 'en') {
-          root.dataset.translating = '';
-          setTimeout(() => delete root.dataset.translating, 1500);
-        }
+        const lang = wanted.find((tag) => ['en', 'fr', 'de'].includes(tag)) || 'en';
+        if (lang !== 'en') location.replace(`${lang}/${location.hash}`);
       })();
     </script>
     <script src="i18n.js" defer></script>
@@ -85,12 +87,13 @@
           <li><a href="#features" data-i18n="nav.features">Features</a></li>
           <li><a href="#addons" data-i18n="nav.addons">Add-ons</a></li>
           <li><a href="#install" data-i18n="nav.install">Install</a></li>
+          <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
           <li><a href="#open-source" data-i18n="nav.open">Open source</a></li>
         </ul>
         <div class="langs" role="group" aria-label="Language" data-i18n-aria="nav.language">
-          <button type="button" data-lang="fr" lang="fr">FR</button>
-          <button type="button" data-lang="en" lang="en">EN</button>
-          <button type="button" data-lang="de" lang="de">DE</button>
+          <a href="fr/" hreflang="fr" lang="fr" data-lang="fr">FR</a>
+          <a href="./" hreflang="en" lang="en" data-lang="en">EN</a>
+          <a href="de/" hreflang="de" lang="de" data-lang="de">DE</a>
         </div>
         <button
           class="theme"
@@ -455,15 +458,9 @@
               one click from the catalog, or from a git link. The database is backed up first, then the app restarts
               on its own.
             </p>
-            <p data-i18n="addons.example">
-              Car service counts the laps and distance of each car since its last service, and flags the cars that are
-              due.
-            </p>
-            <p>
-              <a href="https://github.com/AnselmeSDR/racehubos-car-service" data-i18n="addons.exampleLink"
-                >See the Car service add-on</a
-              >
-            </p>
+            <h3 data-i18n="addons.catalog">In the catalog</h3>
+            <!-- Filled at build from addons/catalog.json, the catalog the app installs from -->
+            <ul class="catalog"></ul>
             <p class="muted" data-i18n="addons.devHtml">
               You write code? The
               <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/docs/ADDONS.md">add-on guide</a> covers
@@ -530,6 +527,71 @@
         </div>
       </section>
 
+      <section class="news" id="news" aria-labelledby="news-title">
+        <div class="wrap">
+          <h2 id="news-title" data-i18n="news.title" data-vars='{"version":"%VERSION%"}'>
+            What's new in version %VERSION%
+          </h2>
+          <!-- Filled at build from the section of this version in CHANGELOG.md -->
+          <div class="news-body"></div>
+          <p class="all">
+            <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/CHANGELOG.md" data-i18n="news.all"
+              >Every version and its changes</a
+            >
+          </p>
+        </div>
+      </section>
+
+      <section class="faq" id="faq" aria-labelledby="faq-title">
+        <div class="wrap">
+          <h2 id="faq-title" data-i18n="faq.title">Questions before you start</h2>
+          <div class="questions">
+            <details>
+              <summary data-i18n="faq.bluetooth">Does my computer need Bluetooth?</summary>
+              <p data-i18n="faq.bluetoothAnswer">
+                Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops
+                have it built in.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.digital124">Does it work with the Digital 124?</summary>
+              <p data-i18n="faq.digital124Answer">
+                Yes. The Digital 124 uses the same Control Unit 30352 and the same AppConnect 30369 as the 132.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.cars">How many cars can race?</summary>
+              <p data-i18n="faq.carsAnswer">
+                Up to six at once, one per controller: as many as the Control Unit handles.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.simulator">Can I try it without a track?</summary>
+              <p data-i18n="faq.simulatorAnswer">Yes: the built-in simulator runs virtual cars, with no Control Unit.</p>
+            </details>
+            <details>
+              <summary data-i18n="faq.browser">Which browser do I need?</summary>
+              <p data-i18n="faq.browserAnswer">
+                Any recent browser. The Bluetooth link goes through the computer, not the browser.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.internet">Do I need internet?</summary>
+              <p data-i18n="faq.internetAnswer">
+                Only to install it, update it or add add-ons. Races run without internet: everything stays on your
+                computer.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.free">Is it really free?</summary>
+              <p data-i18n="faq.freeAnswer">
+                Yes: no account, no subscription, no ads. RaceHubOS is open source, under AGPL-3.0.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <section class="open" id="open-source" aria-labelledby="open-title">
         <div class="wrap split">
           <div class="copy">
@@ -579,6 +641,7 @@
             Carrera is a trademark of Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS is not affiliated with or endorsed
             by Carrera.
           </p>
+          <p data-i18n="footer.privacy">Visits are counted anonymously, without cookies, with GoatCounter.</p>
         </div>
       </div>
     </footer>

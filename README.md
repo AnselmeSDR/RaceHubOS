@@ -202,7 +202,7 @@ RaceHubOS est un système complet de gestion de course qui tourne dans le naviga
 
 Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 
-🌐 Le site, avec les téléchargements et la visite de l'app : **[anselmesdr.github.io/RaceHubOS](https://anselmesdr.github.io/RaceHubOS/?lang=fr)**
+🌐 Le site, avec les téléchargements et la visite de l'app : **[anselmesdr.github.io/RaceHubOS](https://anselmesdr.github.io/RaceHubOS/fr/)**
 
 ### Fonctionnalités
 

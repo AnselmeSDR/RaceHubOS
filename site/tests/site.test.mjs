@@ -1,4 +1,5 @@
-// Contracts of the published site: its texts in three languages, the files it links to, the installers it offers.
+// Contracts of the published site: a page per language, the files it links to, the add-ons and changes it lists, the
+// installers it offers.
 // Run: node --test 'site/tests/*.test.mjs'
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -6,20 +7,48 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
-import { LANGS, loadTexts } from './texts.mjs';
-import { MAC_DOWNLOAD, MAC_INSTALLER, WINDOWS_INSTALLER, appVersion, buildSite, rootDir } from '../scripts/build.mjs';
+import { LANGS, loadTexts } from '../scripts/texts.mjs';
+import {
+  CHANGE_KINDS,
+  MAC_DOWNLOAD,
+  MAC_INSTALLER,
+  PAGES,
+  SITE_URL,
+  WINDOWS_INSTALLER,
+  appVersion,
+  buildSite,
+  readCatalog,
+  readChangelog,
+  rootDir,
+} from '../scripts/build.mjs';
 
 const siteDir = path.join(rootDir, 'site');
 const page = fs.readFileSync(path.join(siteDir, 'index.html'), 'utf-8');
 
 const texts = loadTexts();
 let outDir;
-let built;
+// The built page of each language
+const built = {};
 
 before(() => {
   outDir = buildSite(fs.mkdtempSync(path.join(os.tmpdir(), 'racehubos-site-')));
-  built = fs.readFileSync(path.join(outDir, 'index.html'), 'utf-8');
+  for (const lang of LANGS) built[lang] = fs.readFileSync(path.join(outDir, PAGES[lang], 'index.html'), 'utf-8');
 });
+
+/** The text a part of a page shows, without its tags: words go on through inline tags, not past a block. */
+const plain = (html) =>
+  html
+    .replace(/<\/?(?:a|b|code)\b[^>]*>/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&amp;', '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** A text with its values filled in. */
+const fill = (template, vars) => template.replace(/\{(\w+)\}/g, (_, name) => vars[name]);
 
 after(() => fs.rmSync(outDir, { recursive: true, force: true }));
 
@@ -36,7 +65,11 @@ test('every text the page shows exists, and every text written is shown', () => 
   const inPage = [...page.matchAll(/data-i18n(?:-alt|-title|-content|-aria)?="([^"]+)"/g)].map((m) => m[1]);
   // Texts the script swaps in: statuses, results, alternative texts of the screens
   const script = fs.readFileSync(path.join(siteDir, 'main.js'), 'utf-8');
-  const inScript = [...script.matchAll(/'([a-z]+\.[a-zA-Z]+)'/g)].map((m) => m[1]);
+  // Texts the build writes: the sections of the changelog, the note on its language
+  const build = fs.readFileSync(path.join(siteDir, 'scripts/build.mjs'), 'utf-8');
+  const inScript = [...`${script}\n${build}`.matchAll(/'([a-z]+\.[a-zA-Z]+)'|data-i18n="([a-z]+\.[a-zA-Z]+)"/g)].map(
+    (m) => m[1] ?? m[2]
+  );
   const screens = [...page.matchAll(/data-screen="([^"]+)"/g)].map((m) => `shot.${m[1]}`);
   const used = new Set([...inPage, ...inScript, ...screens]);
   const known = Object.keys(texts.en);
@@ -60,20 +93,94 @@ test('a text holding a link is set as HTML, every other text as plain text', () 
   }
 });
 
-test('the built site holds every file the page points to, in every language', () => {
+test('the built site holds every file each page points to', () => {
   const missing = [];
   const local = (ref) => !/^(https?:|mailto:|#)/.test(ref);
-  const refs = [
-    ...[...built.matchAll(/\s(?:src|href)="([^"]+)"/g)].map((m) => m[1]),
-    ...[...built.matchAll(/property="og:image" content="([^"]+)"/g)].map((m) => m[1]),
-    ...[...fs.readFileSync(path.join(outDir, 'styles.css'), 'utf-8').matchAll(/url\('([^']+)'\)/g)].map((m) => m[1]),
-  ].filter(local);
-  const shots = [...built.matchAll(/data-(?:shot|screen)="([^"]+)"/g)].map((m) => m[1]);
-  for (const shot of new Set(shots)) {
-    for (const lang of LANGS) refs.push(`img/${lang}/${shot}.webp`, `img/${lang}/dark/${shot}.webp`);
+  const css = fs.readFileSync(path.join(outDir, 'styles.css'), 'utf-8');
+  for (const ref of [...css.matchAll(/url\('([^']+)'\)/g)].map((m) => m[1]).filter(local)) {
+    if (!fs.existsSync(path.join(outDir, ref))) missing.push(`styles.css: ${ref}`);
   }
-  for (const ref of new Set(refs)) if (!fs.existsSync(path.join(outDir, ref))) missing.push(ref);
+  for (const lang of LANGS) {
+    const html = built[lang];
+    // A page in a folder reaches the shared files with ../
+    const refs = [...html.matchAll(/\s(?:src|href)="([^"]+)"/g)].map((m) => m[1]).filter(local);
+    // The captures of every screen of the tour, in the language of the page and in both themes
+    const shots = [...html.matchAll(/data-(?:shot|screen)="([^"]+)"/g)].map((m) => m[1]);
+    for (const shot of new Set(shots)) {
+      for (const theme of ['', 'dark/']) {
+        const capture = `img/${lang}/${theme}${shot}.webp`;
+        if (!fs.existsSync(path.join(outDir, capture))) missing.push(`${lang}: ${capture}`);
+      }
+    }
+    for (const ref of new Set(refs)) {
+      const file = path.join(outDir, PAGES[lang], ref.endsWith('/') ? `${ref}index.html` : ref);
+      if (!fs.existsSync(file)) missing.push(`${lang}: ${ref}`);
+    }
+    for (const [, image] of html.matchAll(/property="og:image" content="([^"]+)"/g)) {
+      assert.ok(image.startsWith(`${SITE_URL}img/${lang}/`), `${lang}: shared with ${image}`);
+      if (!fs.existsSync(path.join(outDir, image.slice(SITE_URL.length)))) missing.push(`${lang}: ${image}`);
+    }
+  }
   assert.deepEqual(missing, []);
+});
+
+test('each language has its page, in that language, and tells search engines where the others are', () => {
+  const url = (lang) => SITE_URL + PAGES[lang];
+  for (const lang of LANGS) {
+    const html = built[lang];
+    assert.match(html, new RegExp(`<html lang="${lang}"`));
+    assert.ok(html.includes(`<title data-i18n="meta.title">${texts[lang]['meta.title']}</title>`), lang);
+    assert.ok(html.includes(`<link rel="canonical" href="${url(lang)}" />`), lang);
+    for (const other of LANGS) {
+      assert.ok(
+        html.includes(`<link rel="alternate" hreflang="${other}" href="${url(other)}" />`),
+        `${lang} > ${other}`
+      );
+    }
+    assert.ok(html.includes(`<link rel="alternate" hreflang="x-default" href="${SITE_URL}" />`), lang);
+    // The language links lead to the pages, this one marked as the current one
+    const links = [...html.matchAll(/<a\b[^>]*data-lang="(\w+)"[^>]*>/g)];
+    assert.deepEqual(links.map((m) => m[1]).sort(), LANGS);
+    for (const [tag, other] of links) {
+      const href = tag.match(/href="([^"]*)"/)[1];
+      assert.equal(new URL(href, url(lang)).href, url(other), `${lang}: link to ${other}`);
+      assert.equal(tag.includes('aria-current="page"'), other === lang, `${lang}: link to ${other}`);
+    }
+  }
+  const sitemap = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf-8');
+  assert.deepEqual([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort(), LANGS.map(url).sort());
+});
+
+test('each page lists the add-ons of the catalog the app installs from, in its language, with their code', () => {
+  const addons = readCatalog();
+  assert.ok(addons.length > 0);
+  for (const lang of LANGS) {
+    const catalog = built[lang].match(/<ul class="catalog">([\s\S]*?)<\/ul>/)[1];
+    assert.equal(catalog.match(/<li>/g).length, addons.length, lang);
+    for (const addon of addons) {
+      assert.ok(catalog.includes(`<a href="${addon.repo}">`), `${lang}: ${addon.id}`);
+      assert.ok(plain(catalog).includes(`${addon.name[lang]} ${addon.description[lang]}`), `${lang}: ${addon.id}`);
+    }
+  }
+});
+
+test('each page shows the changes of the version it offers, from the changelog, with their date', () => {
+  const { date, sections } = readChangelog(appVersion());
+  assert.match(date, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(sections.some((section) => section.entries.length));
+  for (const lang of LANGS) {
+    const news = built[lang].match(/<section class="news"[\s\S]*?<\/section>/)[0];
+    assert.ok(news.includes(`<time datetime="${date}">`), lang);
+    assert.ok(plain(news).includes(fill(texts[lang]['news.title'], { version: appVersion() })), lang);
+    for (const section of sections.filter((s) => s.entries.length)) {
+      assert.ok(plain(news).includes(texts[lang][CHANGE_KINDS[section.kind]]), `${lang}: ${section.kind}`);
+      for (const entry of section.entries) {
+        assert.ok(plain(news).includes(plain(entry.replaceAll('`', ''))), `${lang}: ${entry}`);
+      }
+    }
+    // The notes are in English: the other pages say so
+    assert.equal(news.includes(texts[lang]['news.english']), lang !== 'en', lang);
+  }
 });
 
 test('only the page and its assets are published, not the scripts, tests and picture sources', () => {
@@ -132,7 +239,9 @@ test('the macOS installer comes zipped, unchanged and still executable', () => {
   );
 });
 
-test('the page shows the version of the app it offers', () => {
-  assert.ok(!built.includes('%VERSION%'));
-  assert.match(built, new RegExp(`Version</span> ${appVersion().replaceAll('.', '\\.')}<`));
+test('each page shows the version of the app it offers', () => {
+  for (const lang of LANGS) {
+    assert.ok(!built[lang].includes('%VERSION%'), lang);
+    assert.ok(built[lang].includes(`${texts[lang]['hero.version']}</span> ${appVersion()}<`), lang);
+  }
 });

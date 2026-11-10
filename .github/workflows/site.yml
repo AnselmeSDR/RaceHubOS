@@ -8,6 +8,8 @@ on:
       - 'site/**'
       - 'RaceHubOS-install-*'
       - 'package.json'
+      - 'CHANGELOG.md'
+      - 'addons/catalog.json'
       - '.github/workflows/site.yml'
   workflow_dispatch:
 

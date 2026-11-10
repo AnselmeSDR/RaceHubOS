@@ -10,6 +10,7 @@ window.RACEHUBOS_TEXTS = {
     'nav.addons': 'Add-ons',
     'nav.install': 'Install',
     'nav.open': 'Open source',
+    'nav.faq': 'FAQ',
     'nav.language': 'Language',
     'nav.code': 'Source code on GitHub',
     'nav.night': 'Night mode',
@@ -78,9 +79,7 @@ window.RACEHUBOS_TEXTS = {
     'addons.title': 'Add-ons',
     'addons.text':
       'An add-on brings a feature without changing the core of the app: a page, a column, a badge. Install it in one click from the catalog, or from a git link. The database is backed up first, then the app restarts on its own.',
-    'addons.example':
-      'Car service counts the laps and distance of each car since its last service, and flags the cars that are due.',
-    'addons.exampleLink': 'See the Car service add-on',
+    'addons.catalog': 'In the catalog',
     'addons.devHtml':
       'You write code? The <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/docs/ADDONS.md">add-on guide</a> covers everything, with a complete example.',
     'install.title': 'Racing in three steps',
@@ -102,9 +101,37 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Credits',
     'open.credit1': 'Anselme Schneider: creator and developer',
     'open.credit2': 'Romain Danna: co-author, racing expertise',
+    'news.title': "What's new in version {version}",
+    'news.english': 'These notes are written in English.',
+    'news.added': 'New',
+    'news.changed': 'Changed',
+    'news.deprecated': 'Deprecated',
+    'news.removed': 'Removed',
+    'news.fixed': 'Fixed',
+    'news.security': 'Security',
+    'news.all': 'Every version and its changes',
+    'faq.title': 'Questions before you start',
+    'faq.bluetooth': 'Does my computer need Bluetooth?',
+    'faq.bluetoothAnswer':
+      'Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops have it built in.',
+    'faq.digital124': 'Does it work with the Digital 124?',
+    'faq.digital124Answer':
+      'Yes. The Digital 124 uses the same Control Unit 30352 and the same AppConnect 30369 as the 132.',
+    'faq.cars': 'How many cars can race?',
+    'faq.carsAnswer': 'Up to six at once, one per controller: as many as the Control Unit handles.',
+    'faq.simulator': 'Can I try it without a track?',
+    'faq.simulatorAnswer': 'Yes: the built-in simulator runs virtual cars, with no Control Unit.',
+    'faq.browser': 'Which browser do I need?',
+    'faq.browserAnswer': 'Any recent browser. The Bluetooth link goes through the computer, not the browser.',
+    'faq.internet': 'Do I need internet?',
+    'faq.internetAnswer':
+      'Only to install it, update it or add add-ons. Races run without internet: everything stays on your computer.',
+    'faq.free': 'Is it really free?',
+    'faq.freeAnswer': 'Yes: no account, no subscription, no ads. RaceHubOS is open source, under AGPL-3.0.',
     'footer.license': 'Software licensed under AGPL-3.0. A commercial license is available for closed-source use.',
     'footer.trademark':
       'Carrera is a trademark of Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS is not affiliated with or endorsed by Carrera.',
+    'footer.privacy': 'Visits are counted anonymously, without cookies, with GoatCounter.',
   },
   fr: {
     'meta.title': 'RaceHubOS : gestion de courses pour Carrera Digital 132 et 124',
@@ -115,6 +142,7 @@ window.RACEHUBOS_TEXTS = {
     'nav.addons': 'Add-ons',
     'nav.install': 'Installer',
     'nav.open': 'Open source',
+    'nav.faq': 'FAQ',
     'nav.language': 'Langue',
     'nav.code': 'Code source sur GitHub',
     'nav.night': 'Mode nuit',
@@ -184,9 +212,7 @@ window.RACEHUBOS_TEXTS = {
     'addons.title': 'Add-ons',
     'addons.text':
       'Un add-on ajoute une fonctionnalité sans toucher au cœur de l’application : une page, une colonne, un badge. Installez-le en un clic depuis le Catalogue, ou depuis un lien git. La base est d’abord sauvegardée, puis l’application redémarre toute seule.',
-    'addons.example':
-      'Entretien des voitures compte les tours et la distance de chaque voiture depuis son dernier entretien, et signale celles à réviser.',
-    'addons.exampleLink': 'Voir l’add-on Entretien des voitures',
+    'addons.catalog': 'Au catalogue',
     'addons.devHtml':
       'Vous codez ? Le <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/docs/ADDONS.md">guide des add-ons</a> explique tout, avec un exemple complet.',
     'install.title': 'En piste en trois étapes',
@@ -208,10 +234,39 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Crédits',
     'open.credit1': 'Anselme Schneider : création et développement',
     'open.credit2': 'Romain Danna : co-auteur, expertise course',
+    'news.title': 'Nouveautés de la version {version}',
+    'news.english': 'Ces notes sont écrites en anglais.',
+    'news.added': 'Nouveau',
+    'news.changed': 'Modifié',
+    'news.deprecated': 'Obsolète',
+    'news.removed': 'Retiré',
+    'news.fixed': 'Corrigé',
+    'news.security': 'Sécurité',
+    'news.all': 'Toutes les versions et leurs changements',
+    'faq.title': 'Avant de vous lancer',
+    'faq.bluetooth': 'Mon ordinateur a-t-il besoin du Bluetooth ?',
+    'faq.bluetoothAnswer':
+      'Oui : RaceHubOS dialogue avec l’AppConnect 30369 en Bluetooth Low Energy, depuis l’ordinateur. La plupart des portables l’ont d’origine.',
+    'faq.digital124': 'Ça marche avec le Digital 124 ?',
+    'faq.digital124Answer':
+      'Oui. Le Digital 124 utilise la même Control Unit 30352 et le même AppConnect 30369 que le 132.',
+    'faq.cars': 'Combien de voitures peuvent courir ?',
+    'faq.carsAnswer': 'Jusqu’à six en même temps, une par manette : autant que la Control Unit en gère.',
+    'faq.simulator': 'Je peux l’essayer sans circuit ?',
+    'faq.simulatorAnswer': 'Oui : le simulateur intégré fait rouler des voitures virtuelles, sans Control Unit.',
+    'faq.browser': 'Quel navigateur faut-il ?',
+    'faq.browserAnswer':
+      'N’importe quel navigateur récent. La liaison Bluetooth passe par l’ordinateur, pas par le navigateur.',
+    'faq.internet': 'Faut-il internet ?',
+    'faq.internetAnswer':
+      'Seulement pour l’installer, le mettre à jour ou ajouter des add-ons. Les courses tournent sans internet : tout reste sur votre ordinateur.',
+    'faq.free': 'C’est vraiment gratuit ?',
+    'faq.freeAnswer': 'Oui : ni compte, ni abonnement, ni publicité. RaceHubOS est open source, sous licence AGPL-3.0.',
     'footer.license':
       'Logiciel sous licence AGPL-3.0. Une licence commerciale est disponible pour un usage en code fermé.',
     'footer.trademark':
       'Carrera est une marque de Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS n’est ni affilié à Carrera, ni soutenu par Carrera.',
+    'footer.privacy': 'Les visites sont comptées anonymement, sans cookie, avec GoatCounter.',
   },
   de: {
     'meta.title': 'RaceHubOS: Rennverwaltung für Carrera Digital 132 und 124',
@@ -222,6 +277,7 @@ window.RACEHUBOS_TEXTS = {
     'nav.addons': 'Add-ons',
     'nav.install': 'Installieren',
     'nav.open': 'Open Source',
+    'nav.faq': 'FAQ',
     'nav.language': 'Sprache',
     'nav.code': 'Quellcode auf GitHub',
     'nav.night': 'Nachtmodus',
@@ -292,9 +348,7 @@ window.RACEHUBOS_TEXTS = {
     'addons.title': 'Add-ons',
     'addons.text':
       'Ein Add-on bringt eine Funktion, ohne den Kern der App zu verändern: eine Seite, eine Spalte, ein Abzeichen. Du installierst es mit einem Klick aus dem Katalog oder über einen Git-Link. Zuerst wird die Datenbank gesichert, danach startet die App von selbst neu.',
-    'addons.example':
-      'Fahrzeugwartung zählt die Runden und die Strecke jedes Autos seit der letzten Wartung und zeigt, welche Autos fällig sind.',
-    'addons.exampleLink': 'Zum Add-on Fahrzeugwartung',
+    'addons.catalog': 'Im Katalog',
     'addons.devHtml':
       'Du programmierst? Der <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/docs/ADDONS.md">Add-on-Leitfaden</a> erklärt alles, mit einem vollständigen Beispiel.',
     'install.title': 'In drei Schritten auf der Bahn',
@@ -316,8 +370,37 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Mitwirkende',
     'open.credit1': 'Anselme Schneider: Gründer und Entwickler',
     'open.credit2': 'Romain Danna: Mitautor, Rennerfahrung',
+    'news.title': 'Neu in Version {version}',
+    'news.english': 'Diese Hinweise sind auf Englisch verfasst.',
+    'news.added': 'Neu',
+    'news.changed': 'Geändert',
+    'news.deprecated': 'Veraltet',
+    'news.removed': 'Entfernt',
+    'news.fixed': 'Behoben',
+    'news.security': 'Sicherheit',
+    'news.all': 'Alle Versionen und ihre Änderungen',
+    'faq.title': 'Fragen vor dem Start',
+    'faq.bluetooth': 'Braucht mein Computer Bluetooth?',
+    'faq.bluetoothAnswer':
+      'Ja: RaceHubOS spricht über Bluetooth Low Energy mit dem AppConnect 30369, direkt vom Computer aus. Die meisten Laptops haben es eingebaut.',
+    'faq.digital124': 'Funktioniert es mit Digital 124?',
+    'faq.digital124Answer':
+      'Ja. Digital 124 nutzt dieselbe Control Unit 30352 und denselben AppConnect 30369 wie Digital 132.',
+    'faq.cars': 'Wie viele Autos können fahren?',
+    'faq.carsAnswer': 'Bis zu sechs gleichzeitig, eines pro Handregler: so viele, wie die Control Unit verwaltet.',
+    'faq.simulator': 'Kann ich es ohne Bahn ausprobieren?',
+    'faq.simulatorAnswer': 'Ja: Der eingebaute Simulator lässt virtuelle Autos fahren, ganz ohne Control Unit.',
+    'faq.browser': 'Welchen Browser brauche ich?',
+    'faq.browserAnswer':
+      'Jeden aktuellen Browser. Die Bluetooth-Verbindung läuft über den Computer, nicht über den Browser.',
+    'faq.internet': 'Brauche ich Internet?',
+    'faq.internetAnswer':
+      'Nur zum Installieren, zum Aktualisieren und für Add-ons. Rennen laufen ohne Internet: Alles bleibt auf deinem Computer.',
+    'faq.free': 'Ist es wirklich kostenlos?',
+    'faq.freeAnswer': 'Ja: kein Konto, kein Abo, keine Werbung. RaceHubOS ist Open Source, unter der AGPL-3.0.',
     'footer.license': 'Software unter der AGPL-3.0. Für Closed-Source-Nutzung gibt es eine kommerzielle Lizenz.',
     'footer.trademark':
       'Carrera ist eine Marke der Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS ist weder mit Carrera verbunden noch von Carrera unterstützt.',
+    'footer.privacy': 'Besuche werden anonym gezählt, ohne Cookies, mit GoatCounter.',
   },
 };

@@ -1,10 +1,15 @@
-// The site in a real browser: language, start lights, downloads, phones, pages without JavaScript.
+// The site in a real browser: a page per language, start lights, downloads, phones, pages without JavaScript, audience.
 // Run: npx playwright test -c site/playwright.config.mjs
 import { expect, test } from '@playwright/test';
-import { LANGS, loadTexts } from './texts.mjs';
+import { PAGES, SITE_URL } from '../scripts/build.mjs';
+import { LANGS, loadTexts } from '../scripts/texts.mjs';
 
 const texts = loadTexts();
 const normalize = (text) => text.replaceAll('&nbsp;', ' ').replace(/\s+/g, ' ').trim();
+/** The address of the page of a language, from the root of the site. */
+const pageOf = (lang) => `/${PAGES[lang]}`;
+/** Where a page finds the shared files: its own folder for English, one up for the others. */
+const rootOf = (lang) => (PAGES[lang] ? '../' : '');
 
 /** Each translated element: its key, the values filled in its text, and what it shows. */
 const shownTexts = (page) =>
@@ -19,44 +24,41 @@ const shownTexts = (page) =>
 /** A text with its values filled in. */
 const fill = (template, vars) => template.replace(/\{(\w+)\}/g, (_, name) => vars[name]);
 
-async function expectLanguage(page, lang) {
-  await expect(page.locator('html')).toHaveAttribute('lang', lang);
+async function expectTexts(page, lang) {
   for (const [key, vars, text] of await shownTexts(page)) {
     expect(normalize(text), key).toBe(normalize(fill(texts[lang][key], vars)));
   }
-  await expect(page.locator('[data-shot="race"]')).toHaveAttribute('src', `img/${lang}/race.webp`);
-  await expect(page.locator(`[data-lang="${lang}"]`)).toHaveAttribute('aria-pressed', 'true');
+}
+
+async function expectLanguage(page, lang) {
+  await expect.poll(() => new URL(page.url()).pathname).toBe(pageOf(lang));
+  await expect(page.locator('html')).toHaveAttribute('lang', lang);
+  await expectTexts(page, lang);
+  await expect(page.locator('[data-shot="race"]')).toHaveAttribute('src', `${rootOf(lang)}img/${lang}/race.webp`);
+  await expect(page.locator(`[data-lang="${lang}"]`)).toHaveAttribute('aria-current', 'page');
   await expect(page).toHaveTitle(texts[lang]['meta.title']);
 }
 
 test.describe('in German', () => {
   test.use({ locale: 'de-DE' });
 
-  test("the page opens in the browser's language", async ({ page }) => {
+  test("the home page sends the visitor to the page in the browser's language", async ({ page }) => {
     await page.goto('/');
     await expectLanguage(page, 'de');
   });
 
-  test('the English text the page is written in never shows first: the page appears translated', async ({ page }) => {
-    let release;
-    const held = new Promise((resolve) => (release = resolve));
-    await page.route('**/main.js', async (route) => {
-      await held;
-      await route.continue();
+  test('the English home page is never drawn when it sends the visitor to their language', async ({ page }) => {
+    // The page of the language answers nothing: the home page keeps what it had read of itself
+    let asked;
+    const redirected = new Promise((resolve) => (asked = resolve));
+    await page.route('**/de/', (route) => {
+      asked();
+      return route.fulfill({ status: 204 });
     });
     await page.goto('/', { waitUntil: 'commit' });
-    await page.locator('h1').waitFor({ state: 'attached' });
-    await expect(page.locator('h1')).toBeHidden();
-    release();
-    await expectLanguage(page, 'de');
-    await expect(page.locator('h1')).toBeVisible();
-  });
-
-  test('should a script fail, the page still shows, in English', async ({ page }) => {
-    await page.route('**/main.js', (route) => route.abort());
-    await page.goto('/');
-    await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h1')).toHaveText(texts.en['hero.title']);
+    await redirected;
+    expect(new URL(page.url()).pathname).toBe('/');
+    await expect(page.locator('h1')).toHaveCount(0);
   });
 
   test('?lang= wins over the browser language', async ({ page }) => {
@@ -64,31 +66,48 @@ test.describe('in German', () => {
     await expectLanguage(page, 'fr');
   });
 
-  test('the language picked is applied everywhere and kept for the next visit', async ({ page }) => {
-    await page.goto('/');
+  test('the language picked is kept for the next visit, and the visitor stays where they were', async ({ page }) => {
+    await page.goto('/#install');
+    await expectLanguage(page, 'de');
     await page.locator('[data-lang="fr"]').click();
     await expectLanguage(page, 'fr');
-    await page.reload();
+    expect(new URL(page.url()).hash).toBe('#install');
+    // The home page sends the next visit to the language picked, not to the browser's
+    await page.goto('/');
     await expectLanguage(page, 'fr');
+    await page.locator('[data-lang="en"]').click();
+    await expectLanguage(page, 'en');
+    await page.goto('/');
+    await expectLanguage(page, 'en');
   });
 });
 
 test.describe('in a language the site does not have', () => {
   test.use({ locale: 'es-ES' });
 
-  test('the page falls back to English', async ({ page }) => {
+  test('the home page stays in English', async ({ page }) => {
     await page.goto('/');
     await expectLanguage(page, 'en');
   });
 });
 
+test('should a script fail, each page still reads in its language', async ({ page }) => {
+  await page.route('**/main.js', (route) => route.abort());
+  for (const lang of LANGS) {
+    await page.goto(pageOf(lang));
+    await expect(page.locator('h1')).toBeVisible();
+    await expectTexts(page, lang);
+  }
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('the page reads in English, with the texts of the English dictionary', async ({ page }) => {
-    await page.goto('/');
-    for (const [key, vars, text] of await shownTexts(page)) {
-      expect(normalize(text), key).toBe(normalize(fill(texts.en[key], vars)));
+  test('each page reads in its language, with the texts of its dictionary', async ({ page }) => {
+    for (const lang of LANGS) {
+      await page.goto(pageOf(lang));
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      await expectTexts(page, lang);
     }
   });
 });
@@ -197,14 +216,14 @@ test.describe('on a phone', () => {
 
   for (const lang of LANGS) {
     test(`the page never scrolls sideways (${lang})`, async ({ page }) => {
-      await page.goto(`/?lang=${lang}`);
+      await page.goto(pageOf(lang));
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow).toBe(0);
     });
   }
 });
 
-test('the page loads every file it asks for, with no error, and each menu link has its section', async ({ page }) => {
+test('each page loads every file it asks for, with no error, and each menu link has its section', async ({ page }) => {
   const failures = [];
   page.on(
     'response',
@@ -212,9 +231,8 @@ test('the page loads every file it asks for, with no error, and each menu link h
   );
   page.on('pageerror', (error) => failures.push(error.message));
   page.on('console', (message) => message.type() === 'error' && failures.push(message.text()));
-  await page.goto('/');
   for (const lang of LANGS) {
-    await page.locator(`[data-lang="${lang}"]`).click();
+    await page.goto(pageOf(lang));
     // Lazy screenshots load once scrolled into view
     for (const shot of await page.locator('[data-shot]').all()) {
       await shot.scrollIntoViewIfNeeded();
@@ -314,7 +332,7 @@ test.describe('the demo race', () => {
     page,
   }) => {
     await page.clock.install();
-    await page.goto('/');
+    await page.goto('/fr/');
     await page.clock.runFor(20000);
 
     const running = await shownOrder(page);
@@ -363,7 +381,7 @@ test.describe('the demo race', () => {
     page,
   }) => {
     await page.clock.install();
-    await page.goto('/');
+    await page.goto('/fr/');
     await page.clock.runFor(1000);
     // On the grid in the order of the rows, the first one nearest the line, and still while the lights come on
     expect(await carsOnCircuit(page)).toEqual(GRID);
@@ -394,30 +412,32 @@ test.describe('in French', () => {
   test.use({ locale: 'fr-FR' });
 
   test('a tab of the screens shows that screen, in the language of the page', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/fr/');
     await page.locator('[data-screen="podium"]').click();
     const screen = page.locator('.tour .shot');
-    await expect(screen).toHaveAttribute('src', 'img/fr/podium.webp');
+    await expect(screen).toHaveAttribute('src', '../img/fr/podium.webp');
     await expect(screen).toHaveAttribute('alt', texts.fr['shot.podium']);
     await expect(page.locator('[data-screen="podium"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('[data-screen="race"]')).toHaveAttribute('aria-selected', 'false');
+    // The page of another language shows its own capture
     await page.locator('[data-lang="de"]').click();
-    await expect(screen).toHaveAttribute('src', 'img/de/podium.webp');
+    await page.locator('[data-screen="podium"]').click();
+    await expect(screen).toHaveAttribute('src', '../img/de/podium.webp');
     await expect(screen).toHaveAttribute('alt', texts.de['shot.podium']);
   });
 
   test('the arrow keys move from one screen to the next, and wrap around', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/fr/');
     const screen = page.locator('.tour .shot');
     await page.locator('[data-screen="race"]').focus();
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('[data-screen="podium"]')).toBeFocused();
     await expect(page.locator('[data-screen="podium"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(screen).toHaveAttribute('src', 'img/fr/podium.webp');
+    await expect(screen).toHaveAttribute('src', '../img/fr/podium.webp');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
     await expect(page.locator('[data-screen="addons"]')).toBeFocused();
-    await expect(screen).toHaveAttribute('src', 'img/fr/addons.webp');
+    await expect(screen).toHaveAttribute('src', '../img/fr/addons.webp');
     // Only the selected tab is reached with Tab
     expect(await page.locator('[role="tab"][tabindex="0"]').count()).toBe(1);
   });
@@ -427,8 +447,66 @@ test.describe('in French', () => {
       window.spoken = [];
       speechSynthesis.speak = (utterance) => window.spoken.push({ text: utterance.text, lang: utterance.lang });
     });
-    await page.goto('/');
+    await page.goto('/fr/');
     await page.locator('[data-voice-button]').click();
     expect(await page.evaluate(() => window.spoken)).toEqual([{ text: texts.fr['voice.sample'], lang: 'fr-FR' }]);
+  });
+});
+
+test.describe('the audience', () => {
+  const COUNTER = 'https://racehubos.goatcounter.com/count';
+  const PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+
+  /** The site at its published address, served by the local server, and the counts it sends. */
+  async function published(page, baseURL) {
+    const counts = [];
+    await page.route(`${SITE_URL}**`, async (route) => {
+      const local = route.request().url().replace(SITE_URL, `${baseURL}/`);
+      await route.fulfill({ response: await route.fetch({ url: local }) });
+    });
+    await page.route(`${COUNTER}?**`, (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      counts.push({ page: params.get('p'), event: params.get('e') === 'true' });
+      return route.fulfill({ contentType: 'image/gif', body: PIXEL });
+    });
+    return counts;
+  }
+
+  test('on the published site, each visit counts its page, and each download its system and language', async ({
+    page,
+    baseURL,
+  }) => {
+    const counts = await published(page, baseURL);
+    await page.goto(`${SITE_URL}fr/`);
+    await expect.poll(() => counts).toEqual([{ page: '/RaceHubOS/fr/', event: false }]);
+    const download = page.waitForEvent('download');
+    await page.locator('.hero [data-os="mac"]').click();
+    await download;
+    await expect.poll(() => counts.at(-1)).toEqual({ page: 'download-mac-fr', event: true });
+  });
+
+  for (const [who, setup] of [
+    ['who asks not to be tracked', () => Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' })],
+    [
+      'whose browser sends Global Privacy Control',
+      () => Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true }),
+    ],
+  ]) {
+    test(`a visitor ${who} is not counted`, async ({ page, baseURL }) => {
+      await page.addInitScript(setup);
+      const counts = await published(page, baseURL);
+      await page.goto(SITE_URL);
+      await page.locator('.hero [data-os="windows"]').click();
+      await page.waitForLoadState('networkidle');
+      expect(counts).toEqual([]);
+    });
+  }
+
+  test('a copy of the site served from this computer counts nothing', async ({ page }) => {
+    const counted = [];
+    await page.route(`${COUNTER}?**`, (route) => counted.push(route.request().url()) && route.abort());
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    expect(counted).toEqual([]);
   });
 });

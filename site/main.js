@@ -7,7 +7,9 @@
   const LANG_KEY = 'racehubos-site-lang';
   const SPEECH_LANGS = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE' };
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let lang = FALLBACK;
+  // Each language has its page, written in it at build: English at the root of the site, the others in a folder
+  const lang = LANGS.includes(document.documentElement.lang) ? document.documentElement.lang : FALLBACK;
+  const ROOT = document.documentElement.dataset.root || '';
 
   /** Keeps a choice of the visitor for the next visit; read back by the script in the head of the page. */
   function remember(key, value) {
@@ -21,7 +23,7 @@
   /** A text in the page's language, with its values filled in. */
   const t = (key, vars) => TEXTS[lang][key].replace(/\{(\w+)\}/g, (_, name) => (vars ? vars[name] : ''));
 
-  /** A translated text, kept in the visitor's language when they switch. */
+  /** A translated text, its key kept on the element as for the texts written at build. */
   function setText(el, key, vars) {
     el.dataset.i18n = key;
     if (vars) el.dataset.vars = JSON.stringify(vars);
@@ -38,46 +40,19 @@
 
   // ---------- Language ----------
 
-  /** ?lang= first, then the visitor's choice, then the browser's languages, then English. */
   /** A capture of the app in the language and the theme of the page. */
   const shotSrc = (shot) =>
-    `img/${lang}/${document.documentElement.dataset.theme === 'dark' ? 'dark/' : ''}${shot}.webp`;
+    `${ROOT}img/${lang}/${document.documentElement.dataset.theme === 'dark' ? 'dark/' : ''}${shot}.webp`;
   const showShots = () =>
     document.querySelectorAll('[data-shot]').forEach((img) => {
       img.src = shotSrc(img.dataset.shot);
     });
 
-  /** The language picked before the first paint, by the script in the head of the page. */
-  const pickLanguage = () => (LANGS.includes(document.documentElement.lang) ? document.documentElement.lang : FALLBACK);
-
-  function apply(next) {
-    lang = next;
-    document.documentElement.lang = lang;
-    document.querySelectorAll('[data-i18n]').forEach((el) => {
-      const key = el.dataset.i18n;
-      const vars = el.dataset.vars ? JSON.parse(el.dataset.vars) : undefined;
-      if (key.endsWith('Html')) el.innerHTML = t(key);
-      else el.textContent = t(key, vars);
-    });
-    for (const attr of ['alt', 'title', 'content']) {
-      document.querySelectorAll(`[data-i18n-${attr}]`).forEach((el) => {
-        el.setAttribute(attr, t(el.getAttribute(`data-i18n-${attr}`)));
-      });
-    }
-    document
-      .querySelectorAll('[data-i18n-aria]')
-      .forEach((el) => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
-    showShots();
-    document.querySelectorAll('[data-lang]').forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
-    });
-    delete document.documentElement.dataset.translating;
-  }
-
-  document.querySelectorAll('[data-lang]').forEach((button) => {
-    button.addEventListener('click', () => {
-      remember(LANG_KEY, button.dataset.lang);
-      apply(button.dataset.lang);
+  // The language picked is kept: the English page sends the next visit to it. The visitor stays where they were.
+  document.querySelectorAll('[data-lang]').forEach((link) => {
+    link.addEventListener('click', () => {
+      remember(LANG_KEY, link.dataset.lang);
+      link.hash = location.hash;
     });
   });
 
@@ -108,6 +83,32 @@
   const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
   const os = /mac/i.test(platform) ? 'mac' : 'windows';
   document.querySelectorAll(`[data-os="${os}"]`).forEach((link) => link.classList.add('primary'));
+
+  // ---------- Audience: visits and downloads counted anonymously, without cookies (GoatCounter) ----------
+
+  const COUNTER = 'https://racehubos.goatcounter.com/count';
+  // Not on a copy of the site served from this computer, nor for a visitor who asks not to be tracked
+  const counting =
+    !['localhost', '127.0.0.1', ''].includes(location.hostname) &&
+    navigator.doNotTrack !== '1' &&
+    !navigator.globalPrivacyControl;
+
+  /** Counts the visit of a page, or an event: its name in place of a page. */
+  function count(path, event) {
+    if (!counting) return;
+    const params = new URLSearchParams({ p: path, rnd: Math.random().toString(36).slice(2) });
+    if (event) params.set('e', 'true');
+    else {
+      params.set('t', document.title);
+      if (document.referrer) params.set('r', document.referrer);
+    }
+    new Image().src = `${COUNTER}?${params}`;
+  }
+
+  count(location.pathname);
+  document.querySelectorAll('a[download]').forEach((link) => {
+    link.addEventListener('click', () => count(`download-${link.dataset.os}-${lang}`, true));
+  });
 
   // ---------- Demo race: the start lights, then the leaderboard of the app, then its podium ----------
 
@@ -514,7 +515,6 @@
     next.focus();
   });
 
-  apply(pickLanguage());
   // With reduced motion the board keeps the race shown in the page, until the visitor restarts it
   resetCars();
   if (!reducedMotion) startRace();
