@@ -82,7 +82,10 @@ describe('RowIdentity', () => {
       />
     )
     expect(screen.getByAltText('Ana Lopes')).toBeInTheDocument()
-    expect(screen.getByAltText('Ferrari 499P')).toBeInTheDocument()
+    // The car cut out on its background: whole, with no rounded frame around it
+    const carPicture = screen.getByAltText('Ferrari 499P')
+    expect(carPicture).toHaveClass('object-contain')
+    expect(carPicture.parentElement.className).not.toMatch(/rounded|overflow-hidden|shadow/)
     expect(screen.getByText('123')).toHaveClass('text-5xl')
     expect(screen.getByText('Lopes')).toBeInTheDocument()
     expect(screen.getByText('Ferrari 499P')).toBeInTheDocument()

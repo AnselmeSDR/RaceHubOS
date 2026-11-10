@@ -2,7 +2,7 @@ import { Flag } from 'lucide-react'
 import { formatLevel, levelPercent } from '@racehubos/shared'
 import { editColumn } from '@/components/crud/editColumn'
 import { carColor } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import CarPicture from '@/components/car/CarPicture'
 
 /** The columns of the cars table; `onEdit(car)` opens a car's form. */
 export function carColumns(t, { onEdit }) {
@@ -19,16 +19,16 @@ export function carColumns(t, { onEdit }) {
         const car = row.original
         return (
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: carColor(car) }}
-            >
-              {car.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                car.brand?.charAt(0)
-              )}
-            </div>
+            {car.img ? (
+              <CarPicture car={car} alt="" className="w-14 h-8" />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: carColor(car) }}
+              >
+                {car.brand?.charAt(0)}
+              </div>
+            )}
             <span className="font-medium">{car.model}</span>
           </div>
         )

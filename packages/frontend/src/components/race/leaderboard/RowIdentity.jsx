@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useApp } from '@/context/AppContext'
 import { getImgUrl } from '@/utils/image'
+import CarPicture from '@/components/car/CarPicture'
 
 const BLACK = ['#000', '#000000', 'black']
 
@@ -43,11 +44,7 @@ export default function RowIdentity({ driver, car, color, expanded }) {
         </div>
       )}
 
-      {car.img && (
-        <div className="w-14 h-10 rounded flex-shrink-0 overflow-hidden shadow-md">
-          <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-        </div>
-      )}
+      {car.img && <CarPicture car={car} className="w-16 h-10" />}
 
       <div className="flex-1 min-w-0">
         <div className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}>
