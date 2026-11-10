@@ -10,16 +10,11 @@ const API_URL = 'http://localhost:3101'
  * offered no way to remove anything. The bin now arms itself into a "Confirm?"
  * button, so a single click never deletes.
  */
-/** Unique per run: driver numbers and names carry unique constraints. */
+/** Unique per run. No driver number: it is unique too, and a random one collided with the drivers already made. */
 const stamp = () => `E2E-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
 const ENTITIES = [
-  {
-    label: 'pilote',
-    path: '/drivers',
-    endpoint: '/api/drivers',
-    create: () => ({ name: stamp(), number: 700 + Math.floor(Math.random() * 299) }),
-  },
+  { label: 'pilote', path: '/drivers', endpoint: '/api/drivers', create: () => ({ name: stamp() }) },
   { label: 'voiture', path: '/cars', endpoint: '/api/cars', create: () => ({ brand: 'E2E', model: stamp() }) },
   { label: 'circuit', path: '/tracks', endpoint: '/api/tracks', create: () => ({ name: stamp(), length: 20 }) },
   { label: 'équipe', path: '/teams', endpoint: '/api/teams', create: () => ({ name: stamp() }) },
