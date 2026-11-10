@@ -131,7 +131,6 @@ window.RACEHUBOS_TEXTS = {
     'footer.license': 'Software licensed under AGPL-3.0. A commercial license is available for closed-source use.',
     'footer.trademark':
       'Carrera is a trademark of Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS is not affiliated with or endorsed by Carrera.',
-    'footer.privacy': 'Visits are counted anonymously, without cookies, with GoatCounter.',
   },
   fr: {
     'meta.title': 'RaceHubOS : gestion de courses pour Carrera Digital 132 et 124',
@@ -266,7 +265,6 @@ window.RACEHUBOS_TEXTS = {
       'Logiciel sous licence AGPL-3.0. Une licence commerciale est disponible pour un usage en code fermé.',
     'footer.trademark':
       'Carrera est une marque de Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS n’est ni affilié à Carrera, ni soutenu par Carrera.',
-    'footer.privacy': 'Les visites sont comptées anonymement, sans cookie, avec GoatCounter.',
   },
   de: {
     'meta.title': 'RaceHubOS: Rennverwaltung für Carrera Digital 132 und 124',
@@ -401,6 +399,5 @@ window.RACEHUBOS_TEXTS = {
     'footer.license': 'Software unter der AGPL-3.0. Für Closed-Source-Nutzung gibt es eine kommerzielle Lizenz.',
     'footer.trademark':
       'Carrera ist eine Marke der Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS ist weder mit Carrera verbunden noch von Carrera unterstützt.',
-    'footer.privacy': 'Besuche werden anonym gezählt, ohne Cookies, mit GoatCounter.',
   },
 };
