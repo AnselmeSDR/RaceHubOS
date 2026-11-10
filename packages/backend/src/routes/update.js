@@ -1,20 +1,12 @@
 import express from 'express';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { refreshDesktopInstaller } from '../lib/desktopInstaller.js';
+import { applyUpdate, checkForUpdate } from '../lib/update.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.join(__dirname, '../../../..');
+const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 
+/** Self-update from GitHub's main: check, then apply and restart (exit code 42). */
 const router = express.Router();
-import { backupDatabase } from '../lib/backupDatabase.js';
-import { isNewerVersion } from '../lib/version.js';
-
-const execAsync = promisify(exec);
 
 let isUpdating = false;
 let io = null;
@@ -23,162 +15,30 @@ export function setUpdateIo(socketIo) {
   io = socketIo;
 }
 
-function getLocalVersion() {
-  const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'));
-  return pkg.version;
-}
-
 function emitProgress(step, message, status = 'running') {
   io?.emit('update:progress', { step, message, status });
 }
 
-/**
- * GET /api/update/check
- * Compare local version with GitHub
- */
 router.get('/check', async (req, res) => {
-  try {
-    const currentVersion = getLocalVersion();
-
-    const response = await fetch('https://api.github.com/repos/AnselmeSDR/RaceHubOS/contents/package.json', {
-      headers: { 'Accept': 'application/vnd.github.raw', 'User-Agent': 'RaceHubOS' },
-    });
-    if (!response.ok) {
-      return res.json({
-        success: true,
-        data: { currentVersion, latestVersion: null, updateAvailable: false, error: 'Impossible de contacter GitHub' },
-      });
-    }
-
-    const remotePkg = await response.json();
-    const latestVersion = remotePkg.version;
-    // Strict comparison: an older remote version must never look like an update
-    const updateAvailable = isNewerVersion(latestVersion, currentVersion);
-
-    res.json({
-      success: true,
-      data: { currentVersion, latestVersion, updateAvailable },
-    });
-  } catch (error) {
-    res.json({
-      success: true,
-      data: { currentVersion: getLocalVersion(), latestVersion: null, updateAvailable: false, error: error.message },
-    });
-  }
+  res.json({ success: true, data: await checkForUpdate(rootDir) });
 });
 
-/**
- * Undo a failed update: back to the previous commit, with dependencies and
- * build restored. Runs before any schema migration, so the database is untouched.
- */
-export async function rollback(previousCommit, reason, { cwd = rootDir } = {}) {
-  console.error(`⚠️  Mise à jour échouée (${reason}) — retour à ${previousCommit.slice(0, 8)}`);
-  emitProgress(0, 'Échec de la mise à jour, restauration de la version précédente...');
-
-  try {
-    await execAsync(`git reset --hard ${previousCommit}`, { cwd, timeout: 60000 });
-    await execAsync('npm install --legacy-peer-deps', { cwd, timeout: 300000 });
-    await execAsync('npm run build', { cwd, timeout: 120000 });
-    console.log('✅ Version précédente restaurée');
-  } catch (err) {
-    // Nothing else we can do automatically — make it loud rather than silent
-    console.error('❌ Restauration impossible:', err.message);
-    emitProgress(0, `Restauration impossible: ${err.message}. Relancez l'installeur.`, 'error');
-    throw err;
-  }
-}
-
-/**
- * POST /api/update/apply
- * Pull latest, install, build, migrate, restart
- */
+// Answers at once; the progress follows on `update:progress`
 router.post('/apply', async (req, res) => {
-  if (isUpdating) {
-    return res.status(409).json({ success: false, error: 'Mise à jour déjà en cours' });
-  }
+  if (isUpdating) return res.status(409).json({ success: false, error: 'Mise à jour déjà en cours' });
 
   isUpdating = true;
   res.json({ success: true, message: 'Mise à jour lancée' });
-
   try {
-    // Backup database (dated snapshot in prisma/db-old/, keeps the last 10)
-    emitProgress(1, 'Sauvegarde de la base de données...');
-    const backupPath = backupDatabase({ reason: 'update' });
-    if (backupPath) console.log(`💾 Sauvegarde avant mise à jour: ${backupPath}`);
-
-    // Remember where we stand, so a failed update can be undone
-    const { stdout: headBefore } = await execAsync('git rev-parse HEAD', { cwd: rootDir, timeout: 10000 });
-    const previousCommit = headBefore.trim();
-
-    // Git pull (clean merge, preserve untracked files like db/uploads)
-    emitProgress(2, 'Téléchargement de la mise à jour...');
-    await execAsync('git fetch origin main', { cwd: rootDir, timeout: 60000 });
-    // Stash any local tracked changes, then reset to remote
-    await execAsync('git checkout -- .', { cwd: rootDir, timeout: 10000 }).catch(() => {});
-    await execAsync('git pull origin main --ff-only', { cwd: rootDir, timeout: 60000 });
-
-    // From here the working tree is on the new version: any failure must roll back,
-    // otherwise the next restart runs on a half-installed app.
-    try {
-      // npm install (postinstall prisma removed — handled by startup.js on restart)
-      emitProgress(3, 'Installation des dépendances...');
-      await execAsync('npm install --legacy-peer-deps', { cwd: rootDir, timeout: 300000 });
-
-      // Build frontend
-      emitProgress(4, 'Build du frontend...');
-      await execAsync('npm run build', { cwd: rootDir, timeout: 120000 });
-    } catch (error) {
-      await rollback(previousCommit, error.message);
-      throw new Error(`Mise à jour annulée, version précédente restaurée (${error.message})`);
-    }
-
-    // Schema migration comes last, once the code is installed and built:
-    // it is the only irreversible step, and startup.js retries it on restart.
-    emitProgress(5, 'Migration de la base de données...');
-    await execAsync('npx prisma generate', { cwd: path.join(rootDir, 'packages/backend'), timeout: 60000 }).catch(
-      () => {}
-    );
-    // scripts/migrate.js baselines a database predating migrations, which plain
-    // `migrate deploy` refuses to touch (P3005)
-    await execAsync('node scripts/migrate.js', { cwd: path.join(rootDir, 'packages/backend'), timeout: 120000 }).catch(
-      () => {}
-    );
-
-    const newVersion = getLocalVersion();
-
-    // Regenerate launcher .bat from template (Windows only)
-    const templatePath = path.join(rootDir, 'RaceHubOS.bat.template');
-    if (fs.existsSync(templatePath)) {
-      emitProgress(6, 'Mise à jour du lanceur...');
-      const batContent = fs
-        .readFileSync(templatePath, 'utf-8')
-        .replace(/__VERSION__/g, `v${newVersion}`)
-        .replace(/__TARGET_DIR__/g, rootDir.replace(/\//g, '\\'));
-      const batFiles = fs.readdirSync(rootDir).filter((f) => /^RaceHubOS-v.*\.bat$/.test(f));
-      for (const batFile of batFiles) {
-        fs.writeFileSync(path.join(rootDir, batFile), batContent);
-      }
-    }
-
-    // Bootstraps the installer's self-update on desktops still holding a copy
-    // that predates it — those can never update themselves
-    try {
-      const { copied, target } = refreshDesktopInstaller({ rootDir });
-      if (copied) console.log(`[update] Installeur du bureau mis à jour: ${target}`);
-    } catch (err) {
-      console.warn('[update] Installeur du bureau non mis à jour:', err.message);
-    }
-
-    emitProgress(7, `Mise à jour v${newVersion} terminée. Redémarrage...`, 'complete');
-
-    isUpdating = false;
-
-    // Exit with code 42 so launcher restarts
+    const version = await applyUpdate({ rootDir, emit: emitProgress });
+    emitProgress(7, `Mise à jour v${version} terminée. Redémarrage...`, 'complete');
+    // The launcher restarts the app on code 42
     setTimeout(() => process.exit(42), 2000);
   } catch (error) {
     console.error('Update error:', error);
-    isUpdating = false;
     emitProgress(0, `Erreur: ${error.message}`, 'error');
+  } finally {
+    isUpdating = false;
   }
 });
 

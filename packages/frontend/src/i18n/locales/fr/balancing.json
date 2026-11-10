@@ -7,9 +7,6 @@
     "hideStandings": "Masquer le classement",
     "standingsTitle": "Classement Général"
   },
-  "session": {
-    "defaultName": "Équilibrage"
-  },
   "chart": {
     "carFallback": "Voiture {{number}}",
     "noLapData": "Aucune donnée de tour disponible",

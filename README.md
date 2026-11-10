@@ -23,6 +23,7 @@ Built by slot racers, for slot racers. 🏎️
   - [macOS / Linux](#-macos---linux)
   - [Windows](#-windows)
   - [Upgrade](#-upgrade)
+- [Add-ons](#-add-ons)
 - [Development](#-development)
   - [Simulator](#-simulator)
   - [WebSocket Events](#-websocket-events)
@@ -49,6 +50,7 @@ Built by slot racers, for slot racers. 🏎️
 - 🔌 Bluetooth LE connectivity to Carrera Control Unit via AppConnect
 - 🎮 Built-in simulator for development (no hardware required)
 - ⚖️ Car balancing mode with lap time chart, median tracking and outlier filtering
+- 🧩 Add-ons: extra features installed from the app, see [Add-ons](#-add-ons)
 
 ## 🛠️ Tech Stack
 
@@ -94,6 +96,24 @@ Updates are handled from within the app:
 2. Click **Vérifier** to check for updates
 3. If available, click **Mettre à jour**
 4. The app downloads, installs and restarts automatically
+
+## 🧩 Add-ons
+
+Add-ons bring features to RaceHubOS without changing its core: a page in the menu, a column in a list, a badge on a car, something that happens at the end of each session.
+
+Open **Add-ons** in the menu:
+
+- **Market**: the add-ons listed by the maintainer, installed in one click.
+- **Install from a link**: any git repository (GitLab, GitHub…). Nobody has reviewed it, and an add-on runs with the same rights as RaceHubOS: install only what you trust.
+- **Installed**: enable, disable, update when a new version is out, or remove each add-on, with or without its data.
+
+The database is backed up before each action. RaceHubOS then rebuilds and restarts on its own, and an add-on that breaks the build is disabled.
+
+| Add-on | What it does |
+|---|---|
+| [Car service](https://github.com/AnselmeSDR/racehubos-car-service) | Laps and distance of each car since its last service, an interval per car, and the cars due: a page, a badge on the car and a column in the cars list |
+
+**Writing an add-on**: [docs/ADDONS.md](docs/ADDONS.md) covers the folder layout, the manifest, the server and web sides, data, changing core files (overrides), publishing, and the rules for AI assistants. Car service is a complete example, tests included.
 
 ## 🧑‍💻 Development
 
@@ -147,6 +167,7 @@ RaceHubOS is an active project with a lot of room to grow. Here are some directi
 - 🧩 **New features** — Penalties, fuel strategy, team relay races, lap charts, and more
 - **Ideas & bugs** — [Open an issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branch, and submit a pull request — read [CONTRIBUTING.md](CONTRIBUTING.md) first
+- **Add-ons** — Add a feature without changing the core — read [docs/ADDONS.md](docs/ADDONS.md)
 - **Questions** — Reach out at anselme8@icloud.com
 
 All contributions are welcome — whether it's a feature, a bug fix, a design idea, or just feedback.
@@ -195,6 +216,7 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 - 🔌 Connexion Bluetooth LE à la Control Unit Carrera via AppConnect
 - 🎮 Simulateur intégré pour le développement (pas de matériel requis)
 - ⚖️ Mode équilibrage voitures avec graphe temps au tour, suivi médiane et filtre outliers
+- 🧩 Add-ons : des fonctionnalités en plus, installées depuis l'application, voir [Add-ons](#add-ons)
 
 ### Installation
 
@@ -233,6 +255,24 @@ Les mises à jour se font depuis l'application :
 4. L'app télécharge, installe et redémarre automatiquement
 
 > **Note :** En production, `npm run build && npm start` build le frontend et lance le backend sur un seul port (3001). En développement, `npm run dev` lance Vite et Express avec hot reload.
+
+### Add-ons
+
+Les add-ons ajoutent des fonctionnalités à RaceHubOS sans toucher au cœur : une page dans le menu, une colonne dans une liste, un badge sur une voiture, une action à la fin de chaque session.
+
+Ouvrez **Add-ons** dans le menu :
+
+- **Catalogue** : les add-ons listés par le mainteneur, installés en un clic.
+- **Installer depuis un lien** : n'importe quel dépôt git (GitLab, GitHub…). Personne ne l'a vérifié, et un add-on a les mêmes droits que RaceHubOS : n'installez que ce en quoi vous avez confiance.
+- **Installés** : activer, désactiver, mettre à jour quand une nouvelle version sort, ou désinstaller chaque add-on, avec ou sans ses données.
+
+La base est sauvegardée avant chaque action. RaceHubOS se reconstruit ensuite et redémarre seul, et un add-on qui casse le build est désactivé.
+
+| Add-on | Ce qu'il fait |
+|---|---|
+| [Entretien des voitures](https://github.com/AnselmeSDR/racehubos-car-service) | Tours et distance de chaque voiture depuis son dernier entretien, un intervalle par voiture, et les voitures à entretenir : une page, un badge sur la voiture et une colonne dans la liste des voitures |
+
+**Écrire un add-on** : [docs/ADDONS.md](docs/ADDONS.md) (en anglais) décrit l'arborescence, le manifeste, les côtés serveur et web, les données, la modification des fichiers du cœur (overrides), la publication, et les règles pour les assistants IA. Entretien des voitures est un exemple complet, tests compris.
 
 ### Stack technique
 
@@ -292,6 +332,7 @@ Le projet est en développement actif et ouvert aux contributions :
 - 🧩 **Nouvelles features** — Pénalités, stratégie carburant, relais par équipe, graphiques de tours, etc.
 - **Idées et bugs** — [Ouvrir une issue](https://github.com/AnselmeSDR/RaceHubOS/issues)
 - **Code** — Fork, branche, et pull request — lire d'abord [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Add-ons** — Ajouter une fonctionnalité sans toucher au cœur — lire [docs/ADDONS.md](docs/ADDONS.md)
 - **Questions** — anselme8@icloud.com
 
 ### Licence

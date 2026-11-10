@@ -30,6 +30,30 @@ const MODE_FLAGS = {
 // Virtual device address
 export const SIMULATOR_ADDRESS = 'SIMULATOR';
 
+const clamp = (value) => Math.max(0, Math.min(15, value));
+
+/** Same bounds and messages as the Control Unit's `setword`. */
+function check(value, min, max, name) {
+  if (value < min || value > max) throw new Error(`${name} out of range`);
+}
+
+/** Distance from the start line (ms) of the car at grid `index`: cars start before the line. */
+const startDistanceOf = (index) => 200 + index * 80 + Math.random() * 50;
+
+/** What a reset clears: the car is back on the grid, before the line, with no lap. */
+const freshRun = (index) => ({
+  currentLap: 0,
+  totalLaps: 0,
+  lastLapTime: 0,
+  bestLapTime: null,
+  totalTime: 0,
+  sectorTimes: [0, 0, 0],
+  currentSector: 0,
+  // First crossing: cars start before finish line, first pass is very short
+  firstCrossing: true,
+  startDistance: startDistanceOf(index),
+});
+
 export class CarreraSimulator extends EventEmitter {
   constructor(io) {
     super();
@@ -118,22 +142,15 @@ export class CarreraSimulator extends EventEmitter {
     this.cars = Array.from({ length: carCount }, (_, i) => ({
       id: i + 1,
       position: i + 1,
-      currentLap: 0,
-      totalLaps: 0,
-      lastLapTime: 0,
-      bestLapTime: null,
       fuel: 15, // 0-15 scale
       speed: 0,
+      // Controller settings, as setSpeed / setBrake would set them on the CU (0-15)
+      maxSpeed: 15,
+      brake: 15,
       inPit: false,
-      totalTime: 0,
-      sectorTimes: [0, 0, 0],
-      currentSector: 0,
       // Performance factor: 0.85 (fast) to 1.15 (slow) - creates gaps between cars
       performance: 0.85 + Math.random() * 0.3,
-      // First crossing: cars start before finish line, first pass is very short
-      firstCrossing: true,
-      // Distance from start line (ms): varies by grid position
-      startDistance: 200 + i * 80 + Math.random() * 50,
+      ...freshRun(i),
     }));
   }
 
@@ -193,9 +210,13 @@ export class CarreraSimulator extends EventEmitter {
     this.raceTime += this.tickRate;
 
     this.cars.forEach((car) => {
-      // Simulate speed variation (realistic racing)
-      const baseSpeed = 8 + Math.random() * 4; // 8-12 speed units
-      car.speed = Math.max(0, Math.min(15, baseSpeed));
+      // A controller set to speed 0 has no power: the car stands still
+      if (car.maxSpeed === 0) {
+        car.speed = 0;
+        return;
+      }
+      // Simulate speed variation (realistic racing), capped by the controller's setting
+      car.speed = Math.min(car.maxSpeed, clamp(8 + Math.random() * 4)); // 8-12 speed units
 
       // Simulate sector progression
       this.simulateSectorProgress(car);
@@ -256,19 +277,17 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Handle first crossing (cars start before finish line)
-   * Emits 'timer' event with very short time (few hundred ms)
+   * A finish line crossing, as the real CU reports it: controller 0-5, the time as timestamp,
+   * sector 1 for the finish line.
    */
-  completeFirstCrossing(car) {
-    const crossingTime = car.startDistance;
-    car.totalTime = crossingTime;
+  emitCrossing(car, timestamp) {
+    this.emit('timer', { controller: car.id - 1, timestamp, sector: 1 });
+  }
 
-    // Emit 'timer' event like real CU
-    this.emit('timer', {
-      controller: car.id - 1,
-      timestamp: car.totalTime,
-      sector: 1,
-    });
+  /** First crossing: cars start a few hundred ms before the finish line. */
+  completeFirstCrossing(car) {
+    car.totalTime = car.startDistance;
+    this.emitCrossing(car, car.totalTime);
   }
 
   /**
@@ -286,43 +305,10 @@ export class CarreraSimulator extends EventEmitter {
       car.bestLapTime = lapTime;
     }
 
-    // Emit 'timer' event like real CU for unified handling
-    // Format: { controller: 0-5, timestamp: ms, sector: 1-3 }
-    // sector 1 = finish line
-    this.emit('timer', {
-      controller: car.id - 1, // 0-indexed (car.id is 1-indexed)
-      timestamp: car.totalTime, // Accumulated time as timestamp
-      sector: 1, // Finish line = sector 1
-    });
+    this.emitCrossing(car, car.totalTime);
 
     // Reset sector times
     car.sectorTimes = [0, 0, 0];
-  }
-
-  /**
-   * Handle pit stop logic
-   */
-  handlePitStop(car) {
-    if (!car.pitTimer) {
-      car.pitTimer = 0;
-    }
-
-    car.pitTimer += this.tickRate;
-
-    // Pit stop takes 3-5 seconds
-    const pitDuration = 3000 + Math.random() * 2000;
-
-    if (car.pitTimer >= pitDuration) {
-      car.fuel = 15; // Refuel
-      car.inPit = false;
-      car.pitTimer = 0;
-
-      this.io.emit('race:pitStop', {
-        carId: car.id,
-        duration: pitDuration,
-        timestamp: Date.now(),
-      });
-    }
   }
 
   /**
@@ -396,7 +382,7 @@ export class CarreraSimulator extends EventEmitter {
   setCarSpeed(carId, speed) {
     const car = this.cars.find((c) => c.id === carId);
     if (car) {
-      car.speed = Math.max(0, Math.min(15, speed));
+      car.speed = clamp(speed);
     }
   }
 
@@ -499,14 +485,8 @@ export class CarreraSimulator extends EventEmitter {
       this.raceActive = true;
       this.emitCuStatus();
 
-      // Emit timer event for each car (like CU at race start)
-      for (const car of this.cars) {
-        this.emit('timer', {
-          controller: car.id - 1, // 0-indexed
-          timestamp: this.raceTime, // ~0 at start
-          sector: 1,
-        });
-      }
+      // Every car crosses at the start, like the CU reports it
+      for (const car of this.cars) this.emitCrossing(car, this.raceTime);
     }
   }
 
@@ -567,17 +547,7 @@ export class CarreraSimulator extends EventEmitter {
    */
   resetTimer() {
     this.raceTime = 0;
-    this.cars.forEach((car, i) => {
-      car.currentLap = 0;
-      car.totalLaps = 0;
-      car.lastLapTime = 0;
-      car.bestLapTime = null;
-      car.totalTime = 0;
-      car.sectorTimes = [0, 0, 0];
-      car.currentSector = 0;
-      car.firstCrossing = true;
-      car.startDistance = 200 + i * 80 + Math.random() * 50;
-    });
+    this.cars.forEach((car, i) => Object.assign(car, freshRun(i)));
     this.emitCuStatus();
   }
 
@@ -592,22 +562,31 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Toggle a mode flag
+   * Sets a controller setting like the CU: `address` 0-7 (the car on controller 0-5, none beyond),
+   * `value` 0-15. Throws on a value the CU would refuse.
    */
-  toggleMode(flag) {
-    this.cuMode ^= flag;
-    this.emitCuStatus();
+  setCarSetting(field, address, value) {
+    check(address, 0, 7, 'Address');
+    check(value, 0, 15, 'Value');
+    const car = this.cars[address];
+    if (car) car[field] = value;
+    return { success: true };
   }
 
-  /**
-   * Set fuel for a controller
-   */
-  setFuel(controller, value) {
-    const car = this.cars.find((c) => c.id === controller);
-    if (car) {
-      car.fuel = Math.max(0, Math.min(15, value));
-      this.emitCuStatus();
-    }
+  /** Caps the speed of the car on controller `address`; 0 stops it. */
+  setSpeed(address, value) {
+    return this.setCarSetting('maxSpeed', address, value);
+  }
+
+  setBrake(address, value) {
+    return this.setCarSetting('brake', address, value);
+  }
+
+  /** Fills the tank of the car on controller `address`. */
+  setFuel(address, value) {
+    const result = this.setCarSetting('fuel', address, value);
+    this.emitCuStatus();
+    return result;
   }
 
   /**

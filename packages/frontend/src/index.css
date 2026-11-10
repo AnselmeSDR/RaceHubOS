@@ -4,6 +4,7 @@
 @import '@fontsource-variable/inter';
 
 @source "../node_modules/@radix-ui";
+/* The add-on folders are added by vite/addonsPlugin.js */
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,22 +1,20 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, RefreshCw, Flag, MapPin, Trophy, Pencil } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import DeleteButton from '../components/ui/DeleteButton'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ConfirmModal } from '../components/ui/Modal'
 import { RecordsList } from '../components/RecordDisplays'
-import { TrackFormModal } from './Tracks'
-import LapTime from '../components/race/LapTime'
-import { getImgUrl } from '../utils/image'
-import { sessionBadgeClass } from '@/lib/colors'
+import TrackFormModal from '../components/track/TrackFormModal'
+import TrackIdentity from '../components/track/TrackIdentity'
+import TrackProfileActions from '../components/track/TrackProfileActions'
+import TrackRecord from '../components/track/TrackRecord'
+import TrackRecentSessions from '../components/track/TrackRecentSessions'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export default function TrackProfile() {
-  const { t, i18n } = useTranslation('tracks')
+  const { t } = useTranslation('tracks')
   const { id } = useParams()
   const navigate = useNavigate()
   const [track, setTrack] = useState(null)
@@ -74,8 +72,6 @@ export default function TrackProfile() {
     )
   }
 
-  const trackColor = track.color || '#9333EA'
-
   // Deleting from the profile: the entity is soft-deleted, then we leave the page
   async function handleDelete() {
     try {
@@ -93,49 +89,15 @@ export default function TrackProfile() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/tracks')}>
             <ArrowLeft className="size-4" />
           </Button>
-          {track.img ? (
-            <div
-              className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
-              style={{ '--tw-ring-color': trackColor }}
-            >
-              <img src={getImgUrl(track.img)} alt={track.name} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-              style={{ backgroundColor: trackColor }}
-            >
-              <MapPin className="size-5" />
-            </div>
-          )}
-          <div>
-            <h1 className="font-black text-lg" style={{ color: trackColor }}>
-              {track.name}
-            </h1>
-            <div className="text-xs text-muted-foreground flex items-center gap-3">
-              {track.length && <span>{track.length}m</span>}
-              {track.corners && <span>{t('profile.cornersCount', { count: track.corners })}</span>}
-              <span>
-                {track._count?.sessions || 0} {t('glossary:session', { count: track._count?.sessions || 0 })}
-              </span>
-            </div>
-          </div>
+          <TrackIdentity track={track} />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowResetConfirm(true)}
-            disabled={resetting}
-            className="text-orange-600 dark:text-orange-400"
-          >
-            <RefreshCw className={`size-4 ${resetting ? 'animate-spin' : ''}`} />
-          </Button>
-          <DeleteButton variant="outline" onDelete={handleDelete} />
-        </div>
+        <TrackProfileActions
+          track={track}
+          resetting={resetting}
+          onEdit={() => setShowEdit(true)}
+          onResetStats={() => setShowResetConfirm(true)}
+          onDelete={handleDelete}
+        />
       </div>
 
       {showEdit && (
@@ -159,23 +121,7 @@ export default function TrackProfile() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Record */}
-        {track.bestLap && (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <Trophy className="size-8 text-yellow-500 flex-shrink-0" />
-              <div>
-                <div className="text-xs text-muted-foreground uppercase font-medium">{t('profile.trackRecord')}</div>
-                <LapTime time={track.bestLap} size="xl" highlight />
-                {track.bestLapBy && (
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    {t('common:by')} {track.bestLapBy}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <TrackRecord track={track} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
@@ -188,49 +134,7 @@ export default function TrackProfile() {
             showTrack={false}
           />
 
-          {/* Recent Sessions */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-semibold">{t('common:recentSessions')}</h3>
-              </div>
-              {track.sessions?.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {track.sessions.slice(0, 8).map((session) => {
-                    const typeLabel = session.type
-                      ? t(`glossary:sessionType.${session.type}`, { defaultValue: session.type })
-                      : ''
-                    return (
-                      <Link
-                        key={session.id}
-                        to={`/sessions/${session.id}`}
-                        className="flex items-center justify-between px-4 py-2.5 hover:bg-muted transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] px-1.5 py-0 ${sessionBadgeClass(session.type)}`}
-                          >
-                            {typeLabel}
-                          </Badge>
-                          <span className="text-sm text-foreground">{session.name || typeLabel}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>
-                            {session._count?.drivers || 0}{' '}
-                            {t('glossary:driver', { count: session._count?.drivers || 0 })}
-                          </span>
-                          <span>{new Date(session.createdAt).toLocaleDateString(i18n.language)}</span>
-                        </div>
-                      </Link>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-sm text-muted-foreground">{t('common:noSessions')}</div>
-              )}
-            </CardContent>
-          </Card>
+          <TrackRecentSessions track={track} />
         </div>
       </div>
     </div>

@@ -63,7 +63,7 @@ test.describe('Championship Detailed Tests', () => {
     console.log('Stop button:', await stopBtn.count())
   })
 
-  test('SessionConfigModal - Open and verify form', async ({ page }) => {
+  test('Session config - Open and verify form', async ({ page }) => {
     // Click config button (title contains "session")
     const configBtn = page.locator('button[title*="ession"]').first()
     if ((await configBtn.count()) === 0) {

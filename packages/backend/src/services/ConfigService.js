@@ -1,6 +1,10 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import { EventEmitter } from 'events';
 
+const SLOTS = 6;
+const withPeople = { driver: true, car: true };
+
+/** Driver and car of each controller slot (0-5), by track. */
 export class ConfigService extends EventEmitter {
   constructor(io) {
     super();
@@ -8,150 +12,61 @@ export class ConfigService extends EventEmitter {
     this.io = io;
   }
 
-  /**
-   * Get configuration for a specific controller on a track
-   */
   async getConfig(controller, trackId) {
-    const config = await this.prisma.controllerConfig.findUnique({
-      where: {
-        trackId_controller: { trackId, controller: Number(controller) },
-      },
-      include: {
-        driver: true,
-        car: true,
-      },
+    return this.prisma.controllerConfig.findUnique({
+      where: { trackId_controller: { trackId, controller: Number(controller) } },
+      include: withPeople,
     });
-
-    return config;
   }
 
-  /**
-   * Check if a controller is fully configured (has driver AND car)
-   */
-  async isConfigured(controller, trackId) {
-    const config = await this.getConfig(controller, trackId);
-    return config?.driverId && config?.carId;
-  }
-
-  /**
-   * Get all configurations for a track
-   */
+  /** The six slots of a track, empty ones included. */
   async getAllConfigs(trackId) {
-    // Get existing configs
-    const configs = await this.prisma.controllerConfig.findMany({
-      where: { trackId },
-      include: {
-        driver: true,
-        car: true,
-      },
-      orderBy: { controller: 'asc' },
-    });
-
-    // Build full list of 6 slots (0-5, 0-indexed)
-    const slots = [];
-    for (let i = 0; i < 6; i++) {
-      const existing = configs.find((c) => c.controller === i);
-      slots.push({
-        controller: i,
-        driverId: existing?.driverId || null,
-        carId: existing?.carId || null,
-        driver: existing?.driver || null,
-        car: existing?.car || null,
+    const configs = await this.prisma.controllerConfig.findMany({ where: { trackId }, include: withPeople });
+    return Array.from({ length: SLOTS }, (_, controller) => {
+      const config = configs.find((c) => c.controller === controller);
+      return {
+        controller,
+        driverId: config?.driverId || null,
+        carId: config?.carId || null,
+        driver: config?.driver || null,
+        car: config?.car || null,
         isActive: true,
-      });
-    }
-
-    return slots;
+      };
+    });
   }
 
-  /**
-   * Update configuration for a controller slot
-   */
   async updateConfig(controller, trackId, driverId, carId) {
-    const controllerInt = Number(controller);
+    const slot = { driverId: driverId || null, carId: carId || null };
+    controller = Number(controller);
     const config = await this.prisma.controllerConfig.upsert({
-      where: {
-        trackId_controller: { trackId, controller: controllerInt },
-      },
-      create: {
-        controller: controllerInt,
-        trackId,
-        driverId: driverId || null,
-        carId: carId || null,
-      },
-      update: {
-        driverId: driverId || null,
-        carId: carId || null,
-      },
-      include: {
-        driver: true,
-        car: true,
-      },
+      where: { trackId_controller: { trackId, controller } },
+      create: { controller, trackId, ...slot },
+      update: slot,
+      include: withPeople,
     });
-
-    this.emit('config:updated', { controller: controllerInt, config });
-    this.io?.emit('config:updated', { controller: controllerInt, config });
-
+    this.emit('config:updated', { controller, config });
+    this.io?.emit('config:updated', { controller, config });
     return config;
   }
 
-  /**
-   * Update multiple controllers at once
-   */
   async updateBulk(trackId, configs) {
     const results = [];
-
     for (const { controller, driverId, carId } of configs) {
-      const config = await this.updateConfig(controller, trackId, driverId, carId);
-      results.push(config);
+      results.push(await this.updateConfig(controller, trackId, driverId, carId));
     }
-
     this.io?.emit('config:bulk-updated', { trackId, configs: results });
-
     return results;
   }
 
-  /**
-   * Clear all configurations for a track
-   */
   async clearAll(trackId) {
-    await this.prisma.controllerConfig.deleteMany({
-      where: { trackId },
-    });
-
+    await this.prisma.controllerConfig.deleteMany({ where: { trackId } });
     this.io?.emit('config:cleared', { trackId });
-
     return { success: true };
   }
 
-  /**
-   * Get driver/car info for a controller (used by LapRecorder)
-   */
-  async getDriverCarForController(controller, trackId) {
-    const config = await this.getConfig(controller, trackId);
-
-    if (!config?.driverId || !config?.carId) {
-      return null;
-    }
-
-    return {
-      driverId: config.driverId,
-      carId: config.carId,
-      driver: config.driver,
-      car: config.car,
-    };
-  }
-
-  /**
-   * Check if all active controllers are configured
-   */
+  /** Slots given a driver without a car, or the reverse. */
   async validateConfiguration(trackId) {
-    const configs = await this.getAllConfigs(trackId);
-    const unconfigured = configs.filter((c) => c.config && !c.isConfigured);
-
-    return {
-      valid: unconfigured.length === 0,
-      unconfiguredSlots: unconfigured.map((c) => c.controller),
-    };
+    const halfSet = (await this.getAllConfigs(trackId)).filter((slot) => !slot.driverId !== !slot.carId);
+    return { valid: halfSet.length === 0, unconfiguredSlots: halfSet.map((slot) => slot.controller) };
   }
 }

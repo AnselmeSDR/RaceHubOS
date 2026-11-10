@@ -1,6 +1,6 @@
 # Composants d'affichage des pilotes
 
-Ce fichier contient tous les composants réutilisables pour afficher les pilotes dans différents contextes, inspirés des designs NASCAR et Formule 1.
+Les composants réutilisables pour afficher les pilotes dans différents contextes, inspirés des designs NASCAR et Formule 1. Chacun est dans son propre fichier sous `components/driverDisplays/` (un add-on peut ainsi en remplacer un seul) ; `components/DriverDisplays.jsx` les ré-exporte pour garder le chemin d'import historique.
 
 ## Vue d'ensemble
 

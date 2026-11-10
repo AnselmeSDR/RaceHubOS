@@ -33,7 +33,8 @@ Both are checked by `npm run check`.
 Every PR that changes code comes with tests covering the change:
 
 - business rules: backend, `npm test -w @racehubos/backend` — always through this script, which points the tests at a throwaway database
-- interface: Playwright, `npm test -w @racehubos/frontend`, with selectors on `data-testid`
+- interface, unit: [Vitest](https://vitest.dev) and Testing Library, `npm test -w @racehubos/frontend` (`npm run test:coverage -w @racehubos/frontend` for the coverage)
+- interface, end to end: Playwright, `npm run test:e2e -w @racehubos/frontend`, with selectors on `data-testid`
 
 A test must fail when the rule it protects is broken.
 
@@ -52,11 +53,18 @@ Don't reformat files you don't need to change (e.g. `package.json` rewritten wit
 ```bash
 npm run check
 npm test -w @racehubos/backend
+npm test -w @racehubos/frontend
 ```
 
 - One PR = one topic, based on the latest `main`.
 - Every translation key exists in every language (`fr`, `en`, `de`…), checked by `npm run check`.
 - Enable **Allow edits by maintainers**, so small fixes can be made directly on your branch.
+
+## Add-ons
+
+A feature doesn't have to live in the core: an add-on adds pages, API routes and even changes to existing pages from its own repository. See [docs/ADDONS.md](docs/ADDONS.md).
+
+Is the piece your add-on needs to change written inline in a big page? Open a pull request that only moves it into its own file, with no visible change: `refactor: extract <piece> from <file>`. These PRs are welcome. See [split it in the core](docs/ADDONS.md#the-spot-you-need-is-inside-a-big-file-split-it-in-the-core).
 
 ## License
 

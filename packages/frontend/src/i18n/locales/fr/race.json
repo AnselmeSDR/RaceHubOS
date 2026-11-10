@@ -38,26 +38,6 @@
     "gap": "Écart",
     "total": "Total"
   },
-  "resultsModal": {
-    "title": "Résultats",
-    "colPos": "Pos",
-    "colDriver": "Pilote",
-    "colLaps": "Tours",
-    "colBest": "Meilleur",
-    "backToFreePractice": "Retour au mode libre"
-  },
-  "sessionHeader": {
-    "elapsed": "Temps",
-    "remaining": "Restant",
-    "cuOk": "CU OK",
-    "cuOff": "CU Off"
-  },
-  "cancelConfirmModal": {
-    "title": "Annuler la session ?",
-    "message": "Cette action va annuler la session en cours.",
-    "back": "Retour",
-    "confirm": "Annuler la session"
-  },
   "sessionModal": {
     "nameLabel": "Nom de la session",
     "durationLabel": "Durée (min)",
@@ -103,23 +83,6 @@
     "falseStart": "FAUX DÉPART",
     "go": "GO!",
     "start": "START"
-  },
-  "session": {
-    "noSession": "Aucune session sélectionnée",
-    "typePractice": "Essais libres",
-    "typeQualif": "Qualifications",
-    "typeRace": "Course",
-    "elapsed": "Temps",
-    "remaining": "Restant",
-    "cuOk": "CU OK",
-    "cuOff": "CU Off",
-    "connectCu": "Connecter un CU",
-    "start": "Démarrer",
-    "pause": "Pause",
-    "finish": "Terminer",
-    "resume": "Reprendre",
-    "lastLapInProgress": "Dernier tour en cours...",
-    "viewResults": "Voir Résultats"
   },
   "controllerSlot": {
     "controller": "Manette {{number}}",

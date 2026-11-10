@@ -7,6 +7,22 @@
  * - Emet cu:* events pour le frontend (logs/footer)
  * - Appelle SessionService pour la logique session
  */
+/** The info of a missing device. */
+const NOT_CONNECTED = Object.freeze({
+  version: 'NOT CONNECTED',
+  fuelMode: false,
+  realMode: false,
+  pitLane: false,
+  lapCounter: false,
+  numCars: 0,
+});
+
+/** Time since the controller's previous finish-line crossing; 0 for a first one, or a clock gone backwards. */
+function lapTimeSince(previous, timestamp) {
+  if (!previous) return 0;
+  return Math.max(0, timestamp - previous);
+}
+
 export class SyncService {
   constructor(io) {
     this.source = null; // ControlUnit ou Simulator (set via setDevice)
@@ -20,6 +36,7 @@ export class SyncService {
     this.cuStatus = null;
     this.pollInterval = 500;
     this.pollTimer = null;
+    this.pollLoop = null; // the running loop's token: a stopped loop does not schedule its next poll
 
     // Bound handlers for cleanup
     this._onTimer = (event) => this.handleTimerEvent(event);
@@ -90,13 +107,10 @@ export class SyncService {
 
     let lapTime = 0;
     if (isFinishLine && timestamp > 0) {
-      const lastTimestamp = this.lastTimestamps.get(controller) || 0;
-      lapTime = lastTimestamp > 0 ? timestamp - lastTimestamp : 0;
-      if (lapTime >= 0) {
-        this.lastTimestamps.set(controller, timestamp);
-      } else {
-        lapTime = 0; // CU glitch, treat as first pass
-      }
+      const previous = this.lastTimestamps.get(controller);
+      lapTime = lapTimeSince(previous, timestamp);
+      // A clock gone backwards (CU glitch) keeps the previous crossing as the reference
+      if (!(timestamp < previous)) this.lastTimestamps.set(controller, timestamp);
     }
 
     // Emit raw timer (for frontend logs/footer)
@@ -152,14 +166,20 @@ export class SyncService {
     if (this.pollInterval === ms) return;
     this.pollInterval = ms;
 
-    if (this.pollTimer) {
+    if (this.pollLoop) {
       this.stopPolling();
       this.startPolling();
     }
   }
 
+  /**
+   * Polls the device now, then every `pollInterval`. One loop at a time: its next poll is
+   * scheduled once the current one answers, unless the loop was stopped meanwhile.
+   */
   startPolling() {
-    if (this.pollTimer || !this.source) return;
+    if (this.pollLoop || !this.source) return;
+    const loop = {};
+    this.pollLoop = loop;
 
     const poll = async () => {
       try {
@@ -169,17 +189,16 @@ export class SyncService {
       } catch (error) {
         console.warn('[SyncService] Poll error:', error.message);
       }
-      this.pollTimer = setTimeout(poll, this.pollInterval);
+      if (this.pollLoop === loop) this.pollTimer = setTimeout(poll, this.pollInterval);
     };
 
     poll();
   }
 
   stopPolling() {
-    if (this.pollTimer) {
-      clearTimeout(this.pollTimer);
-      this.pollTimer = null;
-    }
+    this.pollLoop = null;
+    clearTimeout(this.pollTimer);
+    this.pollTimer = null;
   }
 
   // ==================== CU Control ====================
@@ -254,16 +273,7 @@ export class SyncService {
   }
 
   getInfo() {
-    return (
-      this.source?.getInfo?.() || {
-        version: 'NOT CONNECTED',
-        fuelMode: false,
-        realMode: false,
-        pitLane: false,
-        lapCounter: false,
-        numCars: 0,
-      }
-    );
+    return this.source?.getInfo?.() || NOT_CONNECTED;
   }
 
   getState() {

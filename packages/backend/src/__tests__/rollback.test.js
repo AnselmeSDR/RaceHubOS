@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { rollback } from '../routes/update.js';
+import { rollback } from '../lib/update.js';
 
 /**
  * Integration test on a real git repository: a failed update must put the

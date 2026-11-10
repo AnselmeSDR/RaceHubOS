@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Add-ons are ES modules. Each add-on lives in its own folder here: see docs/ADDONS.md"
+}

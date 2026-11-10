@@ -1,321 +1,87 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Flag, Users2, Trophy, Clock, Play, MapPin, CheckCircle } from 'lucide-react'
-import SessionForm from '../components/SessionForm'
+import { Flag } from 'lucide-react'
+import { SessionStatus } from '@racehubos/shared'
 import { ListPage } from '@/components/ui/list-page'
-import { FilterHeader } from '@/components/ui/filter-header'
-import { Badge } from '@/components/ui/badge'
-import { sessionBadgeClass } from '@/lib/colors'
+import SessionForm from '../components/SessionForm'
+import { ColumnFilterContext } from '../components/crud/columnFilterContext'
+import { sessionColumns } from '../components/sessionList/sessionColumns'
+import { usePagedList } from '../hooks/usePagedList'
+import { filterParams, hasColumnFilters } from '../lib/listFilters'
+import { getData } from '../lib/sessionApi'
 import { sessionTypeOptions } from '../utils/sessionTypes'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const EMPTY_FILTERS = { status: [], trackId: [], type: [], championshipId: [] }
+const FILTERED_STATUSES = [SessionStatus.DRAFT, SessionStatus.ACTIVE, SessionStatus.FINISHED]
 
+/** Every session, filtered by type, track, status and championship; a new one from the header. */
 export default function SessionsList() {
   const { t, i18n } = useTranslation('sessions')
   const navigate = useNavigate()
-  const [sessions, setSessions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [lists, setLists] = useState({ tracks: [], championships: [] })
   const [showForm, setShowForm] = useState(false)
-
-  // Filter options
-  const [tracks, setTracks] = useState([])
-  const [championships, setChampionships] = useState([])
-
-  const [filters, setFilters] = useState({
-    status: [],
-    trackId: [],
-    type: [],
-    championshipId: [],
-    deleted: false,
-  })
-  const [sort, setSort] = useState(null)
-  const filtersRef = useRef(filters)
-  filtersRef.current = filters
+  const list = usePagedList('/api/sessions', filterParams(filters))
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/api/tracks`).then((r) => r.json()),
-      fetch(`${API_URL}/api/championships`).then((r) => r.json()),
-    ])
-      .then(([tracksData, champsData]) => {
-        if (tracksData.success) setTracks(tracksData.data || [])
-        if (champsData.success) setChampionships(champsData.data || [])
-      })
-      .catch(() => {})
+    Promise.all([getData('/api/tracks'), getData('/api/championships')]).then(([tracks, championships]) => {
+      setLists((prev) => ({
+        tracks: tracks || prev.tracks,
+        championships: championships || prev.championships,
+      }))
+    })
   }, [])
 
-  useEffect(() => {
-    loadData(0)
-  }, [filters, sort])
-
-  const hasLoadedOnce = useRef(false)
-
-  async function loadData(offset) {
-    const isFirst = offset === 0
-    if (isFirst && !hasLoadedOnce.current) setLoading(true)
-    else if (!isFirst) setLoadingMore(true)
-    try {
-      const params = new URLSearchParams()
-      if (filters.status.length) params.append('status', filters.status.join(','))
-      if (filters.trackId.length) params.append('trackId', filters.trackId.join(','))
-      if (filters.type.length) params.append('type', filters.type.join(','))
-      if (filters.championshipId.length) params.append('championshipId', filters.championshipId.join(','))
-      if (filters.deleted) params.append('deleted', 'true')
-      if (sort) {
-        params.append('sortBy', sort.id)
-        params.append('sortOrder', sort.desc ? 'desc' : 'asc')
-      }
-      params.append('offset', String(offset))
-      params.append('limit', '50')
-      const res = await fetch(`${API_URL}/api/sessions?${params}`)
-      const data = await res.json()
-      if (data.success) {
-        setSessions((prev) => (isFirst ? data.data : [...prev, ...data.data]))
-        setHasMore(data.hasMore ?? false)
-        if (isFirst) setTotalCount(data.total ?? 0)
-      }
-    } catch (err) {
-      console.error('Failed to load sessions:', err)
-    } finally {
-      if (isFirst) {
-        setLoading(false)
-        hasLoadedOnce.current = true
-      } else setLoadingMore(false)
-    }
-  }
-
-  function getStatusIcon(status) {
-    switch (status) {
-      case 'draft':
-        return <Clock className="h-4 w-4 text-gray-500" />
-      case 'active':
-        return <Play className="h-4 w-4 text-green-500 animate-pulse" />
-      case 'finished':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />
-      default:
-        return null
-    }
-  }
-
-  function formatDate(date) {
-    if (!date) return '-'
-    return new Date(date).toLocaleDateString(i18n.language, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-
-  function formatDuration(startedAt, finishedAt) {
-    if (!startedAt || !finishedAt) return '-'
-    const d = new Date(finishedAt) - new Date(startedAt)
-    return `${Math.floor(d / 60000)}:${String(Math.floor((d % 60000) / 1000)).padStart(2, '0')}`
-  }
-
-  const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'name',
-        header: t('columns.name'),
-        cell: ({ row }) => (
-          <div>
-            <span className="font-semibold">
-              {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
-            </span>
-            {row.original.championship && (
-              <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-                <Trophy className="h-3 w-3 text-yellow-500" />
-                {row.original.championship.name}
-              </div>
-            )}
-          </div>
-        ),
+  const filterContext = useMemo(
+    () => ({
+      filters,
+      setFilter: (key, values) => setFilters((f) => ({ ...f, [key]: values })),
+      options: {
+        type: sessionTypeOptions(t),
+        trackId: lists.tracks.map((track) => ({ value: track.id, label: track.name })),
+        status: FILTERED_STATUSES.map((value) => ({ value, label: t(`glossary:sessionStatus.${value}`) })),
+        championshipId: [
+          { value: 'null', label: t('filters.noChampionship') },
+          ...lists.championships.map((c) => ({ value: c.id, label: c.name })),
+        ],
       },
-      {
-        id: 'type',
-        accessorFn: (row) => row.type,
-        meta: { label: t('columns.type') },
-        header: ({ column }) => (
-          <FilterHeader
-            column={column}
-            label={t('columns.type')}
-            active={filtersRef.current.type.length > 0}
-            value={filtersRef.current.type}
-            options={sessionTypeOptions(t)}
-            onChange={(v) => setFilters((f) => ({ ...f, type: v }))}
-          />
-        ),
-        cell: ({ row }) => (
-          <Badge className={sessionBadgeClass(row.original.type)}>
-            {t(`glossary:sessionType.${row.original.type}`, { defaultValue: row.original.type })}
-          </Badge>
-        ),
-      },
-      {
-        id: 'track',
-        accessorFn: (row) => row.track?.name || '',
-        meta: { label: t('glossary:track', { count: 1 }) },
-        header: ({ column }) => (
-          <FilterHeader
-            column={column}
-            label={t('glossary:track', { count: 1 })}
-            active={filtersRef.current.trackId.length > 0}
-            value={filtersRef.current.trackId}
-            options={tracks.map((track) => ({ value: track.id, label: track.name }))}
-            onChange={(v) => setFilters((f) => ({ ...f, trackId: v }))}
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            {row.original.track?.name || t('common:notDefined')}
-          </span>
-        ),
-      },
-      {
-        id: 'status',
-        accessorFn: (row) => row.status,
-        meta: { label: t('columns.status') },
-        header: ({ column }) => (
-          <FilterHeader
-            column={column}
-            label={t('columns.status')}
-            active={filtersRef.current.status.length > 0}
-            value={filtersRef.current.status}
-            options={[
-              { value: 'draft', label: t('glossary:sessionStatus.draft') },
-              { value: 'active', label: t('glossary:sessionStatus.active') },
-              { value: 'finished', label: t('glossary:sessionStatus.finished') },
-            ]}
-            onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5">
-            {getStatusIcon(row.original.status)}
-            <span className="text-muted-foreground">
-              {t(`glossary:sessionStatus.${row.original.status}`, { defaultValue: row.original.status })}
-            </span>
-          </span>
-        ),
-      },
-      {
-        id: 'championship',
-        accessorFn: (row) => row.championship?.name || '',
-        meta: { label: t('glossary:championship', { count: 1 }) },
-        header: ({ column }) => (
-          <FilterHeader
-            column={column}
-            label={t('glossary:championship', { count: 1 })}
-            active={filtersRef.current.championshipId.length > 0}
-            value={filtersRef.current.championshipId}
-            options={[
-              { value: 'null', label: t('filters.noChampionship') },
-              ...championships.map((c) => ({ value: c.id, label: c.name })),
-            ]}
-            onChange={(v) => setFilters((f) => ({ ...f, championshipId: v }))}
-          />
-        ),
-        cell: ({ row }) => <span className="text-muted-foreground">{row.original.championship?.name || '-'}</span>,
-      },
-      {
-        id: 'drivers',
-        accessorFn: (row) => row.drivers?.length || 0,
-        header: t('glossary:driver', { count: 2 }),
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Users2 className="w-4 h-4" />
-            {row.original.drivers?.length || 0}
-          </span>
-        ),
-      },
-      {
-        id: 'laps',
-        accessorFn: (row) => row._count?.laps || 0,
-        header: t('glossary:lap', { count: 2 }),
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Flag className="w-4 h-4" />
-            {row.original._count?.laps || 0}
-          </span>
-        ),
-      },
-      {
-        id: 'duration',
-        accessorFn: (row) => (row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0),
-        header: t('columns.duration'),
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">
-            {formatDuration(row.original.startedAt, row.original.finishedAt)}
-          </span>
-        ),
-      },
-      {
-        id: 'date',
-        accessorFn: (row) => row.updatedAt,
-        header: t('columns.date'),
-        cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.updatedAt)}</span>,
-      },
-    ],
-    [tracks, championships, t]
+    }),
+    [filters, lists, t]
   )
 
-  const hasActiveFilters =
-    filters.status.length > 0 ||
-    filters.trackId.length > 0 ||
-    filters.type.length > 0 ||
-    filters.championshipId.length > 0 ||
-    filters.deleted
+  const columns = useMemo(() => sessionColumns(t, { lang: i18n.language }), [t, i18n.language])
 
   return (
-    <ListPage
-      title={t('glossary:session', { count: 2 })}
-      icon={<Flag />}
-      color="indigo"
-      preferenceKey="sessions"
-      data={sessions}
-      totalCount={totalCount}
-      columns={columns}
-      loading={loading}
-      searchPlaceholder={t('searchPlaceholder')}
-      addLabel={t('addLabel')}
-      onAdd={() => setShowForm(true)}
-      onRowClick={(row) => !filters.deleted && navigate(`/sessions/${row.id}`)}
-      rowClassName={() => (filters.deleted ? 'opacity-50' : '')}
-      deleteEndpoint="/api/sessions"
-      exportEndpoint="/api/sessions/export"
-      onDeleted={() => loadData(0)}
-      hasMore={hasMore}
-      loadingMore={loadingMore}
-      onLoadMore={() => loadData(sessions.length)}
-      onSortChange={setSort}
-      hasActiveFilters={hasActiveFilters}
-      emptyTitle={t('emptyTitle')}
-      emptyMessage={t('emptyMessage')}
-      options={[
-        {
-          key: 'deleted',
-          label: t('common:showDeleted'),
-          checked: filters.deleted,
-          onChange: (v) => setFilters((f) => ({ ...f, deleted: !!v })),
-        },
-      ]}
-    >
-      {showForm && (
-        <SessionForm
-          onClose={() => setShowForm(false)}
-          onSaved={() => {
-            setShowForm(false)
-            loadData(0)
-          }}
-        />
-      )}
-    </ListPage>
+    <ColumnFilterContext.Provider value={filterContext}>
+      <ListPage
+        {...list.listProps}
+        title={t('glossary:session', { count: 2 })}
+        icon={<Flag />}
+        color="indigo"
+        preferenceKey="sessions"
+        columns={columns}
+        searchPlaceholder={t('searchPlaceholder')}
+        addLabel={t('addLabel')}
+        onAdd={() => setShowForm(true)}
+        // A deleted session has no page to open
+        onRowClick={(row) => !list.showDeleted && navigate(`/sessions/${row.id}`)}
+        deleteEndpoint="/api/sessions"
+        exportEndpoint="/api/sessions/export"
+        hasActiveFilters={hasColumnFilters(filters) || list.showDeleted}
+        emptyTitle={t('emptyTitle')}
+        emptyMessage={t('emptyMessage')}
+      >
+        {showForm && (
+          <SessionForm
+            onClose={() => setShowForm(false)}
+            onSaved={() => {
+              setShowForm(false)
+              list.reload()
+            }}
+          />
+        )}
+      </ListPage>
+    </ColumnFilterContext.Provider>
   )
 }

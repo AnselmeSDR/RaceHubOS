@@ -1,198 +1,78 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
-import { softDeleteCar, restoreCar } from '../lib/softDelete.js';
+import { attachExtras } from '../addons/extras.js';
+import { purgeCar, restoreCar, softDeleteCar } from '../lib/softDelete.js';
 import { withImageUrl, withNestedImageUrls } from '../utils/imageUrl.js';
 import { carWorkbook, carsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
 import { carSpecsFrom } from '@racehubos/shared';
+import { findOr404, HttpError, route } from '../lib/http.js';
+import { addDeletionRoutes } from '../lib/entities/deletion.js';
+import { changesFrom, kept, trimmed } from '../lib/entities/fields.js';
+import { byBestLap, listPage } from '../lib/entities/list.js';
+import { bestLapRecords } from '../lib/entities/records.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
 
-// GET /api/cars - List all cars
-router.get('/', async (req, res) => {
-  try {
-    const { deleted, limit = '50', offset = '0', sortBy = 'brand', sortOrder = 'asc' } = req.query;
-    const where = deleted === 'true' ? { deletedAt: { not: null } } : { deletedAt: null };
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
+const LIST = {
+  sortBy: 'brand',
+  include: { _count: { select: { sessions: { where: { deletedAt: null } } } } },
+  counts: ['sessions'],
+  computed: { bestLap: byBestLap },
+};
 
-    const isComputedSort = sortBy === 'bestLap';
-    const dbOrderBy =
-      sortBy === 'sessions'
-        ? { sessions: { _count: sortOrder } }
-        : isComputedSort
-          ? undefined
-          : { [sortBy]: sortOrder };
+// GET /api/cars - filtered (deleted), sorted and paginated
+router.get(
+  '/',
+  route('Failed to fetch cars', async (req, res) => {
+    const { page, ...rest } = await listPage(prisma.car, req.query, LIST);
+    res.json({ success: true, data: await attachExtras(prisma, 'car', page.map(withImageUrl)), ...rest });
+  })
+);
 
-    const [allCars, total] = await Promise.all([
-      prisma.car.findMany({
-        where,
-        include: {
-          _count: {
-            select: {
-              sessions: { where: { deletedAt: null } },
-            },
-          },
-        },
-        orderBy: dbOrderBy,
-        ...(!isComputedSort ? { skip: parsedOffset, take: parsedLimit } : {}),
-      }),
-      prisma.car.count({ where }),
-    ]);
-
-    let sorted = allCars;
-    if (isComputedSort) {
-      const dir = sortOrder === 'asc' ? 1 : -1;
-      sorted = [...allCars].sort((a, b) => dir * ((a.bestLap || Infinity) - (b.bestLap || Infinity)));
-    }
-    const cars = isComputedSort ? sorted.slice(parsedOffset, parsedOffset + parsedLimit) : sorted;
-
-    res.json({
-      success: true,
-      data: cars.map((c) => withImageUrl(c)),
-      total,
-      hasMore: parsedOffset + parsedLimit < total,
-    });
-  } catch (error) {
-    console.error('Error fetching cars:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch cars',
-    });
-  }
-});
-
-// GET /api/cars/:id - Get car by ID
-/**
- * GET /api/cars/export?ids=a,b,c
- * Excel workbook for a hand-picked set of cars
- */
-router.get('/export', async (req, res) => {
-  try {
+// GET /api/cars/export?ids=a,b,c - Excel workbook for a hand-picked set of cars
+router.get(
+  '/export',
+  route(null, async (req, res) => {
     const result = await carsWorkbook(prisma, idsFromQuery(req.query.ids));
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'No car to export' });
-    }
-
+    if (!result) throw new HttpError(404, 'No car to export');
     await sendWorkbook(res, result);
-  } catch (error) {
-    console.error('Error exporting cars:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-/**
- * GET /api/cars/:id/export
- * Excel workbook centred on one car
- */
-router.get('/:id/export', async (req, res) => {
-  try {
+// GET /api/cars/:id/export - Excel workbook centred on one car
+router.get(
+  '/:id/export',
+  route(null, async (req, res) => {
     const result = await carWorkbook(prisma, req.params.id);
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'Car not found' });
-    }
-
+    if (!result) throw new HttpError(404, 'Car not found');
     await sendWorkbook(res, result);
-  } catch (error) {
-    console.error('Error exporting car:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  })
+);
 
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const car = await prisma.car.findUnique({
-      where: { id },
-      include: {
-        sessions: {
-          include: {
-            session: {
-              include: {
-                track: true,
-              },
-            },
-          },
-          orderBy: {
-            session: {
-              createdAt: 'desc',
-            },
-          },
-          take: 10,
-        },
-        _count: {
-          select: { sessions: true },
-        },
+// GET /api/cars/:id - with latest sessions, entry count and best lap per driver and track
+router.get(
+  '/:id',
+  route('Failed to fetch car', async (req, res) => {
+    const car = await findOr404(prisma.car, req.params.id, 'Car', {
+      sessions: {
+        include: { session: { include: { track: true } } },
+        orderBy: { session: { createdAt: 'desc' } },
+        take: 10,
       },
+      _count: { select: { sessions: true } },
     });
+    const records = await bestLapRecords(prisma, 'car', car.id);
+    res.json({ success: true, data: await attachExtras(prisma, 'car', withNestedImageUrls({ ...car, records })) });
+  })
+);
 
-    if (!car) {
-      return res.status(404).json({
-        success: false,
-        error: 'Car not found',
-      });
-    }
-
-    // Get best laps per driver x track combo for this car (top 10)
-    const bestLaps = await prisma.lap.findMany({
-      where: { carId: id },
-      orderBy: { lapTime: 'asc' },
-      distinct: ['driverId', 'trackId'],
-      take: 10,
-      include: {
-        driver: {
-          select: { id: true, name: true, color: true, img: true },
-        },
-        track: {
-          select: { id: true, name: true, color: true },
-        },
-        session: {
-          select: { type: true },
-        },
-      },
-    });
-
-    const records = bestLaps.map((lap) => ({
-      id: lap.id,
-      lapTime: lap.lapTime,
-      driver: lap.driver,
-      track: lap.track,
-      sessionType: lap.session?.type,
-    }));
-
-    res.json({
-      success: true,
-      data: withNestedImageUrls({ ...car, records }),
-    });
-  } catch (error) {
-    console.error('Error fetching car:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch car',
-    });
-  }
-});
-
-// POST /api/cars - Create new car
-router.post('/', async (req, res) => {
-  try {
+router.post(
+  '/',
+  route('Failed to create car', async (req, res) => {
     const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
-
-    // Validation
-    if (!brand || brand.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Brand is required',
-      });
-    }
-
-    if (!model || model.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Model is required',
-      });
-    }
+    if (!brand?.trim()) throw new HttpError(400, 'Brand is required');
+    if (!model?.trim()) throw new HttpError(400, 'Model is required');
 
     const car = await prisma.car.create({
       data: {
@@ -201,183 +81,63 @@ router.post('/', async (req, res) => {
         year: year || null,
         img: img || null,
         color: color || '#3B82F6',
-        maxSpeed: maxSpeed !== undefined ? maxSpeed : 100,
-        brakeForce: brakeForce !== undefined ? brakeForce : 50,
-        fuelCapacity: fuelCapacity !== undefined ? fuelCapacity : 100,
+        // Left out, the schema's defaults apply
+        maxSpeed,
+        brakeForce,
+        fuelCapacity,
         ...carSpecsFrom(req.body),
       },
     });
+    res.status(201).json({ success: true, data: withImageUrl(car) });
+  })
+);
 
-    res.status(201).json({
-      success: true,
-      data: withImageUrl(car),
-    });
-  } catch (error) {
-    console.error('Error creating car:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create car',
-    });
-  }
+const EDITABLE = {
+  brand: trimmed,
+  model: trimmed,
+  year: kept,
+  img: kept,
+  color: kept,
+  maxSpeed: kept,
+  brakeForce: kept,
+  fuelCapacity: kept,
+};
+
+router.put(
+  '/:id',
+  route('Failed to update car', async (req, res) => {
+    const { id } = req.params;
+    await findOr404(prisma.car, id, 'Car');
+    const data = { ...changesFrom(req.body, EDITABLE), ...carSpecsFrom(req.body, { partial: true }) };
+    res.json({ success: true, data: withImageUrl(await prisma.car.update({ where: { id }, data })) });
+  })
+);
+
+addDeletionRoutes(router, {
+  name: 'Car',
+  model: prisma.car,
+  hide: (id) => softDeleteCar(prisma, id),
+  erase: (id) => purgeCar(prisma, id),
+  restore: (id) => restoreCar(prisma, id),
 });
 
-// PUT /api/cars/:id - Update car
-router.put('/:id', async (req, res) => {
-  try {
+// POST /api/cars/:id/reset-stats - erases its laps and entries, zeroes the totals
+router.post(
+  '/:id/reset-stats',
+  route('Failed to reset car statistics', async (req, res) => {
     const { id } = req.params;
-    const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
-
-    // Check if car exists
-    const exists = await prisma.car.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Car not found',
-      });
-    }
-
-    // Build update data
-    const updateData = {};
-    if (brand !== undefined) updateData.brand = brand.trim();
-    if (model !== undefined) updateData.model = model.trim();
-    if (year !== undefined) updateData.year = year;
-    if (img !== undefined) updateData.img = img;
-    if (color !== undefined) updateData.color = color;
-    if (maxSpeed !== undefined) updateData.maxSpeed = maxSpeed;
-    if (brakeForce !== undefined) updateData.brakeForce = brakeForce;
-    if (fuelCapacity !== undefined) updateData.fuelCapacity = fuelCapacity;
-    Object.assign(updateData, carSpecsFrom(req.body, { partial: true }));
-
-    const car = await prisma.car.update({
-      where: { id },
-      data: updateData,
-    });
-
-    res.json({
-      success: true,
-      data: withImageUrl(car),
-    });
-  } catch (error) {
-    console.error('Error updating car:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update car',
-    });
-  }
-});
-
-// DELETE /api/cars/:id - Soft delete or hard delete car
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check if car exists
-    const exists = await prisma.car.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Car not found',
-      });
-    }
-
-    if (exists.deletedAt) {
-      // Hard delete - cascade related records
-      await prisma.$transaction([
-        prisma.sessionDriver.deleteMany({ where: { carId: id } }),
-        prisma.lap.deleteMany({ where: { carId: id } }),
-        prisma.controllerConfig.deleteMany({ where: { carId: id } }),
-        prisma.trackRecord.deleteMany({ where: { carId: id } }),
-        prisma.car.delete({ where: { id } }),
-      ]);
-    } else {
-      // Soft delete
-      // Cascade: everything recorded under this car is hidden with it
-      await softDeleteCar(prisma, id);
-    }
-
-    res.json({
-      success: true,
-      message: 'Car deleted successfully',
-    });
-  } catch (error) {
-    console.error('Error deleting car:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete car',
-    });
-  }
-});
-
-// PATCH /api/cars/:id/restore - Restore soft-deleted car
-router.patch('/:id/restore', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const entity = await prisma.car.findUnique({ where: { id } });
-    if (!entity) return res.status(404).json({ success: false, error: 'Car not found' });
-
-    await restoreCar(prisma, id);
-
-    res.json({ success: true, message: 'Car restored' });
-  } catch (error) {
-    console.error('Error restoring car:', error);
-    res.status(500).json({ success: false, error: 'Failed to restore car' });
-  }
-});
-
-// POST /api/cars/:id/reset-stats - Reset car statistics
-router.post('/:id/reset-stats', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const exists = await prisma.car.findUnique({
-      where: { id },
-    });
-
-    if (!exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Car not found',
-      });
-    }
-
-    // Delete related data and reset stats in a transaction
+    await findOr404(prisma.car, id, 'Car');
     const car = await prisma.$transaction(async (tx) => {
-      // Delete laps
       await tx.lap.deleteMany({ where: { carId: id } });
-      // Delete session participations
       await tx.sessionDriver.deleteMany({ where: { carId: id } });
-
-      // Reset stats fields
       return tx.car.update({
         where: { id },
-        data: {
-          totalRaces: 0,
-          bestLap: null,
-        },
-        include: {
-          _count: { select: { sessions: true } },
-        },
+        data: { totalRaces: 0, bestLap: null },
+        include: { _count: { select: { sessions: true } } },
       });
     });
-
-    res.json({
-      success: true,
-      data: withImageUrl(car),
-      message: 'Statistics reset successfully',
-    });
-  } catch (error) {
-    console.error('Error resetting car stats:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to reset car statistics',
-    });
-  }
-});
+    res.json({ success: true, data: withImageUrl(car), message: 'Statistics reset successfully' });
+  })
+);
 
 export default router;

@@ -1,0 +1,10 @@
+{
+  "addons": [
+    {
+      "id": "e2e-market",
+      "repo": "https://example.invalid/racehubos-e2e-market",
+      "name": { "en": "E2E market", "fr": "Catalogue E2E", "de": "E2E-Katalog" },
+      "description": { "en": "Listed, never installed by the tests.", "fr": "Listé, jamais installé par les tests." }
+    }
+  ]
+}

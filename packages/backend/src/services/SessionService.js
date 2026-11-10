@@ -1,7 +1,13 @@
 import { createPrismaClient } from '../lib/prisma.js';
 import EventEmitter from 'events';
-import { SESSION_TYPES, SessionStatus, SessionType, isSessionType } from '@racehubos/shared';
-import { sessionName } from '../lib/sessionNames.js';
+import { SessionStatus, SessionType, isSessionType } from '@racehubos/shared';
+import { bestLapOf, gapTo, compareEntries, rankEntries } from '../lib/sessions/ranking.js';
+import { pauseDurations, racingTime } from '../lib/sessions/clock.js';
+import { hasDriverFinished, isDNF, nextStep } from '../lib/sessions/finish.js';
+import { cuSettingsOf } from '../lib/sessions/carSettings.js';
+import { lapHistoryOf, liveDriverOf, pausesOf } from '../lib/sessions/liveState.js';
+import { createSessionFromControllers, resetStoredSession } from '../lib/sessions/storage.js';
+import { softDeleteSession } from '../lib/softDelete.js';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
 
@@ -36,7 +42,6 @@ export class SessionService extends EventEmitter {
     this.displayedDeltas = new Map(); // controller -> delta to display
 
     // Grace period
-    this.raceFinishTime = null;
     this.gracePeriodTimer = null;
     this.gracePeriodEndsAt = null;
 
@@ -61,81 +66,43 @@ export class SessionService extends EventEmitter {
     const { controller, lapTime, sector } = data;
 
     // Ignore stale hardware events when there is no running session.
-    if (!this.activeSessionId || !this.isActive()) {
-      return;
-    }
-
+    if (!this.activeSessionId || !this.isActive()) return;
     // Only process finish line (sector 1) with valid lap time
-    if (sector !== 1 || lapTime <= 0) {
-      return;
-    }
+    if (sector !== 1 || lapTime <= 0) return;
 
     const driver = this.getDriverByController(controller);
-    if (!driver) {
-      return;
-    }
+    if (!driver) return;
 
     // A driver who has already crossed their finish line must not record
     // additional laps while the other drivers use the grace period.
-    if (this.hasDriverFinished(driver)) {
-      return;
-    }
+    if (this.hasDriverFinished(driver)) return;
 
-    // Track crossings - first crossing is start, doesn't count as lap
-    // const isFirstCrossing = driver.crossings === 0; // DISABLED: count first lap
+    // Every crossing counts as a lap, the first one included
     driver.crossings++;
-
-    // if (isFirstCrossing) { // DISABLED
-    // // First crossing = crossing start line from grid, not a lap
-    // this.emitLeaderboard();
-    // }
 
     // Balancing: ignore laps beyond maxLaps per controller
     const maxLaps = this.sessionConfig?.maxLaps;
-    if (this.currentPhase === SessionType.BALANCING && maxLaps && driver.totalLaps >= maxLaps) {
-      return;
-    }
+    const isBalancing = this.currentPhase === SessionType.BALANCING;
+    if (isBalancing && maxLaps && driver.totalLaps >= maxLaps) return;
 
     // 1. Update RAM
+    const roundedLap = Math.round(lapTime);
     driver.totalLaps++;
-    driver.lastLapTime = Math.round(lapTime);
+    driver.lastLapTime = roundedLap;
 
     // Track lap history for balancing chart
-    if (this.currentPhase === SessionType.BALANCING) {
-      if (!this.lapHistory.has(controller)) {
-        this.lapHistory.set(controller, []);
-      }
-      this.lapHistory.get(controller).push({
-        lapNumber: driver.totalLaps,
-        lapTime: Math.round(lapTime),
-      });
+    if (isBalancing) {
+      if (!this.lapHistory.has(controller)) this.lapHistory.set(controller, []);
+      this.lapHistory.get(controller).push({ lapNumber: driver.totalLaps, lapTime: roundedLap });
     }
 
     const previousSessionBest = this.getSessionBestLapTime();
-    if (driver.bestLapTime === null || lapTime < driver.bestLapTime) {
-      driver.bestLapTime = Math.round(lapTime);
-    }
-
-    // Check if this is a new session best lap
-    const roundedLap = Math.round(lapTime);
-    if (previousSessionBest === null || roundedLap < previousSessionBest) {
-      this.emit('session:bestlap', {
-        controller: driver.controller,
-        driverName: driver.driver?.name || null,
-        carBrand: driver.car?.brand || null,
-        carModel: driver.car?.model || null,
-        sessionType: this.currentPhase,
-        lapTime: roundedLap,
-        totalLaps: driver.totalLaps,
-        maxLapsCompleted: Math.max(...this.sessionDrivers.map((d) => d.totalLaps)),
-      });
-    }
+    if (driver.bestLapTime === null || lapTime < driver.bestLapTime) driver.bestLapTime = roundedLap;
+    if (previousSessionBest === null || roundedLap < previousSessionBest) this.emitBestLap(driver, roundedLap);
 
     // Only accumulate time up to maxLaps (for race classification)
     // Extra laps during grace period don't count toward total time
-    if (!maxLaps || driver.totalLaps <= maxLaps) {
-      driver.totalTime += Math.round(lapTime);
-    }
+    if (!maxLaps || driver.totalLaps <= maxLaps) driver.totalTime += roundedLap;
 
     // 2. Recalculate positions (pass controller who just completed a lap)
     this.recalculatePositions(controller);
@@ -154,23 +121,26 @@ export class SessionService extends EventEmitter {
     await this.checkSessionComplete();
   }
 
+  emitBestLap(driver, lapTime) {
+    this.emit('session:bestlap', {
+      controller: driver.controller,
+      driverName: driver.driver?.name || null,
+      carBrand: driver.car?.brand || null,
+      carModel: driver.car?.model || null,
+      sessionType: this.currentPhase,
+      lapTime,
+      totalLaps: driver.totalLaps,
+      maxLapsCompleted: Math.max(...this.sessionDrivers.map((d) => d.totalLaps)),
+    });
+  }
+
   /**
    * Check whether a driver has completed their individual finish condition.
    * - Lap-based race: the configured lap limit has been reached.
    * - Time-based race: one final lap has been completed after the checkered flag.
    */
   hasDriverFinished(driver) {
-    const maxLaps = this.sessionConfig?.maxLaps;
-
-    if (maxLaps) {
-      return driver.totalLaps >= maxLaps;
-    }
-
-    return (
-      this.sessionStatus === SessionStatus.FINISHING &&
-      driver.lapsAtFinishing != null &&
-      driver.totalLaps > driver.lapsAtFinishing
-    );
+    return hasDriverFinished(driver, { maxLaps: this.sessionConfig?.maxLaps, status: this.sessionStatus });
   }
 
   /**
@@ -209,28 +179,16 @@ export class SessionService extends EventEmitter {
         championship: true,
       },
     });
-
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
-    }
+    if (!session) throw new Error(`Session ${sessionId} not found`);
 
     this.activeSessionId = session.id;
     this.activeTrackId = session.trackId;
-    // A lap's phase is its session's type; the ladder this replaces spelled out
-    // that identity type by type, and silently fell back to race for a new one
+    // A lap's phase is its session's type; an unknown type runs as a race
     this.currentPhase = isSessionType(session.type) ? session.type : SessionType.RACE;
 
     // Reset position tracking for new session
-    if (!this.previousPositions) {
-      this.previousPositions = new Map();
-    } else {
-      this.previousPositions.clear();
-    }
-    if (!this.displayedDeltas) {
-      this.displayedDeltas = new Map();
-    } else {
-      this.displayedDeltas.clear();
-    }
+    this.previousPositions.clear();
+    this.displayedDeltas.clear();
 
     this.sessionConfig = {
       maxDuration: session.maxDuration,
@@ -238,76 +196,37 @@ export class SessionService extends EventEmitter {
       gracePeriod: session.gracePeriod || DEFAULT_GRACE_PERIOD_MS,
       startedAt: session.startedAt,
       championshipId: session.championshipId,
-      pauses: session.pauses ? JSON.parse(session.pauses) : [],
+      pauses: pausesOf(session.pauses),
     };
     this.sessionStatus = session.status;
-
-    // Initialize driver states
-    this.sessionDrivers = session.drivers.map((sd) => ({
-      id: sd.id,
-      controller: sd.controller,
-      driverId: sd.driverId,
-      carId: sd.carId,
-      driver: sd.driver,
-      car: sd.car,
-      gridPos: sd.gridPos,
-      position: sd.position || 0,
-      totalLaps: sd.totalLaps || 0,
-      totalTime: sd.totalTime || 0,
-      bestLapTime: sd.bestLapTime || null,
-      lastLapTime: sd.lastLapTime || null,
-      lapsAtFinishing: sd.lapsAtFinishing ?? null, // For checkered flag logic
-      gap: null,
-      crossings: sd.totalLaps || 0, // Track line crossings (first doesn't count as lap)
-    }));
+    this.sessionDrivers = session.drivers.map(liveDriverOf);
 
     // Load lap history for balancing sessions (needed for chart data)
-    this.lapHistory = new Map();
-    if (session.type === SessionType.BALANCING) {
-      const existingLaps = await this.prisma.lap.findMany({
-        where: { sessionId: session.id, deletedAt: null },
-        orderBy: { lapNumber: 'asc' },
-      });
-      for (const lap of existingLaps) {
-        if (!this.lapHistory.has(lap.controller)) {
-          this.lapHistory.set(lap.controller, []);
-        }
-        this.lapHistory.get(lap.controller).push({
-          lapNumber: lap.lapNumber,
-          lapTime: Math.round(lap.lapTime),
-        });
-      }
-    }
+    this.lapHistory =
+      session.type === SessionType.BALANCING
+        ? lapHistoryOf(await this.prisma.lap.findMany({ where: { sessionId: session.id, deletedAt: null } }))
+        : new Map();
 
-    this.raceFinishTime = null;
     this.recalculatePositions();
     this.emitLeaderboard();
 
-    // If session is in finishing state, recreate grace period timer
+    // Caught finishing (a restart during the grace period): finish when it would have ended
     if (session.status === SessionStatus.FINISHING && session.finishingAt) {
-      const gracePeriod = this.sessionConfig.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
       const elapsed = Date.now() - new Date(session.finishingAt).getTime();
-      const remaining = Math.max(0, gracePeriod - elapsed);
-
-      this.gracePeriodEndsAt = Date.now() + remaining;
-
-      if (remaining > 0) {
-        this.gracePeriodTimer = setTimeout(async () => {
-          if (this.sessionStatus === SessionStatus.FINISHING) {
-            await this.finishSession('grace_period_elapsed');
-          }
-        }, remaining);
-      } else {
-        // Grace period already elapsed, finish immediately
-        setImmediate(async () => {
-          if (this.sessionStatus === SessionStatus.FINISHING) {
-            await this.finishSession('grace_period_elapsed');
-          }
-        });
-      }
+      this.armGracePeriod(Math.max(0, this.sessionConfig.gracePeriod - elapsed));
     }
 
     return session;
+  }
+
+  /** Finishes the session once `delay` ms are over, if it is still finishing then. */
+  armGracePeriod(delay) {
+    this.gracePeriodEndsAt = Date.now() + delay;
+    const finish = async () => {
+      if (this.sessionStatus === SessionStatus.FINISHING) await this.finishSession('grace_period_elapsed');
+    };
+    if (delay > 0) this.gracePeriodTimer = setTimeout(finish, delay);
+    else setImmediate(finish);
   }
 
   /**
@@ -358,11 +277,9 @@ export class SessionService extends EventEmitter {
   async pauseSession() {
     if (!this.activeSessionId) return null;
 
-    const now = Date.now();
-
     // Add pause entry to history
     const pauses = this.sessionConfig?.pauses || [];
-    pauses.push({ start: now, end: null });
+    pauses.push({ start: Date.now(), end: null });
     this.sessionConfig.pauses = pauses;
 
     await this.prisma.session.update({
@@ -413,9 +330,8 @@ export class SessionService extends EventEmitter {
     if (!this.activeSessionId) return null;
 
     const sessionId = this.activeSessionId;
+    // finishSession() stops the race and tells everyone
     await this.finishSession('manual_stop');
-    // Note: finishSession() already calls stopRace() and emits session:finished
-
     return { sessionId };
   }
 
@@ -426,13 +342,8 @@ export class SessionService extends EventEmitter {
     this.stopHeartbeat();
 
     // Keep sessionDrivers for leaderboard queries until new session loads
-    if (this.previousPositions) {
-      this.previousPositions.clear();
-    }
-    if (this.displayedDeltas) {
-      this.displayedDeltas.clear();
-    }
-    this.raceFinishTime = null;
+    this.previousPositions.clear();
+    this.displayedDeltas.clear();
     this.gracePeriodEndsAt = null;
     this.activeSessionId = null;
     this.activeTrackId = null;
@@ -441,10 +352,8 @@ export class SessionService extends EventEmitter {
     this.sessionStatus = null;
     this.lapHistory = new Map();
 
-    if (this.gracePeriodTimer) {
-      clearTimeout(this.gracePeriodTimer);
-      this.gracePeriodTimer = null;
-    }
+    clearTimeout(this.gracePeriodTimer);
+    this.gracePeriodTimer = null;
 
     await this.syncService?.reset();
   }
@@ -472,39 +381,23 @@ export class SessionService extends EventEmitter {
     if (!this.activeSessionId || this.sessionStatus !== SessionStatus.ACTIVE) return;
 
     const now = Date.now();
-
-    // Check if resuming from pause (has open pause entry)
     const pauses = this.sessionConfig?.pauses || [];
-    const lastPause = pauses[pauses.length - 1];
-    const isResumingFromPause = lastPause && lastPause.end === null;
+    const lastPause = pauses.at(-1);
 
-    if (isResumingFromPause) {
-      // Close the pause entry
+    if (lastPause && lastPause.end === null) {
+      // Resuming from pause: close it
       lastPause.end = now;
-
       await this.prisma.session.update({
         where: { id: this.activeSessionId },
         data: { pauses: JSON.stringify(pauses) },
       });
-
-      this.emit('session:race_resumed', {
-        sessionId: this.activeSessionId,
-        resumedAt: new Date(now).toISOString(),
-      });
+      this.emit('session:race_resumed', { sessionId: this.activeSessionId, resumedAt: new Date(now).toISOString() });
     } else if (!this.sessionConfig.startedAt) {
-      // First start - set startedAt
+      // First start
       const startedAt = new Date(now);
       this.sessionConfig.startedAt = startedAt;
-
-      await this.prisma.session.update({
-        where: { id: this.activeSessionId },
-        data: { startedAt },
-      });
-
-      this.emit('session:race_started', {
-        sessionId: this.activeSessionId,
-        startedAt: startedAt.toISOString(),
-      });
+      await this.prisma.session.update({ where: { id: this.activeSessionId }, data: { startedAt } });
+      this.emit('session:race_started', { sessionId: this.activeSessionId, startedAt: startedAt.toISOString() });
     }
   }
 
@@ -515,79 +408,40 @@ export class SessionService extends EventEmitter {
   }
 
   getSessionBestLapTime() {
-    const times = this.sessionDrivers.map((d) => d.bestLapTime).filter((t) => t && t > 0);
-    return times.length > 0 ? Math.min(...times) : null;
+    return bestLapOf(this.sessionDrivers);
   }
 
+  /**
+   * Ranks the drivers in place with their gaps. A driver whose place changed shows by how much
+   * (`positionDelta`), until their next lap without a change (`lapController` just lapped).
+   */
   recalculatePositions(lapController = null) {
     if (this.sessionDrivers.length === 0) return;
 
-    const isRace = this.currentPhase === SessionType.RACE;
+    this.sessionDrivers.sort(compareEntries(this.currentPhase));
+    const [leader] = this.sessionDrivers;
 
-    if (isRace) {
-      this.sessionDrivers.sort((a, b) => {
-        if (b.totalLaps !== a.totalLaps) return b.totalLaps - a.totalLaps;
-        return a.totalTime - b.totalTime;
-      });
-    } else {
-      this.sessionDrivers.sort((a, b) => {
-        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
-        if (a.bestLapTime === null) return 1;
-        if (b.bestLapTime === null) return -1;
-        return a.bestLapTime - b.bestLapTime;
-      });
-    }
-
-    const leader = this.sessionDrivers[0];
-
-    for (let i = 0; i < this.sessionDrivers.length; i++) {
-      const driver = this.sessionDrivers[i];
+    for (const [i, driver] of this.sessionDrivers.entries()) {
       const newPosition = i + 1;
       const previousPosition = this.previousPositions.get(driver.controller);
 
       if (previousPosition !== undefined && previousPosition !== newPosition) {
-        // Position changed - update delta for this driver
         this.displayedDeltas.set(driver.controller, previousPosition - newPosition);
       } else if (driver.controller === lapController) {
-        // This driver just completed a lap but position didn't change - clear their delta
         this.displayedDeltas.set(driver.controller, 0);
       }
       // Other drivers with no position change keep their existing delta
 
-      // Get displayed delta
       driver.positionDelta = this.displayedDeltas.get(driver.controller) || 0;
-
-      // Update position
       driver.position = newPosition;
-
-      // Store current position for next comparison
       this.previousPositions.set(driver.controller, newPosition);
-
-      if (i === 0) {
-        driver.gap = null;
-      } else if (isRace) {
-        const lapDiff = leader.totalLaps - driver.totalLaps;
-        if (lapDiff > 0) {
-          driver.gap = lapDiff;
-        } else {
-          driver.gap = driver.totalTime - leader.totalTime;
-        }
-      } else {
-        if (leader.bestLapTime && driver.bestLapTime) {
-          driver.gap = driver.bestLapTime - leader.bestLapTime;
-        } else {
-          driver.gap = null;
-        }
-      }
+      driver.gap = i === 0 ? null : gapTo(leader, driver, this.currentPhase);
     }
   }
 
   getEnrichedLeaderboard() {
     if (this.currentPhase === SessionType.BALANCING && this.lapHistory.size > 0) {
-      return this.sessionDrivers.map((d) => ({
-        ...d,
-        laps: this.lapHistory.get(d.controller) || [],
-      }));
+      return this.sessionDrivers.map((d) => ({ ...d, laps: this.lapHistory.get(d.controller) || [] }));
     }
     return this.sessionDrivers;
   }
@@ -596,208 +450,92 @@ export class SessionService extends EventEmitter {
     this.emit('session:leaderboard', this.getEnrichedLeaderboard());
   }
 
-  /**
-   * Static method to calculate gaps on drivers array
-   * Used by API routes when returning session data
-   */
+  /** Stored entries ranked, with their gaps and positions: for the API, outside the live session. */
   static calculateDriverGaps(drivers, sessionType) {
-    if (!drivers || drivers.length === 0) return drivers;
-
-    const isRace = sessionType === SessionType.RACE;
-    const sorted = [...drivers].sort((a, b) => {
-      if (isRace) {
-        if (b.totalLaps !== a.totalLaps) return b.totalLaps - a.totalLaps;
-        return a.totalTime - b.totalTime;
-      } else {
-        if (a.bestLapTime === null && b.bestLapTime === null) return 0;
-        if (a.bestLapTime === null) return 1;
-        if (b.bestLapTime === null) return -1;
-        return a.bestLapTime - b.bestLapTime;
-      }
-    });
-
-    const leader = sorted[0];
-    return sorted.map((driver, i) => {
-      let gap = null;
-      if (i > 0 && leader) {
-        if (isRace) {
-          const lapDiff = leader.totalLaps - driver.totalLaps;
-          gap = lapDiff > 0 ? lapDiff : driver.totalTime - leader.totalTime;
-        } else {
-          if (leader.bestLapTime && driver.bestLapTime) {
-            gap = driver.bestLapTime - leader.bestLapTime;
-          }
-        }
-      }
-      return { ...driver, gap, position: i + 1 };
-    });
+    return rankEntries(drivers, sessionType);
   }
 
   // ==================== Heartbeat ====================
 
   startHeartbeat() {
     this.stopHeartbeat();
-
-    this.heartbeatInterval = setInterval(async () => {
-      if (!this.activeSessionId || !this.isActive()) {
-        this.stopHeartbeat();
-        return;
-      }
-
-      const now = Date.now();
-
-      // Calculate total pause duration from pauses array
-      const pauses = this.sessionConfig?.pauses || [];
-      let totalPauseDuration = 0;
-      let currentPauseDuration = null;
-
-      for (const p of pauses) {
-        if (p.end) {
-          totalPauseDuration += p.end - p.start;
-        } else {
-          // Open pause (currently paused)
-          currentPauseDuration = now - p.start;
-          totalPauseDuration += currentPauseDuration;
-        }
-      }
-
-      // Elapsed racing time = wall clock time - pause time
-      let elapsedTime = 0;
-      if (this.sessionConfig?.startedAt) {
-        const wallTime = now - new Date(this.sessionConfig.startedAt).getTime();
-        elapsedTime = wallTime - totalPauseDuration;
-      }
-
-      let remainingTime = null;
-      if (this.sessionConfig?.maxDuration) {
-        remainingTime = Math.max(0, this.sessionConfig.maxDuration - elapsedTime);
-
-        // Time is up
-        if (remainingTime === 0 && this.sessionStatus === SessionStatus.ACTIVE) {
-          if (this.currentPhase === SessionType.BALANCING) {
-            // Balancing: stop immediately, no grace period
-            await this.finishSession('time_elapsed');
-          } else {
-            // Race: checkered flag + grace period
-            await this.startFinishingPhase('time_elapsed');
-          }
-        }
-      }
-
-      let remainingLaps = null;
-      if (this.sessionConfig?.maxLaps) {
-        const leaderLaps = Math.max(...this.sessionDrivers.map((d) => d.totalLaps), 0);
-        remainingLaps = Math.max(0, this.sessionConfig.maxLaps - leaderLaps);
-      }
-
-      let gracePeriodRemaining = null;
-      if (this.sessionStatus === SessionStatus.FINISHING && this.gracePeriodEndsAt) {
-        gracePeriodRemaining = Math.max(0, this.gracePeriodEndsAt - Date.now());
-        // Check if all drivers finished their lap during finishing phase
-        await this.checkSessionComplete();
-      }
-
-      this.emit('session:heartbeat', {
-        sessionId: this.activeSessionId,
-        status: this.sessionStatus,
-        startedAt: this.sessionConfig?.startedAt,
-        elapsedTime,
-        remainingTime,
-        remainingLaps,
-        gracePeriodRemaining,
-        pauseDuration: currentPauseDuration,
-        totalPauseDuration,
-        pauses,
-        leaderboard: this.getEnrichedLeaderboard(),
-      });
-    }, 1000);
+    this.heartbeatInterval = setInterval(() => this.beat(), 1000);
   }
 
   stopHeartbeat() {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
+    clearInterval(this.heartbeatInterval);
+    this.heartbeatInterval = null;
+  }
+
+  /**
+   * One heartbeat: the racing time and what is left of it, laps or grace period, sent with the
+   * leaderboard. Time up waves the flag (balancing finishes at once); finishing, it checks
+   * whether everyone is home.
+   */
+  async beat() {
+    if (!this.activeSessionId || !this.isActive()) {
+      this.stopHeartbeat();
+      return;
     }
+
+    const now = Date.now();
+    const pauses = this.sessionConfig?.pauses || [];
+    const { total: totalPauseDuration, current: currentPauseDuration } = pauseDurations(pauses, now);
+    const elapsedTime = racingTime(this.sessionConfig?.startedAt, totalPauseDuration, now);
+
+    let remainingTime = null;
+    if (this.sessionConfig?.maxDuration) {
+      remainingTime = Math.max(0, this.sessionConfig.maxDuration - elapsedTime);
+      if (remainingTime === 0 && this.sessionStatus === SessionStatus.ACTIVE) {
+        if (this.currentPhase === SessionType.BALANCING) await this.finishSession('time_elapsed');
+        else await this.startFinishingPhase('time_elapsed');
+      }
+    }
+
+    let remainingLaps = null;
+    if (this.sessionConfig?.maxLaps) {
+      const leaderLaps = Math.max(...this.sessionDrivers.map((d) => d.totalLaps), 0);
+      remainingLaps = Math.max(0, this.sessionConfig.maxLaps - leaderLaps);
+    }
+
+    let gracePeriodRemaining = null;
+    if (this.sessionStatus === SessionStatus.FINISHING && this.gracePeriodEndsAt) {
+      gracePeriodRemaining = Math.max(0, this.gracePeriodEndsAt - Date.now());
+      await this.checkSessionComplete();
+    }
+
+    this.emit('session:heartbeat', {
+      sessionId: this.activeSessionId,
+      status: this.sessionStatus,
+      startedAt: this.sessionConfig?.startedAt,
+      elapsedTime,
+      remainingTime,
+      remainingLaps,
+      gracePeriodRemaining,
+      pauseDuration: currentPauseDuration,
+      totalPauseDuration,
+      pauses,
+      leaderboard: this.getEnrichedLeaderboard(),
+    });
   }
 
   // ==================== Session Completion ====================
 
+  /** After a lap or a heartbeat: waves the flag or finishes the session when its end has come. */
   async checkSessionComplete() {
     if (!this.activeSessionId || !this.sessionConfig) return;
-    if (this.sessionStatus !== SessionStatus.ACTIVE && this.sessionStatus !== SessionStatus.FINISHING) return;
 
-    const { maxLaps } = this.sessionConfig;
-
-    let shouldStop = false;
-    let shouldStartFinishing = false;
-    let reason = '';
-
-    // Note: time-based finishing is now handled in heartbeat
-
-    // Check lap limit
-    if (maxLaps && this.sessionStatus === SessionStatus.ACTIVE) {
-      if (this.currentPhase === SessionType.BALANCING) {
-        // Balancing: finish when all active controllers reached maxLaps
-        const activeDrivers = this.sessionDrivers.filter((d) => d.totalLaps > 0);
-        if (activeDrivers.length > 0 && activeDrivers.every((d) => d.totalLaps >= maxLaps)) {
-          shouldStop = true;
-          reason = 'all_finished';
-        }
-      } else {
-        // Race: checkered flag when leader reaches maxLaps
-        const maxLapsReached = this.sessionDrivers.some((d) => d.totalLaps >= maxLaps);
-        if (maxLapsReached) {
-          shouldStartFinishing = true;
-          reason = 'leader_finished';
-        }
-      }
-    }
-
-    // Checkered flag logic: check if all drivers finished
-    if (this.sessionStatus === SessionStatus.FINISHING) {
-      const allFinished = this.checkAllDriversFinished();
-      if (allFinished) {
-        shouldStop = true;
-        reason = 'all_finished';
-      }
-    }
-
-    if (shouldStartFinishing && !shouldStop) {
-      await this.startFinishingPhase(reason);
-    }
-
-    if (shouldStop) {
-      await this.finishSession(reason);
-    }
-  }
-
-  /**
-   * Check if all active drivers have finished
-   * - Lap-based race: all must reach maxLaps
-   * - Time-based race: all must complete their current lap (lapsAtFinishing + 1)
-   */
-  checkAllDriversFinished() {
-    const maxLaps = this.sessionConfig?.maxLaps;
-
-    const activeDrivers = this.sessionDrivers.filter((d) => {
-      // Driver was active at checkered flag if they had completed at least 1 lap
-      return d.lapsAtFinishing !== null && d.lapsAtFinishing !== undefined && d.lapsAtFinishing > 0;
+    const step = nextStep({
+      phase: this.currentPhase,
+      status: this.sessionStatus,
+      maxLaps: this.sessionConfig.maxLaps,
+      drivers: this.sessionDrivers,
     });
-
-    if (activeDrivers.length === 0) {
-      // No active drivers, finish immediately
-      return true;
-    }
-
-    if (maxLaps) {
-      // Lap-based race: all must reach maxLaps
-      return activeDrivers.every((d) => d.totalLaps >= maxLaps);
-    } else {
-      // Time-based race: all must complete their current lap
-      return activeDrivers.every((d) => d.totalLaps > d.lapsAtFinishing);
-    }
+    if (step?.action === 'flag') await this.startFinishingPhase(step.reason);
+    if (step?.action === 'finish') await this.finishSession(step.reason);
   }
 
+  /** The checkered flag: each driver's laps are noted, and the grace period starts. */
   async startFinishingPhase(reason) {
     await this.prisma.session.update({
       where: { id: this.activeSessionId },
@@ -809,7 +547,7 @@ export class SessionService extends EventEmitter {
 
     // Snapshot laps for checkered flag logic (finish current lap)
     for (const driver of this.sessionDrivers) {
-      driver.lapsAtFinishing = driver.totalLaps; // RAM state
+      driver.lapsAtFinishing = driver.totalLaps;
       await this.prisma.sessionDriver.update({
         where: { id: driver.id },
         data: { lapsAtFinishing: driver.totalLaps },
@@ -817,23 +555,15 @@ export class SessionService extends EventEmitter {
     }
 
     const gracePeriod = this.sessionConfig.gracePeriod || DEFAULT_GRACE_PERIOD_MS;
-    this.gracePeriodEndsAt = Date.now() + gracePeriod;
-
     this.emit('session:finishing', {
       sessionId: this.activeSessionId,
       reason,
       gracePeriodMs: gracePeriod,
       endsAt: new Date(Date.now() + gracePeriod).toISOString(),
     });
-
     this.emitStatusChanged('finishing', previousStatus);
 
-    // Auto-finish after grace period
-    this.gracePeriodTimer = setTimeout(async () => {
-      if (this.sessionStatus === SessionStatus.FINISHING) {
-        await this.finishSession('grace_period_elapsed');
-      }
-    }, gracePeriod);
+    this.armGracePeriod(gracePeriod);
   }
 
   async finishSession(reason) {
@@ -841,16 +571,13 @@ export class SessionService extends EventEmitter {
     if (this.sessionStatus === SessionStatus.FINISHED || this._finishing) return;
     this._finishing = true;
 
-    if (this.gracePeriodTimer) {
-      clearTimeout(this.gracePeriodTimer);
-      this.gracePeriodTimer = null;
-    }
+    clearTimeout(this.gracePeriodTimer);
+    this.gracePeriodTimer = null;
 
     const sessionId = this.activeSessionId;
     const previousStatus = this.sessionStatus;
     const championshipId = this.sessionConfig?.championshipId;
 
-    // Calculate DNF
     await this.calculateDNF();
 
     // Save final positions
@@ -889,36 +616,22 @@ export class SessionService extends EventEmitter {
     // Stop CU/Simulator
     await this.syncService?.stopRace();
 
-    // Reset state
     await this.resetForNewSession();
     this._finishing = false;
   }
 
   /**
-   * Apply car profile to CU for all 6 controller slots.
-   * Used at session start (initial config) and at session end (restore after throttle/stop).
-   * Car values are 0-100. CU usable range is 1-10 for speed/brake (factory default = 10),
-   * 1-15 for fuel (factory default = 7). Slots without a driver get factory defaults.
+   * Sends each of the 6 controllers its car's settings (speed, brake, fuel), the factory ones
+   * for a free slot. At session start, and at its end to restore a throttled or stopped car.
    */
   async applyCarConfigs() {
     const device = this.syncService?.getDevice();
     if (!device?.setSpeed) return;
 
-    // The CU has 10 levels for speed, brake and fuel alike (manual 30352,
-    // "Setting of the cars' basic speed": 1-10). The protocol carries a nibble,
-    // which is the field size, not the scale.
-    const toLevel = (v) => Math.max(1, Math.min(10, Math.round((v ?? 100) / 10)));
-    const toSpeedBrake = toLevel;
-    const toFuel = toLevel;
-
     const driverByController = new Map(this.sessionDrivers.map((d) => [d.controller, d]));
-
     for (let addr = 0; addr < 6; addr++) {
       const driver = driverByController.get(addr);
-      const car = driver?.car;
-      const speed = car ? toSpeedBrake(car.maxSpeed) : 10;
-      const brake = car ? toSpeedBrake(car.brakeForce) : 10;
-      const fuel = car ? toFuel(car.fuelCapacity) : 7;
+      const { speed, brake, fuel } = cuSettingsOf(driver?.car);
       try {
         await device.setSpeed(addr, speed);
         if (device.setBrake) await device.setBrake(addr, brake);
@@ -930,33 +643,14 @@ export class SessionService extends EventEmitter {
     }
   }
 
+  /** Marks DNF who was on track at the flag but did not finish; the flag's laps come from the database. */
   async calculateDNF() {
     const maxLaps = this.sessionConfig?.maxLaps;
-
     for (const driver of this.sessionDrivers) {
-      const sd = await this.prisma.sessionDriver.findUnique({
-        where: { id: driver.id },
-      });
-
-      if (sd?.lapsAtFinishing !== null && sd.lapsAtFinishing > 0) {
-        let isDNF = false;
-
-        if (maxLaps) {
-          // Lap-based race: DNF if didn't reach maxLaps
-          isDNF = driver.totalLaps < maxLaps;
-        } else {
-          // Time-based race: DNF if didn't finish current lap
-          isDNF = driver.totalLaps === sd.lapsAtFinishing;
-        }
-
-        if (isDNF) {
-          driver.isDNF = true;
-          await this.prisma.sessionDriver.update({
-            where: { id: driver.id },
-            data: { isDNF: true },
-          });
-        }
-      }
+      const entry = await this.prisma.sessionDriver.findUnique({ where: { id: driver.id } });
+      if (!isDNF(driver.totalLaps, entry?.lapsAtFinishing ?? null, maxLaps)) continue;
+      driver.isDNF = true;
+      await this.prisma.sessionDriver.update({ where: { id: driver.id }, data: { isDNF: true } });
     }
   }
 
@@ -972,7 +666,7 @@ export class SessionService extends EventEmitter {
         controller: driver.controller,
         phase: this.currentPhase,
         lapNumber: driver.totalLaps,
-        lapTime: lapTime,
+        lapTime,
       },
     });
   }
@@ -994,201 +688,34 @@ export class SessionService extends EventEmitter {
 
   /**
    * Create a session with drivers from track's controller config
-   * @param {Object} params - { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying }
+   * @param {Object} params - { type, name, trackId, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status }
    */
-  async createSession(params) {
-    const {
-      type,
-      name,
-      trackId,
-      championshipId,
-      maxDuration,
-      maxLaps,
-      order,
-      gridFromQualifying,
-      status: initialStatus,
-    } = params;
-
-    if (!isSessionType(type)) {
-      throw new Error(`Invalid session type. Must be one of: ${SESSION_TYPES.join(', ')}`);
-    }
-
-    // Resolve trackId from championship if needed
-    let finalTrackId = trackId;
-    if (championshipId && !trackId) {
-      const championship = await this.prisma.championship.findUnique({ where: { id: championshipId } });
-      if (!championship?.trackId) {
-        throw new Error('Championship has no track assigned');
-      }
-      finalTrackId = championship.trackId;
-    }
-
-    if (!finalTrackId) {
-      throw new Error('trackId or championshipId required');
-    }
-
-    // Create session
-    const session = await this.prisma.session.create({
-      data: {
-        name: name || sessionName(type),
-        type,
-        status: initialStatus || 'draft',
-        trackId: finalTrackId,
-        championshipId: championshipId || null,
-        maxDuration: maxDuration || null,
-        maxLaps: maxLaps || null,
-        order: order ?? 0,
-      },
-    });
-
-    // Get controller configs for this track
-    const configs = await this.prisma.controllerConfig.findMany({
-      where: { trackId: finalTrackId },
-      include: { driver: true, car: true },
-    });
-
-    // Get grid order from last qualifying if requested (for race)
-    let gridOrder = null;
-    if (type === SessionType.RACE && gridFromQualifying) {
-      const lastQualifying = await this.prisma.session.findFirst({
-        where: { trackId: finalTrackId, type: SessionType.QUALIF, status: SessionStatus.FINISHED, deletedAt: null },
-        orderBy: { finishedAt: 'desc' },
-        include: { drivers: { where: { deletedAt: null }, orderBy: { finalPos: 'asc' } } },
-      });
-      if (lastQualifying) {
-        gridOrder = lastQualifying.drivers.map((d) => d.driverId);
-      }
-    }
-
-    // Add drivers from controller config
-    for (let i = 0; i < configs.length; i++) {
-      const config = configs[i];
-      if (config.driverId && config.carId) {
-        const gridPos = gridOrder ? gridOrder.indexOf(config.driverId) + 1 || configs.length : i + 1;
-
-        await this.prisma.sessionDriver.create({
-          data: {
-            sessionId: session.id,
-            driverId: config.driverId,
-            carId: config.carId,
-            controller: config.controller,
-            gridPos: type === SessionType.RACE ? gridPos : null,
-          },
-        });
-      }
-    }
-
-    // Return full session with relations
-    return await this.prisma.session.findUnique({
-      where: { id: session.id },
-      include: {
-        track: true,
-        championship: true,
-        drivers: {
-          include: { driver: true, car: true },
-          orderBy: type === SessionType.RACE ? { gridPos: 'asc' } : { controller: 'asc' },
-        },
-      },
-    });
+  createSession(params) {
+    return createSessionFromControllers(this.prisma, params);
   }
 
-  /**
-   * Reset session to draft state
-   * - Practice: soft delete laps (for stats)
-   * - Qualif/Race: hard delete laps
-   */
+  /** The stored session, or an error; the running one is stopped first. */
+  async leaveSession(sessionId) {
+    const session = await this.prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session) throw new Error(`Session ${sessionId} not found`);
+    if (this.activeSessionId === sessionId) await this.resetForNewSession();
+    return session;
+  }
+
+  /** Back to draft, its laps hidden (kept for the statistics); a championship is told. */
   async resetSession(sessionId) {
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
-    }
-
-    // Stop if this is the active session
-    if (this.activeSessionId === sessionId) {
-      await this.resetForNewSession();
-    }
-
+    const session = await this.leaveSession(sessionId);
     // Send stop signal to CU/Simulator
     await this.syncService?.stopRace();
-
-    // Soft delete laps (keep for stats)
-    await this.prisma.lap.updateMany({
-      where: { sessionId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-
-    // Reset session driver stats
-    await this.prisma.sessionDriver.updateMany({
-      where: { sessionId },
-      data: {
-        position: null,
-        finalPos: null,
-        totalLaps: 0,
-        totalTime: 0,
-        bestLapTime: null,
-        lastLapTime: null,
-        isDNF: false,
-        lapsAtFinishing: null,
-      },
-    });
-
-    // Reset session to draft
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { status: SessionStatus.DRAFT, startedAt: null, finishingAt: null, finishedAt: null, pauses: null },
-    });
-
-    // Emit internal event for ChampionshipService
-    if (session.championshipId) {
-      super.emit('sessionReset', { sessionId, championshipId: session.championshipId });
-    }
+    await resetStoredSession(this.prisma, sessionId);
+    if (session.championshipId) super.emit('sessionReset', { sessionId, championshipId: session.championshipId });
   }
 
-  /**
-   * Delete a session and all related data
-   */
+  /** Hides the session with everything recorded in it; a championship is told. */
   async deleteSession(sessionId) {
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
-    }
-
-    // Stop if this is the active session
-    if (this.activeSessionId === sessionId) {
-      await this.resetForNewSession();
-    }
-
-    const now = new Date();
-
-    // Soft delete cascade: laps, session drivers, track records, session
-    await this.prisma.lap.updateMany({
-      where: { sessionId, deletedAt: null },
-      data: { deletedAt: now },
-    });
-    await this.prisma.sessionDriver.updateMany({
-      where: { sessionId, deletedAt: null },
-      data: { deletedAt: now },
-    });
-    // A record stands for one lap of this session: hiding the lap hides it too
-    await this.prisma.trackRecord.updateMany({
-      where: { sessionId, deletedAt: null },
-      data: { deletedAt: now },
-    });
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { deletedAt: now },
-    });
-
-    // Emit internal event for ChampionshipService
-    if (session.championshipId) {
-      super.emit('sessionDeleted', { sessionId, championshipId: session.championshipId });
-    }
+    const session = await this.leaveSession(sessionId);
+    await softDeleteSession(this.prisma, sessionId);
+    if (session.championshipId) super.emit('sessionDeleted', { sessionId, championshipId: session.championshipId });
   }
 
   // ==================== Emit Helpers ====================

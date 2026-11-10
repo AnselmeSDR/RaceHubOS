@@ -7,9 +7,6 @@
     "hideStandings": "Hide standings",
     "standingsTitle": "Overall Standings"
   },
-  "session": {
-    "defaultName": "Balancing"
-  },
   "chart": {
     "carFallback": "Car {{number}}",
     "noLapData": "No lap data available",

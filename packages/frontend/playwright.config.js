@@ -6,6 +6,8 @@ import { defineConfig } from '@playwright/test'
 const BACKEND_PORT = 3101
 const FRONTEND_PORT = 5175
 const E2E_DB = path.resolve(import.meta.dirname, '../backend/prisma/e2e.db')
+// Both servers load the test add-ons, never the developer's own addons/ folder
+const E2E_ADDONS = path.resolve(import.meta.dirname, 'tests/fixtures/addons')
 
 export default defineConfig({
   testDir: './tests',
@@ -33,7 +35,7 @@ export default defineConfig({
     {
       // The database is built before the server boots: Playwright starts
       // webServers in parallel with globalSetup, so the schema is created here.
-      command: 'node ../frontend/tests/prepare-e2e-db.js && node src/index.js',
+      command: 'node ../frontend/tests/prepare-e2e-db.js && node --import ./src/addons/preload.js src/index.js',
       cwd: path.resolve(import.meta.dirname, '../backend'),
       url: `http://localhost:${BACKEND_PORT}/health`,
       // never reuse a running server: it would be pointed at the real database
@@ -43,6 +45,9 @@ export default defineConfig({
         DATABASE_URL: `file:${E2E_DB}`,
         PORT: String(BACKEND_PORT),
         USE_MOCK_DEVICE: 'true',
+        RACEHUBOS_ADDONS_DIR: E2E_ADDONS,
+        // The catalog of tests/fixtures/addons, never the one on GitHub
+        RACEHUBOS_CATALOG_URL: '',
       },
     },
     {
@@ -50,7 +55,7 @@ export default defineConfig({
       url: `http://localhost:${FRONTEND_PORT}`,
       reuseExistingServer: false,
       timeout: 60000,
-      env: { BACKEND_PORT: String(BACKEND_PORT) },
+      env: { BACKEND_PORT: String(BACKEND_PORT), RACEHUBOS_ADDONS_DIR: E2E_ADDONS },
     },
   ],
 })

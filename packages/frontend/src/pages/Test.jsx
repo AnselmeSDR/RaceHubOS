@@ -1,888 +1,202 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { io } from 'socket.io-client'
-import { Wifi, WifiOff, Trash2, Play, Square, RefreshCw, X, Zap, User, Settings } from 'lucide-react'
-import { API_URL, CONTROLLER_COLORS, CU_BUTTONS, MODE_FLAGS } from '../constants'
-import { SessionType } from '@racehubos/shared'
+import ControllerConfigPanel from '../components/cuTest/ControllerConfigPanel'
+import CuControls from '../components/cuTest/CuControls'
+import CuTestHeader from '../components/cuTest/CuTestHeader'
+import TestLeaderboardPanel from '../components/cuTest/TestLeaderboardPanel'
+import TestLogPanel from '../components/cuTest/TestLogPanel'
+import * as api from '../components/cuTest/cuTestApi'
+import {
+  autoAssignControllers,
+  controllerInfo,
+  cuInfoLines,
+  logEntry,
+  recordLap,
+  sortTestLeaderboard,
+} from '../components/cuTest/cuTestModel'
+import { useCuTestSocket } from '../components/cuTest/useCuTestSocket'
 
-// Auto-assign drivers/cars to controllers based on DB data
-const autoAssignControllers = (drivers, cars, currentConfig) => {
-  // Only auto-assign if config is empty
-  if (Object.keys(currentConfig).length > 0) return currentConfig
+const STATUS_POLL_MS = 2000
 
-  const newConfig = {}
-  drivers.forEach((driver, index) => {
-    const controller = index + 1
-    if (controller <= 8) {
-      newConfig[controller] = {
-        driverId: driver.id,
-        carId: cars[index]?.id || null,
-      }
-    }
-  })
-
-  return newConfig
-}
-
+// Diagnostics page: the Control Unit's commands and every event the server sends
 export default function Test() {
-  const { t, i18n } = useTranslation('test')
-  const [logs, setLogs] = useState([])
+  const { t } = useTranslation('test')
+  const [logs, setLogs] = useState(() => [logEntry('info', 'APP', 'Page Test initialized')])
   const [connected, setConnected] = useState(false)
   const [cuConnected, setCuConnected] = useState(false)
   const [cuStatus, setCuStatus] = useState(null)
   const [leaderboard, setLeaderboard] = useState({})
-  const [filter, setFilter] = useState('all')
-  const [groupByType, setGroupByType] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [actionLoading, setActionLoading] = useState(null)
+  const [scanning, setScanning] = useState(false)
+  const [busy, setBusy] = useState(null)
   const [showConfig, setShowConfig] = useState(false)
   const [controllerConfig, setControllerConfig] = useState({})
   const [drivers, setDrivers] = useState([])
   const [cars, setCars] = useState([])
   const [testSession, setTestSession] = useState(null)
-  const socketRef = useRef(null)
-  const logsEndRef = useRef(null)
 
-  // Create or load a test session and load it into SyncService
-  const ensureTestSession = async () => {
-    try {
-      // Look for existing draft practice session without championship
-      const searchRes = await fetch(`${API_URL}/sessions?type=practice&championshipId=null`)
-      const searchData = await searchRes.json()
-      let session = null
-
-      if (searchData.success && searchData.data?.length > 0) {
-        session = searchData.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-      } else {
-        // Create one
-        const createRes = await fetch(`${API_URL}/sessions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: SessionType.PRACTICE, name: 'Test Session' }),
-        })
-        const createData = await createRes.json()
-        if (createData.success) session = createData.data
-      }
-
-      if (session) {
-        // Load into SyncService (resets CU if draft)
-        await fetch(`${API_URL}/sync/load-session/${session.id}`, { method: 'POST' })
-        setTestSession(session)
-        addLog('success', 'SESSION', `Test session loaded: ${session.id.substring(0, 8)}...`)
-      }
-    } catch (err) {
-      addLog('error', 'SESSION', `Failed to load test session: ${err.message}`)
-    }
+  const addLog = (...args) => setLogs((prev) => [...prev, logEntry(...args)])
+  const addLap = (lap) => setLeaderboard((prev) => recordLap(prev, lap))
+  const cuGone = () => {
+    setCuConnected(false)
+    setCuStatus(null)
   }
 
-  // Load drivers and cars from API
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/drivers`).then((res) => res.json()),
-      fetch(`${API_URL}/cars`).then((res) => res.json()),
-    ])
-      .then(([driversData, carsData]) => {
-        const loadedDrivers = driversData.data || []
-        const loadedCars = carsData.data || []
-        setDrivers(loadedDrivers)
-        setCars(loadedCars)
+    api
+      .ensureTestSession()
+      .then((session) => {
+        if (!session) return
+        setTestSession(session)
+        setLogs((prev) => [
+          ...prev,
+          logEntry('success', 'SESSION', `Test session loaded: ${session.id.substring(0, 8)}...`),
+        ])
+      })
+      .catch((err) =>
+        setLogs((prev) => [...prev, logEntry('error', 'SESSION', `Failed to load test session: ${err.message}`)])
+      )
 
-        // Auto-assign if config is empty
-        if (loadedDrivers.length > 0) {
-          setControllerConfig((prev) => {
-            const newConfig = autoAssignControllers(loadedDrivers, loadedCars, prev)
-            return newConfig
-          })
-        }
+    api
+      .loadDriversAndCars()
+      .then(({ drivers, cars }) => {
+        setDrivers(drivers)
+        setCars(cars)
+        if (drivers.length > 0) setControllerConfig((prev) => autoAssignControllers(drivers, cars, prev))
       })
       .catch(() => {})
   }, [])
 
-  const addLog = (type, source, message, data = null) => {
-    const timestamp = new Date().toISOString()
-    setLogs((prev) => [...prev, { timestamp, type, source, message, data }])
-  }
-
-  // Get driver/car name from config or default
-  const getControllerInfo = (controller) => {
-    const config = controllerConfig[controller]
-    if (config) {
-      // Find driver and car from loaded data
-      const driver = config.driverId ? drivers.find((d) => d.id === config.driverId) : null
-      const car = config.carId ? cars.find((c) => c.id === config.carId) : null
-      return {
-        driverName: driver?.name || config.driverName || t('leaderboard.defaultDriver', { number: controller }),
-        carName: car
-          ? `${car.brand} ${car.model}`
-          : config.carName || t('leaderboard.defaultCar', { number: controller }),
-        color: car?.color || driver?.color || config.color || CONTROLLER_COLORS[controller] || '#888',
-      }
-    }
-    return {
-      driverName: t('leaderboard.defaultDriver', { number: controller }),
-      carName: t('leaderboard.defaultCar', { number: controller }),
-      color: CONTROLLER_COLORS[controller] || '#888',
-    }
-  }
-
-  const updateLeaderboard = (lapData) => {
-    setLeaderboard((prev) => {
-      const key = lapData.controller || lapData.carId || 'unknown'
-      const existing = prev[key] || { laps: 0, bestLap: null, lastLap: null, totalTime: 0 }
-
-      const lapTime = lapData.lapTime || lapData.time
-      const newLaps = lapData.lapNumber || existing.laps + 1
-      const newBestLap = existing.bestLap === null ? lapTime : Math.min(existing.bestLap, lapTime)
-
-      return {
-        ...prev,
-        [key]: {
-          ...existing,
-          controller: key,
-          laps: newLaps,
-          lastLap: lapTime,
-          bestLap: newBestLap,
-          totalTime: existing.totalTime + lapTime,
-          lastUpdate: Date.now(),
-        },
-      }
-    })
-  }
-
-  // Update controller config
-  const updateControllerConfig = (controller, field, value) => {
-    setControllerConfig((prev) => {
-      const newConfig = {
-        ...prev,
-        [controller]: {
-          ...prev[controller],
-          [field]: value,
-        },
-      }
-      return newConfig
-    })
-  }
-
-  // Load test session on mount
+  // The Control Unit's state, polled
   useEffect(() => {
-    ensureTestSession()
-  }, [])
-
-  useEffect(() => {
-    addLog('info', 'APP', 'Page Test initialized')
-
-    const socket = io()
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      setConnected(true)
-      addLog('success', 'SOCKET', `Connected (id: ${socket.id})`)
-    })
-
-    socket.on('disconnect', (reason) => {
-      setConnected(false)
-      addLog('error', 'SOCKET', `Disconnected: ${reason}`)
-    })
-
-    socket.on('connect_error', (error) => {
-      addLog('error', 'SOCKET', `Connection error: ${error.message}`)
-    })
-
-    // Lap events
-    socket.on('lap:completed', (data) => {
-      addLog('lap', 'LAP', `Lap completed - Car ${data.controller || data.carId}`, data)
-      updateLeaderboard(data)
-    })
-
-    socket.on('lap_completed', (data) => {
-      addLog('lap', 'LAP', `Lap completed (alt) - Car ${data.controller || data.carId}`, data)
-      updateLeaderboard(data)
-    })
-
-    // Race events
-    socket.on('race:status', (data) => {
-      addLog('status', 'RACE', `Status: ${data.active ? 'RUNNING' : 'STOPPED'}`, data)
-    })
-
-    // CU/Bluetooth events
-    socket.on('cu:connected', () => {
-      setCuConnected(true)
-      addLog('success', 'BLE', 'Control Unit connected')
-    })
-
-    socket.on('cu:disconnected', () => {
-      setCuConnected(false)
-      setCuStatus(null)
-      addLog('error', 'BLE', 'Control Unit disconnected')
-    })
-
-    socket.on('cu:status', (data) => {
-      setCuStatus(data)
-    })
-
-    socket.on('cu:timer', (data) => {
-      if (data.isFinishLine) {
-        const lapTimeStr = data.lapTime > 0 ? ` - Lap: ${(data.lapTime / 1000).toFixed(3)}s` : ' (first pass)'
-        addLog('lap', 'BLE', `Car ${data.controller} Finish${lapTimeStr}`, data)
-        if (data.lapTime > 0) {
-          updateLeaderboard({ controller: data.controller, lapTime: data.lapTime })
-        }
-      } else {
-        addLog('info', 'BLE', `Car ${data.controller} Sector ${data.sector}`, data)
-      }
-    })
-
-    socket.on('cu:reconnect-failed', () => {
-      addLog('error', 'BLE', 'Reconnection failed')
-    })
-
-    // Session events
-    socket.on('session:started', (data) => {
-      addLog('success', 'SESSION', `Session started: ${data.sessionId}`, data)
-    })
-
-    socket.on('session:stopped', (data) => {
-      addLog('info', 'SESSION', `Session stopped: ${data.sessionId}`, data)
-    })
-
-    // Phase events
-    socket.on('phase:started', (data) => {
-      addLog('success', 'PHASE', `Phase started: ${data.phase}`, data)
-    })
-
-    // Positions
-    socket.on('positions:updated', (data) => {
-      addLog('status', 'POS', `Positions updated`, data)
-    })
-
-    // Catch-all for unknown events
-    const originalOnevent = socket.onevent
-    socket.onevent = function (packet) {
-      const eventName = packet.data[0]
-      const knownEvents = [
-        'connect',
-        'disconnect',
-        'connect_error',
-        'lap:completed',
-        'lap_completed',
-        'race:status',
-        'cu:connected',
-        'cu:disconnected',
-        'cu:status',
-        'cu:timer',
-        'cu:reconnect-failed',
-        'session:started',
-        'session:stopped',
-        'phase:started',
-        'positions:updated',
-      ]
-      if (!knownEvents.includes(eventName)) {
-        addLog('info', 'UNKNOWN', `Event: ${eventName}`, packet.data[1])
-      }
-      originalOnevent.call(socket, packet)
-    }
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
-  // Auto-scroll logs
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
-
-  const clearLogs = () => setLogs([])
-  const clearLeaderboard = () => setLeaderboard({})
-
-  // Fetch initial CU status
-  useEffect(() => {
-    fetchStatus()
-    const interval = setInterval(fetchStatus, 2000)
+    const poll = () =>
+      api
+        .getBluetoothStatus()
+        .then((data) => {
+          setCuConnected(data.connected)
+          if (data.lastStatus) setCuStatus(data.lastStatus)
+        })
+        .catch(() => {})
+    poll()
+    const interval = setInterval(poll, STATUS_POLL_MS)
     return () => clearInterval(interval)
   }, [])
 
-  const fetchStatus = async () => {
-    try {
-      const res = await fetch(`${API_URL}/bluetooth/status`)
-      const data = await res.json()
-      setCuConnected(data.connected)
-      if (data.lastStatus) setCuStatus(data.lastStatus)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  // CU Control functions
-  const apiCall = async (endpoint, method = 'POST', body = null) => {
-    setActionLoading(endpoint)
-    try {
-      const options = { method, headers: { 'Content-Type': 'application/json' } }
-      if (body) options.body = JSON.stringify(body)
-      const res = await fetch(`${API_URL}/bluetooth${endpoint}`, options)
-      const data = await res.json()
-      if (data.success) {
-        addLog('success', 'APP', data.message || `${endpoint} OK`)
-      } else {
-        addLog('error', 'APP', `${endpoint} failed: ${data.error}`)
+  useCuTestSocket({
+    connect: (_, socket) => {
+      setConnected(true)
+      addLog('success', 'SOCKET', `Connected (id: ${socket.id})`)
+    },
+    disconnect: (reason) => {
+      setConnected(false)
+      addLog('error', 'SOCKET', `Disconnected: ${reason}`)
+    },
+    connect_error: (error) => addLog('error', 'SOCKET', `Connection error: ${error.message}`),
+    'lap:completed': (data) => {
+      addLog('lap', 'LAP', `Lap completed - Car ${data.controller || data.carId}`, data)
+      addLap(data)
+    },
+    lap_completed: (data) => {
+      addLog('lap', 'LAP', `Lap completed (alt) - Car ${data.controller || data.carId}`, data)
+      addLap(data)
+    },
+    'race:status': (data) => addLog('status', 'RACE', `Status: ${data.active ? 'RUNNING' : 'STOPPED'}`, data),
+    'cu:connected': () => {
+      setCuConnected(true)
+      addLog('success', 'BLE', 'Control Unit connected')
+    },
+    'cu:disconnected': () => {
+      cuGone()
+      addLog('error', 'BLE', 'Control Unit disconnected')
+    },
+    'cu:status': setCuStatus,
+    'cu:timer': (data) => {
+      if (!data.isFinishLine) {
+        addLog('info', 'BLE', `Car ${data.controller} Sector ${data.sector}`, data)
+        return
       }
+      const lapTime = data.lapTime > 0 ? ` - Lap: ${(data.lapTime / 1000).toFixed(3)}s` : ' (first pass)'
+      addLog('lap', 'BLE', `Car ${data.controller} Finish${lapTime}`, data)
+      if (data.lapTime > 0) addLap({ controller: data.controller, lapTime: data.lapTime })
+    },
+    'cu:reconnect-failed': () => addLog('error', 'BLE', 'Reconnection failed'),
+    'session:started': (data) => addLog('success', 'SESSION', `Session started: ${data.sessionId}`, data),
+    'session:stopped': (data) => addLog('info', 'SESSION', `Session stopped: ${data.sessionId}`, data),
+    'phase:started': (data) => addLog('success', 'PHASE', `Phase started: ${data.phase}`, data),
+    'positions:updated': (data) => addLog('status', 'POS', 'Positions updated', data),
+    onUnknown: (event, data) => addLog('info', 'UNKNOWN', `Event: ${event}`, data),
+  })
+
+  async function command(endpoint, body) {
+    setBusy(endpoint)
+    try {
+      const data = await api.callBluetooth(endpoint, body)
+      if (data.success) addLog('success', 'APP', data.message || `${endpoint} OK`)
+      else addLog('error', 'APP', `${endpoint} failed: ${data.error}`)
       return data
     } catch (err) {
       addLog('error', 'APP', `${endpoint} error: ${err.message}`)
       return { success: false, error: err.message }
     } finally {
-      setActionLoading(null)
+      setBusy(null)
     }
   }
 
-  const scanAndConnect = async () => {
-    setLoading(true)
+  async function scan() {
+    setScanning(true)
     addLog('info', 'APP', 'Scanning for Control Unit...')
-    const data = await apiCall('/scan', 'POST', { autoConnect: true })
+    const data = await command('/scan', { autoConnect: true })
     if (data.success) setCuConnected(true)
-    setLoading(false)
+    setScanning(false)
   }
 
-  const disconnect = async () => {
-    await apiCall('/disconnect')
-    setCuConnected(false)
-    setCuStatus(null)
+  async function disconnect() {
+    await command('/disconnect')
+    cuGone()
   }
 
-  const formatTime = (ms) => {
-    if (!ms) return '-'
-    return (ms / 1000).toFixed(3) + 's'
-  }
-
-  const getLogColor = (type) => {
-    switch (type) {
-      case 'success':
-        return 'text-green-400'
-      case 'error':
-        return 'text-red-400'
-      case 'lap':
-        return 'text-yellow-400'
-      case 'status':
-        return 'text-blue-400'
-      default:
-        return 'text-gray-300'
+  async function showInfo() {
+    try {
+      const data = await api.getBluetoothInfo()
+      if (!data.success) {
+        addLog('error', 'APP', `Info failed: ${data.error}`)
+        return
+      }
+      cuInfoLines(data.data).forEach((line, i) => addLog('info', 'APP', line, i === 0 ? data.data : null))
+    } catch (err) {
+      addLog('error', 'APP', `Info failed: ${err.message}`)
     }
   }
 
-  const getLogTypeLabel = (type) => {
-    const labels = {
-      success: t('logs.typeSuccess'),
-      error: t('logs.typeError'),
-      lap: t('logs.typeLap'),
-      status: t('logs.typeStatus'),
-      info: t('logs.typeInfo'),
-    }
-    return labels[type] || type
+  function assign(controller, field, value) {
+    setControllerConfig((prev) => ({ ...prev, [controller]: { ...prev[controller], [field]: value } }))
   }
-
-  const getSourceBadge = (source) => {
-    const colors = {
-      APP: 'bg-gray-600',
-      SOCKET: 'bg-purple-600',
-      LAP: 'bg-yellow-600',
-      RACE: 'bg-green-600',
-      BLE: 'bg-blue-600',
-      SESSION: 'bg-orange-600',
-      PHASE: 'bg-pink-600',
-      POS: 'bg-cyan-600',
-      UNKNOWN: 'bg-red-600',
-    }
-    return colors[source] || 'bg-gray-600'
-  }
-
-  const filteredLogs =
-    filter === 'all' ? logs : logs.filter((log) => log.type === filter || log.source.toLowerCase() === filter)
-
-  // Group logs by type for grouped view
-  const groupedLogs = groupByType
-    ? filteredLogs.reduce((acc, log) => {
-        const key = log.type
-        if (!acc[key]) acc[key] = []
-        acc[key].push(log)
-        return acc
-      }, {})
-    : null
-
-  const logTypes = ['success', 'error', 'lap', 'status', 'info']
-
-  const sortedLeaderboard = Object.values(leaderboard).sort((a, b) => {
-    if (b.laps !== a.laps) return b.laps - a.laps
-    if (!a.bestLap) return 1
-    if (!b.bestLap) return -1
-    return a.bestLap - b.bestLap
-  })
-
-  // Decode CU status
-  const getRaceState = () => {
-    if (!cuStatus) return { text: t('raceState.unknown'), color: 'gray' }
-    const start = cuStatus.start
-    if (start === 0) return { text: t('raceState.racing'), color: 'green' }
-    if (start >= 1 && start <= 5) return { text: t('raceState.lights', { count: start }), color: 'yellow' }
-    if (start === 6) return { text: t('raceState.falseStart'), color: 'red' }
-    if (start === 7) return { text: t('raceState.go'), color: 'green' }
-    if (start >= 8) return { text: t('raceState.stopped'), color: 'red' }
-    return { text: t('raceState.state', { state: start }), color: 'gray' }
-  }
-
-  const getModes = () => {
-    if (!cuStatus) return []
-    const modes = []
-    if (cuStatus.mode & MODE_FLAGS.FUEL) modes.push(t('modes.fuel'))
-    if (cuStatus.mode & MODE_FLAGS.REAL) modes.push(t('modes.real'))
-    if (cuStatus.mode & MODE_FLAGS.PIT_LANE) modes.push(t('modes.pitLane'))
-    if (cuStatus.mode & MODE_FLAGS.LAP_COUNTER) modes.push(t('modes.lapCounter'))
-    return modes
-  }
-
-  const raceState = getRaceState()
-  const modes = getModes()
 
   return (
     <div className="p-6 h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('title')}</h1>
-          {/* Socket status */}
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-              connected
-                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
-                : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-            }`}
-          >
-            {connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-            {connected ? t('status.socketOk') : t('status.socketOff')}
-          </div>
-          {/* CU status */}
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-              cuConnected
-                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            <Zap className="w-4 h-4" />
-            {cuConnected ? t('status.cuConnected') : t('status.cuOffline')}
-          </div>
-          {/* Race state */}
-          {cuConnected && (
-            <div
-              className={`px-3 py-1 rounded-full text-sm font-bold bg-${raceState.color}-100 text-${raceState.color}-700`}
-            >
-              {raceState.text}
-            </div>
-          )}
-          {/* Session */}
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-              testSession
-                ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            {testSession ? t('status.session', { id: testSession.id.substring(0, 8) }) : t('status.noSession')}
-          </div>
-          {/* Modes */}
-          {modes.length > 0 && (
-            <div className="flex gap-1">
-              {modes.map((m) => (
-                <span
-                  key={m}
-                  className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
-                >
-                  {m}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* CU Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-700 dark:text-gray-200">{t('cu.title')}</span>
-            {!cuConnected ? (
-              <button
-                onClick={scanAndConnect}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
-                {t('cu.scanConnect')}
-              </button>
-            ) : (
-              <>
-                {/* Main controls */}
-                {cuStatus?.start === 0 ? (
-                  <button
-                    onClick={() => apiCall('/start-race')}
-                    disabled={actionLoading}
-                    className="flex items-center gap-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-bold"
-                  >
-                    <Square className="w-5 h-5" />
-                    {t('cu.stop')}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => apiCall('/start-race')}
-                    disabled={actionLoading}
-                    className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                  >
-                    <Play className="w-4 h-4" />
-                    {t('cu.start')}
-                  </button>
-                )}
-                <button
-                  onClick={() => apiCall('/esc')}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
-                >
-                  {t('cu.esc')}
-                </button>
-                <button
-                  onClick={() => apiCall('/reset-timer')}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  {t('cu.resetTimer')}
-                </button>
-                <button
-                  onClick={() => apiCall('/clear-position')}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {t('cu.clearPos')}
-                </button>
-                <button
-                  onClick={async () => {
-                    const res = await fetch(`${API_URL}/bluetooth/info`)
-                    const data = await res.json()
-                    if (data.success) {
-                      const { version, ble } = data.data
-                      addLog('info', 'APP', `CU Version: ${version}`, data.data)
-                      if (ble) {
-                        addLog('info', 'APP', `BLE Name: ${ble.name} | Addr: ${ble.address} | UUID: ${ble.uuid}`)
-                        if (ble.rssi) addLog('info', 'APP', `RSSI: ${ble.rssi}dBm`)
-                        if (ble.manufacturerData) addLog('info', 'APP', `Manufacturer: ${ble.manufacturerData}`)
-                        if (ble.services?.length) addLog('info', 'APP', `Services: ${ble.services.join(', ')}`)
-                      }
-                    } else {
-                      addLog('error', 'APP', `Info failed: ${data.error}`)
-                    }
-                  }}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1 px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-                >
-                  {t('cu.info')}
-                </button>
-
-                {/* CU Buttons */}
-                <div className="border-l dark:border-gray-600 pl-2 ml-2 flex gap-1">
-                  {Object.entries(CU_BUTTONS).map(([name, id]) => (
-                    <button
-                      key={id}
-                      onClick={() => apiCall(`/button/${id}`)}
-                      disabled={actionLoading}
-                      className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50 text-xs"
-                      title={t('cu.buttonTitle', { id, name })}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Disconnect */}
-                <button
-                  onClick={disconnect}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 ml-2"
-                >
-                  <X className="w-4 h-4" />
-                  {t('cu.disconnect')}
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Status info */}
-          {cuConnected && cuStatus && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
-              <span>{t('cu.display', { count: cuStatus.display || 6 })}</span>
-              {cuStatus.fuel && (
-                <span>{t('cu.fuel', { values: cuStatus.fuel.slice(0, cuStatus.display || 6).join(', ') })}</span>
-              )}
-            </div>
-          )}
-
-          {/* Config toggle */}
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className={`flex items-center gap-1 px-3 py-2 rounded-lg ${showConfig ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'} hover:bg-blue-200 dark:hover:bg-blue-900/70`}
-          >
-            <Settings className="w-4 h-4" />
-            {t('config.toggle')}
-          </button>
-        </div>
-      </div>
-
-      {/* Controller Configuration Panel */}
+      <CuTestHeader connected={connected} cuConnected={cuConnected} cuStatus={cuStatus} testSession={testSession} />
+      <CuControls
+        cuConnected={cuConnected}
+        cuStatus={cuStatus}
+        scanning={scanning}
+        busy={busy}
+        showConfig={showConfig}
+        onScan={scan}
+        onCommand={command}
+        onInfo={showInfo}
+        onDisconnect={disconnect}
+        onToggleConfig={() => setShowConfig(!showConfig)}
+      />
       {showConfig && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
-          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
-            <User className="w-5 h-5" />
-            {t('config.title')}
-          </h3>
-          <div className="grid grid-cols-4 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((controller) => {
-              const config = controllerConfig[controller] || {}
-              const color = CONTROLLER_COLORS[controller]
-              return (
-                <div
-                  key={controller}
-                  className="border dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="font-bold text-sm text-gray-900 dark:text-white">
-                      {t('config.controller', { number: controller })}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <select
-                      value={config.driverId || ''}
-                      onChange={(e) => updateControllerConfig(controller, 'driverId', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
-                    >
-                      <option value="">{t('config.driverPlaceholder')}</option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          #{d.number} {d.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={config.carId || ''}
-                      onChange={(e) => updateControllerConfig(controller, 'carId', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white dark:bg-gray-600 dark:text-white"
-                    >
-                      <option value="">{t('config.carPlaceholder')}</option>
-                      {cars.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.brand} {c.model}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-xs text-gray-400 mt-2">
-            {t('config.autoSaved', { driverCount: drivers.length, carCount: cars.length })}
-          </p>
-        </div>
+        <ControllerConfigPanel config={controllerConfig} drivers={drivers} cars={cars} onChange={assign} />
       )}
 
       <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
-        {/* Logs Panel */}
-        <div className="col-span-2 bg-gray-900 rounded-lg flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between p-3 border-b border-gray-700">
-            <div className="flex items-center gap-2">
-              <span className="text-white font-semibold">{t('logs.title')}</span>
-              <span className="text-gray-400 text-sm">({filteredLogs.length})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setGroupByType(!groupByType)}
-                className={`px-2 py-1 text-sm rounded ${groupByType ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}
-              >
-                {groupByType ? t('logs.grouped') : t('logs.chrono')}
-              </button>
-              {!groupByType && (
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700"
-                >
-                  <option value="all">{t('logs.filterAll')}</option>
-                  <option value="lap">{t('logs.filterLap')}</option>
-                  <option value="status">{t('logs.filterStatus')}</option>
-                  <option value="error">{t('logs.filterError')}</option>
-                  <option value="success">{t('logs.filterSuccess')}</option>
-                  <option value="info">{t('logs.filterInfo')}</option>
-                </select>
-              )}
-              <button
-                onClick={clearLogs}
-                className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
-                title={t('logs.clearTitle')}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
-            {filteredLogs.length === 0 ? (
-              <div className="text-gray-500 text-center py-8">{t('logs.waiting')}</div>
-            ) : groupByType ? (
-              // Grouped view by type
-              <div className="space-y-4">
-                {logTypes.map((type) => {
-                  const typeLogs = groupedLogs[type] || []
-                  if (typeLogs.length === 0) return null
-                  return (
-                    <div key={type}>
-                      <div
-                        className={`sticky top-0 py-1 px-2 rounded font-bold uppercase text-xs mb-1 ${getLogColor(type)} bg-gray-800`}
-                      >
-                        {t('logs.groupCount', { type: getLogTypeLabel(type), count: typeLogs.length })}
-                      </div>
-                      <div className="space-y-1 pl-2 border-l-2 border-gray-700">
-                        {typeLogs.map((log, i) => (
-                          <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
-                            <span className="text-gray-500 flex-shrink-0">
-                              {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
-                            </span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}
-                            >
-                              {log.source}
-                            </span>
-                            <span className="flex-1">{log.message}</span>
-                            {log.data && (
-                              <button
-                                onClick={() => console.log(log.data)}
-                                className="text-gray-500 hover:text-gray-300 flex-shrink-0"
-                                title={t('logs.logDataTitle')}
-                              >
-                                {t('logs.logData')}
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              // Chronological view
-              <div className="space-y-1">
-                {filteredLogs.map((log, i) => (
-                  <div key={i} className={`flex items-start gap-2 ${getLogColor(log.type)}`}>
-                    <span className="text-gray-500 flex-shrink-0">
-                      {new Date(log.timestamp).toLocaleTimeString(i18n.language)}
-                    </span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] text-white flex-shrink-0 ${getSourceBadge(log.source)}`}
-                    >
-                      {log.source}
-                    </span>
-                    <span className="flex-1">{log.message}</span>
-                    {log.data && (
-                      <button
-                        onClick={() => console.log(log.data)}
-                        className="text-gray-500 hover:text-gray-300 flex-shrink-0"
-                        title={t('logs.logDataTitle')}
-                      >
-                        {t('logs.logData')}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div ref={logsEndRef} />
-          </div>
-        </div>
-
-        {/* Leaderboard Panel */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between p-3 border-b dark:border-gray-700">
-            <span className="font-semibold text-gray-800 dark:text-white">{t('leaderboard.title')}</span>
-            <button
-              onClick={clearLeaderboard}
-              className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-400"
-              title={t('leaderboard.clearTitle')}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {sortedLeaderboard.length === 0 ? (
-              <div className="text-gray-400 text-center py-8 text-sm">{t('leaderboard.noData')}</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                  <tr className="text-left text-gray-500 dark:text-gray-400 text-xs">
-                    <th className="px-3 py-2">{t('leaderboard.colPos')}</th>
-                    <th className="px-3 py-2">{t('leaderboard.colCar')}</th>
-                    <th className="px-3 py-2 text-right">{t('leaderboard.colLaps')}</th>
-                    <th className="px-3 py-2 text-right">{t('leaderboard.colBest')}</th>
-                    <th className="px-3 py-2 text-right">{t('leaderboard.colLast')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedLeaderboard.map((entry, index) => {
-                    const info = getControllerInfo(entry.controller)
-                    return (
-                      <tr
-                        key={entry.controller}
-                        className={`border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                          Date.now() - entry.lastUpdate < 3000 ? 'bg-yellow-50 dark:bg-yellow-900/30' : ''
-                        }`}
-                      >
-                        <td className="px-3 py-2 font-bold text-gray-900 dark:text-white">{index + 1}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500 flex-shrink-0"
-                              style={{ backgroundColor: info.color }}
-                            />
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">{info.driverName}</div>
-                              <div className="text-xs text-gray-400">{info.carName}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-gray-900 dark:text-white">{entry.laps}</td>
-                        <td className="px-3 py-2 text-right font-mono text-green-600 dark:text-green-400">
-                          {formatTime(entry.bestLap)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
-                          {formatTime(entry.lastLap)}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {sortedLeaderboard.length > 0 && (
-            <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex justify-between">
-                <span>{t('leaderboard.totalLaps', { count: sortedLeaderboard.reduce((s, e) => s + e.laps, 0) })}</span>
-                <span>{t('leaderboard.cars', { count: sortedLeaderboard.length })}</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <TestLogPanel logs={logs} onClear={() => setLogs([])} />
+        <TestLeaderboardPanel
+          entries={sortTestLeaderboard(leaderboard)}
+          infoOf={(controller) => controllerInfo(controller, controllerConfig, drivers, cars, t)}
+          onClear={() => setLeaderboard({})}
+        />
       </div>
     </div>
   )

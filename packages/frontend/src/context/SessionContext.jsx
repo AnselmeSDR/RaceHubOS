@@ -1,20 +1,13 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { io } from 'socket.io-client'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { RUNNING_SESSION_STATUSES, SessionStatus, SessionType } from '@racehubos/shared'
+import { fastestLapOf, maxLapsOf, toLeaderboardEntries } from '../lib/leaderboardEntries'
 import { useApp } from './AppContext'
 import { useVoice } from './VoiceContext'
-import { SessionStatus, SessionType } from '@racehubos/shared'
-import i18n from '../i18n'
-import { sessionNames } from '../lib/sessionNames'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
-const WS_URL = import.meta.env.VITE_WS_URL || ''
-
-export const SESSION_STATUS = {
-  DRAFT: 'draft',
-  ACTIVE: 'active',
-  FINISHING: 'finishing',
-  FINISHED: 'finished',
-}
+import { announceFinish, bestLapLine } from './session/announcements'
+import * as requests from './session/sessionRequests'
+import { EMPTY_TIMING, heartbeatTiming, leaderboardIn, loadedTiming } from './session/sessionTiming'
+import { useIsStale } from './session/useIsStale'
+import { useSessionSocket } from './session/useSessionSocket'
 
 const SessionContext = createContext(null)
 
@@ -22,356 +15,129 @@ export function SessionProvider({ children }) {
   const { setSessionActive } = useApp()
   const voice = useVoice()
 
-  // Current session
   const [session, setSession] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
-
-  // Timing
-  const [elapsed, setElapsed] = useState(0)
-  const [remaining, setRemaining] = useState(null)
-  const [gracePeriodRemaining, setGracePeriodRemaining] = useState(null)
-  const [pauseDuration, setPauseDuration] = useState(null)
-  const [totalPauseDuration, setTotalPauseDuration] = useState(0)
-  const [pauses, setPauses] = useState([])
-  const [startedAt, setStartedAt] = useState(null)
-
-  // Session lifecycle
+  const [timing, setTiming] = useState(EMPTY_TIMING)
   const [finishingSession, setFinishingSession] = useState(null)
   const [sessionResults, setSessionResults] = useState(null)
-
-  // Data freshness
   const [lastServerTime, setLastServerTime] = useState(null)
-  const [isStale, setIsStale] = useState(false)
+  const isStale = useIsStale(lastServerTime)
 
-  // Socket ref
-  const socketRef = useRef(null)
-
-  // Ref for voice access from socket listeners
-  const voiceRef = useRef(voice)
-  voiceRef.current = voice
-
-  // Check data freshness
+  // The session on screen once rendered: loading another one first clears what is shown
+  const shownIdRef = useRef(null)
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!lastServerTime) {
-        setIsStale(false)
-        return
-      }
-      const age = Date.now() - new Date(lastServerTime).getTime()
-      setIsStale(age > 2000)
-    }, 500)
-    return () => clearInterval(interval)
-  }, [lastServerTime])
+    shownIdRef.current = session?.id ?? null
+  }, [session?.id])
 
-  // Initialize socket
-  useEffect(() => {
-    const socket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    })
-    socketRef.current = socket
+  // ==================== Server events ====================
 
-    // Leaderboard updates
-    socket.on('session:leaderboard', (data) => {
-      if (Array.isArray(data)) {
-        setLeaderboard(data)
-      } else if (data.leaderboard && Array.isArray(data.leaderboard)) {
-        setLeaderboard(data.leaderboard)
-      }
-    })
-
-    // Session updates
-    socket.on('race:session', (data) => {
-      setSession(data)
-    })
-
-    // Session status changes
-    socket.on('session:status_changed', (data) => {
+  useSessionSocket({
+    'session:leaderboard': (data) => {
+      const received = leaderboardIn(data)
+      if (received) setLeaderboard(received)
+    },
+    'race:session': setSession,
+    'session:status_changed': (data) => {
       if (data.sessionId && data.status) {
         setSession((prev) => (prev?.id === data.sessionId ? { ...prev, status: data.status } : prev))
       }
       if (data.timestamp) setLastServerTime(data.timestamp)
-      window.dispatchEvent(new CustomEvent('session:status_changed', { detail: data }))
-    })
-
-    // Session finishing
-    socket.on('session:finishing', (data) => {
-      setFinishingSession({
-        sessionId: data.sessionId,
-        endsAt: data.endsAt,
-        gracePeriodMs: data.gracePeriodMs,
-        reason: data.reason,
-      })
-    })
-
-    // Session finished
-    socket.on('session:finished', (data) => {
+    },
+    'session:finishing': ({ sessionId, endsAt, gracePeriodMs, reason }) =>
+      setFinishingSession({ sessionId, endsAt, gracePeriodMs, reason }),
+    'session:finished': (data) => {
       setSession((prev) => {
         if (prev?.id !== data.sessionId) return prev
         const drivers = data.leaderboard?.length > 0 ? data.leaderboard : prev.drivers
         return { ...prev, status: SessionStatus.FINISHED, drivers }
       })
       setFinishingSession(null)
-      // Keep final leaderboard
-      if (data.leaderboard && Array.isArray(data.leaderboard)) {
-        setLeaderboard(data.leaderboard)
-      }
-      setSessionResults({
-        sessionId: data.sessionId,
-        championshipId: data.championshipId,
-        reason: data.reason,
-      })
-      window.dispatchEvent(new CustomEvent('session:finished', { detail: data }))
-
-      // Skip podium/voice for balancing sessions
-      if (data.sessionType === SessionType.BALANCING) return
-
-      // Play finish music then announce podium
-      try {
-        const audio = new Audio('/sounds/race-finish.mp3')
-        audio.volume = 0.7
-        audio.play().catch(() => {})
-
-        const v = voiceRef.current
-        if (v.podiumEnabledRef.current && data.leaderboard?.length > 0) {
-          const isQualif = data.sessionType === SessionType.QUALIF
-          const sorted = [...data.leaderboard]
-            .filter((d) => d.driver && (d.totalLaps > 0 || d.bestLapTime))
-            .sort((a, b) => {
-              if (isQualif) return (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity)
-              if ((b.totalLaps || 0) !== (a.totalLaps || 0)) return (b.totalLaps || 0) - (a.totalLaps || 0)
-              return (a.totalTime || Infinity) - (b.totalTime || Infinity)
-            })
-          const allLabels = ['first', 'second', 'third'].map((rank) => i18n.t(`voice:ranks.${rank}`))
-          const podium = sorted.slice(0, 3).map((driver, i) => ({ driver, label: allLabels[i] }))
-
-          // Announce 3rd, 2nd, 1st
-          const announceOrder = [...podium].reverse()
-
-          const delay = 3000
-          setTimeout(() => {
-            const queue = []
-            announceOrder.forEach(({ driver, label }) => {
-              if (!driver.driver) return
-              const name = driver.driver.name
-              const time = isQualif ? v.formatTimeVoice(driver.bestLapTime) : v.formatTimeVoice(driver.totalTime)
-              queue.push(i18n.t('voice:podium', { rank: label, name, time }))
-            })
-
-            const speakNext = (index) => {
-              if (index >= queue.length) return
-              const utterance = v.speak(queue[index], { rate: 1.0, force: true })
-              if (utterance) utterance.onend = () => setTimeout(() => speakNext(index + 1), 500)
-            }
-            speakNext(0)
-          }, delay)
-        }
-      } catch {}
-    })
-
-    // Real-time positions
-    socket.on('positions:updated', (positions) => {
-      if (Array.isArray(positions)) {
-        setLeaderboard(positions)
-      }
-    })
-
-    // Heartbeat (timing updates + leaderboard)
-    socket.on('session:heartbeat', (data) => {
+      // The final leaderboard stays shown
+      if (Array.isArray(data.leaderboard)) setLeaderboard(data.leaderboard)
+      setSessionResults({ sessionId: data.sessionId, championshipId: data.championshipId, reason: data.reason })
+      // No podium for a balancing session
+      if (data.sessionType !== SessionType.BALANCING) announceFinish(voice, data)
+    },
+    'positions:updated': (positions) => {
+      if (Array.isArray(positions)) setLeaderboard(positions)
+    },
+    'session:heartbeat': (data) => {
       setLastServerTime(new Date().toISOString())
-      if (data.elapsedTime !== undefined) setElapsed(Math.floor(data.elapsedTime / 1000))
-      if (data.remainingTime !== undefined) setRemaining(Math.floor(data.remainingTime / 1000))
-      if (data.gracePeriodRemaining !== undefined) {
-        setGracePeriodRemaining(data.gracePeriodRemaining > 0 ? Math.ceil(data.gracePeriodRemaining / 1000) : null)
-      }
-      setPauseDuration(data.pauseDuration ? Math.floor(data.pauseDuration / 1000) : null)
-      setTotalPauseDuration(data.totalPauseDuration ? Math.floor(data.totalPauseDuration / 1000) : 0)
-      setPauses(data.pauses || [])
-      if (data.startedAt) setStartedAt(data.startedAt)
-      // Update leaderboard from heartbeat (ensures data sync on refresh)
-      if (data.leaderboard && Array.isArray(data.leaderboard)) {
-        setLeaderboard(data.leaderboard)
-      }
-    })
-
-    // Best lap voice announcement (skip for balancing)
-    socket.on('session:bestlap', (data) => {
+      setTiming((prev) => heartbeatTiming(prev, data))
+      // The heartbeat's leaderboard resyncs a page just reloaded
+      if (Array.isArray(data.leaderboard)) setLeaderboard(data.leaderboard)
+    },
+    'session:bestlap': (data) => {
       if (data.sessionType === SessionType.BALANCING) return
-      const v = voiceRef.current
-      if (!v.bestLapEnabledRef.current) return
-      if (data.maxLapsCompleted < v.minLapsRef.current) return
-
-      const name =
-        data.driverName ||
-        [data.carBrand, data.carModel].filter(Boolean).join(' ') ||
-        i18n.t('voice:car', { number: data.controller + 1 })
-      v.speak(i18n.t('voice:bestLap', { name, time: v.formatTimeVoice(data.lapTime) }))
-    })
-
-    // Championship events
-    socket.on('championship:standings_changed', (data) => {
-      window.dispatchEvent(new CustomEvent('championship:standings_changed', { detail: data }))
-    })
-
-    socket.on('championship:races_assigned', (data) => {
-      window.dispatchEvent(new CustomEvent('championship:races_assigned', { detail: data }))
-    })
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
+      const line = bestLapLine(voice, data)
+      if (line) voice.speak(line)
+    },
+  })
 
   // ==================== Session API ====================
 
-  // Fetch session by ID
   const fetchSession = useCallback(async (sessionId) => {
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}`)
-      const data = await response.json()
-      if (data.success) {
-        setSession(data.data)
-        return data.data
-      }
-      return null
+      const body = await requests.getSession(sessionId)
+      if (!body.success) return null
+      setSession(body.data)
+      return body.data
     } catch (error) {
       console.error('[SessionContext] Error fetching session:', error)
       return null
     }
   }, [])
 
-  // Find or create free session (no championship)
+  // The latest free session (no championship) of this type on this track, created when there is none
   const findOrCreateFreeSession = useCallback(async ({ trackId, type, autoCreate = true }) => {
     try {
-      const searchParams = new URLSearchParams({
-        trackId,
-        type,
-        championshipId: 'null',
-      })
-      const searchRes = await fetch(`${API_URL}/api/sessions?${searchParams}`)
-      const searchData = await searchRes.json()
-
-      if (searchData.success && searchData.data?.length > 0) {
-        // Return most recent session (sorted by createdAt desc)
-        const sorted = [...searchData.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        const latestSession = sorted[0]
-        setSession(latestSession)
-        return latestSession
+      const found = await requests.findFreeSession(trackId, type)
+      if (found || !autoCreate) {
+        setSession(found)
+        return found
       }
-
-      // Create new session only if autoCreate is true
-      if (!autoCreate) {
-        setSession(null)
-        return null
-      }
-
-      const createRes = await fetch(`${API_URL}/api/sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId, type, name: sessionNames()[type], status: SessionStatus.DRAFT }),
-      })
-      const createData = await createRes.json()
-
-      if (createData.success) {
-        setSession(createData.data)
-        return createData.data
-      }
-
-      return null
+      const created = await requests.createFreeSession(trackId, type)
+      if (created) setSession(created)
+      return created
     } catch (error) {
       console.error('[SessionContext] Error finding/creating free session:', error)
       return null
     }
   }, [])
 
-  // Create a new session
   const createSession = useCallback(async (params) => {
     try {
-      const { championshipId, ...sessionParams } = params
-      const url = championshipId ? `${API_URL}/api/championships/${championshipId}/sessions` : `${API_URL}/api/sessions`
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionParams),
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setSession(data.data)
-      }
-      return data
+      const body = await requests.createSession(params)
+      if (body.success) setSession(body.data)
+      return body
     } catch (error) {
       console.error('[SessionContext] Error creating session:', error)
       return { success: false, error: error.message }
     }
   }, [])
 
-  // Load session - fetch data and optionally load into SyncService
+  // The session, its clock and its leaderboard; the previous session's data is cleared on a switch
   const loadSession = useCallback(async (sessionId) => {
     if (!sessionId) return { success: false, error: 'No session ID' }
 
-    // Only clear data when switching to a different session
-    setSession((prev) => {
-      if (prev?.id !== sessionId) {
-        setLeaderboard([])
-        setElapsed(0)
-        setRemaining(null)
-        setGracePeriodRemaining(null)
-        setStartedAt(null)
-        setPauses([])
-      }
-      return prev
-    })
+    if (shownIdRef.current !== sessionId) {
+      setLeaderboard([])
+      setTiming(EMPTY_TIMING)
+    }
 
     try {
-      // First, get session data
-      const sessionRes = await fetch(`${API_URL}/api/sessions/${sessionId}`)
-      const sessionData = await sessionRes.json()
-
-      if (!sessionRes.ok || !sessionData.success) {
-        console.warn('[SessionContext] Fetch session failed:', sessionData.error)
-        return { success: false, error: sessionData.error }
+      const loaded = await requests.fetchSessionToLoad(sessionId)
+      if (!loaded.ok) {
+        console.warn('[SessionContext] Fetch session failed:', loaded.error)
+        return { success: false, error: loaded.error }
       }
-
-      const sessionInfo = sessionData.data
+      const { session: sessionInfo } = loaded
       setSession(sessionInfo)
+      setTiming((prev) => loadedTiming(prev, sessionInfo))
+      if (!sessionInfo.startedAt) setFinishingSession(null)
 
-      // Initialize timing state from session data
-      setStartedAt(sessionInfo.startedAt || null)
-      if (sessionInfo.pauses) {
-        const pausesData = typeof sessionInfo.pauses === 'string' ? JSON.parse(sessionInfo.pauses) : sessionInfo.pauses
-        setPauses(pausesData)
-        const totalPause = pausesData.reduce((sum, p) => {
-          if (p.end) return sum + (p.end - p.start)
-          return sum
-        }, 0)
-        setTotalPauseDuration(Math.floor(totalPause / 1000))
-      } else {
-        setPauses([])
-        setTotalPauseDuration(0)
-      }
-      if (!sessionInfo.startedAt) {
-        setElapsed(0)
-        setRemaining(null)
-        setGracePeriodRemaining(null)
-        setFinishingSession(null)
-      }
-
-      // For draft/active sessions, load into SyncService
-      if (['draft', 'active', 'paused'].includes(sessionInfo.status)) {
-        await fetch(`${API_URL}/api/sync/load-session/${sessionId}`, { method: 'POST' })
-      }
-
-      // Fetch leaderboard with gaps calculated by backend
-      const lbRes = await fetch(`${API_URL}/api/sessions/${sessionId}/leaderboard`)
-      const lbData = await lbRes.json()
-      if (lbData.success && Array.isArray(lbData.data)) {
-        setLeaderboard(lbData.data)
-      }
-
+      const stored = await requests.prepareSession(sessionInfo)
+      if (stored) setLeaderboard(stored)
       return { success: true, session: sessionInfo }
     } catch (error) {
       console.error('[SessionContext] Error loading session:', error)
@@ -379,205 +145,77 @@ export function SessionProvider({ children }) {
     }
   }, [])
 
-  // Start session
-  const startSession = useCallback(async (sessionId) => {
+  // start, pause, resume, stop, reset: the server answers with the session as it now is
+  const runAction = useCallback(async (sessionId, action) => {
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/start`, {
-        method: 'POST',
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setSession(data.data)
-      }
-      return data
+      const body = await requests.postSessionAction(sessionId, action)
+      if (body.success) setSession(body.data)
+      return body
     } catch (error) {
-      console.error('[SessionContext] Error starting session:', error)
+      console.error(`[SessionContext] Error on session ${action}:`, error)
       return { success: false, error: error.message }
     }
   }, [])
 
-  // Pause session
-  const pauseSession = useCallback(async (sessionId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/pause`, {
-        method: 'POST',
-      })
-      const data = await response.json()
+  const startSession = useCallback((sessionId) => runAction(sessionId, 'start'), [runAction])
+  const pauseSession = useCallback((sessionId) => runAction(sessionId, 'pause'), [runAction])
+  const resumeSession = useCallback((sessionId) => runAction(sessionId, 'resume'), [runAction])
+  const stopSession = useCallback((sessionId) => runAction(sessionId, 'stop'), [runAction])
 
-      if (data.success) {
-        setSession(data.data)
-      }
-      return data
-    } catch (error) {
-      console.error('[SessionContext] Error pausing session:', error)
-      return { success: false, error: error.message }
-    }
+  const clearSessionData = useCallback(() => {
+    setLeaderboard([])
+    setTiming(EMPTY_TIMING)
+    setFinishingSession(null)
+    setSessionResults(null)
   }, [])
 
-  // Resume session
-  const resumeSession = useCallback(async (sessionId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/resume`, {
-        method: 'POST',
-      })
-      const data = await response.json()
+  const resetSession = useCallback(
+    async (sessionId) => {
+      const body = await runAction(sessionId, 'reset')
+      if (body.success) clearSessionData()
+      return body
+    },
+    [runAction, clearSessionData]
+  )
 
-      if (data.success) {
-        setSession(data.data)
-      }
-      return data
-    } catch (error) {
-      console.error('[SessionContext] Error resuming session:', error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Stop session
-  const stopSession = useCallback(async (sessionId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/stop`, {
-        method: 'POST',
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setSession(data.data)
-      }
-      return data
-    } catch (error) {
-      console.error('[SessionContext] Error stopping session:', error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Reset session
-  const resetSession = useCallback(async (sessionId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/reset`, {
-        method: 'POST',
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setSession(data.data)
-        setLeaderboard([])
-        setElapsed(0)
-        setRemaining(null)
-        setGracePeriodRemaining(null)
-        setStartedAt(null)
-        setPauses([])
-        setTotalPauseDuration(0)
-        setFinishingSession(null)
-        setSessionResults(null)
-      }
-      return data
-    } catch (error) {
-      console.error('[SessionContext] Error resetting session:', error)
-      return { success: false, error: error.message }
-    }
-  }, [])
-
-  // Clear current session
   const clearSession = useCallback(() => {
     setSession(null)
-    setLeaderboard([])
-    setElapsed(0)
-    setRemaining(null)
-    setGracePeriodRemaining(null)
-    setStartedAt(null)
-    setPauses([])
-    setSessionResults(null)
-    setFinishingSession(null)
-  }, [])
+    clearSessionData()
+  }, [clearSessionData])
 
-  // Clear session results
-  const clearSessionResults = useCallback(() => {
-    setSessionResults(null)
-  }, [])
+  const clearSessionResults = useCallback(() => setSessionResults(null), [])
 
-  // ==================== Helpers ====================
+  // ==================== Derived state ====================
 
-  const isActive = session?.status === SessionStatus.ACTIVE
-  const isFinishing = session?.status === SessionStatus.FINISHING
-  const isFinished = session?.status === SessionStatus.FINISHED
-
-  // Notify AppContext of session active state
+  // A running session (balancing aside) takes the whole screen
+  const ongoing = RUNNING_SESSION_STATUSES.includes(session?.status) && session?.type !== SessionType.BALANCING
   useEffect(() => {
-    setSessionActive(
-      ['active', 'paused', 'finishing'].includes(session?.status) && session?.type !== SessionType.BALANCING
-    )
-  }, [session?.status]) // eslint-disable-line react-hooks/exhaustive-deps
+    setSessionActive(ongoing)
+  }, [ongoing, setSessionActive])
 
-  // ==================== Computed Data ====================
-
-  // Transform leaderboard to entries with computed fields
-  // Falls back to session drivers if leaderboard is empty
-  const entries = useMemo(() => {
-    const source = leaderboard.length > 0 ? leaderboard : session?.drivers || []
-    if (source.length === 0) return []
-
-    // Find fastest lap
-    const allBestLaps = source.map((p) => p.bestLapTime).filter((t) => t && t > 0)
-    const fastestLapTime = allBestLaps.length > 0 ? Math.min(...allBestLaps) : null
-
-    return source
-      .map((p) => ({
-        id: p.id,
-        controller: p.controller,
-        driver: p.driver,
-        car: p.car,
-        gridPos: p.gridPos ?? null,
-        stats: {
-          laps: p.totalLaps || 0,
-          bestLap: p.bestLapTime || null,
-          lastLap: p.lastLapTime || null,
-          totalTime: p.totalTime || 0,
-          gap: p.gap ?? null,
-        },
-        position: p.position || 0,
-        positionDelta: p.positionDelta || 0, // From backend
-        hasFastestLap: fastestLapTime && p.bestLapTime === fastestLapTime,
-        isDNF: p.isDNF || false,
-        laps: p.laps || [], // Lap history for balancing chart
-      }))
-      .sort((a, b) => (a.position || 99) - (b.position || 99))
-  }, [leaderboard, session])
-
-  // Max laps completed
-  const maxLapsCompleted = useMemo(() => {
-    return Math.max(0, ...leaderboard.map((p) => p.totalLaps || 0))
-  }, [leaderboard])
-
-  // Fastest lap time
-  const fastestLap = useMemo(() => {
-    const times = leaderboard.map((p) => p.bestLapTime).filter((t) => t && t > 0)
-    return times.length > 0 ? Math.min(...times) : null
-  }, [leaderboard])
+  // The live leaderboard, or the session's drivers before the first lap
+  const sessionDrivers = session?.drivers
+  const entries = useMemo(
+    () => toLeaderboardEntries(leaderboard.length > 0 ? leaderboard : sessionDrivers || [], { liveDeltas: true }),
+    [leaderboard, sessionDrivers]
+  )
+  const maxLapsCompleted = useMemo(() => maxLapsOf(leaderboard), [leaderboard])
+  const fastestLap = useMemo(() => fastestLapOf(leaderboard), [leaderboard])
 
   const value = {
-    // Session state
     session,
     setSession,
     leaderboard,
     entries,
     maxLapsCompleted,
     fastestLap,
-    elapsed,
-    remaining,
-    gracePeriodRemaining,
-    pauseDuration,
-    totalPauseDuration,
-    pauses,
-    startedAt,
+    ...timing,
     finishingSession,
     sessionResults,
 
-    // Data freshness
     lastServerTime,
     isStale,
 
-    // Session actions
     fetchSession,
     findOrCreateFreeSession,
     createSession,
@@ -590,13 +228,9 @@ export function SessionProvider({ children }) {
     clearSession,
     clearSessionResults,
 
-    // Helpers
-    isActive,
-    isFinishing,
-    isFinished,
-
-    // Constants
-    SESSION_STATUS,
+    isActive: session?.status === SessionStatus.ACTIVE,
+    isFinishing: session?.status === SessionStatus.FINISHING,
+    isFinished: session?.status === SessionStatus.FINISHED,
   }
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

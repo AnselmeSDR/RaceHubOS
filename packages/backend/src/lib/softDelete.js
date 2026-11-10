@@ -220,3 +220,132 @@ export async function restoreCar(prisma, carId) {
     };
   });
 }
+
+/** Delete a championship with its sessions, their entries and laps; its participants are hidden. */
+export async function softDeleteChampionship(prisma, championshipId) {
+  const deletedAt = new Date();
+  const ofChampionship = { session: { championshipId } };
+  await prisma.$transaction([
+    prisma.lap.updateMany({ where: { ...active, ...ofChampionship }, data: { deletedAt } }),
+    prisma.sessionDriver.updateMany({ where: { ...active, ...ofChampionship }, data: { deletedAt } }),
+    prisma.session.updateMany({ where: { ...active, championshipId }, data: { deletedAt } }),
+    prisma.championshipParticipant.updateMany({ where: { ...active, championshipId }, data: { deletedAt } }),
+    prisma.championship.update({ where: { id: championshipId }, data: { deletedAt } }),
+  ]);
+  return { deletedAt };
+}
+
+/** Restore a championship and only what its deletion hid. */
+export async function restoreChampionship(prisma, championshipId) {
+  const championship = await prisma.championship.findUnique({ where: { id: championshipId } });
+  if (!championship) throw new Error('Championship not found');
+  const { deletedAt } = championship;
+  const ofChampionship = { session: { championshipId } };
+  const restored = { deletedAt: null };
+  await prisma.$transaction([
+    prisma.championship.update({ where: { id: championshipId }, data: restored }),
+    ...(deletedAt
+      ? [
+          prisma.session.updateMany({ where: { deletedAt, championshipId }, data: restored }),
+          prisma.championshipParticipant.updateMany({ where: { deletedAt, championshipId }, data: restored }),
+          prisma.sessionDriver.updateMany({ where: { deletedAt, ...ofChampionship }, data: restored }),
+          prisma.lap.updateMany({ where: { deletedAt, ...ofChampionship }, data: restored }),
+        ]
+      : []),
+  ]);
+}
+
+/** Erase a championship for good: its laps, entries and sessions first (participants cascade). */
+export async function purgeChampionship(prisma, championshipId) {
+  const ofChampionship = { session: { championshipId } };
+  await prisma.$transaction([
+    prisma.lap.deleteMany({ where: ofChampionship }),
+    prisma.sessionDriver.deleteMany({ where: ofChampionship }),
+    prisma.session.deleteMany({ where: { championshipId } }),
+    prisma.championship.delete({ where: { id: championshipId } }),
+  ]);
+}
+
+/** Delete a session with its entries, laps and records, all at one timestamp. */
+export async function softDeleteSession(prisma, sessionId) {
+  const deletedAt = new Date();
+  await prisma.$transaction([
+    prisma.lap.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    prisma.sessionDriver.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    // A record stands for one lap of this session: hiding the lap hides it too
+    prisma.trackRecord.updateMany({ where: { ...active, sessionId }, data: { deletedAt } }),
+    prisma.session.update({ where: { id: sessionId }, data: { deletedAt } }),
+  ]);
+  return { deletedAt };
+}
+
+/** Restore a session with its entries, laps and records hidden by the same deletion. */
+export async function restoreSession(prisma, sessionId) {
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session) throw new Error('Session not found');
+  const { deletedAt } = session;
+  const restored = { deletedAt: null };
+  await prisma.$transaction([
+    prisma.session.update({ where: { id: sessionId }, data: restored }),
+    ...(deletedAt
+      ? [
+          prisma.sessionDriver.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+          prisma.lap.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+          prisma.trackRecord.updateMany({ where: { deletedAt, sessionId }, data: restored }),
+        ]
+      : []),
+  ]);
+}
+
+/** Erase a session for good, its laps and entries first. */
+export async function purgeSession(prisma, sessionId) {
+  await prisma.$transaction([
+    prisma.lap.deleteMany({ where: { sessionId } }),
+    prisma.sessionDriver.deleteMany({ where: { sessionId } }),
+    prisma.session.delete({ where: { id: sessionId } }),
+  ]);
+}
+
+/** Erase a car for good, with every entry, lap, controller setting and record under it. */
+export async function purgeCar(prisma, carId) {
+  await prisma.$transaction([
+    prisma.sessionDriver.deleteMany({ where: { carId } }),
+    prisma.lap.deleteMany({ where: { carId } }),
+    prisma.controllerConfig.deleteMany({ where: { carId } }),
+    prisma.trackRecord.deleteMany({ where: { carId } }),
+    prisma.car.delete({ where: { id: carId } }),
+  ]);
+}
+
+/** Erase a driver for good, with every lap, entry, participation, controller setting and record under them. */
+export async function purgeDriver(prisma, driverId) {
+  await prisma.$transaction([
+    prisma.lap.deleteMany({ where: { driverId } }),
+    prisma.sessionDriver.deleteMany({ where: { driverId } }),
+    prisma.trackRecord.deleteMany({ where: { driverId } }),
+    prisma.championshipParticipant.deleteMany({ where: { driverId } }),
+    prisma.controllerConfig.deleteMany({ where: { driverId } }),
+    prisma.driver.delete({ where: { id: driverId } }),
+  ]);
+}
+
+/**
+ * Erase a track for good, with what its deletion hid: its championships, their sessions wherever
+ * they run, its own sessions, and every lap, entry, controller setting and record under them.
+ */
+export async function purgeTrack(prisma, trackId) {
+  await prisma.$transaction(async (tx) => {
+    const championships = await tx.championship.findMany({ where: { trackId }, select: { id: true } });
+    const championshipIds = championships.map((c) => c.id);
+    const sessionFilter = { OR: [{ trackId }, { championshipId: { in: championshipIds } }] };
+
+    await tx.lap.deleteMany({ where: { OR: [{ trackId }, { session: sessionFilter }] } });
+    await tx.sessionDriver.deleteMany({ where: { session: sessionFilter } });
+    await tx.trackRecord.deleteMany({ where: { trackId } });
+    await tx.controllerConfig.deleteMany({ where: { trackId } });
+    await tx.session.deleteMany({ where: sessionFilter });
+    // Participants cascade with their championship
+    await tx.championship.deleteMany({ where: { id: { in: championshipIds } } });
+    await tx.track.delete({ where: { id: trackId } });
+  });
+}

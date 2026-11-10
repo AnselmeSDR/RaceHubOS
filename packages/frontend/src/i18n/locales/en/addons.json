@@ -1,0 +1,81 @@
+{
+  "error": {
+    "title": "The \"{{addon}}\" add-on crashed on this page",
+    "hint": "The rest of the app keeps working. If the error comes back, disable the add-on from the Add-ons page.",
+    "retry": "Try again"
+  },
+  "page": {
+    "loadError": "Could not load the add-ons: {{error}}"
+  },
+  "tabs": {
+    "installed": "Installed",
+    "market": "Market",
+    "link": "Install from a link"
+  },
+  "installed": {
+    "empty": "No add-on yet. Find one in the Market.",
+    "by": "by {{author}}",
+    "source": {
+      "catalog": "Market",
+      "link": "Link",
+      "local": "Local folder"
+    },
+    "localHint": "Put in addons/ by hand: the app never updates or removes it.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "invalid": "Invalid",
+    "disabledReason": "Disabled: {{reason}}",
+    "update": "Update to {{ref}}",
+    "enable": "Enable",
+    "disable": "Disable",
+    "uninstall": "Uninstall"
+  },
+  "uninstall": {
+    "title": "Uninstall {{name}}?",
+    "deleteData": "Also delete its data",
+    "deleteDataHint": "Its fields on drivers, cars, tracks… and its own database. Kept otherwise: reinstalling it brings everything back.",
+    "confirm": "Uninstall",
+    "cancel": "Cancel"
+  },
+  "market": {
+    "empty": "The catalog is empty for now.",
+    "offline": "The online catalog couldn't be read: this is the one shipped with the app.",
+    "install": "Install",
+    "installed": "Installed",
+    "source": "Source code"
+  },
+  "link": {
+    "label": "Git repository",
+    "placeholder": "https://github.com/…/racehubos-…",
+    "warning": "This add-on hasn't been reviewed. It can access everything in RaceHubOS: only install add-ons from people you trust.",
+    "install": "Install"
+  },
+  "overrides": {
+    "title": "Core files changed by add-ons",
+    "core": "core",
+    "replacement": "{{addon}} replaces {{file}}: the changes from {{hidden}} are hidden.",
+    "replacementAlone": "{{addon}} replaces {{file}} entirely.",
+    "orphan": "{{addon}} changes {{file}}, which the core no longer has: that change does nothing.",
+    "hint": "Disable one of these add-ons, or ask its author to wrap the file with @base."
+  },
+  "progress": {
+    "install": "Installing {{addon}}",
+    "update": "Updating {{addon}}",
+    "enable": "Enabling {{addon}}",
+    "disable": "Disabling {{addon}}",
+    "uninstall": "Uninstalling {{addon}}",
+    "newAddon": "the add-on",
+    "restarting": "Done. RaceHubOS is restarting…",
+    "failed": "Failed: {{error}}",
+    "dismiss": "Close"
+  },
+  "step": {
+    "starting": "Starting…",
+    "download": "Downloading…",
+    "backup": "Saving the database…",
+    "dependencies": "Installing its dependencies…",
+    "build": "Building the app…",
+    "restart": "Restarting…",
+    "error": "Error"
+  }
+}

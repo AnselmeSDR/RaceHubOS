@@ -18,6 +18,9 @@ beforeAll(async () => {
   // Clean database before tests
   // Children first: several tables reference drivers, cars and tracks with
   // onDelete: Restrict, so they must go before their parents.
+  for (const model of ['carExtra', 'driverExtra', 'trackExtra', 'teamExtra', 'sessionExtra', 'championshipExtra']) {
+    await prisma[model].deleteMany();
+  }
   await prisma.trackRecord.deleteMany();
   await prisma.controllerConfig.deleteMany();
   await prisma.lap.deleteMany();
