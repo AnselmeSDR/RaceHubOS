@@ -2,7 +2,7 @@
   "addons": [
     {
       "id": "car-service",
-      "repo": "https://gitlab.com/AnselmeSDR/racehubos-car-service",
+      "repo": "https://github.com/AnselmeSDR/racehubos-car-service",
       "name": {
         "en": "Car service",
         "fr": "Entretien des voitures",

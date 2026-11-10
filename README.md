@@ -111,7 +111,7 @@ The database is backed up before each action. RaceHubOS then rebuilds and restar
 
 | Add-on | What it does |
 |---|---|
-| [Car service](https://gitlab.com/AnselmeSDR/racehubos-car-service) | Laps and distance of each car since its last service, an interval per car, and the cars due: a page, a badge on the car and a column in the cars list |
+| [Car service](https://github.com/AnselmeSDR/racehubos-car-service) | Laps and distance of each car since its last service, an interval per car, and the cars due: a page, a badge on the car and a column in the cars list |
 
 **Writing an add-on**: [docs/ADDONS.md](docs/ADDONS.md) covers the folder layout, the manifest, the server and web sides, data, changing core files (overrides), publishing, and the rules for AI assistants. Car service is a complete example, tests included.
 
@@ -270,7 +270,7 @@ La base est sauvegardée avant chaque action. RaceHubOS se reconstruit ensuite e
 
 | Add-on | Ce qu'il fait |
 |---|---|
-| [Entretien des voitures](https://gitlab.com/AnselmeSDR/racehubos-car-service) | Tours et distance de chaque voiture depuis son dernier entretien, un intervalle par voiture, et les voitures à entretenir : une page, un badge sur la voiture et une colonne dans la liste des voitures |
+| [Entretien des voitures](https://github.com/AnselmeSDR/racehubos-car-service) | Tours et distance de chaque voiture depuis son dernier entretien, un intervalle par voiture, et les voitures à entretenir : une page, un badge sur la voiture et une colonne dans la liste des voitures |
 
 **Écrire un add-on** : [docs/ADDONS.md](docs/ADDONS.md) (en anglais) décrit l'arborescence, le manifeste, les côtés serveur et web, les données, la modification des fichiers du cœur (overrides), la publication, et les règles pour les assistants IA. Entretien des voitures est un exemple complet, tests compris.
 
