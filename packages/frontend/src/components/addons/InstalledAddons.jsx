@@ -14,6 +14,24 @@ function Status({ addon }) {
   return <Badge className="bg-green-600 text-white">{t('installed.enabled')}</Badge>
 }
 
+/** Enable or disable: at the end of the title's line. */
+function Toggle({ addon, busy, onAction }) {
+  const { t } = useTranslation('addons')
+  const [action, Icon] = addon.enabled ? ['disable', PowerOff] : ['enable', Power]
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="shrink-0"
+      disabled={busy}
+      onClick={() => onAction(action, { id: addon.id })}
+    >
+      <Icon className="size-4" />
+      {t(`installed.${action}`)}
+    </Button>
+  )
+}
+
 function AddonCard({ addon, busy, onAction, onUninstall }) {
   const { t, i18n } = useTranslation('addons')
   const lang = i18n.resolvedLanguage
@@ -41,6 +59,7 @@ function AddonCard({ addon, busy, onAction, onUninstall }) {
             )}
             {addonDescription(addon, lang) && <p className="text-sm mt-1">{addonDescription(addon, lang)}</p>}
           </div>
+          {addon.valid && <Toggle addon={addon} busy={busy} onAction={onAction} />}
         </div>
 
         {!addon.valid && <p className="text-sm text-destructive">{addon.errors.join(' · ')}</p>}
@@ -51,32 +70,22 @@ function AddonCard({ addon, busy, onAction, onUninstall }) {
         )}
         {!installed && <p className="text-xs text-muted-foreground">{t('installed.localHint')}</p>}
 
-        <div className="flex flex-wrap gap-2">
-          {addon.update && (
-            <Button size="sm" disabled={busy} onClick={() => onAction('update', { id: addon.id })}>
-              <ArrowUpCircle className="size-4" />
-              {t('installed.update', { ref: addon.update.ref })}
-            </Button>
-          )}
-          {addon.valid &&
-            (addon.enabled ? (
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => onAction('disable', { id: addon.id })}>
-                <PowerOff className="size-4" />
-                {t('installed.disable')}
+        {(addon.update || installed) && (
+          <div className="flex flex-wrap gap-2">
+            {addon.update && (
+              <Button size="sm" disabled={busy} onClick={() => onAction('update', { id: addon.id })}>
+                <ArrowUpCircle className="size-4" />
+                {t('installed.update', { ref: addon.update.ref })}
               </Button>
-            ) : (
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => onAction('enable', { id: addon.id })}>
-                <Power className="size-4" />
-                {t('installed.enable')}
+            )}
+            {installed && (
+              <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={onUninstall}>
+                <Trash2 className="size-4" />
+                {t('installed.uninstall')}
               </Button>
-            ))}
-          {installed && (
-            <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={onUninstall}>
-              <Trash2 className="size-4" />
-              {t('installed.uninstall')}
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

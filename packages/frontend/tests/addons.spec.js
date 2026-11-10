@@ -31,6 +31,14 @@ test('the Add-ons page lists the add-ons, the catalog and the install from a lin
   await expect(hello.getByRole('button', { name: 'Désactiver' })).toBeVisible()
   await expect(hello.getByRole('button', { name: 'Désinstaller' })).toHaveCount(0)
 
+  // The on/off button ends the title's line, on the right of the card
+  const toggle = await hello.getByRole('button', { name: 'Désactiver' }).boundingBox()
+  const title = await hello.getByRole('heading', { name: 'Bonjour E2E' }).boundingBox()
+  const card = await hello.boundingBox()
+  expect(toggle.y).toBeLessThan(title.y + title.height)
+  expect(toggle.y + toggle.height).toBeGreaterThan(title.y)
+  expect(card.x + card.width - (toggle.x + toggle.width)).toBeLessThan(40)
+
   await page.getByTestId('addons-tab-market').click()
   const market = page.getByTestId('market-e2e-market')
   await expect(market).toContainText('Catalogue E2E')
