@@ -74,3 +74,6 @@ addons/*
 !addons/catalog.json
 !addons/README.md
 !addons/package.json
+
+# Site built for GitHub Pages (npm run site:build)
+_site/

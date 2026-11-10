@@ -2,6 +2,8 @@
 
 **Free & open source race management for Carrera Digital 132/124**
 
+🌐 **[anselmesdr.github.io/RaceHubOS](https://anselmesdr.github.io/RaceHubOS/)**: downloads and a tour of the app, in English, French and German.
+
 ![Podium](docs/screenshots/podium.png)
 
 Carrera dropped their official app. Existing alternatives are closed source. We believe slot racing deserves an open, community-driven tool that anyone can use, improve, and adapt to their setup.
@@ -199,6 +201,8 @@ Carrera a abandonné son app officielle. Les alternatives existantes sont fermé
 RaceHubOS est un système complet de gestion de course qui tourne dans le navigateur. Branchez votre Control Unit Carrera, ouvrez un navigateur, et roulez.
 
 Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
+
+🌐 Le site, avec les téléchargements et la visite de l'app : **[anselmesdr.github.io/RaceHubOS](https://anselmesdr.github.io/RaceHubOS/?lang=fr)**
 
 ### Fonctionnalités
 

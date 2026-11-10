@@ -20,7 +20,9 @@
     "prepare": "node scripts/install-hooks.mjs",
     "hooks:install": "node scripts/install-hooks.mjs && echo \"Hooks installés : message vérifié à chaque commit, règles vérifiées avant chaque push.\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "site:build": "node site/scripts/build.mjs",
+    "test:site": "node --test \"site/tests/*.test.mjs\" && playwright test -c site/playwright.config.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

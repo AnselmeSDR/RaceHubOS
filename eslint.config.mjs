@@ -24,4 +24,19 @@ export default defineConfig([
       globals: globals.jest,
     },
   },
+  {
+    // The site's page scripts run in the browser as classic scripts
+    files: ['site/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: globals.browser,
+    },
+  },
+  {
+    // Playwright scripts: callbacks handed to page.evaluate run in the page
+    files: ['site/tests/*.spec.mjs', 'site/scripts/screenshots.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ]);
