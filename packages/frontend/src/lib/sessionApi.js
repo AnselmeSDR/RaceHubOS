@@ -74,7 +74,10 @@ export async function shareFreeSessionDrivers(trackId, type, drivers) {
   }
 }
 
-/** The best free-session laps of a track by session type, as the standings tabs read them; null when unreadable. */
+/**
+ * The best free-session laps of a track by session type, as the standings tabs read them, and its balancing
+ * standings; null when unreadable.
+ */
 export async function getTrackStandings(trackId) {
   try {
     const res = await fetch(`${API_URL}/api/records/track/${trackId}?championshipId=null`)
@@ -89,6 +92,7 @@ export async function getTrackStandings(trackId) {
         totalLaps: lap.totalLaps || lap.laps || 0,
         totalTime: lap.totalTime || null,
       })),
+      [SessionType.BALANCING]: body.data.balancing || [],
     }
   } catch (err) {
     console.error('Error fetching standings:', err)

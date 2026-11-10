@@ -110,7 +110,7 @@ test('no line-up shared when the other types have no free session', async () => 
 })
 
 describe('getTrackStandings', () => {
-  test('the best laps by type, race totals defaulted', async () => {
+  test('the best laps by type, race totals defaulted; the balancing standings as read', async () => {
     routeFetch({
       '/api/records/track/t1?championshipId=null': {
         success: true,
@@ -121,6 +121,7 @@ describe('getTrackStandings', () => {
             { id: 'r2', lapTime: 7200, laps: 9 },
             { id: 'r3', lapTime: 7300 },
           ],
+          balancing: [{ carId: 'c1', bestLap: 6900 }],
         },
       },
     })
@@ -132,6 +133,7 @@ describe('getTrackStandings', () => {
         { id: 'r2', lapTime: 7200, bestTime: 7200, laps: 9, totalLaps: 9, totalTime: null },
         { id: 'r3', lapTime: 7300, bestTime: 7300, totalLaps: 0, totalTime: null },
       ],
+      balancing: [{ carId: 'c1', bestLap: 6900 }],
     })
   })
 

@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SessionStatus } from '@racehubos/shared'
+import { STANDARD_SESSION_TYPES, SessionStatus } from '@racehubos/shared'
 import { useSession } from '@/context/SessionContext'
 import { isLiveStatus } from '@/lib/leaderboardEntries'
 import {
@@ -91,12 +91,14 @@ export function useFreeSession({ trackId, type, reloadStandings }) {
     await reloadStandings()
   }
 
-  // The line-up is shared with the other free sessions of the track
+  // The line-up is shared with the other free sessions of the track; balancing keeps its cars to itself
   async function saveConfig(changes) {
     if (!session?.id) return
     try {
       await saveSessionConfig(session, changes)
-      if (changes.drivers?.length > 0) await shareFreeSessionDrivers(trackId, type, changes.drivers)
+      if (changes.drivers?.length > 0 && STANDARD_SESSION_TYPES.includes(type)) {
+        await shareFreeSessionDrivers(trackId, type, changes.drivers)
+      }
       await loadSession(session.id)
     } catch (err) {
       console.error('Error saving session config:', err)

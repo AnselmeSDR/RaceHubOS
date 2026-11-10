@@ -7,9 +7,6 @@
     "hideStandings": "Gesamtwertung ausblenden",
     "standingsTitle": "Gesamtwertung"
   },
-  "session": {
-    "defaultName": "Fahrzeugabgleich"
-  },
   "chart": {
     "carFallback": "Auto {{number}}",
     "noLapData": "Keine Rundendaten vorhanden",

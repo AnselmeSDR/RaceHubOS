@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { STANDARD_SESSION_TYPES } from '@racehubos/shared'
+import { STANDARD_SESSION_TYPES, SessionType } from '@racehubos/shared'
 import { getTrackStandings } from '@/lib/sessionApi'
 
-const EMPTY = Object.fromEntries(STANDARD_SESSION_TYPES.map((type) => [type, []]))
+const EMPTY = Object.fromEntries([...STANDARD_SESSION_TYPES, SessionType.BALANCING].map((type) => [type, []]))
 
 /** The free-session standings of a track, read again whenever a session finishes. */
 export function useTrackStandings(trackId) {

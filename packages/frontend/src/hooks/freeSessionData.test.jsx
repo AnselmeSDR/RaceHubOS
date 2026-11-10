@@ -56,7 +56,7 @@ describe('useTrackStandings', () => {
   test('empty without a track', () => {
     const mock = routeFetch({})
     const { result } = renderHook(() => useTrackStandings(null))
-    expect(result.current.standings).toEqual({ practice: [], qualif: [], race: [] })
+    expect(result.current.standings).toEqual({ practice: [], qualif: [], race: [], balancing: [] })
     expect(mock).not.toHaveBeenCalled()
   })
 
