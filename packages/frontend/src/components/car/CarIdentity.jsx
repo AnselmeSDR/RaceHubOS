@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Zap, Flame, FlaskConical } from 'lucide-react'
 import { formatLevel } from '@racehubos/shared'
 import LapTime from '@/components/race/LapTime'
-import { getImgUrl } from '@/utils/image'
 import { carColor } from '@/lib/colors'
+import CarPicture from '@/components/car/CarPicture'
 
 /** Picture, name and figures of a car, at the top of its profile. */
 export default function CarIdentity({ car }) {
@@ -13,12 +13,7 @@ export default function CarIdentity({ car }) {
   return (
     <div className="flex items-center gap-3" data-testid="car-identity">
       {car.img ? (
-        <div
-          className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-offset-2 ring-offset-background"
-          style={{ '--tw-ring-color': color }}
-        >
-          <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-        </div>
+        <CarPicture car={car} className="w-16 h-10" />
       ) : (
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"

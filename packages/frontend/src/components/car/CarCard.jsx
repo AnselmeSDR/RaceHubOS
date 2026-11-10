@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import CardActions from '@/components/crud/CardActions'
 import { carColor } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import CarPicture from '@/components/car/CarPicture'
 
 /** A car in the grid of the cars page: picture, settings gauges and races count. */
 export default function CarCard({ car, onClick, onEdit, onDelete }) {
@@ -25,19 +25,19 @@ export default function CarCard({ car, onClick, onEdit, onDelete }) {
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: color }} />
-            <div
-              className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)` }}
-            >
-              {car.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
+          {car.img ? (
+            <CarPicture car={car} alt="" className="w-36 h-20" />
+          ) : (
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: color }} />
+              <div
+                className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)` }}
+              >
                 <span className="drop-shadow-lg">{car.brand?.charAt(0)}</span>
-              )}
+              </div>
             </div>
-          </div>
+          )}
           {car.year && (
             <Badge variant="secondary" className="shadow-md">
               {car.year}

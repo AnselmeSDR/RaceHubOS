@@ -4,6 +4,7 @@ import { sessionBadgeClass } from '@/lib/colors'
 import { getImgUrl } from '@/utils/image'
 import LinkCell from '@/components/crud/LinkCell'
 import { filteredColumn as filtered } from '@/components/crud/filteredColumn'
+import CarPicture from '@/components/car/CarPicture'
 
 const PODIUM_BACKGROUNDS = ['bg-yellow-500', 'bg-gray-400', 'bg-orange-500']
 
@@ -86,16 +87,16 @@ export function statsColumns(t, { lang, onOpen }) {
             onOpen={onOpen}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: car?.color || '#666' }}
-            >
-              {car?.img ? (
-                <img src={getImgUrl(car.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                car?.brand?.charAt(0)
-              )}
-            </div>
+            {car?.img ? (
+              <CarPicture car={car} alt="" className="w-14 h-8" />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: car?.color || '#666' }}
+              >
+                {car?.brand?.charAt(0)}
+              </div>
+            )}
             <span className="text-muted-foreground truncate">
               {car?.brand} {car?.model}
             </span>

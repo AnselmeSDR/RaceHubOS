@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="meta.title">RaceHubOS: race management for Carrera Digital 132 and 124</title>
+    <meta
+      name="description"
+      data-i18n-content="meta.description"
+      content="Free, open source software for your Carrera Digital 132 and 124 races: live timing, championships, statistics and car balancing. Windows, macOS and Linux."
+    />
+    <meta name="theme-color" content="#fafaf9" />
+    <meta name="color-scheme" content="light" />
+    <meta property="og:title" content="RaceHubOS" />
+    <meta
+      property="og:description"
+      data-i18n-content="meta.description"
+      content="Free, open source software for your Carrera Digital 132 and 124 races."
+    />
+    <meta property="og:image" content="https://anselmesdr.github.io/RaceHubOS/img/en/race.webp" />
+    <link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/inter-italic.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Before the first paint: night mode when the visitor picked it. The English page is the home of the site: a
+      // visitor who wants French or German (?lang=, then their choice, then the browser) goes to that page, before the
+      // browser has read any of the English one.
+      (() => {
+        const root = document.documentElement;
+        const stored = (key) => {
+          try {
+            return localStorage.getItem(key);
+          } catch {
+            return null;
+          }
+        };
+        if (stored('racehubos-site-theme') === 'dark') root.dataset.theme = 'dark';
+        if (root.lang !== 'en') return;
+        const browser = (navigator.languages || [navigator.language]).map((tag) => String(tag).toLowerCase().split('-')[0]);
+        const wanted = [new URLSearchParams(location.search).get('lang'), stored('racehubos-site-lang'), ...browser];
+        const lang = wanted.find((tag) => ['en', 'fr', 'de'].includes(tag)) || 'en';
+        if (lang !== 'en') location.replace(`${lang}/${location.hash}`);
+      })();
+    </script>
+    <script src="i18n.js" defer></script>
+    <script src="main.js" defer></script>
+  </head>
+  <body>
+    <!-- Icons of the app (Lucide, ISC license) -->
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528" /></symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2" /><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2" /><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3" /><path d="M4 22h16" /><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" /><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></symbol>
+      <symbol id="i-users-round" viewBox="0 0 24 24"><path d="M18 21a8 8 0 0 0-16 0" /><circle cx="10" cy="8" r="5" /><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></symbol>
+      <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></symbol>
+      <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18" /><path d="m19 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" /><path d="m5 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M7 21h10" /></symbol>
+      <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" /></symbol>
+      <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></symbol>
+      <symbol id="i-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /><path d="M6.453 15h11.094" /><path d="M8.5 2h7" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol>
+      <symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /><path d="M16 9a5 5 0 0 1 0 6" /><path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol>
+      <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="m7 7 10 10-5 5V2l5 5L7 17" /></symbol>
+      <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01" /><path d="M8.5 16.429a5 5 0 0 1 7 0" /><path d="M5 12.859a10 10 0 0 1 5.17-2.69" /><path d="M19 12.859a10 10 0 0 0-2.007-1.523" /><path d="M2 8.82a15 15 0 0 1 4.177-2.643" /><path d="M22 8.82a15 15 0 0 0-11.288-3.764" /><path d="m2 2 20 20" /></symbol>
+    </svg>
+
+    <a class="skip" href="#features" data-i18n="skip">Skip to content</a>
+
+    <header class="nav">
+      <nav class="wrap nav-inner" aria-label="RaceHubOS">
+        <a class="brand" href="#top">
+          <img src="img/logo-sm.webp" alt="" width="40" height="40" />
+          <span><b>RaceHubOS</b><small>Carrera Digital 132/124</small></span>
+        </a>
+        <ul class="links">
+          <li><a href="#features" data-i18n="nav.features">Features</a></li>
+          <li><a href="#addons" data-i18n="nav.addons">Add-ons</a></li>
+          <li><a href="#install" data-i18n="nav.install">Install</a></li>
+          <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
+          <li><a href="#open-source" data-i18n="nav.open">Open source</a></li>
+        </ul>
+        <div class="langs" role="group" aria-label="Language" data-i18n-aria="nav.language">
+          <a href="fr/" hreflang="fr" lang="fr" data-lang="fr">FR</a>
+          <a href="./" hreflang="en" lang="en" data-lang="en">EN</a>
+          <a href="de/" hreflang="de" lang="de" data-lang="de">DE</a>
+        </div>
+        <button
+          class="theme"
+          type="button"
+          aria-pressed="false"
+          aria-label="Night mode"
+          data-i18n-aria="nav.night"
+          data-theme-toggle
+        >
+          <svg class="i moon" aria-hidden="true"><use href="#i-moon" /></svg>
+          <svg class="i sun" aria-hidden="true"><use href="#i-sun" /></svg>
+        </button>
+        <a
+          class="github"
+          href="https://github.com/AnselmeSDR/RaceHubOS"
+          aria-label="Source code on GitHub"
+          data-i18n-aria="nav.code"
+        >
+          <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+        </a>
+        <a class="button primary small" href="#install" data-i18n="nav.download">Download</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <!-- A slot car circuit behind the hero: the cars of the demo race run on it -->
+        <div class="circuit" aria-hidden="true">
+          <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="chequer" width="9" height="9" patternUnits="userSpaceOnUse">
+                <rect class="flag-light" width="9" height="9" />
+                <rect class="flag-dark" width="4.5" height="4.5" />
+                <rect class="flag-dark" x="4.5" y="4.5" width="4.5" height="4.5" />
+              </pattern>
+            </defs>
+            <path
+              id="circuit-lap"
+              class="road"
+              data-lap
+              d="M 300 120 H 1300 A 160 160 0 0 1 1460 280 V 600 A 160 160 0 0 1 1300 760 H 1000 A 90 90 0 0 1 910 670 V 560 A 90 90 0 0 0 820 470 H 640 A 90 90 0 0 0 550 560 V 670 A 90 90 0 0 1 460 760 H 300 A 160 160 0 0 1 140 600 V 280 A 160 160 0 0 1 300 120 Z"
+            />
+            <use class="slots" href="#circuit-lap" />
+            <use class="lane" href="#circuit-lap" />
+            <rect class="finish" x="456" y="102" width="9" height="36" fill="url(#chequer)" />
+          </svg>
+          <canvas></canvas>
+        </div>
+
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <h1 data-i18n="hero.title">Run your Carrera Digital 132 and 124 races.</h1>
+            <p class="lead" data-i18n="hero.lead">
+              Live timing, championships, statistics and car balancing. Connect the Control Unit, open your browser, and
+              the race is on. Free and open source.
+            </p>
+            <div class="downloads">
+              <a class="button" data-os="windows" href="RaceHubOS-install-win.bat" download>
+                <svg class="i" aria-hidden="true"><use href="#i-download" /></svg>
+                <span data-i18n="hero.windows">Download for Windows</span>
+              </a>
+              <a class="button" data-os="mac" href="RaceHubOS-install-mac.zip" download>
+                <svg class="i" aria-hidden="true"><use href="#i-download" /></svg>
+                <span data-i18n="hero.mac">Download for macOS</span>
+              </a>
+            </div>
+            <p class="aside">
+              <a href="https://github.com/AnselmeSDR/RaceHubOS#-getting-started" data-i18n="hero.other"
+                >Linux or manual install</a
+              >
+              <span><span data-i18n="hero.version">Version</span> %VERSION%</span>
+            </p>
+          </div>
+
+          <figure class="demo">
+            <div class="app">
+              <div class="app-side" aria-hidden="true">
+                <img src="img/logo-sm.webp" alt="" width="36" height="36" />
+                <svg class="i"><use href="#i-chart-column" /></svg>
+                <svg class="i active"><use href="#i-flag" /></svg>
+                <svg class="i"><use href="#i-trophy" /></svg>
+                <svg class="i"><use href="#i-clock" /></svg>
+                <svg class="i"><use href="#i-map" /></svg>
+                <svg class="i"><use href="#i-users-round" /></svg>
+                <svg class="i"><use href="#i-users" /></svg>
+                <svg class="i"><use href="#i-car" /></svg>
+                <svg class="i"><use href="#i-chart-column" /></svg>
+                <svg class="i"><use href="#i-scale" /></svg>
+                <svg class="i"><use href="#i-puzzle" /></svg>
+                <svg class="i"><use href="#i-settings" /></svg>
+                <svg class="i end moon"><use href="#i-moon" /></svg>
+                <svg class="i end sun"><use href="#i-sun" /></svg>
+                <i class="online"></i>
+              </div>
+
+              <div class="app-main">
+                <div class="app-top" aria-hidden="true">
+                  <svg class="i"><use href="#i-panel-left" /></svg>
+                  <b data-i18n="app.freeMode">Free Mode</b>
+                </div>
+                <div class="app-tools" aria-hidden="true">
+                  <span class="select">CREUTZWALD RING <svg class="i"><use href="#i-chevron-down" /></svg></span>
+                  <span class="types">
+                    <span><svg class="i"><use href="#i-flask-conical" /></svg><span data-i18n="app.practice">Free Practice</span></span>
+                    <span><svg class="i"><use href="#i-timer" /></svg><span data-i18n="app.qualif">Qualifying</span></span>
+                    <span class="on"><svg class="i"><use href="#i-flag" /></svg><span data-i18n="app.race">Race</span></span>
+                  </span>
+                </div>
+
+                <div class="session">
+                  <div class="session-head">
+                    <svg class="i" aria-hidden="true"><use href="#i-flag" /></svg>
+                    <b data-i18n="board.session">R - Race</b>
+                    <span class="chip" data-state="paused" data-board-status data-i18n="board.paused">Paused</span>
+                    <button class="replay" type="button" data-replay>
+                      <svg class="i" aria-hidden="true"><use href="#i-refresh-cw" /></svg>
+                      <span data-i18n="board.replay">Restart the demo</span>
+                    </button>
+                  </div>
+                  <div class="session-progress">
+                    <span class="meter">
+                      <svg class="i" aria-hidden="true"><use href="#i-clock" /></svg>
+                      <span data-board-clock>00:41</span>
+                    </span>
+                    <span class="bar"><span data-board-progress style="--p: 0.625"></span></span>
+                    <span class="meter">
+                      <svg class="i" aria-hidden="true"><use href="#i-refresh-cw" /></svg>
+                      <span data-board-lap data-i18n="board.lap" data-vars='{"lap":6,"total":8}'>Lap 6/8</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="stage">
+                  <ol class="rows">
+                    <li class="row" style="--c: #2fabf1; --pos: 0" data-place="1">
+                      <span class="place"><span class="pos">1</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/dan.png" alt="" width="56" height="56" /></span>
+                      <span class="num">71</span>
+                      <img class="livery" src="img/cars/amg.png" alt="" width="64" height="40" />
+                      <span class="who"><b>DAN</b><small><i style="--car: #b0b0b0"></i>AMG GT3 #8</small></span>
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>5</b></span>
+                      <span class="stat best"
+                        ><small data-i18n="board.best">Best</small><b data-best class="fastest">7.742</b></span
+                      >
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>7.811</b></span>
+                      <span class="stat gap"
+                        ><small data-i18n="board.gap">Gap</small
+                        ><b data-gap class="leader" data-i18n="board.leader">Leader</b></span
+                      >
+                    </li>
+                    <li class="row" style="--c: #3b3a38; --pos: 1" data-place="2">
+                      <span class="place"><span class="pos">2</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/sdr.png" alt="" width="56" height="56" /></span>
+                      <span class="num">42</span>
+                      <img class="livery" src="img/cars/bmw.png" alt="" width="64" height="40" />
+                      <span class="who"><b>SDR</b><small><i style="--car: #22c55e"></i>BMW M4 GT3 #11</small></span>
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>5</b></span>
+                      <span class="stat best"><small data-i18n="board.best">Best</small><b data-best>7.768</b></span>
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>7.795</b></span>
+                      <span class="stat gap"><small data-i18n="board.gap">Gap</small><b data-gap class="close">+0.412s</b></span>
+                    </li>
+                    <li class="row" style="--c: #a73044; --pos: 2" data-place="3">
+                      <span class="place"><span class="pos">3</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/pel.png" alt="" width="56" height="56" /></span>
+                      <span class="num">13</span>
+                      <img class="livery" src="img/cars/porsche.png" alt="" width="64" height="40" />
+                      <span class="who"><b>PEL</b><small><i style="--car: #dee0ea"></i>Porsche 911 GT3 R #75</small></span>
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>5</b></span>
+                      <span class="stat best"><small data-i18n="board.best">Best</small><b data-best>7.851</b></span>
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>7.934</b></span>
+                      <span class="stat gap"
+                        ><small data-i18n="board.gap">Gap</small><b data-gap class="medium">+1.268s</b></span
+                      >
+                    </li>
+                    <li class="row" style="--c: #dd0b17; --pos: 3" data-place="4">
+                      <span class="place"><span class="pos">4</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/bou.png" alt="" width="56" height="56" /></span>
+                      <span class="num long">782</span>
+                      <img class="livery" src="img/cars/audi.png" alt="" width="64" height="40" />
+                      <span class="who"><b>BOU</b><small><i style="--car: #6366f1"></i>Audi R8 LMS GT3 #8</small></span>
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>5</b></span>
+                      <span class="stat best"><small data-i18n="board.best">Best</small><b data-best>7.902</b></span>
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>8.120</b></span>
+                      <span class="stat gap"
+                        ><small data-i18n="board.gap">Gap</small><b data-gap class="medium">+3.905s</b></span
+                      >
+                    </li>
+                    <li class="row" style="--c: #9900ff; --pos: 4" data-place="5">
+                      <span class="place"><span class="pos">5</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/mil.png" alt="" width="56" height="56" /></span>
+                      <span class="num">7</span>
+                      <img class="livery" src="img/cars/lamborghini.png" alt="" width="64" height="40" />
+                      <span class="who"
+                        ><b>MIL</b><small><i style="--car: #cafd02"></i>Lamborghini Huracán GT3 evo II #92</small></span
+                      >
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>4</b></span>
+                      <span class="stat best"><small data-i18n="board.best">Best</small><b data-best>7.988</b></span>
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>10.412</b></span>
+                      <span class="stat gap"
+                        ><small data-i18n="board.gap">Gap</small
+                        ><b data-gap class="lapped" data-i18n="board.lapBehind" data-vars='{"laps":1}'>+1 lap</b></span
+                      >
+                    </li>
+                    <li class="row" style="--c: #e7d037; --pos: 5" data-place="6">
+                      <span class="place"><span class="pos">6</span><span class="delta" data-delta></span></span>
+                      <span class="face"><img src="img/drivers/hau.png" alt="" width="56" height="56" /></span>
+                      <span class="num">11</span>
+                      <img class="livery" src="img/cars/mclaren.png" alt="" width="64" height="40" />
+                      <span class="who"><b>HAU</b><small><i style="--car: #ffffff"></i>McLaren 720S GT3 #02</small></span>
+                      <span class="stat laps"><small data-i18n="board.laps">Laps</small><b data-laps>4</b></span>
+                      <span class="stat best"><small data-i18n="board.best">Best</small><b data-best>8.064</b></span>
+                      <span class="stat last"><small data-i18n="board.last">Last</small><b data-last>8.177</b></span>
+                      <span class="stat gap"
+                        ><small data-i18n="board.gap">Gap</small
+                        ><b data-gap class="lapped" data-i18n="board.lapBehind" data-vars='{"laps":1}'>+1 lap</b></span
+                      >
+                    </li>
+                  </ol>
+
+                  <div class="podium" data-board-podium hidden>
+                    <div class="place-card second">
+                      <span class="face"></span><b></b>
+                      <div class="block">
+                        <strong data-i18n="podium.second">2nd</strong>
+                        <span class="behind"></span><span class="fast"></span><span class="count"></span>
+                      </div>
+                    </div>
+                    <div class="place-card first">
+                      <span class="face"></span><b></b>
+                      <div class="block">
+                        <strong data-i18n="podium.first">1st</strong>
+                        <span class="behind" data-i18n="podium.winner">Winner</span><span class="fast"></span
+                        ><span class="count"></span>
+                      </div>
+                    </div>
+                    <div class="place-card third">
+                      <span class="face"></span><b></b>
+                      <div class="block">
+                        <strong data-i18n="podium.third">3rd</strong>
+                        <span class="behind"></span><span class="fast"></span><span class="count"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="lights" data-lights hidden>
+                  <div class="frame">
+                    <span class="col"><i></i><i></i></span>
+                    <span class="col"><i></i><i></i></span>
+                    <span class="col"><i></i><i></i></span>
+                    <span class="col"><i></i><i></i></span>
+                    <span class="col"><i></i><i></i></span>
+                  </div>
+                  <p class="count"><b data-lights-count>1</b> / 5</p>
+                  <p class="go" data-i18n="board.go">GO!</p>
+                </div>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="tour" id="features" aria-labelledby="features-title">
+        <div class="wrap">
+          <h2 id="features-title" data-i18n="features.title">Everything for race night</h2>
+          <p class="lead" data-i18n="features.lead">Real screens of RaceHubOS, from a real season of races.</p>
+          <div class="tour-grid">
+            <div class="tour-list" role="tablist" aria-orientation="vertical" aria-labelledby="features-title">
+              <button type="button" role="tab" aria-selected="true" aria-controls="tour-screen" data-screen="race">
+                <b data-i18n="tour.race">Live race</b>
+                <span data-i18n="tour.raceText"
+                  >Positions, gaps and best laps each time a car crosses the line, read from the Control Unit.</span
+                >
+              </button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="tour-screen" data-screen="podium">
+                <b data-i18n="tour.podium">Podium</b>
+                <span data-i18n="tour.podiumText">The finish, the podium and the fastest lap, called out by a voice.</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="tour-screen"
+                data-screen="championship"
+              >
+                <b data-i18n="tour.championship">Championships</b>
+                <span data-i18n="tour.championshipText"
+                  >Rounds picked by hand, or automatic mode from qualifying to the finals.</span
+                >
+              </button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="tour-screen" data-screen="stats">
+                <b data-i18n="tour.stats">Statistics and records</b>
+                <span data-i18n="tour.statsText"
+                  >Standings, statistics and track records per driver and car, exportable to Excel.</span
+                >
+              </button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="tour-screen" data-screen="balancing">
+                <b data-i18n="tour.balancing">Car balancing</b>
+                <span data-i18n="tour.balancingText"
+                  >Each car on the same track, its lap times plotted, botched laps left out.</span
+                >
+              </button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="tour-screen" data-screen="addons">
+                <b data-i18n="tour.addons">Add-ons</b>
+                <span data-i18n="tour.addonsText"
+                  >Extra features installed from the app, such as car service tracking.</span
+                >
+              </button>
+            </div>
+            <div class="screen" id="tour-screen" role="tabpanel">
+              <img
+                class="shot"
+                data-shot="race"
+                data-i18n-alt="shot.race"
+                src="img/en/race.webp"
+                alt="A live free race: positions, gaps and best laps"
+                width="1440"
+                height="900"
+                loading="lazy"
+              />
+            </div>
+          </div>
+
+          <ul class="more">
+            <li>
+              <svg class="i" aria-hidden="true"><use href="#i-bluetooth" /></svg>
+              <h3 data-i18n="cu.title">Bluetooth Control Unit</h3>
+              <p data-i18n="cu.text">
+                Connects to the Control Unit 30352 through the AppConnect 30369. No track at hand? The simulator runs
+                virtual cars.
+              </p>
+            </li>
+            <li class="voice">
+              <svg class="i" aria-hidden="true"><use href="#i-volume-2" /></svg>
+              <h3 data-i18n="voice.title">Voice announcements</h3>
+              <p data-i18n="voice.text">A voice calls out best laps and the podium, in your language.</p>
+              <button class="button small" type="button" data-voice-button>
+                <span class="wave" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span data-i18n="voice.play">Listen</span>
+              </button>
+            </li>
+            <li>
+              <svg class="i" aria-hidden="true"><use href="#i-wifi-off" /></svg>
+              <h3 data-i18n="local.title">Your data stays home</h3>
+              <p data-i18n="local.text">Everything runs on your computer: no account, no cloud, no subscription.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="addons" id="addons" aria-labelledby="addons-title">
+        <div class="wrap split">
+          <div class="copy">
+            <h2 id="addons-title" data-i18n="addons.title">Add-ons</h2>
+            <p data-i18n="addons.text">
+              An add-on brings a feature without changing the core of the app: a page, a column, a badge. Install it in
+              one click from the catalog, or from a git link. The database is backed up first, then the app restarts
+              on its own.
+            </p>
+            <h3 data-i18n="addons.catalog">In the catalog</h3>
+            <!-- Filled at build from addons/catalog.json, the catalog the app installs from -->
+            <ul class="catalog"></ul>
+            <p class="muted" data-i18n="addons.devHtml">
+              You write code? The
+              <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/docs/ADDONS.md">add-on guide</a> covers
+              everything, with a complete example.
+            </p>
+          </div>
+          <div class="screen">
+            <img
+              class="shot"
+              data-shot="car-service"
+              data-i18n-alt="shot.carService"
+              src="img/en/car-service.webp"
+              alt="The Car service page"
+              width="1440"
+              height="900"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div class="wrap">
+          <h2 id="install-title" data-i18n="install.title">Racing in three steps</h2>
+          <ol class="steps">
+            <li>
+              <p data-i18n="install.step1">Download the installer for your computer.</p>
+              <div class="downloads stacked">
+                <a class="button" data-os="windows" href="RaceHubOS-install-win.bat" download>
+                  <svg class="i" aria-hidden="true"><use href="#i-download" /></svg>
+                  <span data-i18n="hero.windows">Download for Windows</span>
+                </a>
+                <a class="button" data-os="mac" href="RaceHubOS-install-mac.zip" download>
+                  <svg class="i" aria-hidden="true"><use href="#i-download" /></svg>
+                  <span data-i18n="hero.mac">Download for macOS</span>
+                </a>
+              </div>
+            </li>
+            <li>
+              <p data-i18n="install.step2">
+                Double-click it. It installs what is missing (Git, Node.js), then RaceHubOS, and puts a shortcut on your
+                desktop. On macOS, open the zip, then right-click the file and choose Open the first time.
+              </p>
+            </li>
+            <li>
+              <p data-i18n="install.step3">
+                Open RaceHubOS: it shows up in your browser. In Settings, search for your track and connect the Control
+                Unit.
+              </p>
+            </li>
+          </ol>
+          <div class="facts">
+            <p data-i18n="install.needs">
+              You need a Carrera Digital 132 or 124 track with its Control Unit 30352 and the AppConnect 30369, and a
+              computer running Windows, macOS or Linux.
+            </p>
+            <p data-i18n="install.update">Updates come from within the app: Settings, Check, then Update.</p>
+            <p>
+              <a href="https://github.com/AnselmeSDR/RaceHubOS#-getting-started" data-i18n="install.manual"
+                >Linux, manual install and development: see the README.</a
+              >
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="news" id="news" aria-labelledby="news-title">
+        <div class="wrap">
+          <h2 id="news-title" data-i18n="news.title" data-vars='{"version":"%VERSION%"}'>
+            What's new in version %VERSION%
+          </h2>
+          <!-- Filled at build from the section of this version in CHANGELOG.md -->
+          <div class="news-body"></div>
+          <p class="all">
+            <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/CHANGELOG.md" data-i18n="news.all"
+              >Every version and its changes</a
+            >
+          </p>
+        </div>
+      </section>
+
+      <section class="faq" id="faq" aria-labelledby="faq-title">
+        <div class="wrap">
+          <h2 id="faq-title" data-i18n="faq.title">Questions before you start</h2>
+          <div class="questions">
+            <details>
+              <summary data-i18n="faq.bluetooth">Does my computer need Bluetooth?</summary>
+              <p data-i18n="faq.bluetoothAnswer">
+                Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops
+                have it built in.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.digital124">Does it work with the Digital 124?</summary>
+              <p data-i18n="faq.digital124Answer">
+                Yes. The Digital 124 uses the same Control Unit 30352 and the same AppConnect 30369 as the 132.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.cars">How many cars can race?</summary>
+              <p data-i18n="faq.carsAnswer">
+                Up to six at once, one per controller: as many as the Control Unit handles.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.simulator">Can I try it without a track?</summary>
+              <p data-i18n="faq.simulatorAnswer">Yes: the built-in simulator runs virtual cars, with no Control Unit.</p>
+            </details>
+            <details>
+              <summary data-i18n="faq.browser">Which browser do I need?</summary>
+              <p data-i18n="faq.browserAnswer">
+                Any recent browser. The Bluetooth link goes through the computer, not the browser.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.internet">Do I need internet?</summary>
+              <p data-i18n="faq.internetAnswer">
+                Only to install it, update it or add add-ons. Races run without internet: everything stays on your
+                computer.
+              </p>
+            </details>
+            <details>
+              <summary data-i18n="faq.free">Is it really free?</summary>
+              <p data-i18n="faq.freeAnswer">
+                Yes: no account, no subscription, no ads. RaceHubOS is open source, under AGPL-3.0.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="open" id="open-source" aria-labelledby="open-title">
+        <div class="wrap split">
+          <div class="copy">
+            <h2 id="open-title" data-i18n="open.title">Free, open, made by racers</h2>
+            <p data-i18n="open.text">
+              Carrera dropped its official app, and the alternatives are closed. RaceHubOS is licensed under AGPL-3.0:
+              free to use, change and share, and every modified version stays open.
+            </p>
+            <ul class="actions">
+              <li>
+                <a class="button primary" href="https://github.com/AnselmeSDR/RaceHubOS" data-i18n="open.code"
+                  >Read the code and contribute</a
+                >
+              </li>
+              <li>
+                <a class="button" href="https://github.com/AnselmeSDR/RaceHubOS/issues" data-i18n="open.issue"
+                  >Report a bug or suggest an idea</a
+                >
+              </li>
+              <li>
+                <a href="mailto:anselme8@icloud.com" data-i18n="open.contact">Write to the team</a>
+              </li>
+            </ul>
+          </div>
+          <div class="credits">
+            <img src="img/logo.webp" alt="RaceHubOS" width="160" height="160" loading="lazy" />
+            <div>
+              <h3 data-i18n="open.credits">Credits</h3>
+              <ul>
+              <li data-i18n="open.credit1">Anselme Schneider: creator and developer</li>
+              <li data-i18n="open.credit2">Romain Danna: co-author, racing expertise</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <img src="img/logo-sm.webp" alt="" width="48" height="48" loading="lazy" />
+        <div>
+          <p data-i18n="footer.license">
+            Software licensed under AGPL-3.0. A commercial license is available for closed-source use.
+          </p>
+          <p data-i18n="footer.trademark">
+            Carrera is a trademark of Stadlbauer Marketing + Vertrieb GmbH. RaceHubOS is not affiliated with or endorsed
+            by Carrera.
+          </p>
+          <p data-i18n="footer.privacy">Visits are counted anonymously, without cookies, with GoatCounter.</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

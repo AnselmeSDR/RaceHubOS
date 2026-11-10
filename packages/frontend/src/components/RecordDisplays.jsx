@@ -6,6 +6,7 @@ import { sessionBadgeClass } from '@/lib/colors'
 import LapTime from './race/LapTime'
 import { getImgUrl } from '../utils/image'
 import { SessionType, sessionTypeKey } from '@racehubos/shared'
+import CarPicture from '@/components/car/CarPicture'
 
 export function RecordItem({
   position,
@@ -68,18 +69,18 @@ export function RecordItem({
             )}
           </div>
         )}
-        {showCarAvatar && car && (
-          <div
-            className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card"
-            style={{ backgroundColor: car.color || '#6B7280' }}
-          >
-            {car.img ? (
-              <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-            ) : (
+        {showCarAvatar &&
+          car &&
+          (car.img ? (
+            <CarPicture car={car} className="w-14 h-8" />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card"
+              style={{ backgroundColor: car.color || '#6B7280' }}
+            >
               <span>{car.brand?.charAt(0) || '?'}</span>
-            )}
-          </div>
-        )}
+            </div>
+          ))}
       </div>
 
       {/* Info */}

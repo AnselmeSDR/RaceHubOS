@@ -8,630 +8,630 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.26.0] - 2026-11-10
 
 ### Added
-- Add-ons : la page Add-ons installe des fonctionnalités en plus sans toucher au cœur (catalogue ou lien git), les met à jour, les active, les désactive ou les désinstalle ; la base est sauvegardée avant chaque action. Au catalogue : Entretien des voitures. Écrire un add-on : `docs/ADDONS.md`.
+- Add-ons: the Add-ons page installs extra features without touching the core (from the catalog or a git link), updates, enables, disables or uninstalls them; the database is backed up before each action. In the catalog: Car service. Writing an add-on: `docs/ADDONS.md`.
 
 ### Fixed
-- Control Unit : le polling s'arrête vraiment pendant le START, et une déconnexion demandée ne relance plus la reconnexion automatique.
-- Supprimer définitivement un pilote ou un circuit qui a des tours ne plante plus ; l'année d'une voiture peut être vidée ; Paramètres affiche de nouveau la version.
+- Control Unit: polling really stops during START, and a requested disconnection no longer triggers automatic reconnection.
+- Permanently deleting a driver or a track that has laps no longer crashes; a car's year can be cleared; Settings shows the version again.
 
 ### Security
-- `/api/img` et la suppression d'une image acceptaient un chemin en `..%2F` et lisaient ou effaçaient un fichier hors des images.
+- `/api/img` and image deletion accepted a `..%2F` path and read or deleted a file outside the images.
 
 ## [1.25.8] - 2026-11-07
 
 ### Changed
-- Licence AGPL-3.0 déclarée aussi dans les sous-paquets backend, frontend et shared.
+- AGPL-3.0 license also declared in the backend, frontend and shared sub-packages.
 
 ## [1.25.7] - 2026-11-06
 
 ### Added
-- Mentions de licence des projets tiers (THIRD_PARTY_NOTICES.md) : carreralib, dont le protocole CU est dérivé.
+- License notices for third-party projects (THIRD_PARTY_NOTICES.md): carreralib, from which the CU protocol is derived.
 
 ### Removed
-- Ancien analyseur du protocole CU côté interface, inutilisé.
+- Old, unused CU protocol parser on the interface side.
 
 ## [1.25.6] - 2026-11-06
 
 ### Changed
-- Licence : passage d'Apache-2.0 à AGPL-3.0, avec le fichier LICENSE ; toute version modifiée, distribuée ou proposée en ligne, doit rester open source. Licence commerciale possible pour un usage en code fermé.
+- License: switch from Apache-2.0 to AGPL-3.0, with the LICENSE file; any modified version, distributed or offered online, must remain open source. A commercial license is available for closed-source use.
 
 ## [1.25.5] - 2026-11-06
 
 ### Added
-- Documentation du comportement mesuré des stands (entrée, arrêt, sortie) et de la détection des sorties de piste, base du futur suivi des arrêts aux stands.
+- Documentation of the measured pit lane behavior (entry, stop, exit) and of off-track detection, the basis for future pit stop tracking.
 
 ## [1.25.4] - 2026-11-03
 
 ### Fixed
-- Interface sur écran étroit : barres d'outils, assistant de championnat, profil pilote et grille de départ passent à la ligne au lieu de déborder.
-- Titres des récompenses de championnat traduits, et titre de la session d'équilibrage qui affichait « sessionTypeAbbr.balancing ».
+- Interface on narrow screens: toolbars, championship wizard, driver profile and starting grid wrap instead of overflowing.
+- Championship award titles translated, and the balancing session title that showed "sessionTypeAbbr.balancing".
 
 ## [1.25.3] - 2026-11-02
 
 ### Fixed
-- Création d'une base neuve qui échouait (« Schema engine error ») quand RUST_LOG était réglé sur warn ou error.
+- Creating a new database failed ("Schema engine error") when RUST_LOG was set to warn or error.
 
 ## [1.25.2] - 2026-10-25
 
 ### Changed
-- Code formaté par Prettier et contrôlé par ESLint dans tout le dépôt. Aucun changement de fonctionnement.
+- Code formatted by Prettier and checked by ESLint across the whole repository. No functional change.
 
 ## [1.25.1] - 2026-10-24
 
 ### Fixed
-- Classement de session sur écran étroit : nom de la voiture coupé net (« McLare »), il se termine désormais par « … » et les colonnes se resserrent pour en montrer davantage.
+- Session leaderboard on narrow screens: the car name was cut off abruptly ("McLare"); it now ends with "…" and the columns tighten to show more of it.
 
 ## [1.25.0] - 2026-10-24
 
 ### Added
-- **Interface en allemand** : ajout de Deutsch au choix de langue et traduction des 17 espaces de noms existants (936 textes). La langue choisie reste mémorisée, avec les traductions française et anglaise disponibles.
-- **Annonces vocales dans la langue de l'interface** : meilleur tour et podium, voix et temps compris.
+- **German interface**: Deutsch added to the language choice and the 17 existing namespaces translated (936 strings). The chosen language is remembered; the French and English translations remain available.
+- **Voice announcements in the interface language**: best lap and podium, voice and times included.
 
 ### Fixed
-- Textes restés en français ou en anglais quelle que soit la langue : onglet `EL`, barre d'état, bouton `START`, noms des sessions créées automatiquement.
-- Podium : nombre de tours écrit en minuscule (« 30 runden » en allemand).
-- Classement coupé sur écran étroit : il passe sous la session quand la place manque. Nom de circuit tronqué proprement.
-- Records des profils : voiture et circuit l'un sous l'autre quand la place manque, au lieu d'être coupés.
+- Texts that stayed in French or English whatever the language: `EL` tab, status bar, `START` button, names of automatically created sessions.
+- Podium: lap count written in lowercase ("30 runden" in German).
+- Standings cut off on narrow screens: they move below the session when space runs out. Track name truncated cleanly.
+- Profile records: car and track stacked one above the other when space runs out, instead of being cut off.
 
 ### Changed
-- Une traduction manquante s'affiche en anglais, et non plus en français.
+- A missing translation is shown in English instead of French.
 
 ## [1.24.2] - 2026-10-24
 
 ### Added
-- Guide de contribution (`CONTRIBUTING.md`) : commits `type: description` sans scope, tests obligatoires, version et changelog laissés au mainteneur.
-- Hook `commit-msg` qui refuse un message hors format ; les hooks s'installent désormais à chaque `npm install`.
+- Contribution guide (`CONTRIBUTING.md`): `type: description` commits without scope, tests required, version and changelog left to the maintainer.
+- `commit-msg` hook that rejects a message not in that format; hooks are now installed on every `npm install`.
 
 ## [1.24.1] - 2026-09-09
 
 ### Fixed
-- **Les fenêtres de formulaire dépassaient de l'écran** sans pouvoir défiler : le titre reste désormais visible et le corps défile. Concernait tous les formulaires de l'app.
-- Fiche voiture : les caractéristiques s'affichent toujours, avec une invitation à les compléter si rien n'est renseigné.
+- **Form dialogs overflowed the screen** with no way to scroll: the title now stays visible and the body scrolls. Affected every form in the app.
+- Car profile: the specifications are always shown, with a prompt to fill them in if nothing is entered.
 
 ### Changed
-- Formulaire voiture : sections repliables remplacées par des sections simples, tout est visible d'un coup.
-- Bouton d'export réduit à son icône.
-- Les caractéristiques renseignées apparaissent aussi dans les engagements de chaque session exportée.
+- Car form: collapsible sections replaced by plain sections, everything is visible at once.
+- Export button reduced to its icon.
+- The specifications entered also appear in the entries of each exported session.
 
 ## [1.24.0] - 2026-09-09
 
 ### Added
-- **Fiche voiture complétée** (TASK-38) : équipement (échelle, châssis, moteur, rapport, pneus avant/arrière, guide, tresses, aimant, notes) et mesures (poids, longueur, largeur, empattement, voies, garde au sol). Tout est facultatif, en texte libre — les pièces changent trop pour figer une liste. Repris sur la fiche et dans les exports Excel, où seules les caractéristiques renseignées apparaissent.
+- **Extended car profile** (TASK-38): equipment (scale, chassis, motor, gear ratio, front/rear tyres, guide, braids, magnet, notes) and measurements (weight, length, width, wheelbase, track widths, ground clearance). Everything is optional, in free text — parts change too often to fix a list. Shown on the profile and in the Excel exports, where only the specifications entered appear.
 
 ## [1.23.0] - 2026-09-09
 
 ### Added
-- **Export Excel** (TASK-36) depuis une session, un championnat, un pilote, une voiture, ou une sélection dans les listes.
-  - Session ou championnat : page **Référence** cumulant tout l'export, puis chaque championnat suivi de ses sessions, avec son propre classement. Une feuille par session : engagements (manette, voiture, réglages, rang de départ, résultat) et tous les tours.
-  - Pilote ou voiture : palmarès, ventilation par championnat / circuit / voiture (ou pilote), puis une ligne par session. Les tours ne sont pas chargés.
-  - Temps en vraies durées Excel (triables, calculables) affichées `0:09.356`, horodatage au millième.
-  - Podium coloré, onglets teintés par type, couleurs des pilotes et voitures affichées.
-- ⚠️ Les réglages exportés sont ceux **actuels** de la voiture : ils ne sont pas encore figés par session (TASK-37).
+- **Excel export** (TASK-36) from a session, a championship, a driver, a car, or a selection in the lists.
+  - Session or championship: a **Reference** sheet covering the whole export, then each championship followed by its sessions, with its own standings. One sheet per session: entries (controller, car, settings, starting position, result) and every lap.
+  - Driver or car: results summary, breakdown by championship / track / car (or driver), then one row per session. Laps are not loaded.
+  - Times as real Excel durations (sortable, usable in formulas) displayed as `0:09.356`, timestamps to the millisecond.
+  - Colored podium, tabs tinted by type, driver and car colors shown.
+- ⚠️ The exported settings are the car's **current** ones: they are not yet frozen per session (TASK-37).
 
 ## [1.22.1] - 2026-09-01
 
 ### Added
-- Tests du déroulé complet d'une course : tour de grâce compté puis vitesse réduite, passages suivants ignorés, DNF de fin de grâce, course au nombre de tours, absence de Control Unit.
+- Tests of a full race sequence: grace lap counted then speed reduced, later crossings ignored, DNF at the end of the grace period, race by lap count, no Control Unit.
 
 ## [1.22.0] - 2026-08-31
 
 ### Changed
-- **Les statuts et modes rejoignent `@racehubos/shared`** (TASK-04) : `Session.status`, `Championship.status`, `Championship.mode` et `Session.fuelMode` étaient écrits en dur dans 19 fichiers (106 endroits). Stockés en texte, validés par le code, valeurs listées en commentaire dans le schéma
-- Statuts de championnat et de session distingués : `championship.status` était comparé à des statuts de session
+- **Statuses and modes move to `@racehubos/shared`** (TASK-04): `Session.status`, `Championship.status`, `Championship.mode` and `Session.fuelMode` were hardcoded in 19 files (106 places). Stored as text, validated by the code, values listed in a comment in the schema
+- Championship and session statuses told apart: `championship.status` was compared against session statuses
 
 ## [1.21.3] - 2026-08-31
 
 ### Changed
-- **Plus d'`enum` en base**, uniquement du texte. Un enum Prisma rend illisible toute la table dès qu'une ligne porte une valeur inconnue (`findMany()` lève). Les valeurs sont listées en commentaire, la validation est dans le code. Aucune migration.
+- **No more `enum` in the database**, only text. A Prisma enum makes the whole table unreadable as soon as one row holds an unknown value (`findMany()` throws). The values are listed in a comment, validation lives in the code. No migration.
 
 ## [1.21.2] - 2026-08-31
 
 ### Fixed
-- **La migration échouait sous Windows**, pour deux raisons enchaînées, aucune visible en développement. Découvert sur le PC de course, en pleine mise à jour
-  - `npx` est un fichier `.cmd` sous Windows, une extension qu'`execFileSync` ne résout pas : `spawnSync npx ENOENT`
-  - Nommer explicitement `npx.cmd` ne suffit pas : depuis les correctifs BatBadBut, node **refuse de lancer un `.cmd` sans shell** (`EINVAL`). Et passer par un shell aurait ramené les problèmes de guillemets sur les chemins contenant des espaces
-  - Le CLI Prisma est désormais appelé **en JavaScript** (`src/lib/prismaCli.js`, `process.execPath`) : même node, pas de shell, pas de guillemets. Dans la migration comme dans la préparation des tests
-  - Une règle de `npm run check` interdit d'appeler `npx` ou `npm` par `execFile`/`spawn`
-  - `execSync` et `exec` passent par un shell et n'étaient pas concernés
+- **The migration failed on Windows**, for two chained reasons, neither visible in development. Found on the race PC, in the middle of an update
+  - `npx` is a `.cmd` file on Windows, an extension that `execFileSync` does not resolve: `spawnSync npx ENOENT`
+  - Naming `npx.cmd` explicitly is not enough: since the BatBadBut fixes, node **refuses to run a `.cmd` without a shell** (`EINVAL`). And going through a shell would have brought back quoting problems on paths containing spaces
+  - The Prisma CLI is now called **from JavaScript** (`src/lib/prismaCli.js`, `process.execPath`): same node, no shell, no quotes. In the migration as well as in the test setup
+  - An `npm run check` rule forbids calling `npx` or `npm` through `execFile`/`spawn`
+  - `execSync` and `exec` go through a shell and were not affected
 
 ## [1.21.0] - 2026-08-31
 
 ### Added
-- **Un guide de règles que le code doit respecter** (`docs/CONVENTIONS.md`) : chaque règle vient d'un incident réel du projet — le PC de course qui refusait de démarrer, l'équilibrage absent des statistiques, une base réécrite sans prévenir. Le pourquoi est écrit à côté de la règle, car c'est lui qui permet de juger un cas non prévu
-- **`npm run check`** vérifie mécaniquement dix de ces règles ; **`npm run check:push`** ajoute celles qui n'ont de sens qu'avant un push :
-  - aucun `prisma db push`, et `schema.prisma` toujours couvert par une migration
-  - aucun type de session écrit en toutes lettres hors de `@racehubos/shared`
-  - aucun symbole partagé utilisé sans import — **un build Vite réussi ne détecte pas ce cas**, il avait laissé passer 15 fichiers qui auraient planté en course
-  - installeur Windows : pas de `::` dans un bloc parenthésé, parenthèses équilibrées, `INSTALLER_VERSION` présent et incrémenté dès que le fichier change
-  - chaque clé de traduction présente en français et en anglais
-  - scripts de test pointant sur `test.db` et jamais sur la base réelle
-  - version incrémentée et changelog renseigné
-- **`npm run hooks:install`** installe un hook `pre-push` qui lance ces vérifications avant chaque envoi (`git push --no-verify` reste possible en connaissance de cause)
+- **A guide of rules the code must follow** (`docs/CONVENTIONS.md`): each rule comes from a real incident in the project — the race PC that would not start, balancing missing from the statistics, a database rewritten without warning. The reason is written next to the rule, because it is what lets you judge a case nobody anticipated
+- **`npm run check`** mechanically checks ten of these rules; **`npm run check:push`** adds the ones that only make sense before a push:
+  - no `prisma db push`, and `schema.prisma` always covered by a migration
+  - no session type spelled out outside `@racehubos/shared`
+  - no shared symbol used without an import — **a successful Vite build does not catch this case**; it had let through 15 files that would have crashed during a race
+  - Windows installer: no `::` inside a parenthesized block, balanced parentheses, `INSTALLER_VERSION` present and incremented whenever the file changes
+  - every translation key present in French and in English
+  - test scripts pointing at `test.db` and never at the real database
+  - version incremented and changelog filled in
+- **`npm run hooks:install`** installs a `pre-push` hook that runs these checks before each push (`git push --no-verify` remains possible, knowingly)
 
 ### Fixed
-- Trois valeurs par défaut de type de session restaient écrites en dur (`Podium`, `SessionLeaderboard`, `Displays`) — trouvées par le nouveau contrôle
+- Three session type default values were still hardcoded (`Podium`, `SessionLeaderboard`, `Displays`) — found by the new check
 
 ## [1.20.0] - 2026-08-31
 
 ### Changed
-- **Les types de session ont désormais une seule définition** (TASK-03) : `practice`, `qualif`, `race` et `balancing` étaient réécrits à la main partout — 129 endroits dans 24 fichiers
-  - C'est ce qui explique que l'**équilibrage existait en base depuis des mois sans apparaître dans le filtre des statistiques** : chaque liste de types était une liste indépendante, et personne ne pouvait toutes les retrouver
-  - Un paquet `@racehubos/shared` porte la définition, consommé par le serveur comme par l'interface
-  - `schema.prisma` déclare un `enum SessionType` : le client Prisma **refuse désormais d'enregistrer une session dont le type n'existe pas**. Aucune migration — SQLite stocke un enum comme du texte, le schéma de la base est inchangé
-  - Les filtres des pages **Statistiques** et **Sessions**, le formulaire de session, les onglets de session libre, les onglets de classement et le panneau des records **construisent leur liste depuis cette définition** : ajouter un type le fera apparaître partout, sans avoir à chercher
-  - Trois séries de libellés faisaient doublon avec le glossaire (`championships`, `displays`, `race`) : elles sont supprimées, tout passe par `glossary:sessionType` et `glossary:sessionTypeFull`, seuls à couvrir les quatre types en français comme en anglais
-  - L'équilibrage reste volontairement hors des listes de création de course : il a son propre écran, n'appartient à aucun championnat et ne produit pas de classement
-  - Des tests vérifient que l'enum Prisma, le paquet partagé et les traductions ne peuvent plus diverger — ajouter un type sans son libellé fait échouer la suite
+- **Session types now have a single definition** (TASK-03): `practice`, `qualif`, `race` and `balancing` were rewritten by hand everywhere — 129 places in 24 files
+  - This is why **balancing had existed in the database for months without appearing in the statistics filter**: each list of types was an independent list, and nobody could find them all
+  - A `@racehubos/shared` package holds the definition, used by the server as well as the interface
+  - `schema.prisma` declares an `enum SessionType`: the Prisma client **now refuses to save a session whose type does not exist**. No migration — SQLite stores an enum as text, the database schema is unchanged
+  - The filters on the **Statistics** and **Sessions** pages, the session form, the free session tabs, the standings tabs and the records panel **build their list from this definition**: adding a type will make it appear everywhere, without having to search
+  - Three sets of labels duplicated the glossary (`championships`, `displays`, `race`): they are removed, everything goes through `glossary:sessionType` and `glossary:sessionTypeFull`, the only ones covering all four types in both French and English
+  - Balancing is deliberately kept out of the race creation lists: it has its own screen, belongs to no championship and produces no standings
+  - Tests check that the Prisma enum, the shared package and the translations can no longer diverge — adding a type without its label makes the suite fail
 
 ## [1.19.1] - 2026-08-31
 
 ### Fixed
-- **L'installeur du bureau n'était jamais mis à jour** : il clonait bien la dernière version de l'application, mais restait lui-même figé au jour où il avait été téléchargé
-  - Celui du PC de course datait du 15 avril et recopiait encore tout le dossier `prisma/` de l'ancienne installation par-dessus la nouvelle. C'est ainsi qu'un `schema.prisma` contenant `url = env("DATABASE_URL")`, que Prisma 7 refuse, s'est retrouvé dans un dossier v1.18.0 tout neuf et a empêché l'application de démarrer
-  - **L'installeur se met désormais à jour lui-même dès son lancement**, avant toute autre action : il compare son numéro à celui publié sur GitHub, se remplace et se relance si besoin
-  - La comparaison porte sur un numéro (`INSTALLER_VERSION`) et non sur le contenu : Git for Windows convertit les fins de ligne au clone, donc le fichier du bureau n'est jamais identique à celui de GitHub et la comparaison de contenu relancerait l'installeur sans fin
-  - Sans réseau ou en cas d'erreur, l'installeur poursuit avec la version dont il dispose au lieu de s'arrêter
-  - Les installeurs déjà posés sur les bureaux sont antérieurs à ce mécanisme et ne peuvent pas l'acquérir seuls : l'application dépose donc un installeur à jour sur le bureau après chaque mise à jour réussie, ce qui l'amorce (bureau déplacé par OneDrive et bureau en français compris)
-- **Trois commentaires `::` se trouvaient à l'intérieur d'un bloc parenthésé** de l'installeur Windows — précisément le bloc de copie en cause dans la panne. `cmd.exe` n'y accepte que `REM` ; un test vérifie désormais cette règle et l'équilibre des blocs, deux erreurs invisibles hors de Windows
+- **The desktop installer was never updated**: it did clone the latest version of the application, but stayed frozen itself on the day it was downloaded
+  - The one on the race PC dated from April 15 and still copied the whole `prisma/` folder of the old installation over the new one. That is how a `schema.prisma` containing `url = env("DATABASE_URL")`, which Prisma 7 rejects, ended up in a brand new v1.18.0 folder and prevented the application from starting
+  - **The installer now updates itself as soon as it starts**, before any other action: it compares its number with the one published on GitHub, replaces itself and restarts if needed
+  - The comparison is on a number (`INSTALLER_VERSION`) and not on the content: Git for Windows converts line endings on clone, so the desktop file is never identical to the one on GitHub and a content comparison would restart the installer endlessly
+  - With no network or on error, the installer continues with the version it has instead of stopping
+  - The installers already on desktops predate this mechanism and cannot acquire it on their own: the application therefore drops an up-to-date installer on the desktop after each successful update, which bootstraps it (desktop moved by OneDrive and French-named desktop included)
+- **Three `::` comments were inside a parenthesized block** of the Windows installer — precisely the copy block involved in the failure. `cmd.exe` only accepts `REM` there; a test now checks this rule and the balance of the blocks, two errors invisible outside Windows
 
 ## [1.19.0] - 2026-08-31
 
 ### Changed
-- **Le schéma passe uniquement par des migrations** : `prisma db push --accept-data-loss` disparaît du démarrage, de la mise à jour, de la réparation et des deux installeurs, remplacé par `prisma migrate deploy`
-  - `db push` réécrit la base pour la faire ressembler au schéma : il ajoute une colonne sans rien casser, mais un renommage ou un changement de type **supprime les données concernées sans prévenir**. Une migration décrit la transformation, donc la conserve
-  - Chaque changement de schéma est désormais un fichier versionné dans `prisma/migrations/`, appliqué à l'identique sur chaque PC ; en développement il se crée avec `npm run prisma:migrate -w @racehubos/backend`
-- **Bases antérieures aux migrations** : Prisma refuse de migrer une base déjà remplie dont il ne connaît pas l'historique (`P3005`) — le cas de toutes les installations existantes, `db push` n'écrivant aucun historique
-  - `src/lib/migrateSchema.js` compare le schéma réel de la base à chaque suite de migrations et marque comme déjà appliquées celles qu'elle contient réellement, avant d'appliquer le reste
-  - Ce que la base contient n'est jamais déduit de son historique, toujours du schéma lui-même : une base à jour est entièrement baselinée, une base en retard ne l'est que jusqu'à son état réel et les migrations manquantes s'exécutent vraiment
-  - Une base qui ne correspond à aucun état connu n'est pas touchée : le démarrage s'interrompt et propose une réparation, plutôt que de migrer à moitié une base de course
-  - Cinq scénarios couverts par des tests sur bases jetables : installation neuve, base à jour sans historique, base en retard, relance, schéma divergent
-  - `npm run migrate -w @racehubos/backend` applique la migration à la main en cas de besoin
+- **The schema only changes through migrations**: `prisma db push --accept-data-loss` is removed from startup, update, repair and both installers, replaced by `prisma migrate deploy`
+  - `db push` rewrites the database to make it match the schema: it adds a column without breaking anything, but a rename or a type change **deletes the affected data without warning**. A migration describes the transformation, and therefore keeps the data
+  - Each schema change is now a versioned file in `prisma/migrations/`, applied identically on every PC; in development it is created with `npm run prisma:migrate -w @racehubos/backend`
+- **Databases older than migrations**: Prisma refuses to migrate an already filled database whose history it does not know (`P3005`) — the case of every existing installation, since `db push` writes no history
+  - `src/lib/migrateSchema.js` compares the actual database schema with each sequence of migrations and marks as already applied the ones it actually contains, before applying the rest
+  - What the database contains is never inferred from its history, always from the schema itself: an up-to-date database is fully baselined, an outdated database only up to its actual state, and the missing migrations really run
+  - A database that matches no known state is not touched: startup stops and offers a repair, rather than half-migrating a race database
+  - Five scenarios covered by tests on throwaway databases: fresh install, up-to-date database without history, outdated database, rerun, diverging schema
+  - `npm run migrate -w @racehubos/backend` applies the migration by hand when needed
 
 ## [1.18.1] - 2026-08-29
 
 ### Fixed
-- **La mise à jour ne démarrait plus sur le PC de course (Windows)** : la migration Prisma 7 échouait avec `os error 161 — chemin d'accès non valide`
-  - `pathToFileURL()` produisait `file:///C:/Users/…`, une URL correcte mais que le moteur de schéma Prisma rejette sous Windows ; il attend la forme `file:C:\Users\…`
-  - Le chemin natif (`getDatabasePath()`) est désormais distinct de l'URL passée à Prisma (`getDatabaseUrl()`) : `fileURLToPath()` transformait `file:C:\…` en `/C:/Users/…`, ce qui aurait cassé les sauvegardes
-  - Le défaut ne pouvait pas se voir en développement : sous macOS et Linux, `file:///Users/…` fonctionne
-  - Les deux sens de la conversion sont couverts par des tests
-- **Réglages voitures exprimés en niveaux** (RUSH-05) : la Control Unit ne connaît que 10 niveaux par réglage (manuel 30352), transmis dans un champ de 4 bits — aucune valeur intermédiaire n'existe
-  - Le carburant était converti sur 15 niveaux : 100 % envoyait 15 et 70 % envoyait 11, au lieu de 10 et 7
-  - La jauge de carburant des cartes était calculée sur 150 : un réservoir plein s'affichait rempli aux deux tiers
-  - Les curseurs offraient 101 positions pour 10 valeurs réelles — régler 70 % ou 74 % produisait le même effet ; ils avancent maintenant par crans et affichent le niveau (`7/10`), celui lu sur les LEDs de la CU
-  - Vitesse en vert, freinage en rouge, réservoir en bleu, avec la barre remplie jusqu'au niveau
-  - Aucune migration : les valeurs enregistrées sont déjà des multiples de 10
+- **The update no longer started on the race PC (Windows)**: the Prisma 7 migration failed with `os error 161 — chemin d'accès non valide`
+  - `pathToFileURL()` produced `file:///C:/Users/…`, a valid URL but one the Prisma schema engine rejects on Windows; it expects the `file:C:\Users\…` form
+  - The native path (`getDatabasePath()`) is now separate from the URL passed to Prisma (`getDatabaseUrl()`): `fileURLToPath()` turned `file:C:\…` into `/C:/Users/…`, which would have broken the backups
+  - The defect could not be seen in development: on macOS and Linux, `file:///Users/…` works
+  - Both directions of the conversion are covered by tests
+- **Car settings expressed in levels** (RUSH-05): the Control Unit only knows 10 levels per setting (manual 30352), sent in a 4-bit field — no intermediate value exists
+  - Fuel was converted over 15 levels: 100% sent 15 and 70% sent 11, instead of 10 and 7
+  - The fuel gauge on the cards was computed out of 150: a full tank showed as two-thirds full
+  - The sliders offered 101 positions for 10 real values — setting 70% or 74% had the same effect; they now move in steps and show the level (`7/10`), the one read on the CU's LEDs
+  - Speed in green, braking in red, tank in blue, with the bar filled up to the level
+  - No migration: the stored values are already multiples of 10
 
 ## [1.18.0] - 2026-08-28
 
 ### Changed
-- **Suppressions en cascade** : supprimer un objet masque désormais tout ce qui en dépend, au lieu de laisser des temps orphelins visibles dans les statistiques
-  - **Circuit** → ses championnats, leurs sessions, leurs participants, les engagements, les tours et les records
-  - **Championnat** → ses sessions, leurs engagements, leurs tours et ses participants
-  - **Session** → ses engagements, ses tours et les records qui en sont issus
-  - **Pilote** → ses tours, ses engagements, ses records et ses participations aux championnats
-  - **Voiture** → ses tours, ses engagements et ses records
-  - **Équipe** → elle seule ; ses pilotes sont conservés (la relation est optionnelle : un pilote existe sans équipe)
-  - Chaque clé étrangère du modèle est désormais couverte, à l'exception de `ControllerConfig`, qui n'a pas de champ de suppression douce (cf. TASK-32)
-  - Un record matérialise un tour : masquer le tour masque le record
-  - Toutes les lignes d'une même suppression partagent le même horodatage : la restauration ne relève que ce que cette suppression avait masqué, et laisse supprimé ce qui l'avait été volontairement avant
-  - Tout reste en suppression douce (`deletedAt`) : aucune donnée n'est effacée
-  - `node scripts/replay-cascades.js` rejoue les cascades sur les objets supprimés avant cette version — sans argument il ne fait que rapporter, `--apply` sauvegarde puis applique. Sur le poste de développement, 8 484 lignes restées actives sous un parent supprimé ont été masquées, dont 8 146 tours de trois circuits supprimés en juillet
-- **Participants d'un championnat** : modifier la liste **masque** désormais les pilotes retirés au lieu de les effacer, et **réactive** ceux qu'on remet — auparavant chaque modification supprimait puis recréait toutes les lignes, effaçant toute trace des retraits
-  - Nouveau champ `ChampionshipParticipant.deletedAt`
-  - Les pilotes masqués sont exclus de toutes les lectures (classements, brackets, génération des sessions automatiques)
-  - La règle existante reste en vigueur : au moins deux participants, et pas de retrait d'un pilote ayant déjà couru une qualification
+- **Cascading deletions**: deleting an object now hides everything that depends on it, instead of leaving orphan times visible in the statistics
+  - **Track** → its championships, their sessions, their participants, the entries, the laps and the records
+  - **Championship** → its sessions, their entries, their laps and its participants
+  - **Session** → its entries, its laps and the records that come from them
+  - **Driver** → their laps, their entries, their records and their championship participations
+  - **Car** → its laps, its entries and its records
+  - **Team** → only itself; its drivers are kept (the relation is optional: a driver can exist without a team)
+  - Every foreign key in the model is now covered, except `ControllerConfig`, which has no soft-delete field (see TASK-32)
+  - A record materializes a lap: hiding the lap hides the record
+  - All rows of a single deletion share the same timestamp: restoring only brings back what that deletion had hidden, and leaves deleted what had been deliberately deleted before
+  - Everything remains a soft delete (`deletedAt`): no data is erased
+  - `node scripts/replay-cascades.js` replays the cascades on objects deleted before this version — without arguments it only reports, `--apply` backs up then applies. On the development machine, 8,484 rows still active under a deleted parent were hidden, including 8,146 laps from three tracks deleted in July
+- **Championship participants**: editing the list now **hides** removed drivers instead of erasing them, and **reactivates** the ones added back — previously each edit deleted then recreated every row, erasing any trace of removals
+  - New field `ChampionshipParticipant.deletedAt`
+  - Hidden drivers are excluded from every read (standings, brackets, generation of automatic sessions)
+  - The existing rule still applies: at least two participants, and no removal of a driver who has already run a qualifying session
 
 ### Added
-- **Bouton de suppression sur les cartes et les pages de détail** : la suppression n'existait qu'en vue liste, derrière une sélection de ligne — en vue grille, rien ne permettait de supprimer, et les pages de détail n'offraient rien non plus (sauf les sessions)
-  - Présent sur les cartes pilote, voiture, circuit et équipe, et dans la barre d'actions des fiches pilote, voiture, circuit, session et championnat
-  - La carte d'une équipe n'avait aucune action : elle gagne aussi la modification
-  - Le bouton se confirme sur place : un premier clic transforme la corbeille en « Confirmer ? », seul le second supprime
-  - L'état armé retombe tout seul au bout de 4 secondes ou dès que la souris quitte la carte, pour qu'une carte ne reste jamais amorcée
-  - Nouveau composant partagé `DeleteButton`
+- **Delete button on cards and detail pages**: deletion only existed in list view, behind a row selection — in grid view, there was no way to delete, and the detail pages offered nothing either (except sessions)
+  - Present on driver, car, track and team cards, and in the action bar of the driver, car, track, session and championship pages
+  - A team card had no actions: it also gains editing
+  - The button confirms in place: a first click turns the trash can into "Confirm?", only the second one deletes
+  - The armed state resets on its own after 4 seconds or as soon as the mouse leaves the card, so a card never stays armed
+  - New shared component `DeleteButton`
 
 ### Fixed
-- **Configuration d'un championnat terminé** : nom, circuit, participants et sessions étaient encore modifiables. Tout est désormais verrouillé, avec un bandeau qui l'explique et invite à rouvrir le championnat ; le bouton **Réouvrir le championnat** reste évidemment actif
-- **Circuit supprimé invisible dans la configuration** : un championnat couru sur un circuit depuis supprimé affichait un champ vide, la liste ne proposant que les circuits actifs. Le circuit référencé est maintenant affiché, signalé « (supprimé) » — 4 de nos 5 championnats étaient concernés
-- **Les tests d'interface pouvaient viser la base de course** : la configuration Playwright réutilisait le serveur en marche, donc celui branché sur `dev.db`, et les tests y créaient de vraies entités. Ils lancent désormais leurs propres serveurs sur une base jetable, construite à chaque exécution depuis `schema.prisma`
-  - Identifiants de test (`data-testid`) sur les lignes de liste, les cartes, la bascule Grille/Liste et le bouton de suppression : les tests ne dépendent plus de classes CSS, de libellés traduits ni de la position d'un élément
-  - Trois tests d'interface étaient périmés depuis des refontes (cartes de championnat devenues un tableau, classes `.bg-white` remplacées par le thème) : réparés
-- **Message d'erreur trompeur sur les doublons** : créer un pilote avec un numéro déjà pris répondait « Email already exists ». La migration Prisma 7 a vidé `error.meta.target`, où le code lisait la colonne en conflit ; l'information vit désormais dans `meta.driverAdapterError.cause.constraint.fields`. `src/lib/prismaErrors.js` lit les deux formats
-- **Nettoyage des tests** : `trackRecord`, `controllerConfig` et `championshipParticipant` n'étaient pas purgés entre les suites, ce qui provoquait des violations de clé étrangère dès qu'un test créait un record
+- **Configuration of a finished championship**: name, track, participants and sessions could still be edited. Everything is now locked, with a banner that explains it and invites you to reopen the championship; the **Reopen championship** button of course stays active
+- **Deleted track invisible in the configuration**: a championship run on a track deleted since then showed an empty field, as the list only offered active tracks. The referenced track is now shown, marked "(deleted)" — 4 of our 5 championships were affected
+- **The interface tests could hit the race database**: the Playwright configuration reused the running server, hence the one connected to `dev.db`, and the tests created real entities in it. They now start their own servers on a throwaway database, built on each run from `schema.prisma`
+  - Test IDs (`data-testid`) on list rows, cards, the Grid/List toggle and the delete button: the tests no longer depend on CSS classes, translated labels or the position of an element
+  - Three interface tests had been outdated since redesigns (championship cards turned into a table, `.bg-white` classes replaced by the theme): fixed
+- **Misleading error message on duplicates**: creating a driver with a number already taken answered "Email already exists". The Prisma 7 migration emptied `error.meta.target`, where the code read the conflicting column; the information now lives in `meta.driverAdapterError.cause.constraint.fields`. `src/lib/prismaErrors.js` reads both formats
+- **Test cleanup**: `trackRecord`, `controllerConfig` and `championshipParticipant` were not purged between suites, which caused foreign key violations as soon as a test created a record
 
 ## [1.17.0] - 2026-08-26
 
 ### Added
-- **Colonne « Championnat » dans les statistiques** (TASK-02) : chaque temps indique le championnat dans lequel il a été réalisé, ou « — » lorsqu'il vient d'une course libre, d'essais ou d'un équilibrage
-  - Colonne triable et cliquable, qui ouvre la fiche du championnat
-  - Placée entre « Circuit » et « Session »
-  - **Filtre par championnat**, avec une option « Hors championnat » pour isoler les courses libres, essais et équilibrages ; plusieurs championnats peuvent être combinés
+- **"Championship" column in the statistics** (TASK-02): each time shows the championship in which it was set, or "—" when it comes from a free race, practice or balancing
+  - Sortable and clickable column, which opens the championship page
+  - Placed between "Track" and "Session"
+  - **Filter by championship**, with an "Outside championship" option to isolate free races, practice and balancing; several championships can be combined
 
 ### Fixed
-- **Menus de filtre et listes déroulantes transparents au défilement** : leur fond était translucide, l'opacité venant d'un effet de flou porté par un calque interne — qui défilait avec le contenu et disparaissait dès qu'on faisait défiler la liste, laissant voir la page au travers. Le fond est désormais opaque
-- **Listes déroulantes qui se repositionnaient pendant le défilement** (constaté sur le PC de course) : les options se décalaient et empêchaient de choisir une valeur située plus bas. Les listes sont maintenant ancrées au champ (`position="popper"`) au lieu d'être alignées sur l'option sélectionnée
-- **Ordre des colonnes après l'ajout d'une nouvelle colonne** : l'ordre mémorisé d'une liste ne connaît pas les colonnes ajoutées ensuite, qui se retrouvaient reléguées en fin de tableau — hors écran. Elles sont désormais réinsérées à la position où elles sont définies, sans perdre l'ordre choisi par l'utilisateur
+- **Filter menus and dropdowns transparent when scrolling**: their background was translucent, the opacity coming from a blur effect carried by an inner layer — which scrolled with the content and disappeared as soon as the list was scrolled, letting the page show through. The background is now opaque
+- **Dropdowns that repositioned themselves while scrolling** (seen on the race PC): the options shifted and prevented picking a value further down. The lists are now anchored to the field (`position="popper"`) instead of being aligned on the selected option
+- **Column order after a new column is added**: a list's saved order does not know about columns added later, which ended up pushed to the end of the table — off screen. They are now reinserted at the position where they are defined, without losing the order chosen by the user
 
 ## [1.16.0] - 2026-08-26
 
 ### Added
-- **Pilote de référence pour l'équilibrage** (RUSH-02) : l'équilibrage mesure les voitures, pas les pilotes — tous ses tours reviennent désormais à un pilote unique, quel que soit celui qui tient la manette
-  - **Paramètres** : sélection du pilote de référence, bouton **Créer Le STIG** (sans doublon si le pilote existe déjà) et bouton pour réattribuer les tours d'équilibrage déjà enregistrés
-  - **Page Équilibrage** : avertissement et raccourci vers les paramètres tant qu'aucun pilote de référence n'est défini
-  - Les sessions d'équilibrage attribuent automatiquement leurs tours au pilote de référence ; les courses, qualifications et essais gardent leur pilote réel
-  - Nouveau champ `Driver.isReference` — un seul pilote de référence à la fois, modifiable comme n'importe quel pilote (le renommer ne casse rien)
-- **Filtre « Équilibrage » dans les statistiques** : les tours d'équilibrage étaient déjà enregistrés avec ce type mais restaient absents du filtre
+- **Reference driver for balancing** (RUSH-02): balancing measures the cars, not the drivers — all its laps now go to a single driver, whoever holds the controller
+  - **Settings**: reference driver selection, a **Create The STIG** button (no duplicate if the driver already exists) and a button to reassign the balancing laps already recorded
+  - **Balancing page**: warning and shortcut to the settings as long as no reference driver is set
+  - Balancing sessions automatically assign their laps to the reference driver; races, qualifying and practice keep their real driver
+  - New field `Driver.isReference` — only one reference driver at a time, editable like any driver (renaming it breaks nothing)
+- **"Balancing" filter in the statistics**: balancing laps were already recorded with this type but were missing from the filter
 
 ## [1.15.0] - 2026-08-26
 
 ### Added
-- **L'application ne démarre plus sur une installation cassée** : si le démarrage échoue, les lanceurs Windows et macOS affichent l'erreur et proposent trois choix — relancer la mise à jour (réparation), réessayer de démarrer, ou fermer
-  - Auparavant la fenêtre se refermait sans message : impossible de savoir ce qui s'était passé
-  - Le navigateur ne s'ouvre que si l'application répond réellement
-  - Un échec de migration est distingué des autres erreurs (code de sortie 43) et indique que la base n'a pas été modifiée, avec l'emplacement de la sauvegarde
-- **`npm run repair`** : rejoue une mise à jour hors de l'application (récupération, dépendances, build, sauvegarde, migration) — utilisable quand l'app ne démarre pas et ne peut donc pas proposer sa propre mise à jour
+- **The application no longer starts on a broken installation**: if startup fails, the Windows and macOS launchers show the error and offer three choices — rerun the update (repair), try starting again, or close
+  - Previously the window closed without a message: no way to know what had happened
+  - The browser only opens if the application actually responds
+  - A migration failure is distinguished from other errors (exit code 43) and states that the database was not modified, with the location of the backup
+- **`npm run repair`**: replays an update outside the application (fetch, dependencies, build, backup, migration) — usable when the app does not start and so cannot offer its own update
 
 ### Changed
-- **`startup.js`** sort avec le code 43 quand la migration échoue, au lieu d'une erreur non qualifiée, pour que le lanceur puisse expliquer précisément le problème
+- **`startup.js`** exits with code 43 when the migration fails, instead of an unqualified error, so the launcher can explain the problem precisely
 
 ## [1.14.0] - 2026-08-26
 
 ### Added
-- **Retour arrière automatique en cas de mise à jour ratée** : si `npm install` ou le build du frontend échoue après le `git pull`, l'application revient au commit précédent, réinstalle ses dépendances et reconstruit le frontend
-  - Auparavant, un réseau coupé ou une dépendance qui ne compile pas laissait l'installation à moitié faite : au redémarrage suivant, l'app ne fonctionnait plus
-  - Si la restauration elle-même échoue, le message l'indique explicitement au lieu de rester silencieux
-  - Couvert par des tests d'intégration sur un vrai dépôt git
+- **Automatic rollback on a failed update**: if `npm install` or the frontend build fails after the `git pull`, the application goes back to the previous commit, reinstalls its dependencies and rebuilds the frontend
+  - Previously, a dropped network or a dependency that does not compile left the installation half done: on the next restart, the app no longer worked
+  - If the restore itself fails, the message says so explicitly instead of staying silent
+  - Covered by integration tests on a real git repository
 
 ### Changed
-- **La migration de schéma passe en dernier** dans la mise à jour, après l'installation et le build : c'est la seule étape irréversible, elle n'est donc tentée qu'une fois le code en place. En cas d'échec, `startup.js` la rejoue au redémarrage
+- **The schema migration runs last** in the update, after the install and the build: it is the only irreversible step, so it is only attempted once the code is in place. On failure, `startup.js` replays it on restart
 
 ## [1.13.0] - 2026-08-26
 
 ### Added
-- **Sauvegarde datée avant chaque mise à jour** : la base est copiée dans `packages/backend/prisma/db-old/` sous la forme `AAAA-MM-JJ_HH-MM-SS_<raison>.db`, avec rotation automatique (10 dernières conservées)
-  - Déclenchée par la mise à jour depuis l'application (`update`), par la migration de schéma au démarrage (`schema-push`) et par les installeurs Windows/macOS (`install`)
-  - Copie réalisée via `VACUUM INTO` : cohérente même si le serveur tourne, et sans fichiers `-wal`/`-shm` associés
-  - Sauvegarde manuelle possible : `node scripts/backup-db.js <raison>`
-  - Remplace l'unique `dev.db.backup` qui était écrasé à chaque mise à jour — il n'y avait donc jamais d'historique
+- **Dated backup before each update**: the database is copied to `packages/backend/prisma/db-old/` as `YYYY-MM-DD_HH-MM-SS_<reason>.db`, with automatic rotation (last 10 kept)
+  - Triggered by the in-app update (`update`), by the schema migration at startup (`schema-push`) and by the Windows/macOS installers (`install`)
+  - Copy made with `VACUUM INTO`: consistent even while the server is running, and without associated `-wal`/`-shm` files
+  - Manual backup possible: `node scripts/backup-db.js <reason>`
+  - Replaces the single `dev.db.backup` that was overwritten on each update — so there was never any history
 
 ### Changed
-- **Prisma 6 → 7** : nouvel adaptateur SQLite officiel (`@prisma/adapter-better-sqlite3`), configuration déportée dans `prisma.config.js`, et instanciation centralisée via `createPrismaClient()` (`src/lib/prisma.js`) — plus aucun `new PrismaClient()` dispersé dans les routes et services
-  - `src/lib/database-url.js` conserve le comportement Prisma 6 : un `DATABASE_URL` relatif (`file:./dev.db`) reste résolu depuis le dossier `prisma/`
-  - Dates stockées en `unixepoch-ms`, comme avant la migration
-- **Outillage frontend** : Vite 7 → 8, `@vitejs/plugin-react` 5 → 6, ESLint 9 → 10, `@tailwindcss/vite` 4.2 → 4.3
-- **Bibliothèques** : framer-motion 12 → 13, react-easy-crop 5 → 6, ink 6 → 7, plus les mises à jour compatibles (i18next, react-i18next, lucide-react, shadcn, globals, React 19.2.3)
-- **Node.js 22+ requis** (au lieu de 20+) : imposé par Vite 8 et ESLint 10 — les installeurs Windows et macOS/Linux vérifient et installent la bonne version
-- **`package-lock.json` désormais versionné** : les installations sur le PC de course sont reproductibles à l'identique
+- **Prisma 6 → 7**: new official SQLite adapter (`@prisma/adapter-better-sqlite3`), configuration moved to `prisma.config.js`, and centralized instantiation through `createPrismaClient()` (`src/lib/prisma.js`) — no more `new PrismaClient()` scattered across routes and services
+  - `src/lib/database-url.js` keeps the Prisma 6 behavior: a relative `DATABASE_URL` (`file:./dev.db`) is still resolved from the `prisma/` folder
+  - Dates stored as `unixepoch-ms`, as before the migration
+- **Frontend tooling**: Vite 7 → 8, `@vitejs/plugin-react` 5 → 6, ESLint 9 → 10, `@tailwindcss/vite` 4.2 → 4.3
+- **Libraries**: framer-motion 12 → 13, react-easy-crop 5 → 6, ink 6 → 7, plus the compatible updates (i18next, react-i18next, lucide-react, shadcn, globals, React 19.2.3)
+- **Node.js 22+ required** (instead of 20+): required by Vite 8 and ESLint 10 — the Windows and macOS/Linux installers check for and install the right version
+- **`package-lock.json` now versioned**: installations on the race PC are reproducible exactly
 
 ### Fixed
-- **Détection de mise à jour** : la comparaison avec GitHub était une simple inégalité de chaînes (`latestVersion !== currentVersion`), donc une version **plus ancienne** était annoncée comme « nouvelle version disponible » — et une mise à jour lancée depuis ce bandeau aurait fait un retour arrière avec `db push` sur un schéma antérieur. La comparaison est désormais sémantique (`src/lib/version.js`, couverte par des tests)
-- **Les tests effaçaient la base réelle** : `npm test` s'exécutait sur `dev.db` (via le `DATABASE_URL` du `.env`) alors que `setup.js` vide toutes les tables — un simple lancement des tests détruisait pilotes, voitures, sessions et tours
-  - Les tests utilisent désormais une base jetable `prisma/test.db`, **créée au lancement** à partir de `schema.prisma` (`prisma migrate diff`) et supprimée à la fin
-  - `setup.js` refuse de démarrer si `DATABASE_URL` ne pointe pas sur une base de test
-- **`startup.js`** : la base est sauvegardée avant la migration ; si `prisma db push` échoue, la version n'est plus marquée comme migrée et le démarrage s'interrompt avec un message explicite — auparavant l'application démarrait sur un schéma désynchronisé sans jamais réessayer
-  - `--skip-generate` retiré : l'option n'existe plus dans Prisma 7
+- **Update detection**: the comparison with GitHub was a simple string inequality (`latestVersion !== currentVersion`), so an **older** version was announced as "New version available" — and an update started from this banner would have rolled back with `db push` onto an earlier schema. The comparison is now semantic (`src/lib/version.js`, covered by tests)
+- **The tests erased the real database**: `npm test` ran on `dev.db` (through the `DATABASE_URL` in `.env`) while `setup.js` empties every table — simply running the tests destroyed drivers, cars, sessions and laps
+  - The tests now use a throwaway database `prisma/test.db`, **created at launch** from `schema.prisma` (`prisma migrate diff`) and deleted at the end
+  - `setup.js` refuses to start if `DATABASE_URL` does not point to a test database
+- **`startup.js`**: the database is backed up before the migration; if `prisma db push` fails, the version is no longer marked as migrated and startup stops with an explicit message — previously the application started on an out-of-sync schema without ever retrying
+  - `--skip-generate` removed: the option no longer exists in Prisma 7
 
 ## [1.12.1] - 2026-08-26
 
 ### Added
-- **Tests de fin de session** : couverture des limites en tours et au temps pour les essais libres, qualifications, courses et sessions d'équilibrage
-- **Backlog Rush** : ajout des 12 prochaines évolutions produit dans `docs/TASKS.md`
+- **End-of-session tests**: coverage of lap and time limits for free practice, qualifying, races and balancing sessions
+- **Rush backlog**: added the next 12 product changes to `docs/TASKS.md`
 
 ### Fixed
-- **Tours supplémentaires après l'arrivée** : les passages d'un pilote ayant déjà terminé sont ignorés pendant la période de grâce, sans modifier ses tours, ses temps ou son classement
-- **Événements CU tardifs** : les passages reçus lorsqu'aucune session n'est active sont désormais ignorés
+- **Extra laps after the finish**: crossings by a driver who has already finished are ignored during the grace period, without changing their laps, times or position
+- **Late CU events**: crossings received when no session is active are now ignored
 
 ## [1.12.0] - 2026-05-16
 
 ### Added
-- **Traduction i18n EN/FR** : toute l'app est désormais traduisible, basée sur `react-i18next`
-  - Infrastructure : `import.meta.glob` auto-détecte les fichiers de traduction, fallback FR, détection navigateur, persistance localStorage
-  - Sélecteur de langue dans **Paramètres**
-  - Namespaces : `common`, `glossary` (termes métier + statuts + types de session), `layout`, `settings`, `dashboard`, `drivers`, `cars`, `tracks`, `teams`, `sessions`, `stats`, `championships`, `race`, `balancing`, `freeSession`, `displays`, `test`
-  - Pluriels gérés par i18next (`_one` / `_other`) — paramètre `count` automatique
-  - Dates locale-aware (`toLocaleDateString(i18n.language)`)
-  - Toutes les pages migrées (Settings, Layout, Dashboard, Drivers, Cars, Tracks, Teams, Sessions, Stats, Championships + tous les profils détail + Mode Libre, Équilibrage, Displays, Test) ainsi que tous les composants race/championship/balancing/crud/ui
-- **`ChampionshipBracket`** : pour les courses terminées, affichage de la **position finale** (P1/P2/P3 en jaune pour le podium) et du **temps total** par pilote, en plus de la position de grille
+- **EN/FR i18n translation**: the whole app is now translatable, based on `react-i18next`
+  - Infrastructure: `import.meta.glob` auto-detects the translation files, FR fallback, browser detection, localStorage persistence
+  - Language selector in **Settings**
+  - Namespaces: `common`, `glossary` (domain terms + statuses + session types), `layout`, `settings`, `dashboard`, `drivers`, `cars`, `tracks`, `teams`, `sessions`, `stats`, `championships`, `race`, `balancing`, `freeSession`, `displays`, `test`
+  - Plurals handled by i18next (`_one` / `_other`) — automatic `count` parameter
+  - Locale-aware dates (`toLocaleDateString(i18n.language)`)
+  - All pages migrated (Settings, Layout, Dashboard, Drivers, Cars, Tracks, Teams, Sessions, Stats, Championships + all detail profiles + Free Mode, Balancing, Displays, Test) as well as all race/championship/balancing/crud/ui components
+- **`ChampionshipBracket`**: for finished races, shows the **final position** (P1/P2/P3 in yellow for the podium) and the **total time** per driver, in addition to the grid position
 
 ### Changed
-- **Couleurs de type de session centralisées** dans `lib/colors.js` (helper `sessionBadgeClass()`) et basées sur les variables du thème (`bg-session-practice`, `bg-session-race`, etc.) — plus de duplication des classes Tailwind dans 6 fichiers
-- **`StandingsTabs`** utilise désormais `glossary:sessionType` / `glossary:sessionTypeFull` au lieu de ses propres clés dupliquées
-- **`SessionSection`** : hauteur uniforme `h-8` sur Select/Input + gap horizontal sur les cellules du tableau de config
+- **Session type colors centralized** in `lib/colors.js` (`sessionBadgeClass()` helper) and based on the theme variables (`bg-session-practice`, `bg-session-race`, etc.) — no more duplicated Tailwind classes across 6 files
+- **`StandingsTabs`** now uses `glossary:sessionType` / `glossary:sessionTypeFull` instead of its own duplicated keys
+- **`SessionSection`**: uniform `h-8` height on Select/Input + horizontal gap on the config table cells
 
 ### Fixed
-- **`DriverProfile`, `CarProfile`, `TrackProfile`, `SessionDetail`** : remplacement du `confirm()` natif par `ConfirmModal` pour le reset stats / suppression
-- **`SessionDetail`** : code mort nettoyé (`getImgUrl`, `formatDuration`, `totalPauseDuration`, `totalLaps`, `fastestDriver` — scaffolding jamais branché)
-- **`Dashboard`** : alignement vertical correct des valeurs des cartes stats (icône + label dans une div, valeur dans l'autre, `justify-between`)
-- **`Dashboard` "Records absolus"** : chaque record dans sa propre carte bordée → la valeur d'un item n'est plus collée au label du suivant
+- **`DriverProfile`, `CarProfile`, `TrackProfile`, `SessionDetail`**: native `confirm()` replaced by `ConfirmModal` for stats reset / deletion
+- **`SessionDetail`**: dead code cleaned up (`getImgUrl`, `formatDuration`, `totalPauseDuration`, `totalLaps`, `fastestDriver` — scaffolding never wired up)
+- **`Dashboard`**: correct vertical alignment of the stats card values (icon + label in one div, value in the other, `justify-between`)
+- **`Dashboard` "All-time records"**: each record in its own bordered card → an item's value no longer runs into the next item's label
 
 ## [1.11.0] - 2026-05-13
 
 ### Added
-- **Auto-application des profils voiture** : au démarrage de chaque session, les valeurs `maxSpeed`/`brakeForce`/`fuelCapacity` du profil de chaque voiture sont appliquées sur la CU (mapping 0-100 → CU 1-10 pour speed/brake, 1-15 pour fuel)
-- **Slots sans pilote** : les 6 slots de la CU reçoivent les défauts usine (speed=10, brake=10, fuel=7) si aucun pilote n'est assigné
-- **Auto-throttle de fin** : un pilote ayant terminé sa condition (laps atteints OU lap complété pendant grace period) voit sa vitesse passée à 1, les autres pilotes continuent
-- **Doc technique CU** : `docs/CU-CARRERA-PROTOCOL.md` — référence complète du protocole BLE, états, boutons, modes, fuel system
-- **Notice CU** : `docs/Carrera-30352-Control-Unit-Manual.pdf` ajoutée au repo
+- **Car profiles applied automatically**: at the start of each session, the `maxSpeed`/`brakeForce`/`fuelCapacity` values from each car's profile are applied to the CU (mapping 0-100 → CU 1-10 for speed/brake, 1-15 for fuel)
+- **Slots without a driver**: the CU's 6 slots get the factory defaults (speed=10, brake=10, fuel=7) if no driver is assigned
+- **End auto-throttle**: a driver who has met their condition (laps reached OR lap completed during the grace period) has their speed set to 1, the other drivers continue
+- **CU technical doc**: `docs/CU-CARRERA-PROTOCOL.md` — complete reference of the BLE protocol, states, buttons, modes, fuel system
+- **CU manual**: `docs/Carrera-30352-Control-Unit-Manual.pdf` added to the repo
 
 ### Fixed
-- **Podium voix : annonce de positions inexistantes** : avec 1 ou 2 pilotes, la voix annonçait "troisième" / "deuxième" pour des pilotes qui n'existaient pas. Les labels et drivers sont maintenant couplés avant le reverse
-- **finishSession appelée plusieurs fois** : guard `_finishing` ajouté pour éviter que la grace period timer + heartbeat + check déclenchent simultanément finishSession (causait des oscillations de vitesse)
-- **applyCarConfigs ordre** : déplacée APRÈS `prepareRace()` au start de session pour ne pas perturber la séquence de mise en L1
+- **Podium voice: announcement of non-existent positions**: with 1 or 2 drivers, the voice announced "third" / "second" for drivers who did not exist. The labels and drivers are now paired before the reverse
+- **finishSession called several times**: `_finishing` guard added to prevent the grace period timer + heartbeat + check from triggering finishSession at the same time (caused speed oscillations)
+- **applyCarConfigs order**: moved AFTER `prepareRace()` at session start so as not to disturb the L1 setup sequence
 
 ## [1.10.0] - 2026-05-12
 
 ### Added
-- **Auto-throttle de fin de course** : la vitesse d'un pilote ayant rempli sa condition de fin (laps ou temps) est automatiquement baissée à 1, les autres pilotes continuent à pleine vitesse. Restauration à 15 en fin de session
-- **`pressButton` / `pressEsc` / `stopCars`** : nouvelles méthodes sur `ControlUnit` (manquaient — les commandes n'arrivaient pas à la CU)
-- **Log scan BLE amélioré** : affichage du nom des peripherals découverts en plus de l'adresse
+- **End-of-race auto-throttle**: the speed of a driver who has met their finish condition (laps or time) is automatically lowered to 1, the other drivers continue at full speed. Restored to 15 at the end of the session
+- **`pressButton` / `pressEsc` / `stopCars`**: new methods on `ControlUnit` (they were missing — the commands never reached the CU)
+- **Improved BLE scan log**: shows the name of discovered peripherals in addition to the address
 
 ### Fixed
-- **Commandes CU bloquées par le polling** : refonte du `request()` avec mutex async pour sérialiser proprement les commandes BLE. Avant, le polling continu (`?`) monopolisait le canal et les commandes (`T`, `J`, `=`) ne partaient jamais
-- **Protocole BLE : retrait du `$` terminal** : le `$` est uniquement pour le protocole série, pas BLE (alignement avec `carreralib`)
-- **Footer déconnecté alors que CU active** : le backend n'émettait pas `cu:connected` à la connexion socket initiale, et le frontend ne déduisait pas `connected` depuis l'event `cu:status`
-- **Graceful shutdown** : `httpServer.close()` est maintenant attendu avant `process.exit`, évitant les `EADDRINUSE` au restart en mode `--watch`
+- **CU commands blocked by polling**: `request()` rewritten with an async mutex to serialize BLE commands properly. Before, continuous polling (`?`) hogged the channel and the commands (`T`, `J`, `=`) were never sent
+- **BLE protocol: trailing `$` removed**: the `$` is only for the serial protocol, not BLE (aligned with `carreralib`)
+- **Footer showing disconnected while the CU was active**: the backend did not emit `cu:connected` on the initial socket connection, and the frontend did not infer `connected` from the `cu:status` event
+- **Graceful shutdown**: `httpServer.close()` is now awaited before `process.exit`, avoiding `EADDRINUSE` on restart in `--watch` mode
 
 ## [1.9.10] - 2026-04-18
 
 ### Added
-- **Auto-connexion CU** : connexion automatique à la dernière Control Unit au démarrage (toggle dans Settings)
-- **Reconnexion BLE** : retry récursif avec compteur, reset des états à la déconnexion
+- **CU auto-connect**: automatic connection to the last Control Unit at startup (toggle in Settings)
+- **BLE reconnection**: recursive retry with a counter, states reset on disconnection
 
 ### Changed
-- **ControlUnit** : stockage de l'adresse à la connexion
+- **ControlUnit**: address stored on connection
 
 ## [1.9.9] - 2026-04-15
 
 ### Changed
-- **Équilibrage : refonte métriques** : 3 colonnes dans les cards et le panel droit — Best lap (violet), Best médiane fenêtre 5 (highlight jaune + écart), Moyenne 60% meilleurs tours
-- **Équilibrage : cards triées** par best médiane fenêtre 5 (plus rapide en premier)
-- **Équilibrage : médianes par fenêtre de 5** : fenêtres indépendantes (1-5, 6-10, 10-15...) au lieu de paliers cumulatifs
-- **Équilibrage : médiane → tous les tours** : la médiane affichée dans le panel droit est celle de tous les tours cumulés
-- **Équilibrage : 60% = moyenne** : la métrique 60% est maintenant la moyenne (et non médiane) des 60% meilleurs tours
+- **Balancing: metrics redesign**: 3 columns in the cards and the right panel — Best lap (purple), Best median over a window of 5 (yellow highlight + gap), Average of the best 60% of laps
+- **Balancing: cards sorted** by best window-of-5 median (fastest first)
+- **Balancing: medians per window of 5**: independent windows (1-5, 6-10, 10-15...) instead of cumulative steps
+- **Balancing: median → all laps**: the median shown in the right panel is that of all laps combined
+- **Balancing: 60% = average**: the 60% metric is now the average (not the median) of the best 60% of laps
 
 ### Fixed
-- **Prisma warning** : suppression du bloc `prisma.seed` déprécié dans package.json
+- **Prisma warning**: removed the deprecated `prisma.seed` block from package.json
 
 ## [1.9.7] - 2026-04-15
 
 ### Fixed
-- **Mise à jour Windows EPERM** : suppression du `postinstall` prisma generate du root package.json (causait EPERM sur Windows car la DLL est verrouillée). Prisma generate est maintenant géré par `startup.js` au démarrage et par le script `dev` en développement
+- **Windows update EPERM**: removed the prisma generate `postinstall` from the root package.json (caused EPERM on Windows because the DLL is locked). Prisma generate is now handled by `startup.js` at startup and by the `dev` script in development
 
 ## [1.9.6] - 2026-04-15
 
 ### Fixed
-- **Mise à jour : "connexion perdue"** : lors d'une déconnexion WebSocket pendant la mise à jour, le frontend affiche "Redémarrage du serveur..." et attend le retour du serveur au lieu d'afficher une erreur
-- **Ouverture navigateur Windows** : le `.bat` attend que le serveur soit prêt (polling `/health`) avant d'ouvrir le navigateur, au lieu d'un timeout fixe de 3s
-- **Mise à jour du lanceur** : le `.bat` est automatiquement régénéré depuis le template lors d'une mise à jour via l'interface
+- **Update: "connection lost"**: on a WebSocket disconnection during the update, the frontend shows "Restarting server..." and waits for the server to come back instead of showing an error
+- **Windows browser opening**: the `.bat` waits for the server to be ready (polling `/health`) before opening the browser, instead of a fixed 3s timeout
+- **Launcher update**: the `.bat` is automatically regenerated from the template during an update through the interface
 
 ## [1.9.4] - 2026-04-15
 
 ### Fixed
-- **Équilibrage : crash saveLap** : `driverId` rendu optionnel dans le schema Lap (était requis, causait un crash Prisma en mode équilibrage sans pilote)
-- **Mise à jour Windows** : correction EPERM lors du `npm install` (DLL Prisma verrouillée par le process en cours). Le postinstall Prisma est désormais ignoré pendant la mise à jour, et `prisma generate + db push` s'exécutent au redémarrage du serveur
+- **Balancing: saveLap crash**: `driverId` made optional in the Lap schema (it was required, causing a Prisma crash in balancing mode without a driver)
+- **Windows update**: EPERM fix during `npm install` (Prisma DLL locked by the running process). The Prisma postinstall is now skipped during the update, and `prisma generate + db push` run when the server restarts
 
 ## [1.9.2] - 2026-04-15
 
 ### Fixed
-- **Équilibrage : config incomplète** : en mode équilibrage, assigner une voiture sans pilote ne bloque plus le démarrage (seules les voitures sont requises)
+- **Balancing: incomplete config**: in balancing mode, assigning a car without a driver no longer blocks the start (only cars are required)
 
 ## [1.9.1] - 2026-04-15
 
 ### Fixed
-- **Prisma generate automatique** : ajout d'un script `postinstall` pour lancer `prisma generate` après `npm install` (corrige l'erreur sur les nouvelles installations)
+- **Automatic Prisma generate**: added a `postinstall` script to run `prisma generate` after `npm install` (fixes the error on new installations)
 
 ## [1.9.0] - 2026-04-12
 
 ### Added
-- **Championnats automatiques** : nouveau mode "Auto" pour les championnats avec génération automatique de l'arbre qualifications/courses
-- **Wizard de création** : assistant multi-étapes (infos, pilotes, configuration qualif/course, aperçu) avec switch Manuel/Auto
-- **Sélection des participants** : liste de pilotes avec ajout dynamique (nouvelle ligne automatique), modifiable à tout moment
-- **Génération automatique des sessions** : répartition équilibrée des pilotes en groupes de qualif (round-robin) et courses (séquentiel)
-- **Auto-progression** : après toutes les qualifications, les pilotes sont automatiquement assignés aux courses selon le classement fusionné (meilleur tour)
-- **Bracket/Arbre** : visualisation 3 colonnes (qualifs → classement global → courses) avec mise à jour temps réel
-- **Édition flexible** : ajout de pilotes, qualifs ou courses supplémentaires même après le début du championnat (sessions terminées immutables)
-- **Couleurs sémantiques** : tokens CSS dans `@theme` (`session-practice`, `gap-laps`, `leader`, `ctrl-1`...) pour cohérence des couleurs
+- **Automatic championships**: new "Auto" mode for championships with automatic generation of the qualifying/race tree
+- **Creation wizard**: multi-step wizard (info, drivers, qualif/race configuration, preview) with a Manual/Auto switch
+- **Participant selection**: driver list with dynamic adding (automatic new row), editable at any time
+- **Automatic session generation**: balanced distribution of drivers into qualif groups (round-robin) and races (sequential)
+- **Auto-progression**: after all qualifying sessions, drivers are automatically assigned to races according to the merged standings (best lap)
+- **Bracket/Tree**: 3-column view (qualifs → overall standings → races) with real-time updates
+- **Flexible editing**: add extra drivers, qualifs or races even after the championship has started (finished sessions immutable)
+- **Semantic colors**: CSS tokens in `@theme` (`session-practice`, `gap-laps`, `leader`, `ctrl-1`...) for consistent colors
 
 ### Changed
-- **Classement général courses** : colonnes Tours + Écart/Total, gap en tours (orange) quand le nombre de tours diffère du leader
-- **Leaderboard course** : le leader affiche "Leader" en violet pendant la course, le temps total uniquement à la fin
-- **Config championnat** : sessions éditables/supprimables si en draft (même en mode auto), sessions terminées verrouillées
-- **Traduction statuts** : `finished` → `Terminé`, `active` → `En cours`, etc. dans le panneau de configuration
+- **Race overall standings**: Laps + Gap/Total columns, gap in laps (orange) when the lap count differs from the leader's
+- **Race leaderboard**: the leader shows "Leader" in purple during the race, the total time only at the end
+- **Championship config**: sessions editable/deletable while in draft (even in auto mode), finished sessions locked
+- **Status translation**: `finished` → `Terminé`, `active` → `En cours`, etc. in the configuration panel
 
 ## [1.8.0] - 2026-04-11
 
 ### Added
-- **Sessions d'équilibrage** : nouveau type de session `balancing` dédié à l'équilibrage des voitures
-- **Page Équilibrage** (`/balancing`) : page dédiée avec sélecteur de circuit, config simplifiée (contrôleur + voiture uniquement)
-- **Graphe temps au tour** : LineChart recharts en temps réel remplaçant le leaderboard, une courbe par voiture
-- **Statistiques par voiture** : meilleur tour, meilleure médiane (par tranche de 5 tours), indicateur de tendance (accélère/ralentit/stable)
-- **Écart entre voitures** : delta de meilleure médiane affiché pour comparer les performances
-- **Classement général par voiture** : best lap + meilleure médiane par voiture (pas par pilote) dans le panneau droit
-- **Historique des sessions** : évolution de la meilleure médiane session par session avec indicateurs colorés (vert = amélioré, rouge = dégradé)
-- **Filtre outliers** : input "Temps max" dans la config pour exclure les tours aberrants du graphe et des calculs
-- **Exclusion premier tour** : le tour de sortie de pit est automatiquement ignoré dans les calculs et le graphe
-- **Composant Podium** : extrait en composant réutilisable (`Podium.jsx`) avec stats résumé (tours réalisés/configurés, durée réelle/configurée, grace période, meilleur tour)
-- **Refonte page détail session** : migration shadcn/ui, podium, leaderboard intégré, historique des tours, support balancing avec graphe, DNF
+- **Balancing sessions**: new `balancing` session type dedicated to balancing the cars
+- **Balancing page** (`/balancing`): dedicated page with a track selector, simplified config (controller + car only)
+- **Lap time chart**: real-time recharts LineChart replacing the leaderboard, one line per car
+- **Per-car statistics**: best lap, best median (per block of 5 laps), trend indicator (speeding up/slowing down/stable)
+- **Gap between cars**: best median delta shown to compare performance
+- **Overall standings per car**: best lap + best median per car (not per driver) in the right panel
+- **Session history**: change in the best median session by session with colored indicators (green = improved, red = worse)
+- **Outlier filter**: "Max time" input in the config to exclude aberrant laps from the chart and the calculations
+- **First lap excluded**: the pit exit lap is automatically ignored in the calculations and the chart
+- **Podium component**: extracted into a reusable component (`Podium.jsx`) with summary stats (laps completed/configured, actual/configured duration, grace period, best lap)
+- **Session detail page redesign**: shadcn/ui migration, podium, built-in leaderboard, lap history, balancing support with chart, DNF
 
 ### Changed
-- **SessionSection** : colonnes Pilote et Grille masquées pour les sessions balancing, Grace période remplacée par Temps max
-- **Sidebar** : entrée "Équilibrage" ajoutée après Statistiques (icône Scale)
-- **event session:bestlap** : inclut désormais `sessionType` pour désactiver les annonces vocales en balancing
-- **Sidebar en session** : reste ouverte pendant les sessions d'équilibrage (pas de collapse automatique)
-- **Refonte pages détail** : TrackProfile, DriverProfile, CarProfile migrées en shadcn/ui avec header compact, stats inline, sessions cliquables
-- **Migration composants CRUD** : FormModal, Modal, PageHeader, EmptyState, EntityCard, ColorPickerField, RangeField, PhotoUploadField, RecordDisplays en shadcn/ui
-- **Suppression primaryColor** : toutes les couleurs hardcodées remplacées par tokens sémantiques (`text-primary`, `bg-card`, `border-border`)
-- **Tri historique sessions** : tri par `updatedAt` (au lieu de `createdAt`) pour que les sessions modifiées/reset remontent
-- **Colonne Date historique** : affiche `updatedAt` au lieu de `createdAt`
-- **Podium stats** : affiche tours réalisés/max, durée réelle/configurée, grace période avec fallback 30s
-- **Couleurs types de session unifiées** : essais=violet, qualif=bleu, course=vert, équilibrage=orange sur toutes les pages
-- **Dashboard classement pilotes** : courses/victoires/podiums colorés, nombre de courses affiché
-- **Mode production** : le backend Express sert le frontend buildé sur un seul port (3001), démarrage instantané
-- **Mise à jour depuis l'app** : section dans Settings pour vérifier et appliquer les mises à jour (git pull, npm install, build, prisma, restart automatique)
-- **Progression mise à jour** : barre de progression WebSocket en temps réel, affichage erreurs, auto-reconnect après restart
-- **Scripts d'installation** : `RaceHubOS-install-mac.command` et `RaceHubOS-install-win.bat` — un seul script à télécharger et lancer
-- **Auto-install prérequis** : Homebrew/Git/Node.js (Mac) ou Git/Node.js via winget (Windows)
-- **App Bureau macOS** : `.app` avec icône custom, lance le serveur + ouvre le navigateur
-- **Launcher avec auto-restart** : boucle restart (exit code 42) pour supporter les mises à jour depuis l'app
-- **Kill port au lancement** : le launcher libère le port 3001 si déjà occupé
-- **Fallback DATABASE_URL** : le backend crée automatiquement la connexion SQLite si .env absent
-- **Version dynamique** : lue depuis package.json, plus de valeur hardcodée
+- **SessionSection**: Driver and Grid columns hidden for balancing sessions, Grace period replaced by Max time
+- **Sidebar**: "Balancing" entry added after Statistics (Scale icon)
+- **session:bestlap event**: now includes `sessionType` to disable voice announcements in balancing
+- **Sidebar during a session**: stays open during balancing sessions (no automatic collapse)
+- **Detail pages redesign**: TrackProfile, DriverProfile, CarProfile migrated to shadcn/ui with a compact header, inline stats, clickable sessions
+- **CRUD components migration**: FormModal, Modal, PageHeader, EmptyState, EntityCard, ColorPickerField, RangeField, PhotoUploadField, RecordDisplays to shadcn/ui
+- **primaryColor removed**: all hardcoded colors replaced by semantic tokens (`text-primary`, `bg-card`, `border-border`)
+- **Session history sorting**: sorted by `updatedAt` (instead of `createdAt`) so modified/reset sessions move to the top
+- **History Date column**: shows `updatedAt` instead of `createdAt`
+- **Podium stats**: shows laps completed/max, actual/configured duration, grace period with a 30s fallback
+- **Unified session type colors**: practice=purple, qualif=blue, race=green, balancing=orange on every page
+- **Dashboard driver standings**: colored races/wins/podiums, number of races shown
+- **Production mode**: the Express backend serves the built frontend on a single port (3001), instant startup
+- **In-app update**: section in Settings to check for and apply updates (git pull, npm install, build, prisma, automatic restart)
+- **Update progress**: real-time WebSocket progress bar, error display, auto-reconnect after restart
+- **Installation scripts**: `RaceHubOS-install-mac.command` and `RaceHubOS-install-win.bat` — a single script to download and run
+- **Prerequisites auto-install**: Homebrew/Git/Node.js (Mac) or Git/Node.js via winget (Windows)
+- **macOS desktop app**: `.app` with a custom icon, starts the server + opens the browser
+- **Launcher with auto-restart**: restart loop (exit code 42) to support in-app updates
+- **Kill port on launch**: the launcher frees port 3001 if already in use
+- **DATABASE_URL fallback**: the backend automatically creates the SQLite connection if .env is missing
+- **Dynamic version**: read from package.json, no more hardcoded value
 
 ### Fixed
-- **isPitLap** : champ inexistant remplacé par `deletedAt` dans stats.js
-- **Git pull safe** : `checkout + pull --ff-only` préserve DB/uploads/.env
-- **Cache version GitHub** : utilise l'API GitHub au lieu de raw.githubusercontent (pas de cache CDN)
-- **react-is** : dépendance manquante de recharts ajoutée
+- **isPitLap**: non-existent field replaced by `deletedAt` in stats.js
+- **Safe git pull**: `checkout + pull --ff-only` preserves DB/uploads/.env
+- **GitHub version cache**: uses the GitHub API instead of raw.githubusercontent (no CDN cache)
+- **react-is**: missing recharts dependency added
 
 ## [1.6.0] - 2026-04-10
 
 ### Added
-- **Annonce vocale meilleur tour** : synthèse vocale FR quand un nouveau record de session est établi (nom du pilote + temps)
-- **Annonce podium fin de course** : annonce vocale 3e → 2e → 1er avec temps total (race) ou meilleur tour (qualif) après la musique de fin
-- **VoiceContext** : service dédié pour la gestion vocale (speak, formatTimeVoice, préférences)
-- **Settings voix** : toggle activation, seuil tours minimum configurable (1-20, défaut 3), sélecteur de voix FR avec bouton test
-- **Colonne Total (race)** : le leader affiche son temps total, les autres l'écart — colonne unique fusionnée
+- **Best lap voice announcement**: French speech synthesis when a new session record is set (driver name + time)
+- **End-of-race podium announcement**: voice announcement 3rd → 2nd → 1st with total time (race) or best lap (qualif) after the finish music
+- **VoiceContext**: dedicated service for voice handling (speak, formatTimeVoice, preferences)
+- **Voice settings**: on/off toggle, configurable minimum lap threshold (1-20, default 3), French voice selector with a test button
+- **Total column (race)**: the leader shows their total time, the others the gap — single merged column
 
 ### Changed
-- **Écart qualif/practice** : le leader affiche son meilleur tour en violet au lieu de "Leader"
-- **event session:finished** : inclut désormais `sessionType` pour différencier race/qualif dans les annonces
-- **Persistance session libre** : circuit et mode (practice/qualif/race) sauvegardés dans localStorage via AppContext
-- **Copie auto drivers** : changement de type en session libre copie la config pilotes/voitures de la session précédente
-- **Tri podium practice** : aligné avec le leaderboard (tours desc → bestLap asc) pour éviter les incohérences
+- **Qualif/practice gap**: the leader shows their best lap in purple instead of "Leader"
+- **session:finished event**: now includes `sessionType` to tell race and qualif apart in the announcements
+- **Free session persistence**: track and mode (practice/qualif/race) saved in localStorage through AppContext
+- **Automatic driver copy**: changing type in a free session copies the driver/car config from the previous session
+- **Practice podium sorting**: aligned with the leaderboard (laps desc → bestLap asc) to avoid inconsistencies
 
 ### Fixed
-- **Double attribut style** : fix du podium SessionSection (ringColor + backgroundColor fusionnés)
-- **Podium non affiché** : session.drivers mis à jour avec le leaderboard final à la fin de session
-- **Classement race vide** : mapping `totalLaps` manquant dans les records de sessions libres
-- **Classement non rafraîchi** : refetch standings automatique après fin de session (event listener)
+- **Duplicate style attribute**: fixed the SessionSection podium (ringColor + backgroundColor merged)
+- **Podium not shown**: session.drivers updated with the final leaderboard at the end of the session
+- **Empty race standings**: missing `totalLaps` mapping in free session records
+- **Standings not refreshed**: automatic standings refetch after the session ends (event listener)
 
 ## [1.5.0] - 2026-04-06
 
 ### Added
-- **AppContext** : contexte unifié pour les préférences UI (theme, admin, sidebar, standings), remplace ThemeContext
-- **Titre session éditable** : clic sur le titre pour éditer inline (contentEditable), auto-save au blur
-- **Config session inline** : table controllers toujours visible avec selects inline et auto-save, plus de mode formulaire
-- **Config durée/tours/grace** : inputs inline pour qualif et course (sessions libres et championnats)
-- **Podium fin de course** : affichage visuel du podium (1er/2ème/3ème) avec avatars, écarts, meilleur tour et stats
-- **Feux de départ** : sons bip à chaque feu, touche Espace pour lancer, touche Échap et bouton croix pour annuler
-- **Persistance sidebar/standings** : état sauvegardé dans localStorage, fermeture auto en course, restauration après
-- **Sync config sessions libres** : modification pilotes/voitures propagée aux autres types (practice/qualif/race)
-- **Migration DB** : sessions 'ready' migrées vers 'draft'
+- **AppContext**: unified context for UI preferences (theme, admin, sidebar, standings), replaces ThemeContext
+- **Editable session title**: click the title to edit inline (contentEditable), auto-save on blur
+- **Inline session config**: controllers table always visible with inline selects and auto-save, no more form mode
+- **Duration/laps/grace config**: inline inputs for qualif and race (free sessions and championships)
+- **End-of-race podium**: visual podium display (1st/2nd/3rd) with avatars, gaps, best lap and stats
+- **Start lights**: beep sound for each light, Space key to start, Escape key and close button to cancel
+- **Sidebar/standings persistence**: state saved in localStorage, closed automatically during a race, restored afterwards
+- **Free session config sync**: driver/car changes propagated to the other types (practice/qualif/race)
+- **DB migration**: 'ready' sessions migrated to 'draft'
 
 ### Changed
-- **Status ready supprimé** : cycle simplifié draft → active → paused → finishing → finished
-- **Démarrage direct** : bouton "Démarrer" depuis draft (plus besoin de passer par "Prêt")
-- **Classement général** : couleurs podium flashy (badges ronds colorés, gradients, bordures), plus de limite 5 pilotes
-- **Gradient dark mode** : utilise `var(--card)` au lieu de hex hardcodé
-- **Grille de départ** : border et gradient toujours à gauche
-- **Reset session** : soft delete des laps pour tous les types (plus de hard delete pour qualif/race)
-- **Barres de progression** : masquées quand session terminée (infos dans le podium)
-- **Config incomplète** : bloque le démarrage si pilote sans voiture ou inversement
+- **ready status removed**: simplified cycle draft → active → paused → finishing → finished
+- **Direct start**: "Start" button from draft (no need to go through "Ready" anymore)
+- **Overall standings**: bright podium colors (colored round badges, gradients, borders), no more 5-driver limit
+- **Dark mode gradient**: uses `var(--card)` instead of a hardcoded hex
+- **Starting grid**: border and gradient always on the left
+- **Session reset**: soft delete of laps for all types (no more hard delete for qualif/race)
+- **Progress bars**: hidden when the session is finished (info in the podium)
+- **Incomplete config**: blocks the start if a driver has no car or vice versa
 
 ### Fixed
-- **gridPos** : ajouté au leaderboard endpoint et SessionService (positions grille fonctionnelles)
-- **Re-renders infinis** : fix useEffect deps dans FreeSessionPage, ChampionshipDetail, SessionSection
-- **Timing après reset** : remise à zéro du timing dans resetSession et loadSession
-- **handleSaveConfig** : pas de PUT/PATCH inutiles quand seuls les drivers changent
-- **Nom session libre** : plus de doublon "Essais libres libre"
+- **gridPos**: added to the leaderboard endpoint and SessionService (grid positions working)
+- **Infinite re-renders**: fixed useEffect deps in FreeSessionPage, ChampionshipDetail, SessionSection
+- **Timing after reset**: timing reset in resetSession and loadSession
+- **handleSaveConfig**: no unnecessary PUT/PATCH when only the drivers change
+- **Free session name**: no more doubled "Free Practice free"
 
 ### Removed
-- **ThemeContext** : fusionné dans AppContext
-- **Tests obsolètes** : 4 fichiers de tests supprimés (importaient des modules renommés/supprimés)
+- **ThemeContext**: merged into AppContext
+- **Obsolete tests**: 4 test files removed (they imported renamed/removed modules)
 
 ## [1.2.0] - 2026-03-28
 
 ### Added
-- **Sidebar shadcn/ui** : migration vers le composant Sidebar de shadcn/ui (style dashboard-01) avec `SidebarProvider`, `SidebarInset`, collapsible en mode "icon", raccourci clavier `Ctrl+B`, support mobile via Sheet, tooltips en mode collapsed
-- **Logo** : nouveau logo RaceHubOS dans la sidebar
-- **Header layout** : barre supérieure avec `SidebarTrigger`, titre de page dynamique, compteur de résultats, toggle grille/liste et bouton d'ajout (remontés depuis ListPage)
-- **Footer statut CU** : barre inférieure fixe avec état de connexion CU, mode, dernier tour
-- **Dark mode Zinc** : palette dark mode passée en Zinc (gris neutres/bleutés)
-- **Dashboard** : refonte complète avec records absolus, classement pilotes top 10, meilleurs tours, stats cards, bannière session active ; données limitées aux championnats (sessions libres exclues)
-- **Filtre `has_championship`** : nouveau paramètre sur `/api/sessions`, `/api/stats/drivers`, `/api/stats/records`, `/api/stats/laptimes` pour exclure les sessions hors championnat
-- **Settings** : migration vers composants shadcn/ui (Card, Button, icônes lucide), suppression header/lien retour redondants
-- **Backend Status** : migration vers Sheet shadcn/ui (slide-in panel), icônes lucide, filtres par type de log
-- **Migration lucide-react** : remplacement complet de `@heroicons/react` par `lucide-react` sur les 47 fichiers, suppression du package heroicons
-- **Bouton édition (crayon)** : ajouté sur les cartes grille, les lignes de table (colonne actions fixe non déplaçable) et les pages profil (Pilotes, Voitures, Circuits)
-- **Mode Libre** : migration vers composants shadcn/ui (Select, Tabs, Button)
-- **DataTable** : support `meta.className` sur les colonnes, padding réduit sur colonnes select/actions
-- **Sidebar** : réorganisation du menu (Mode Libre, Championnats, Historique, Circuits, Équipes, Pilotes, Voitures, Stats)
-- **Mode Libre** : select circuit et type toujours cliquables, toggle classement général, tokens sémantiques, couleurs podium vives, empty state shadcn Card, sessions libres créées en statut "prêt" par défaut
-- **Configuration session inline** : remplacement du modal par un formulaire intégré directement dans le bloc session (nom, durée, tours, controllers, statut)
-- **Leaderboard expanded** : tailles agrandies (position, avatar, numéro, nom, stats) quand le classement général est masqué
-- **Page Championnat** : migration shadcn (ChampionshipHeader, ChampionshipConfigModal en Sheet, tokens sémantiques), toggle classement général, config session inline, selects shadcn pour controllers et circuit
-- **Leaderboard stats** : tailles agrandies en mode expanded (labels, tours, temps, gap), LapTime size `xl`
-- **Script upgrade** : `RaceHubOS-upgrade.bat` avec prisma generate, raccourci bureau, launcher versionné
-- **Terminer championnat** : bouton dans le header quand toutes les sessions Q/R sont terminées, bouton dans la config pour forcer la fin
-- **Soft delete / hard delete** : DELETE fait un soft delete, re-DELETE fait un hard delete, PATCH restore sur toutes les entités (drivers, cars, tracks, teams, championships, sessions, laps)
-- **ListPage supprimés** : boutons Restaurer + Supprimer définitivement en mode "Afficher les supprimés", confirmation modale, déselection auto après action
-- **Stats laps** : endpoint DELETE/restore pour les laps, filtre "Afficher les supprimés" sur la page Stats
-- **DataTable** : toolbar sticky, empty state avec icône Search
-- **Auto-collapse au start** : sidebar et classement général se ferment automatiquement au démarrage d'une session (Mode Libre et Championnat)
-- **Vue par défaut** : option dans les paramètres pour choisir Grille ou Liste par défaut sur toutes les pages
-- **PageHeaderContext** : context React pour remonter les éléments de header des pages enfants vers le layout
-- **shadcn/ui** : intégration complète avec Tailwind v4, composants Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs
-- **DataTable générique** (`data-table.jsx`) : composant réutilisable basé sur TanStack React Table avec recherche globale, sélection multiple, tri par colonne (asc/desc), filtres par colonne via Popover, drag & drop pour réorganiser les colonnes (avec animation framer-motion), visibilité des colonnes configurable, infinite scroll, skeleton de chargement
-- **ListPage générique** (`list-page.jsx`) : layout page réutilisable avec header (icône + titre + compteur + bouton ajout), DataTable, barre d'actions de sélection, confirmation de suppression, empty state
-- **FilterHeader** (`filter-header.jsx`) : header de colonne avec tri + icône funnel + popover d'options de filtre
-- **Préférences utilisateur** : modèle `Preference` en DB (clé/valeur JSON), route `GET/PUT /api/preferences/:key`, sauvegarde de la visibilité et de l'ordre des colonnes par page
-- **Soft delete** : champ `deletedAt` sur Championship, Session, SessionDriver, Lap, Driver, Car, Track, Team, TrackRecord ; suppression en cascade via `deletedAt` au lieu de hard delete ; filtre "Afficher les supprimés" dans les tableaux
-- **Lazy loading** : toutes les pages chargées dynamiquement via `React.lazy()` + `Suspense`, bundle principal réduit de 900KB à 317KB
+- **shadcn/ui Sidebar**: migration to the shadcn/ui Sidebar component (dashboard-01 style) with `SidebarProvider`, `SidebarInset`, collapsible in "icon" mode, `Ctrl+B` keyboard shortcut, mobile support via Sheet, tooltips in collapsed mode
+- **Logo**: new RaceHubOS logo in the sidebar
+- **Layout header**: top bar with `SidebarTrigger`, dynamic page title, result counter, grid/list toggle and add button (moved up from ListPage)
+- **CU status footer**: fixed bottom bar with CU connection state, mode, last lap
+- **Zinc dark mode**: dark mode palette switched to Zinc (neutral/bluish grays)
+- **Dashboard**: complete redesign with all-time records, top 10 driver standings, fastest laps, stats cards, active session banner; data limited to championships (free sessions excluded)
+- **`has_championship` filter**: new parameter on `/api/sessions`, `/api/stats/drivers`, `/api/stats/records`, `/api/stats/laptimes` to exclude sessions outside championships
+- **Settings**: migration to shadcn/ui components (Card, Button, lucide icons), redundant header/back link removed
+- **Backend Status**: migration to shadcn/ui Sheet (slide-in panel), lucide icons, filters by log type
+- **lucide-react migration**: `@heroicons/react` fully replaced by `lucide-react` across the 47 files, heroicons package removed
+- **Edit button (pencil)**: added on grid cards, table rows (fixed, non-movable actions column) and profile pages (Drivers, Cars, Tracks)
+- **Free Mode**: migration to shadcn/ui components (Select, Tabs, Button)
+- **DataTable**: `meta.className` support on columns, reduced padding on select/actions columns
+- **Sidebar**: menu reorganized (Free Mode, Championships, History, Tracks, Teams, Drivers, Cars, Stats)
+- **Free Mode**: track and type selects always clickable, overall standings toggle, semantic tokens, bright podium colors, shadcn Card empty state, free sessions created with "ready" status by default
+- **Inline session configuration**: modal replaced by a form built directly into the session block (name, duration, laps, controllers, status)
+- **Expanded leaderboard**: larger sizes (position, avatar, number, name, stats) when the overall standings are hidden
+- **Championship page**: shadcn migration (ChampionshipHeader, ChampionshipConfigModal as a Sheet, semantic tokens), overall standings toggle, inline session config, shadcn selects for controllers and track
+- **Leaderboard stats**: larger sizes in expanded mode (labels, laps, times, gap), LapTime size `xl`
+- **Upgrade script**: `RaceHubOS-upgrade.bat` with prisma generate, desktop shortcut, versioned launcher
+- **Finish championship**: button in the header when all Q/R sessions are finished, button in the config to force the end
+- **Soft delete / hard delete**: DELETE does a soft delete, a second DELETE does a hard delete, PATCH restores, on all entities (drivers, cars, tracks, teams, championships, sessions, laps)
+- **ListPage deleted items**: Restore + Delete permanently buttons in "Show deleted items" mode, modal confirmation, automatic deselection after the action
+- **Stats laps**: DELETE/restore endpoint for laps, "Show deleted items" filter on the Stats page
+- **DataTable**: sticky toolbar, empty state with a Search icon
+- **Auto-collapse on start**: sidebar and overall standings close automatically when a session starts (Free Mode and Championship)
+- **Default view**: option in the settings to choose Grid or List as the default on every page
+- **PageHeaderContext**: React context to lift header elements from child pages up to the layout
+- **shadcn/ui**: full integration with Tailwind v4, Popover, Select, Table, Checkbox, Input, Button, DropdownMenu, Skeleton, Badge, Card, Tabs components
+- **Generic DataTable** (`data-table.jsx`): reusable component based on TanStack React Table with global search, multiple selection, per-column sorting (asc/desc), per-column filters via Popover, drag & drop to reorder columns (with framer-motion animation), configurable column visibility, infinite scroll, loading skeleton
+- **Generic ListPage** (`list-page.jsx`): reusable page layout with header (icon + title + counter + add button), DataTable, selection action bar, deletion confirmation, empty state
+- **FilterHeader** (`filter-header.jsx`): column header with sorting + funnel icon + filter options popover
+- **User preferences**: `Preference` model in DB (JSON key/value), `GET/PUT /api/preferences/:key` route, column visibility and order saved per page
+- **Soft delete**: `deletedAt` field on Championship, Session, SessionDriver, Lap, Driver, Car, Track, Team, TrackRecord; cascading deletion through `deletedAt` instead of hard delete; "Show deleted items" filter in the tables
+- **Lazy loading**: all pages loaded dynamically through `React.lazy()` + `Suspense`, main bundle reduced from 900KB to 317KB
 
 ### Changed
-- **Tailwind v3 → v4** : migration vers Tailwind CSS v4 avec plugin Vite natif (`@tailwindcss/vite`), support oklch, suppression de postcss.config.js et tailwind.config.js
-- **Stats : filtres et tri côté serveur** : tous les filtres, le tri et la pagination sont désormais gérés par le backend (Prisma orderBy / skip / take), suppression du tri client-side
-- **Stats : infinite scroll** : remplacement du filtre "Nombre max" par un scroll infini avec chargement progressif par pages de 50
-- **Stats : regroupement pilote×voiture optionnel** : le regroupement par meilleur tour par combo pilote/voiture/circuit est maintenant désactivable via une checkbox
-- **API `/api/stats/laptimes`** : ajout des paramètres `offset`, `sortBy` (lapTime, driver, car, track, sessionType, date), `sortOrder`, `unique` ; retourne `total` et `hasMore` pour la pagination
-- **API `/api/championships`** : ajout des paramètres `offset`, `limit`, `trackId`, `status`, `deleted` ; retourne `total` et `hasMore`
-- **API `/api/sessions`** : ajout des paramètres `offset`, `limit`, `deleted` ; retourne `total` et `hasMore`
-- **Sessions : vue DataTable** : remplacement de la vue liste custom par le DataTable générique avec filtres par colonne (type, circuit, statut, championnat), tri, sélection, drag & drop
-- **Championnats : vue DataTable** : remplacement de la grille de cartes par le DataTable générique avec filtres par colonne (circuit, statut), tri, sélection, drag & drop
-- **Lap.softDeletedAt → Lap.deletedAt** : renommage pour cohérence avec les autres modèles
-- **Suppression** : passage de hard delete à soft delete avec cascade sur Session et Championship
-- **Circuits : vue DataTable** : remplacement de la grille de cartes par le DataTable générique avec tri, sélection, recherche, infinite scroll, drag & drop colonnes
-- **Stats : vue DataTable** : remplacement du tableau custom par le DataTable générique avec filtres par colonne (pilote, voiture, circuit, session), avatars, médailles top 3, infinite scroll
-- **API `/api/tracks`** : ajout des paramètres `offset`, `limit`, `deleted` ; retourne `total` et `hasMore`
-- **Pilotes : vue DataTable + grille** : toggle grille/liste avec shadcn Tabs, DataTable avec colonnes (pilote, n°, équipe, courses, victoires, podiums, tours, record), cartes originales avec racing stripe/gradient/blur en mode grille
-- **Voitures : vue DataTable + grille** : colonnes séparées marque/modèle/année, barres vitesse/freinage, record, sessions, cartes avec specs en mode grille
-- **Équipes : vue DataTable + grille** : colonnes (nom, couleur, pilotes), cartes avec liste pilotes en mode grille
-- **Circuits : vue grille** : ajout du mode grille avec cartes (specs longueur/virages, record, sessions)
-- **API `/api/drivers`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` sessions/laps ; retourne `total` et `hasMore`
-- **API `/api/cars`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` sessions ; retourne `total` et `hasMore`
-- **API `/api/teams`** : ajout des paramètres `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` ; tri par `_count` drivers ; retourne `total` et `hasMore`
-- **Toggle grille/liste** : composant shadcn Tabs dans ListPage, préférence sauvegardée en DB
+- **Tailwind v3 → v4**: migration to Tailwind CSS v4 with the native Vite plugin (`@tailwindcss/vite`), oklch support, postcss.config.js and tailwind.config.js removed
+- **Stats: server-side filters and sorting**: all filters, sorting and pagination are now handled by the backend (Prisma orderBy / skip / take), client-side sorting removed
+- **Stats: infinite scroll**: the "Max number" filter replaced by infinite scroll with progressive loading in pages of 50
+- **Stats: optional driver×car grouping**: grouping by best lap per driver/car/track combo can now be turned off with a checkbox
+- **API `/api/stats/laptimes`**: added `offset`, `sortBy` (lapTime, driver, car, track, sessionType, date), `sortOrder`, `unique` parameters; returns `total` and `hasMore` for pagination
+- **API `/api/championships`**: added `offset`, `limit`, `trackId`, `status`, `deleted` parameters; returns `total` and `hasMore`
+- **API `/api/sessions`**: added `offset`, `limit`, `deleted` parameters; returns `total` and `hasMore`
+- **Sessions: DataTable view**: custom list view replaced by the generic DataTable with per-column filters (type, track, status, championship), sorting, selection, drag & drop
+- **Championships: DataTable view**: card grid replaced by the generic DataTable with per-column filters (track, status), sorting, selection, drag & drop
+- **Lap.softDeletedAt → Lap.deletedAt**: renamed for consistency with the other models
+- **Deletion**: switch from hard delete to soft delete with cascade on Session and Championship
+- **Tracks: DataTable view**: card grid replaced by the generic DataTable with sorting, selection, search, infinite scroll, column drag & drop
+- **Stats: DataTable view**: custom table replaced by the generic DataTable with per-column filters (driver, car, track, session), avatars, top 3 medals, infinite scroll
+- **API `/api/tracks`**: added `offset`, `limit`, `deleted` parameters; returns `total` and `hasMore`
+- **Drivers: DataTable + grid view**: grid/list toggle with shadcn Tabs, DataTable with columns (driver, no., team, races, wins, podiums, laps, record), original cards with racing stripe/gradient/blur in grid mode
+- **Cars: DataTable + grid view**: separate brand/model/year columns, speed/braking bars, record, sessions, cards with specs in grid mode
+- **Teams: DataTable + grid view**: columns (name, color, drivers), cards with a driver list in grid mode
+- **Tracks: grid view**: grid mode added with cards (length/turns specs, record, sessions)
+- **API `/api/drivers`**: added `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` parameters; sorting by `_count` sessions/laps; returns `total` and `hasMore`
+- **API `/api/cars`**: added `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` parameters; sorting by `_count` sessions; returns `total` and `hasMore`
+- **API `/api/teams`**: added `offset`, `limit`, `deleted`, `sortBy`, `sortOrder` parameters; sorting by `_count` drivers; returns `total` and `hasMore`
+- **Grid/list toggle**: shadcn Tabs component in ListPage, preference saved in DB
 
 ### Fixed
-- **Tri toutes les pages** : tri côté serveur pour les colonnes calculées (relations, comptages, durées) sur championnats, sessions, pilotes, voitures, circuits
-- **Suppression des voitures liées à des sessions** : ajout d'une transaction Prisma pour supprimer en cascade les SessionDriver, Lap et FuelStop associés avant de supprimer la voiture
-- **Affichage "Pilote non trouvé"** : ajout de vérification `res.ok` avant de parser la réponse JSON dans DriverProfile
-- **Images non affichées en vue liste des voitures** : ajout du rendu conditionnel de `car.img` dans CarTable avec fallback sur l'initiale de la marque
-- **Couleurs toutes vertes en vue liste des voitures** : utilisation de `car.color` au lieu de la couleur par défaut dans CarTable pour les badges, barres de progression et avatars
-- **Compteurs pilotes/voitures à 0 sur le dashboard** : ajout de vérifications `res.ok` sur les appels API du Dashboard avant de mettre à jour les états
-- **Simulateur accessible sans mode admin** : ajout de la condition `isAdmin &&` sur le lien vers /simulator dans la sidebar
+- **Sorting on all pages**: server-side sorting for computed columns (relations, counts, durations) on championships, sessions, drivers, cars, tracks
+- **Deleting cars linked to sessions**: added a Prisma transaction to cascade-delete the associated SessionDriver, Lap and FuelStop records before deleting the car
+- **"Driver not found" shown**: added a `res.ok` check before parsing the JSON response in DriverProfile
+- **Images not shown in the car list view**: added conditional rendering of `car.img` in CarTable with a fallback to the brand's initial
+- **All-green colors in the car list view**: `car.color` used instead of the default color in CarTable for badges, progress bars and avatars
+- **Driver/car counters at 0 on the dashboard**: added `res.ok` checks on the Dashboard API calls before updating the state
+- **Simulator reachable without admin mode**: added the `isAdmin &&` condition on the /simulator link in the sidebar
 
 ## [0.1.0] - 2026-01-23
 
 ### Changed
-- **SessionDriver** : `driverId` et `carId` sont maintenant optionnels dans le schéma Prisma pour permettre les configurations partielles en brouillon
-- **Route sessions** : mise à jour du filtre pour accepter les configs avec pilote OU voiture (pas obligatoirement les deux)
-- **Images** : stockage du chemin relatif (`/api/img/type/filename`) au lieu de l'URL complète, endpoint `/api/img/:type/:filename` pour servir les images (évite les problèmes de port)
-- **Settings** : masquage du simulateur dans la liste des appareils si l'utilisateur n'est pas admin
+- **SessionDriver**: `driverId` and `carId` are now optional in the Prisma schema to allow partial configurations in draft
+- **Sessions route**: filter updated to accept configs with a driver OR a car (not necessarily both)
+- **Images**: relative path stored (`/api/img/type/filename`) instead of the full URL, `/api/img/:type/:filename` endpoint to serve images (avoids port issues)
+- **Settings**: simulator hidden from the device list if the user is not an admin
 
 ### Added
-- **Page Statistiques refaite** : nouveau design avec tableau de tous les records, filtres (pilote, voiture, circuit, type de session, nombre max de résultats), colonnes triables, avatars cliquables vers les profils, médailles pour le top 3
-- **Route API `/api/stats/laptimes`** : endpoint pour récupérer les meilleurs temps par combo pilote×voiture×circuit avec filtres et limite configurable
-- **Design Top 10 Records amélioré** : nouveau composant `RecordDisplays` avec médailles or/argent/bronze pour le top 3, avatars pilotes et voitures empilés, badges colorés pour le type de session (Course/Qualif/Essais)
-- **Validation configuration incomplète** : blocage du passage en statut "Prêt" si un contrôleur a un pilote sans voiture ou inversement, avec message d'avertissement visuel
-- **Sauvegarde brouillon partielle** : possibilité de sauvegarder une configuration avec seulement le pilote ou seulement la voiture assignée
-- **Numéros de pilotes à 3 chiffres** : augmentation de la largeur du badge (w-16 → w-20) et taille de police adaptative selon le nombre de chiffres dans SessionLeaderboard
-- **Image voiture dans leaderboard** : affichage de l'image de la voiture à côté du numéro du pilote dans le classement en course
-- **Bouton "Reset stats"** : ajout sur les pages profil pilote, voiture et circuit avec suppression des données associées (laps, sessions, records) via transaction Prisma
-- **Page profil voiture** (`/cars/:id`) : header stylisé, specs, Top 10 records (combo pilote × circuit avec type de session), sessions récentes
-- **Page profil circuit** (`/tracks/:id`) : header avec image/specs (longueur, virages, courses), record du circuit, Top 10 records (combo pilote × voiture avec type de session), sessions récentes cliquables
-- **Page profil pilote** (`/drivers/:id`) : Top 10 records (combo voiture × circuit avec type de session) remplace l'ancien affichage "Meilleurs tours"
-- **Navigation vers profil** : clic sur une carte (pilote/voiture/circuit) navigue vers sa page profil, bouton crayon pour éditer
+- **Statistics page rebuilt**: new design with a table of all records, filters (driver, car, track, session type, max number of results), sortable columns, avatars linking to the profiles, medals for the top 3
+- **API route `/api/stats/laptimes`**: endpoint to fetch the best times per driver×car×track combo with filters and a configurable limit
+- **Improved Top 10 Records design**: new `RecordDisplays` component with gold/silver/bronze medals for the top 3, stacked driver and car avatars, colored badges for the session type (Race/Qualifying/Practice)
+- **Incomplete configuration validation**: blocks switching to "Ready" status if a controller has a driver without a car or vice versa, with a visual warning message
+- **Partial draft saving**: a configuration can be saved with only the driver or only the car assigned
+- **3-digit driver numbers**: wider badge (w-16 → w-20) and font size adapted to the number of digits in SessionLeaderboard
+- **Car image in the leaderboard**: the car image is shown next to the driver's number in the race standings
+- **"Reset stats" button**: added on the driver, car and track profile pages, deleting the associated data (laps, sessions, records) through a Prisma transaction
+- **Car profile page** (`/cars/:id`): styled header, specs, Top 10 records (driver × track combo with session type), recent sessions
+- **Track profile page** (`/tracks/:id`): header with image/specs (length, turns, races), track record, Top 10 records (driver × car combo with session type), clickable recent sessions
+- **Driver profile page** (`/drivers/:id`): Top 10 records (car × track combo with session type) replaces the old "Fastest laps" display
+- **Navigation to profiles**: clicking a card (driver/car/track) opens its profile page, pencil button to edit
 - Initial project setup
 - Monorepo structure with backend and frontend packages
 - SQLite database with Prisma ORM

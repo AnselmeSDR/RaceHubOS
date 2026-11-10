@@ -1,19 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { formatGapSeconds, podiumBadge, podiumRow } from '@/lib/podium'
-import { getImgUrl } from '@/utils/image'
 import LapTime from '../race/LapTime'
 import MedianHistory from './MedianHistory'
+import CarPicture from '@/components/car/CarPicture'
 
 const NO_COLOR = '#6B7280'
 
 function CarThumb({ car }) {
-  if (car?.img) {
-    return (
-      <div className="w-10 h-7 rounded flex-shrink-0 overflow-hidden">
-        <img src={getImgUrl(car.img)} alt={`${car.brand} ${car.model}`} className="w-full h-full object-cover" />
-      </div>
-    )
-  }
+  if (car?.img) return <CarPicture car={car} className="w-14 h-7" />
   return (
     <div
       className="w-10 h-7 rounded flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
