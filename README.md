@@ -49,6 +49,7 @@ Built by slot racers, for slot racers. 🏎️
 - 🔌 Bluetooth LE connectivity to Carrera Control Unit via AppConnect
 - 🎮 Built-in simulator for development (no hardware required)
 - ⚖️ Car balancing mode with lap time chart, median tracking and outlier filtering
+- 🧩 Add-ons: install extra features from the Add-ons page (catalog or any git link), then enable, disable, update or remove them. For example, [Car service](https://gitlab.com/AnselmeSDR/racehubos-car-service): laps since each car's last service
 
 ## 🛠️ Tech Stack
 
@@ -196,6 +197,7 @@ Fait par des passionnés de slot, pour des passionnés de slot. 🏎️
 - 🔌 Connexion Bluetooth LE à la Control Unit Carrera via AppConnect
 - 🎮 Simulateur intégré pour le développement (pas de matériel requis)
 - ⚖️ Mode équilibrage voitures avec graphe temps au tour, suivi médiane et filtre outliers
+- 🧩 Add-ons : des fonctionnalités en plus, installées depuis la page Add-ons (catalogue ou lien git), puis activées, désactivées, mises à jour ou désinstallées. Par exemple [Entretien des voitures](https://gitlab.com/AnselmeSDR/racehubos-car-service) : les tours de chaque voiture depuis son dernier entretien
 
 ### Installation
 
