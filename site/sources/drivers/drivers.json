@@ -1,0 +1,152 @@
+[
+  {
+    "driver": "Amelia GRE",
+    "number": 14,
+    "color": "#0a2180",
+    "file": "amelia-gre.png"
+  },
+  {
+    "driver": "Anselme SDR",
+    "number": 42,
+    "color": "#3b3a38",
+    "file": "anselme-sdr.png",
+    "site": "img/drivers/sdr.png"
+  },
+  {
+    "driver": "Antoine GIR",
+    "number": 777,
+    "color": "#fc79a5",
+    "file": "antoine-gir.png"
+  },
+  {
+    "driver": "Damien PEL",
+    "number": 13,
+    "color": "#a73044",
+    "file": "damien-pel.png",
+    "site": "img/drivers/pel.png"
+  },
+  {
+    "driver": "Felix WAG",
+    "number": null,
+    "color": "#84CC16",
+    "file": "felix-wag.png"
+  },
+  {
+    "driver": "Grace MOL",
+    "number": 57,
+    "color": "#3B82F6",
+    "file": "grace-mol.png"
+  },
+  {
+    "driver": "Henry WAL",
+    "number": 77,
+    "color": "#4d4d4d",
+    "file": "henry-wal.png"
+  },
+  {
+    "driver": "Inès ROU",
+    "number": null,
+    "color": "#3B82F6",
+    "file": "ines-rou.png"
+  },
+  {
+    "driver": "Jakob NEU",
+    "number": 2,
+    "color": "#f12835",
+    "file": "jakob-neu.png"
+  },
+  {
+    "driver": "Lena FIS",
+    "number": 8,
+    "color": "#f675a1",
+    "file": "lena-fis.png"
+  },
+  {
+    "driver": "Leonie HAU",
+    "number": 11,
+    "color": "#e7d037",
+    "file": "leonie-hau.png",
+    "site": "img/drivers/hau.png"
+  },
+  {
+    "driver": "Lily HOL",
+    "number": 29,
+    "color": "#09399b",
+    "file": "lily-hol.png"
+  },
+  {
+    "driver": "Lucy PAR",
+    "number": 33,
+    "color": "#00007c",
+    "file": "lucy-par.png"
+  },
+  {
+    "driver": "Lukas BRE",
+    "number": 999,
+    "color": "#e61116",
+    "file": "lukas-bre.png"
+  },
+  {
+    "driver": "Léa BOU",
+    "number": 782,
+    "color": "#dd0b17",
+    "file": "lea-bou.png",
+    "site": "img/drivers/bou.png"
+  },
+  {
+    "driver": "Marie LAN",
+    "number": 94,
+    "color": "#144a61",
+    "file": "marie-lan.png"
+  },
+  {
+    "driver": "Mathis KRO",
+    "number": 69,
+    "color": "#22C55E",
+    "file": "mathis-kro.png"
+  },
+  {
+    "driver": "Nathan COR",
+    "number": 9,
+    "color": "#472369",
+    "file": "nathan-cor.png"
+  },
+  {
+    "driver": "Océane PIC",
+    "number": 5,
+    "color": "#1938c7",
+    "file": "oceane-pic.png"
+  },
+  {
+    "driver": "Oliver ASH",
+    "number": 666,
+    "color": "#29b7ef",
+    "file": "oliver-ash.png"
+  },
+  {
+    "driver": "Quentin MEU",
+    "number": 3,
+    "color": "#f05a82",
+    "file": "quentin-meu.png"
+  },
+  {
+    "driver": "Romain DAN",
+    "number": 71,
+    "color": "#2fabf1",
+    "file": "romain-dan.png",
+    "site": "img/drivers/dan.png"
+  },
+  {
+    "driver": "Sarah MIL",
+    "number": 7,
+    "color": "#9900ff",
+    "file": "sarah-mil.png",
+    "site": "img/drivers/mil.png"
+  },
+  {
+    "driver": "Tobias KEL",
+    "number": 995,
+    "color": "#132ca0",
+    "file": "tobias-kel.png"
+  }
+]

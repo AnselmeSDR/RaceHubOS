@@ -82,21 +82,35 @@ test('only the page and its assets are published, not the scripts, tests and pic
   assert.ok(!fs.existsSync(path.join(outDir, 'sources')));
 });
 
+/**
+ * The kept sources of one kind of picture: each folder holds exactly the files listed, each a transparent PNG, and the
+ * site shows exactly the pictures made from them.
+ */
+function checkSources(kind, list, folders) {
+  const sourcesDir = path.join(siteDir, 'sources', kind);
+  const items = JSON.parse(fs.readFileSync(path.join(sourcesDir, list), 'utf-8'));
+  const files = items.map((item) => item.file).sort();
+  for (const folder of folders) assert.deepEqual(fs.readdirSync(path.join(sourcesDir, folder)).sort(), files);
+  for (const item of items) {
+    // Byte 25 of a PNG is its colour type: 6 is RGBA
+    const header = fs.readFileSync(path.join(sourcesDir, folders.at(-1), item.file)).subarray(0, 26);
+    assert.equal(header[25], 6, `${item.file} has no transparency`);
+  }
+  const shown = fs.readdirSync(path.join(siteDir, 'img', kind)).map((file) => `img/${kind}/${file}`);
+  const made = items.filter((item) => item.site).map((item) => item.site);
+  assert.deepEqual(made.sort(), shown.sort());
+  return items;
+}
+
 test('every car picture of the site can be made again from a kept source, with its prompt', () => {
-  const sourcesDir = path.join(siteDir, 'sources/cars');
-  const cars = JSON.parse(fs.readFileSync(path.join(sourcesDir, 'cars.json'), 'utf-8'));
-  const files = cars.map((car) => car.file).sort();
-  assert.deepEqual(fs.readdirSync(path.join(sourcesDir, 'originals')).sort(), files);
-  assert.deepEqual(fs.readdirSync(path.join(sourcesDir, 'transparent')).sort(), files);
+  const cars = checkSources('cars', 'cars.json', ['originals', 'transparent']);
   for (const car of cars) {
     assert.match(car.prompt, new RegExp(`Race number "${car.car.split('#')[1]}"`), `${car.car}: not its prompt`);
-    // Byte 25 of a PNG is its colour type: 6 is RGBA
-    const header = fs.readFileSync(path.join(sourcesDir, 'transparent', car.file)).subarray(0, 26);
-    assert.equal(header[25], 6, `${car.car}: the cut-out has no transparency`);
   }
-  const shown = fs.readdirSync(path.join(siteDir, 'img/cars')).map((file) => `img/cars/${file}`);
-  const made = cars.filter((car) => car.site).map((car) => car.site);
-  assert.deepEqual(made.sort(), shown.sort());
+});
+
+test('every driver portrait of the site can be made again from a kept source', () => {
+  checkSources('drivers', 'drivers.json', ['portraits']);
 });
 
 test('the Windows installer offered is the one in the repository', () => {
