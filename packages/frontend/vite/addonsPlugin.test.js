@@ -121,7 +121,7 @@ describe('in a real Vite server', () => {
   let server
 
   // A tiny repository: a core module, a core page using it, and two add-ons wrapping it
-  const setup = async () => {
+  const setup = async ({ watch = null } = {}) => {
     write(root, 'packages/frontend/src/board.js', "export default () => ['core']\nexport const name = 'board'")
     write(root, 'packages/frontend/src/helper.js', "export const helper = 'helper from the core folder'")
     write(
@@ -160,7 +160,7 @@ describe('in a real Vite server', () => {
       configFile: false,
       root: path.join(root, 'packages/frontend'),
       plugins: [racehubosAddons({ rootDir: root })],
-      server: { middlewareMode: true, watch: null },
+      server: { middlewareMode: true, watch },
       appType: 'custom',
       logLevel: 'silent',
       optimizeDeps: { noDiscovery: true, include: [] },
@@ -190,6 +190,24 @@ describe('in a real Vite server', () => {
       },
     ])
   })
+
+  test('an add-on enabled or disabled from the Add-ons page is in or out of the next page load', async () => {
+    await setup({ watch: {} })
+    const loaded = async () => ({
+      addons: (await server.ssrLoadModule(VIRTUAL_ID)).default.map((addon) => addon.id),
+      rows: (await server.ssrLoadModule('/src/page.js')).default().rows,
+    })
+    expect((await loaded()).rows).toContain('pits')
+
+    write(root, 'addons/.data/state.json', {
+      disabled: { sectors: { reason: 'off' }, pits: { reason: 'off' } },
+      installed: {},
+    })
+    await vi.waitFor(async () => expect(await loaded()).toEqual({ addons: [], rows: ['core'] }), { timeout: 5000 })
+
+    write(root, 'addons/.data/state.json', { disabled: { pits: { reason: 'off' } }, installed: {} })
+    await vi.waitFor(async () => expect((await loaded()).addons).toEqual(['sectors']), { timeout: 5000 })
+  }, 15000)
 
   test('@base outside an override is an error', async () => {
     await setup()

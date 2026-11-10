@@ -95,7 +95,7 @@ export default function HelloPage() {
 
 Then run `npm run dev` from the repository root. **Hello** appears in the sidebar, and the page lives at `/addons/hello`.
 
-Restart `npm run dev` when you add an add-on or a new override file. Editing existing files reloads on its own: the web side through Vite hot reload, the server side through `node --watch`.
+Restart `npm run dev` when you link a new add-on or add an override file. Editing existing files reloads on its own: the web side through Vite hot reload, the server side because the backend restarts when your `server/` folder changes. Enabling, disabling, installing, updating or removing an add-on from the Add-ons page restarts the backend, then the page reloads with the new set, as in production.
 
 Already working in your own repository? Link it instead of copying it: `ln -s ~/dev/hello addons/hello` (Windows: `mklink /D addons\hello C:\dev\hello`). A linked folder is an add-on like any other.
 
@@ -585,10 +585,12 @@ _For core contributors._ The add-on mechanism is about one module per side, plus
   5. a package an add-on doesn't carry → the core's, so that an add-on linked from elsewhere finds `@racehubos/shared` and the core's dependencies.
 - `resolve.dedupe` for the packages listed in [Dependencies](#dependencies), and `server.fs.allow` includes `addons/` and every add-on linked from outside the repository.
 - `configureVitest` adds the enabled add-ons and their stacks to the key of Vitest's module cache: a module transformed with one set of add-ons is never served to a run with another, such as the core's tests after an add-on's tests.
+- In development, the plugin polls `addons/.data/state.json`. When it changes, the plugin reads the add-ons again and invalidates every module. The reload the Add-ons page does once the backend is back then gets the new set.
 - `src/index.css` gets one `@source "<add-on folder>"` per enabled add-on, through the plugin's `transform`. A single `@source` on `addons/` wouldn't do: Tailwind skips the files git ignores, and `addons/*` is ignored. The dev server sees add-on classes anyway; only the build missed them.
 
 **Backend**
 
+- `npm run dev` runs `scripts/dev.js` (`src/lib/devRunner.js`). It restarts the backend when its code, the shared package or an enabled add-on's server side changes. It also restarts it after an exit with code 42, which `node --watch` doesn't do: without it the app stayed down after an add-on action.
 - Resolve hook (`src/addons/hooks.js`, `module.register`): `src/addons/preload.js` is loaded with `node --import` by the `dev` and `start` scripts, and registers it only when an add-on is enabled. Same rules as `resolveId`, including the fallback to the core's packages (from `packages/backend/`) when the add-on has no copy of its own.
 - One core migration adds the six `*Extra` tables: `<type>Id`, `addon`, `data` (JSON text), primary key on the record and the add-on, foreign key to the record with `onDelete: Cascade`. The core routes return `extras` with each record.
 - Loader called from `index.js` after the core routes and **before** the SPA fallback:

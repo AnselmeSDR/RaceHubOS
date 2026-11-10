@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import {
   ADDON_SPECIFIER,
+  addonPaths,
   BASE_SPECIFIER,
   buildOverrideStacks,
   createOverrideResolver,
@@ -22,6 +23,7 @@ import {
  * - a package an add-on doesn't carry comes from the core, even for an add-on linked from elsewhere
  * - Tailwind scans each add-on folder: `addons/` is ignored by git, which Tailwind would skip
  * - Vitest's module cache is kept apart for each set of enabled add-ons
+ * - the dev server follows the add-ons enabled, disabled, installed or removed meanwhile
  */
 
 export const VIRTUAL_ID = 'virtual:racehubos-addons'
@@ -97,6 +99,7 @@ export default function racehubosAddons({ rootDir }) {
   const coreImporter = path.join(rootDir, 'packages/frontend/src/main.jsx')
 
   let cacheKey = ''
+  let stopWatching = () => {}
 
   const discover = () => {
     addons = enabledAddons(rootDir)
@@ -128,6 +131,25 @@ export default function racehubosAddons({ rootDir }) {
     // Every transform depends on the enabled add-ons: Vitest's module cache must not serve one made for others
     configureVitest({ defineCacheKeyGenerator }) {
       defineCacheKeyGenerator(() => cacheKey)
+    },
+
+    // An add-on enabled, disabled, installed or removed: production builds the app again, here the
+    // next page load gets the new set (the Add-ons page reloads once the backend is back)
+    configureServer(server) {
+      if (server.config.server.watch === null) return
+      const { stateFile } = addonPaths(rootDir)
+      // Polled: works before the file exists, and across its atomic replacement
+      const changed = (current, previous) => {
+        if (current.mtimeMs === previous.mtimeMs) return
+        discover()
+        for (const environment of Object.values(server.environments)) environment.moduleGraph.invalidateAll()
+      }
+      fs.watchFile(stateFile, { interval: 500, persistent: false }, changed)
+      stopWatching = () => fs.unwatchFile(stateFile, changed)
+    },
+
+    closeBundle() {
+      stopWatching()
     },
 
     configResolved(config) {

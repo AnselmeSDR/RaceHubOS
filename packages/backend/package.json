@@ -7,7 +7,7 @@
   "type": "module",
   "main": "./src/index.js",
   "scripts": {
-    "dev": "npx prisma generate && node --watch --import ./src/addons/preload.js src/index.js",
+    "dev": "npx prisma generate && node scripts/dev.js",
     "start": "node scripts/startup.js && node --import ./src/addons/preload.js src/index.js",
     "migrate": "node scripts/migrate.js",
     "cli": "node src/cli/sim.js",
