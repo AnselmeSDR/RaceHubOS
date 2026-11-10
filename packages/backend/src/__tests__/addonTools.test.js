@@ -69,6 +69,13 @@ describe('parseCatalog', () => {
     expect(parseCatalog(null)).toEqual([]);
     expect(parseCatalog({ addons: 'x' })).toEqual([]);
   });
+
+  test('every entry of the catalog shipped with the app is valid: none is dropped', () => {
+    const shipped = JSON.parse(
+      fs.readFileSync(path.resolve(import.meta.dirname, '../../../../addons/catalog.json'), 'utf-8')
+    );
+    expect(parseCatalog(shipped).map((entry) => entry.id)).toEqual(shipped.addons.map((entry) => entry.id));
+  });
 });
 
 describe('readCatalog', () => {

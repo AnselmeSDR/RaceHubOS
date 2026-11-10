@@ -1,3 +1,18 @@
 {
-  "addons": []
+  "addons": [
+    {
+      "id": "car-service",
+      "repo": "https://gitlab.com/AnselmeSDR/racehubos-car-service",
+      "name": {
+        "en": "Car service",
+        "fr": "Entretien des voitures",
+        "de": "Fahrzeugwartung"
+      },
+      "description": {
+        "en": "Laps and distance of each car since its last service, a service interval per car, and the cars due for service.",
+        "fr": "Tours et distance de chaque voiture depuis son dernier entretien, un intervalle par voiture, et les voitures à entretenir.",
+        "de": "Runden und Strecke jedes Fahrzeugs seit der letzten Wartung, ein Intervall pro Fahrzeug und die fälligen Fahrzeuge."
+      }
+    }
+  ]
 }
