@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] - 2026-11-10
+
+### Added
+- Add-ons : la page Add-ons installe des fonctionnalités en plus sans toucher au cœur (catalogue ou lien git), les met à jour, les active, les désactive ou les désinstalle ; la base est sauvegardée avant chaque action. Au catalogue : Entretien des voitures. Écrire un add-on : `docs/ADDONS.md`.
+
+### Fixed
+- Control Unit : le polling s'arrête vraiment pendant le START, et une déconnexion demandée ne relance plus la reconnexion automatique.
+- Supprimer définitivement un pilote ou un circuit qui a des tours ne plante plus ; l'année d'une voiture peut être vidée ; Paramètres affiche de nouveau la version.
+
+### Security
+- `/api/img` et la suppression d'une image acceptaient un chemin en `..%2F` et lisaient ou effaçaient un fichier hors des images.
+
 ## [1.25.8] - 2026-11-07
 
 ### Changed
