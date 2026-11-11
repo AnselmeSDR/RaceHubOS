@@ -18,8 +18,7 @@
  *    its own add-ons folder and marks it installed from the catalog.
  * 3. Starts the backend (port 3301, mock device) and Vite (port 5301) on that copy and folder, the same pair
  *    as packages/frontend/playwright.config.js, then gives a few cars a service interval or a service.
- *    The backend loads BACKEND_PATCH: in 1.26.0 the simulator can't get past the start lights, and a dropped
- *    image download crashes the server (see there).
+ *    The backend loads BACKEND_PATCH: a dropped image download crashes the server (see there).
  * 4. Captures each screen in each language with Playwright (1440x900, x2), in light then dark mode (THEMES),
  *    converts it to WebP.
  *    Silent: Chromium muted, speech synthesis stubbed (the app announces the race out loud).
@@ -564,17 +563,13 @@ async function setUpCarService(ids, db, addonsDir) {
 // ==================== Servers ====================
 
 /**
- * Two fixes of RaceHubOS 1.26.0, loaded in the capture's backend only; everything else runs unchanged.
+ * A fix of RaceHubOS, loaded in the capture's backend only; everything else runs unchanged.
  *
- * - The simulator can't start a race: on lights 1/5, SyncService.handleStatus resets the device for a clean
- *   slate, and the simulator's reset() puts its lights back to "stopped" (the Control Unit keeps them). Here the
- *   simulator's reset keeps its start lights like the CU does.
- * - An image download the browser drops halfway (a page left, a context closed) kills the backend: the
- *   sendFile callback of /api/img (server/coreRoutes.js) answers 404 after the headers went out, and that
- *   throw is uncaught. Here sendFile callbacks are not called for a response already sent.
+ * An image download the browser drops halfway (a page left, a context closed) kills the backend: the
+ * sendFile callback of /api/img (server/coreRoutes.js) answers 404 after the headers went out, and that
+ * throw is uncaught. Here sendFile callbacks are not called for a response already sent.
  */
-const BACKEND_PATCH = ({ simulatorUrl, expressUrl }) => `
-import { CarreraSimulator } from ${JSON.stringify(simulatorUrl)}
+const BACKEND_PATCH = ({ expressUrl }) => `
 import express from ${JSON.stringify(expressUrl)}
 
 const sendFile = express.response.sendFile
@@ -587,20 +582,6 @@ express.response.sendFile = function (file, options, callback) {
     if (err && this.headersSent) return
     done(err)
   })
-}
-
-const reset = CarreraSimulator.prototype.reset
-CarreraSimulator.prototype.reset = function () {
-  const lights = this.cuState
-  if (!(lights >= 1 && lights <= 5)) return reset.call(this)
-  // Timer and laps cleared, lights kept, and no "stopped" status sent in between
-  this.emitCuStatus = () => {}
-  try {
-    reset.call(this)
-  } finally {
-    delete this.emitCuStatus
-  }
-  this.cuState = lights
 }
 `;
 
@@ -622,7 +603,6 @@ async function startServers(db, addonsDir) {
   fs.writeFileSync(
     patch,
     BACKEND_PATCH({
-      simulatorUrl: pathToFileURL(path.join(BACKEND_DIR, 'src/services/simulator.js')).href,
       // The backend's own express (same module instance)
       expressUrl: pathToFileURL(createRequire(path.join(BACKEND_DIR, 'package.json')).resolve('express')).href,
     })

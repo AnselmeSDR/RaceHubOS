@@ -527,18 +527,11 @@ export class CarreraSimulator extends EventEmitter {
   }
 
   /**
-   * Full reset - puts CU back to STOPPED state and clears all data
-   * Called by SyncService.reset() before starting a new session
+   * Resets the timer like the CU's `=` command: laps start over, the lights and the race stay as
+   * they are. SyncService sends it at the first start light; stopping the CU here sent every start
+   * back to "stopped". Ending a race is ESC's job (`pressEsc`).
    */
   reset() {
-    // Stop the simulation loop if running
-    if (this.interval) {
-      clearInterval(this.interval);
-      this.interval = null;
-    }
-    this.isRunning = false;
-    this.cuState = CU_STATE.STOPPED;
-    this.raceActive = false;
     this.resetTimer();
   }
 

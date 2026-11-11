@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import { CU_STATE, CarreraSimulator, MODE_FLAGS, SIMULATOR_ADDRESS } from '../services/simulator.js';
+import { SyncService } from '../services/SyncService.js';
 
 let io, sim, timers, statuses;
 
@@ -265,17 +266,39 @@ describe('settings and resets', () => {
     expect(timers.some((t) => t.controller === 0)).toBe(true);
   });
 
-  test('a reset stops the loop and puts every car back on the grid', async () => {
+  test('a reset starts the timer over like the CU: every car back on the grid, the lights and the loop untouched', async () => {
     await sim.connect();
     await sim.start();
     Object.assign(sim.cars[2], { totalLaps: 4, bestLapTime: 9000, position: 1, firstCrossing: false });
     sim.raceTime = 5000;
 
     sim.reset();
-    expect(sim).toMatchObject({ isRunning: false, interval: null, cuState: CU_STATE.STOPPED, raceTime: 0 });
+    expect(sim).toMatchObject({ isRunning: true, cuState: CU_STATE.LIGHTS_1, raceTime: 0 });
+    expect(sim.interval).not.toBeNull();
     expect(sim.cars[2]).toMatchObject({ totalLaps: 0, bestLapTime: null, firstCrossing: true, startDistance: 385 });
 
     sim.clearPosition();
     expect(sim.cars.map((c) => c.position)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+});
+
+describe('driven by SyncService', () => {
+  test('the first start light resets the timer without stopping the CU: the next START runs the race', async () => {
+    const sync = new SyncService(io);
+    sync.setDevice(sim);
+    await sim.connect();
+    const reset = jest.spyOn(sim, 'reset');
+
+    // START from the app: first light, the timer wiped, the CU waiting for the next START
+    await sync.startRace();
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(sim.cuState).toBe(CU_STATE.LIGHTS_1);
+
+    const countdown = sync.startRace();
+    await jest.advanceTimersByTimeAsync(5000);
+    await countdown;
+    expect(sim.cuState).toBe(CU_STATE.RACING);
+    expect(reset).toHaveBeenCalledTimes(1);
+    sync.close();
   });
 });
