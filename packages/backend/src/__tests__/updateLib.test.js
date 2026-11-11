@@ -1,8 +1,11 @@
 import { jest } from '@jest/globals';
+import { exec } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { applyUpdate, checkForUpdate, localVersion } from '../lib/update.js';
+import { promisify } from 'util';
+import { applyUpdate, checkForUpdate, fetchMain, localVersion } from '../lib/update.js';
+import { git } from './helpers/gitRepos.js';
 
 let rootDir;
 
@@ -156,5 +159,67 @@ describe('applying an update', () => {
     await expect(apply()).rejects.toThrow('offline');
     expect(commands.map(([command]) => command)).toEqual(['git rev-parse HEAD', 'git fetch origin main']);
     expect(localVersion(rootDir)).toBe('1.2.0');
+  });
+});
+
+describe('a checkout and GitHub main', () => {
+  let origin, checkout;
+
+  const commitVersion = (dir, version) => {
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ version }));
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '--quiet', '-m', `version ${version}`);
+  };
+  // Real git; npm, build and migration do nothing
+  const execAsync = promisify(exec);
+  const run = async (command, options) => (command.startsWith('git ') ? execAsync(command, options) : { stdout: '' });
+  const update = (replaceLocal) =>
+    applyUpdate({
+      rootDir: checkout,
+      replaceLocal,
+      run,
+      backup: () => null,
+      build: async () => ({ disabled: [] }),
+      refreshInstaller: () => ({ copied: false }),
+    });
+
+  beforeEach(() => {
+    origin = path.join(rootDir, 'origin');
+    checkout = path.join(rootDir, 'checkout');
+    fs.mkdirSync(origin);
+    git(origin, 'init', '--quiet', '--initial-branch=main');
+    commitVersion(origin, '1.2.0');
+    git(rootDir, 'clone', '--quiet', origin, checkout);
+  });
+
+  test('a checkout behind main has not diverged', async () => {
+    commitVersion(origin, '1.3.0');
+    expect(await fetchMain(checkout)).toEqual({ diverged: false });
+    expect(await update(false)).toBe('1.3.0');
+  });
+
+  test('main rewritten upstream: the checkout has diverged, only replacing its code follows main', async () => {
+    git(origin, 'commit', '--quiet', '--amend', '-m', 'version 1.2.0, rewritten');
+    commitVersion(origin, '1.3.0');
+    fs.writeFileSync(path.join(checkout, 'dev.db'), 'laps');
+
+    expect(await fetchMain(checkout)).toEqual({ diverged: true });
+    await expect(update(false)).rejects.toThrow(/fast-forward/);
+    expect(localVersion(checkout)).toBe('1.2.0');
+
+    expect(await update(true)).toBe('1.3.0');
+    expect(git(checkout, 'rev-parse', 'HEAD')).toBe(git(origin, 'rev-parse', 'HEAD'));
+    expect(fs.readFileSync(path.join(checkout, 'dev.db'), 'utf-8')).toBe('laps');
+  });
+
+  test('a git failure is not a divergence', async () => {
+    fs.rmSync(origin, { recursive: true });
+    await expect(fetchMain(checkout)).rejects.toThrow(/git fetch origin main/);
+
+    const brokenHistory = async (command) => {
+      if (command.startsWith('git merge-base')) throw Object.assign(new Error('bad object HEAD'), { code: 128 });
+      return { stdout: '' };
+    };
+    await expect(fetchMain(checkout, { run: brokenHistory })).rejects.toThrow('bad object HEAD');
   });
 });

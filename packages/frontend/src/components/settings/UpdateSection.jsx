@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
-import { ArrowUpCircle, CheckCircle, Download, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowUpCircle, CheckCircle, Download, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import Modal, { ModalFooter } from '@/components/ui/Modal'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const WS_URL = import.meta.env.VITE_WS_URL || ''
@@ -29,6 +30,7 @@ export default function UpdateSection() {
   const [checking, setChecking] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [updateProgress, setUpdateProgress] = useState(null)
+  const [confirmReplace, setConfirmReplace] = useState(false)
 
   // Check for updates on mount
   useEffect(() => {
@@ -60,12 +62,25 @@ export default function UpdateSection() {
     }
   }
 
-  async function applyUpdate() {
+  /** `replaceLocal`: the user agreed to replace a local code that diverged from GitHub. */
+  async function applyUpdate(replaceLocal = false) {
+    setConfirmReplace(false)
     setUpdating(true)
     setUpdateProgress({ step: 0, message: t('update.starting'), status: 'running' })
     try {
-      const res = await fetch(`${API_URL}/api/update/apply`, { method: 'POST' })
+      const res = await fetch(`${API_URL}/api/update/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replaceLocal }),
+      })
       const data = await res.json()
+      if (data.diverged) {
+        // The update cannot fast-forward: ask before replacing the local code
+        setUpdateProgress(null)
+        setUpdating(false)
+        setConfirmReplace(true)
+        return
+      }
       if (!data.success) {
         setUpdateProgress({ step: 0, message: data.error || t('update.genericError'), status: 'error' })
         setUpdating(false)
@@ -130,7 +145,7 @@ export default function UpdateSection() {
                   {t('update.newVersionAvailable', { version: updateInfo.latestVersion })}
                 </p>
               </div>
-              <Button size="sm" onClick={applyUpdate}>
+              <Button size="sm" onClick={() => applyUpdate()}>
                 <ArrowUpCircle className="size-4" />
                 {t('update.updateButton')}
               </Button>
@@ -184,6 +199,22 @@ export default function UpdateSection() {
             </div>
           )}
         </div>
+        <Modal
+          open={confirmReplace}
+          onClose={() => setConfirmReplace(false)}
+          title={t('update.diverged.title')}
+          icon={<AlertTriangle className="size-5 text-amber-500" />}
+        >
+          <p className="text-sm">{t('update.diverged.message')}</p>
+          <ModalFooter>
+            <Button variant="outline" onClick={() => setConfirmReplace(false)}>
+              {t('common:cancel')}
+            </Button>
+            <Button variant="destructive" onClick={() => applyUpdate(true)}>
+              {t('update.diverged.confirm')}
+            </Button>
+          </ModalFooter>
+        </Modal>
       </CardContent>
     </Card>
   )

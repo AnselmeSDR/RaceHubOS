@@ -11,7 +11,12 @@
     "serverRestart": "Server wird neu gestartet …",
     "restarting": "Neustart …",
     "connectionError": "Verbindung zum Server fehlgeschlagen",
-    "genericError": "Fehler"
+    "genericError": "Fehler",
+    "diverged": {
+      "title": "Lokalen Code ersetzen?",
+      "message": "Der Code dieser Installation weicht von GitHub ab (Verlauf umgeschrieben oder lokale Änderungen): Die Aktualisierung kann so nicht angewendet werden. Durch den Code von GitHub ersetzen? Lokale Codeänderungen gehen verloren; Datenbank (vorher gesichert), Bilder und Add-ons bleiben unberührt.",
+      "confirm": "Ersetzen und aktualisieren"
+    }
   },
   "connection": {
     "connected": "Verbunden: {{device}}",

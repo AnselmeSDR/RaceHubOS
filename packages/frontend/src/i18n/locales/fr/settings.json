@@ -11,7 +11,12 @@
     "serverRestart": "Redémarrage du serveur...",
     "restarting": "Redémarrage en cours...",
     "connectionError": "Erreur de connexion au serveur",
-    "genericError": "Erreur"
+    "genericError": "Erreur",
+    "diverged": {
+      "title": "Remplacer le code local ?",
+      "message": "Le code de cette installation a divergé de GitHub (historique réécrit ou modifications locales) : la mise à jour ne peut pas s'appliquer telle quelle. Le remplacer par celui de GitHub ? Les modifications locales du code seront perdues ; la base de données (sauvegardée avant), les images et les add-ons ne sont pas touchés.",
+      "confirm": "Remplacer et mettre à jour"
+    }
   },
   "connection": {
     "connected": "Connecté: {{device}}",

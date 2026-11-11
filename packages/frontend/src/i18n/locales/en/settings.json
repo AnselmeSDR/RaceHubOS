@@ -11,7 +11,12 @@
     "serverRestart": "Restarting server...",
     "restarting": "Restarting...",
     "connectionError": "Server connection error",
-    "genericError": "Error"
+    "genericError": "Error",
+    "diverged": {
+      "title": "Replace the local code?",
+      "message": "This installation's code has diverged from GitHub (history rewritten or local changes): the update cannot be applied as is. Replace it with GitHub's? Local code changes will be lost; the database (backed up first), images and add-ons are not touched.",
+      "confirm": "Replace and update"
+    }
   },
   "connection": {
     "connected": "Connected: {{device}}",

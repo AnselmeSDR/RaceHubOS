@@ -31,6 +31,22 @@ export async function checkForUpdate(rootDir, { fetch = globalThis.fetch } = {})
 }
 
 /**
+ * Fetches GitHub's main. `diverged` when this checkout cannot fast-forward to it: main's
+ * history was rewritten upstream, or the checkout has commits of its own.
+ */
+export async function fetchMain(rootDir, { run = execAsync } = {}) {
+  await run('git fetch origin main', { cwd: rootDir, timeout: 60000 });
+  try {
+    await run('git merge-base --is-ancestor HEAD FETCH_HEAD', { cwd: rootDir, timeout: 10000 });
+    return { diverged: false };
+  } catch (error) {
+    // Exit code 1 means "not an ancestor"; anything else is a git failure
+    if (error.code === 1) return { diverged: true };
+    throw error;
+  }
+}
+
+/**
  * Undo a failed update: back to the previous commit, with dependencies and
  * build restored. Runs before any schema migration, so the database is untouched.
  */
@@ -67,9 +83,12 @@ function refreshLaunchers(rootDir, version, emit) {
 /**
  * Pulls main, installs, builds, migrates; returns the new version. A failure before the
  * migration rolls the code back. `emit(step, message, status)` reports the progress.
+ * `replaceLocal` resets the code onto main instead, for a checkout that diverged from it
+ * (see `fetchMain`) — only once the user agreed.
  */
 export async function applyUpdate({
   rootDir,
+  replaceLocal = false,
   emit = () => {},
   run = execAsync,
   backup = backupDatabase,
@@ -91,7 +110,7 @@ export async function applyUpdate({
   emit(2, 'Téléchargement de la mise à jour...');
   await git('fetch origin main', 60000);
   await git('checkout -- .', 10000).catch(() => {});
-  await git('pull origin main --ff-only', 60000);
+  await git(replaceLocal ? 'reset --hard FETCH_HEAD' : 'pull origin main --ff-only', 60000);
 
   // From here the working tree is on the new version: any failure must roll back,
   // otherwise the next restart runs on a half-installed app.

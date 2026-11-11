@@ -20,14 +20,14 @@ let reload
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-/** `routes` maps a path to an answer (a function to throw or vary); any other URL fails. */
+/** `routes` maps a path to an answer (a function of the request options, to throw or vary); any other URL fails. */
 function stubApi(routes) {
   fetchMock = vi.fn(async (url, options = {}) => {
     const key = Object.keys(routes).find(
       (path) => url === `${API_URL}${path}` && (routes[path].method ?? 'GET') === (options.method ?? 'GET')
     )
     if (!key) throw new Error(`unexpected ${url}`)
-    return routes[key].answer()
+    return routes[key].answer(options)
   })
   vi.stubGlobal('fetch', fetchMock)
 }
@@ -181,6 +181,30 @@ test('an update failing on the server side stops the progress', async () => {
   expect(screen.getByText('npm install failed')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Check' })).toBeInTheDocument()
+})
+
+test('a checkout diverged from GitHub asks before replacing the local code', async () => {
+  const user = userEvent.setup()
+  const asked = []
+  const apply = async ({ body }) => {
+    const { replaceLocal } = JSON.parse(body)
+    asked.push(replaceLocal)
+    return json(replaceLocal ? { success: true } : { success: false, diverged: true })
+  }
+  stubApi({ '/api/update/check': route(available), '/api/update/apply': route(apply, 'POST') })
+  render(<UpdateSection />)
+
+  await user.click(await screen.findByRole('button', { name: 'Update' }))
+  expect(await screen.findByText('Replace the local code?')).toBeInTheDocument()
+  expect(screen.queryByText('Starting...')).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(screen.queryByText('Replace the local code?')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Update' }))
+  await user.click(await screen.findByRole('button', { name: 'Replace and update' }))
+  expect(screen.queryByText('Replace the local code?')).not.toBeInTheDocument()
+  expect(screen.getByText('Starting...')).toBeInTheDocument()
+  expect(asked).toEqual([false, false, true])
 })
 
 test('leaving the page closes the socket', () => {
