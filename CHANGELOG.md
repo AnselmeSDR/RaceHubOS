@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.1] - 2026-11-11
+
+### Fixed
+- Update: an installation whose code diverged from GitHub (history rewritten, local commits) could no longer update ("Not possible to fast-forward"); the app now asks before replacing the local code, database, images and add-ons untouched.
+- Simulator: a race could not start, the session stayed on "Resume CU" (the reset at the first start light put the simulator back to stopped).
+
 ## [1.27.0] - 2026-11-10
 
 ### Added
