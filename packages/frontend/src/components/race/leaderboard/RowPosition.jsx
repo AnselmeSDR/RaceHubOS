@@ -2,14 +2,18 @@ import { motion } from 'framer-motion'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { positionColor } from './leaderboardOrder'
 
-// The place, and the places won or lost since the last lap
+// The place, and below it the places won or lost since the last lap: narrow, the row stays tight
 export default function RowPosition({ position, delta, expanded }) {
   return (
     <div
       data-testid="leaderboard-position"
-      className={`${expanded ? 'w-20' : 'w-12 @4xl:w-16'} flex-shrink-0 flex items-center justify-center gap-1`}
+      className={`${expanded ? 'w-7 @3xl:w-8 @5xl:w-12 @6xl:w-16' : 'w-7 @3xl:w-8 @5xl:w-12 @6xl:w-14'} flex-shrink-0 flex flex-col items-center justify-center gap-0.5`}
     >
-      <span className={`${expanded ? 'text-3xl' : 'text-2xl'} font-black ${positionColor(position)}`}>{position}</span>
+      <span
+        className={`${expanded ? 'text-xl @3xl:text-2xl @5xl:text-3xl' : 'text-xl @3xl:text-2xl'} font-black leading-none ${positionColor(position)}`}
+      >
+        {position}
+      </span>
       {delta !== 0 && delta !== undefined && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}

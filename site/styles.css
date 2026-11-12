@@ -778,7 +778,7 @@ h3 {
   right: 0;
   left: 0;
   display: grid;
-  grid-template-columns: 3.25rem 3.5rem 4.75rem 3.5rem minmax(0, 1fr) repeat(4, 5.5rem);
+  grid-template-columns: 3.25rem 5.5rem 3.5rem 3.5rem minmax(0, 1fr) repeat(4, 5.5rem);
   align-items: center;
   column-gap: 12px;
   height: var(--row-h);
@@ -848,7 +848,7 @@ h3 {
 }
 
 /* The common picture layer of the app (PictureLayer): a square with corners at 20 %, no ring nor shadow;
-   the driver's colour only fills it when there is no portrait, a cut-out portrait keeps its transparency */
+   the portrait on the driver's colour, as the drivers' pictures of the app carry it in their file */
 .face {
   display: grid;
   place-items: center;
@@ -862,23 +862,15 @@ h3 {
   font-weight: 900;
 }
 
-/* Three digits, a size smaller, as in the app */
-.num.long {
-  font-size: calc(var(--size) * 0.75);
-}
-
-.face:has(img) {
-  background: none;
-}
-
 .face img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.num {
-  --size: 3rem;
+/* The driver's code in large, in their colour, where the app's board puts the name (RowIdentity) */
+.code {
+  --size: 2.25rem;
   color: var(--c);
   font-size: var(--size);
   font-weight: 900;
@@ -985,7 +977,7 @@ h3 {
 
 @container (max-width: 820px) {
   .row {
-    grid-template-columns: 2.75rem 3rem 3.75rem 3rem minmax(0, 1fr) repeat(2, 5.25rem);
+    grid-template-columns: 2.75rem 4.5rem 3rem 3rem minmax(0, 1fr) repeat(2, 5.25rem);
   }
 
   .row .laps,
@@ -1003,8 +995,8 @@ h3 {
     height: 48px;
   }
 
-  .num {
-    --size: 2.4rem;
+  .code {
+    --size: 1.9rem;
   }
 }
 
@@ -1020,7 +1012,7 @@ h3 {
   }
 
   .row {
-    grid-template-columns: 1.75rem 2.5rem 2.6rem minmax(0, 1fr) 4.6rem;
+    grid-template-columns: 1.75rem 3.5rem 2.5rem minmax(0, 1fr) 4.6rem;
     column-gap: 8px;
     padding-right: 8px;
     border-left-width: 4px;
@@ -1043,8 +1035,8 @@ h3 {
     font-size: 1.15rem;
   }
 
-  .num {
-    --size: 1.6rem;
+  .code {
+    --size: 1.4rem;
   }
 
   .who b {

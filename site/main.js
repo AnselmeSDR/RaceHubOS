@@ -162,7 +162,7 @@
     cars = rows.map((row, index) => ({
       row,
       color: row.style.getPropertyValue('--c').trim(),
-      code: row.querySelector('.who b').textContent,
+      code: row.querySelector('.code').textContent,
       pace: PACES[index],
       grid: index,
       index: undefined,

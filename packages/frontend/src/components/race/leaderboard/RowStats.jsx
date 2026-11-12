@@ -6,7 +6,7 @@ import LapTime from '../LapTime'
 
 function Stat({ label, expanded, className = '', children }) {
   return (
-    <div className={`text-center ${className}`}>
+    <div className={`text-center px-0.5 @4xl:px-1.5 @6xl:px-2.5 ${className}`}>
       <div className={`${expanded ? 'text-sm' : 'text-xs'} text-muted-foreground/50 uppercase`}>{label}</div>
       {children}
     </div>
@@ -40,8 +40,9 @@ export default function RowStats({ entry, sortBy, sessionStatus, expanded }) {
     )
   }
 
+  // Cells of the row's subgrid: each column lines up with the other rows'
   return (
-    <div className={`flex items-center ${expanded ? 'gap-8' : 'gap-3 @4xl:gap-6'} flex-shrink-0`}>
+    <>
       <Stat label={t('leaderboard.laps')} expanded={expanded}>
         <div className={`font-mono font-bold ${expanded ? 'text-2xl' : 'text-lg'} text-foreground`}>
           {stats.laps ?? 0}
@@ -60,6 +61,6 @@ export default function RowStats({ entry, sortBy, sessionStatus, expanded }) {
       >
         {gap}
       </Stat>
-    </div>
+    </>
   )
 }

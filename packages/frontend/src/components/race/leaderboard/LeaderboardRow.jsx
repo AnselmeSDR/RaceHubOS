@@ -25,7 +25,8 @@ export default function LeaderboardRow({ entry, sortBy, sessionStatus, expanded,
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 50 }}
       transition={LAYOUT_TRANSITION}
-      className={`flex items-center gap-3 rounded-lg shadow-md dark:shadow-none ${expanded ? 'p-4' : 'p-3'}`}
+      // A subgrid of the board, so that its cells line up with the other rows'
+      className={`col-span-full grid grid-cols-subgrid items-center rounded-lg shadow-md dark:shadow-none ${expanded ? 'p-2 pl-1 @3xl:p-3 @3xl:pl-1.5 @5xl:p-4 @5xl:pl-3 @6xl:pl-4' : 'p-2 pl-1 @3xl:p-3 @3xl:pl-1.5 @5xl:pl-3 @6xl:pl-4'}`}
       style={{
         background: `linear-gradient(to right, ${color}45, ${color}25 50%, ${color}08 70%, var(--card))`,
         borderLeft: `5px solid ${color}`,

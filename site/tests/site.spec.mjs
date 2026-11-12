@@ -154,7 +154,7 @@ const carsOnCircuit = (page) =>
           count++;
         }
       }
-      if (count) found.push({ code: row.querySelector('.who b').textContent, x: sum / count });
+      if (count) found.push({ code: row.querySelector('.code').textContent, x: sum / count });
     }
     return found.sort((a, b) => b.x - a.x).map((car) => car.code);
   });
@@ -314,7 +314,7 @@ test.describe('the demo race', () => {
           best: row.querySelector('[data-best]').textContent,
           fastest: row.querySelector('[data-best]').classList.contains('fastest'),
           gap: row.querySelector('[data-gap]').textContent,
-          code: row.querySelector('.who b').textContent,
+          code: row.querySelector('.code').textContent,
           face: row.querySelector('.face').innerHTML,
         }))
         .sort((a, b) => a.pos - b.pos)

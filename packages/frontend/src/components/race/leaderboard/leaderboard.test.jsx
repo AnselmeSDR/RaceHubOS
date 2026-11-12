@@ -72,7 +72,7 @@ describe('RowPosition', () => {
 })
 
 describe('RowIdentity', () => {
-  test('photo, number, car picture, last name and car, each with its divisions', () => {
+  test('last name, photo, car picture, number and car, each with its divisions', () => {
     render(
       <RowIdentity
         driver={{
@@ -98,28 +98,35 @@ describe('RowIdentity', () => {
     expect(carPicture).toHaveClass('object-contain')
     expect(carPicture.parentElement).toHaveClass('rounded-[20%]')
     expect(carPicture.parentElement.className).not.toMatch(/ring|shadow/)
-    // As big as the driver's picture: a smaller square leaves a tiny car
-    expect(carPicture.parentElement).toHaveClass('size-16')
-    expect(screen.getByAltText('Ana Lopes').parentElement).toHaveClass('size-16')
-    expect(screen.getByText('123')).toHaveClass('text-5xl')
-    expect(screen.getByText('Lopes')).toBeInTheDocument()
+    // As big as the driver's picture at every width: a smaller square leaves a tiny car
+    const sizes = (element) => element.className.match(/\S*size-\S+/g)
+    expect(sizes(carPicture.parentElement)).toEqual(sizes(screen.getByAltText('Ana Lopes').parentElement))
+    // Tight on a narrow board, full on a wide one
+    expect(carPicture.parentElement).toHaveClass('size-10', '@5xl:size-16')
+    // The last name in large, in the driver's colour; the number in its place below
+    expect(screen.getByText('Lopes')).toHaveClass('text-2xl', '@5xl:text-4xl')
+    expect(screen.getByText('123')).toHaveClass('text-lg', '@5xl:text-2xl')
+    // The name first, then the photo
+    expect(screen.getByText('Lopes').compareDocumentPosition(screen.getByAltText('Ana Lopes'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
     expect(screen.getByText('Ferrari 499P')).toBeInTheDocument()
     expect(screen.getAllByTestId('division-badge').map((b) => b.textContent)).toEqual(['GOLD', 'GT3'])
   })
 
-  test('an unknown driver gets an initial; a black number is outlined in the dark', () => {
+  test('an unknown driver gets an initial; a black name is outlined in the dark', () => {
     app.isDark = true
     render(<RowIdentity driver={{ number: 7 }} car={{ name: 'Kart' }} color="#000000" />)
     expect(screen.getByText('D')).toBeInTheDocument()
-    expect(screen.getByText('Unknown')).toBeInTheDocument()
-    expect(screen.getByText('7')).toHaveClass('text-5xl')
-    expect(screen.getByText('7').style.webkitTextStroke).toBe('2px white')
+    expect(screen.getByText('7')).toBeInTheDocument()
+    expect(screen.getByText('Unknown')).toHaveClass('text-2xl', '@3xl:text-3xl')
+    expect(screen.getByText('Unknown').style.webkitTextStroke).toBe('2px white')
     cleanup()
-    render(<RowIdentity driver={{ name: 'Ben', number: 777 }} car={{}} color="#000" />)
-    expect(screen.getByText('777')).toHaveClass('text-4xl')
+    render(<RowIdentity driver={{ name: 'Ben Ash', number: 777 }} car={{}} color="#000" />)
+    expect(screen.getByText('Ash')).toHaveClass('text-3xl', '@3xl:text-4xl')
     cleanup()
-    render(<RowIdentity driver={{ name: 'Ben', number: 7 }} car={{}} color="#000" expanded />)
-    expect(screen.getByText('7')).toHaveClass('text-6xl')
+    render(<RowIdentity driver={{ name: 'Bo', number: 7 }} car={{}} color="#000" expanded />)
+    expect(screen.getByText('Bo')).toHaveClass('text-4xl', '@5xl:text-6xl')
   })
 })
 
@@ -133,6 +140,23 @@ describe('SessionLeaderboard', () => {
     cleanup()
     render(<SessionLeaderboard entries={null} />)
     expect(screen.getByText('No entries in the leaderboard')).toBeInTheDocument()
+  })
+
+  test('a narrow board drops the number and car, the car picture, the photo, then scrolls sideways', () => {
+    render(
+      <SessionLeaderboard
+        entries={[
+          { ...a, driver: { name: 'Ana Lopes', number: 7 }, car: { brand: 'Ferrari', model: '499P', img: 'f.png' } },
+        ]}
+      />
+    )
+    const [row] = rows()
+    expect(within(row).getByTestId('leaderboard-number-car')).toHaveClass('@max-[40rem]:invisible')
+    expect(within(row).getByAltText('Ferrari 499P').parentElement).toHaveClass('@max-[35rem]:hidden')
+    expect(within(row).getByText('A').parentElement).toHaveClass('@max-[32rem]:hidden')
+    // Rather than push the times off screen
+    expect(row.parentElement).toHaveClass('min-w-[29rem]')
+    expect(row.parentElement.parentElement).toHaveClass('overflow-x-auto')
   })
 
   test('practice: by laps, the leader shows its best lap, the others their gap', () => {
