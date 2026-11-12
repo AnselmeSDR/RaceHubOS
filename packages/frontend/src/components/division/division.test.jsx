@@ -10,6 +10,7 @@ import DivisionChampionships from './DivisionChampionships'
 import DivisionFormModal from './DivisionFormModal'
 import DivisionIdentity from './DivisionIdentity'
 import DivisionMembers from './DivisionMembers'
+import DivisionPicker from './DivisionPicker'
 
 const people = (n) => Array.from({ length: n }, (_, i) => ({ id: `d${i}`, name: `Driver ${i}` }))
 const cars = (n) =>
@@ -58,6 +59,25 @@ describe('DivisionBadge', () => {
     expect(badge.style.backgroundColor).toBe('')
     expect(badge.style.getPropertyValue('--ink')).toBe('#1E293B')
     expect(badge.style.getPropertyValue('--ink-dark')).toBe('#e7e5e4')
+  })
+})
+
+describe('DivisionPicker', () => {
+  test('each line of the menu ends with how many drivers the division holds, or cars the category', async () => {
+    const gold = { id: 'g', name: 'GOLD', scope: 'driver', order: 4, _count: { drivers: 3, cars: 0 } }
+    const gt3 = { id: 'gt3', name: 'GT3', scope: 'car', order: 1, _count: { drivers: 0, cars: 1 } }
+    const fresh = { id: 'n', name: 'NEW', scope: 'driver', order: 5 }
+    render(<DivisionPicker divisions={[gold, gt3, fresh]} value={[]} onChange={vi.fn()} label="Add" />)
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    const ends = (await screen.findAllByRole('menuitemcheckbox')).map((item) => {
+      const count = within(item).getByTitle(/driver|car/)
+      return [count.textContent, count.title]
+    })
+    expect(ends).toEqual([
+      ['3', '3 drivers'],
+      ['1', '1 car'],
+      ['0', '0 drivers'],
+    ])
   })
 })
 

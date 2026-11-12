@@ -56,5 +56,11 @@
     "addDriver": "Add a driver…",
     "addCar": "Add a car…",
     "noChampionships": "No championship is run for this division."
+  },
+  "picker": {
+    "drivers_one": "{{count}} driver",
+    "drivers_other": "{{count}} drivers",
+    "cars_one": "{{count}} car",
+    "cars_other": "{{count}} cars"
   }
 }

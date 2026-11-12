@@ -85,6 +85,7 @@
         </a>
         <ul class="links">
           <li><a href="#features" data-i18n="nav.features">Features</a></li>
+          <li><a href="#championships" data-i18n="nav.championships">Championships</a></li>
           <li><a href="#addons" data-i18n="nav.addons">Add-ons</a></li>
           <li><a href="#install" data-i18n="nav.install">Install</a></li>
           <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
@@ -446,6 +447,64 @@
               <p data-i18n="local.text">Everything runs on your computer: no account, no cloud, no subscription.</p>
             </li>
           </ul>
+        </div>
+      </section>
+
+      <section class="wizard" id="championships" aria-labelledby="championships-title">
+        <div class="wrap">
+          <h2 id="championships-title" data-i18n="wizard.title">Championships</h2>
+          <p class="lead" data-i18n="wizard.lead">
+            A new championship in three steps: its name and track, its drivers, then its sessions.
+          </p>
+          <div class="tour-grid">
+            <div class="tour-list" role="tablist" aria-orientation="vertical" aria-labelledby="championships-title">
+              <button
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="wizard-screen"
+                data-screen="wizard-drivers"
+              >
+                <b data-i18n="wizard.drivers">Drivers, divisions and categories</b>
+                <span data-i18n="wizard.driversText"
+                  >Pick the driver divisions and car categories it is run for: only their drivers and cars are offered,
+                  each driver on their favourite car.</span
+                >
+              </button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="wizard-screen" data-screen="wizard-auto">
+                <b data-i18n="wizard.auto">Automatic planning</b>
+                <span data-i18n="wizard.autoText"
+                  >Free practices, qualifying groups and races dealt out for you; two drivers of one car never meet in a
+                  session.</span
+                >
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="wizard-screen"
+                data-screen="wizard-manual"
+              >
+                <b data-i18n="wizard.manual">Planning by hand</b>
+                <span data-i18n="wizard.manualText"
+                  >Each session in a column, six controllers each: drag the drivers, and the sessions, wherever you
+                  like.</span
+                >
+              </button>
+            </div>
+            <div class="screen" id="wizard-screen" role="tabpanel">
+              <img
+                class="shot"
+                data-shot="wizard-drivers"
+                data-i18n-alt="shot.wizard-drivers"
+                src="img/en/wizard-drivers.webp"
+                alt="The drivers of a new championship, with its divisions and categories"
+                width="1440"
+                height="900"
+                loading="lazy"
+              />
+            </div>
+          </div>
         </div>
       </section>
 

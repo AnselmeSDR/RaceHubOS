@@ -480,39 +480,41 @@
     speechSynthesis.speak(utterance);
   });
 
-  // ---------- Tour of the screens ----------
+  // ---------- Tours of the screens: each list of tabs and its capture ----------
 
-  const screen = document.querySelector('.tour .shot');
-  const tabs = [...document.querySelectorAll('[data-screen]')];
+  document.querySelectorAll('[role="tablist"]').forEach((list) => {
+    const tabs = [...list.querySelectorAll('[data-screen]')];
+    const screen = document.getElementById(tabs[0].getAttribute('aria-controls')).querySelector('.shot');
 
-  function select(tab) {
-    tabs.forEach((other) => {
-      other.setAttribute('aria-selected', String(other === tab));
-      other.tabIndex = other === tab ? 0 : -1;
+    function select(tab) {
+      tabs.forEach((other) => {
+        other.setAttribute('aria-selected', String(other === tab));
+        other.tabIndex = other === tab ? 0 : -1;
+      });
+      screen.dataset.shot = tab.dataset.screen;
+      screen.setAttribute('data-i18n-alt', `shot.${tab.dataset.screen}`);
+      screen.src = shotSrc(tab.dataset.screen);
+      screen.alt = t(`shot.${tab.dataset.screen}`);
+    }
+
+    tabs.forEach((tab) => {
+      tab.tabIndex = tab.getAttribute('aria-selected') === 'true' ? 0 : -1;
+      tab.addEventListener('click', () => {
+        if (document.startViewTransition && !reducedMotion) document.startViewTransition(() => select(tab));
+        else select(tab);
+      });
     });
-    screen.dataset.shot = tab.dataset.screen;
-    screen.setAttribute('data-i18n-alt', `shot.${tab.dataset.screen}`);
-    screen.src = shotSrc(tab.dataset.screen);
-    screen.alt = t(`shot.${tab.dataset.screen}`);
-  }
 
-  tabs.forEach((tab) => {
-    tab.tabIndex = tab.getAttribute('aria-selected') === 'true' ? 0 : -1;
-    tab.addEventListener('click', () => {
-      if (document.startViewTransition && !reducedMotion) document.startViewTransition(() => select(tab));
-      else select(tab);
+    // Arrow keys move between the tabs, as in any tab list
+    list.addEventListener('keydown', (event) => {
+      const move = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+      const index = tabs.indexOf(document.activeElement);
+      if (!move || index < 0) return;
+      event.preventDefault();
+      const next = tabs[(index + move + tabs.length) % tabs.length];
+      select(next);
+      next.focus();
     });
-  });
-
-  // Arrow keys move between the tabs, as in any tab list
-  tabs[0].parentElement.addEventListener('keydown', (event) => {
-    const move = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
-    const index = tabs.indexOf(document.activeElement);
-    if (!move || index < 0) return;
-    event.preventDefault();
-    const next = tabs[(index + move + tabs.length) % tabs.length];
-    select(next);
-    next.focus();
   });
 
   // With reduced motion the board keeps the race shown in the page, until the visitor restarts it

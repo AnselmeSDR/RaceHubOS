@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
+import { DivisionScope } from '@racehubos/shared'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -8,9 +9,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import DivisionBadge from './DivisionBadge'
 
+/** How many drivers a division holds, or cars a category, out of the bin. */
+const membersOf = (division) => division._count?.[division.scope === DivisionScope.CAR ? 'cars' : 'drivers'] ?? 0
+
 /**
  * None, one or several of `divisions` (ids in `value`): the chosen ones as removable badges, the others
- * ticked in a menu with their rank. `label` names the add button for screen readers.
+ * ticked in a menu, from the highest rank, with how many drivers or cars each holds. `label` names the add button for screen readers.
  */
 export default function DivisionPicker({ divisions, value, onChange, label, testId }) {
   const { t } = useTranslation('divisions')
@@ -43,7 +47,14 @@ export default function DivisionPicker({ divisions, value, onChange, label, test
             >
               <DivisionBadge division={division} />
               <span className="flex-1" />
-              <span className="text-[11px] text-muted-foreground">{division.order}</span>
+              <span
+                className="text-[11px] text-muted-foreground tabular-nums"
+                title={t(division.scope === DivisionScope.CAR ? 'picker.cars' : 'picker.drivers', {
+                  count: membersOf(division),
+                })}
+              >
+                {membersOf(division)}
+              </span>
             </DropdownMenuCheckboxItem>
           ))}
           {divisions.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('noneYet')}</p>}

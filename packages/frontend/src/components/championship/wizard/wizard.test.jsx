@@ -143,10 +143,15 @@ describe('WizardParticipantsStep', () => {
     expect(screen.queryByText('★ Profile')).not.toBeInTheDocument()
   })
 
-  test('a car shared by several drivers names the others', () => {
+  test('a car shared by several drivers: an icon naming the others, explained below', () => {
     lineUp([entry(drivers[0], 'ferrari'), entry(drivers[1], 'ferrari'), entry(drivers[2])])
-    expect(screen.getByText('also: Ben')).toBeInTheDocument()
-    expect(screen.getByText('also: Ana')).toBeInTheDocument()
+    expect(screen.getAllByRole('img', { name: /^Car shared with/ }).map((icon) => icon.title)).toEqual([
+      'Car shared with Ben',
+      'Car shared with Ana',
+    ])
+    expect(screen.getByText(/^Car shared with another driver: allowed/)).toBeInTheDocument()
+    // The car run shows the icon, not the names; the others name who runs them
+    expect(screen.getByRole('combobox', { name: "Ana's car" })).toHaveDisplayValue('Ferrari 296')
     const cidCars = screen.getByRole('combobox', { name: "Cid's car" })
     expect(within(cidCars).getByRole('option', { name: 'Ferrari 296 · also: Ana, Ben' })).toBeInTheDocument()
   })

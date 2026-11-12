@@ -7,6 +7,7 @@ window.RACEHUBOS_TEXTS = {
       'Free, open source software for your Carrera Digital 132 and 124 races: live timing, championships, statistics and car balancing. Windows, macOS and Linux.',
     skip: 'Skip to content',
     'nav.features': 'Features',
+    'nav.championships': 'Championships',
     'nav.addons': 'Add-ons',
     'nav.install': 'Install',
     'nav.open': 'Open source',
@@ -67,6 +68,20 @@ window.RACEHUBOS_TEXTS = {
     'shot.balancing': 'Balancing: lap times of each car, with the median',
     'shot.addons': 'The add-on catalog',
     'shot.carService': 'The Car service page',
+    'wizard.title': 'Championships',
+    'wizard.lead': 'A new championship in three steps: its name and track, its drivers, then its sessions.',
+    'wizard.drivers': 'Drivers, divisions and categories',
+    'wizard.driversText':
+      'Pick the driver divisions and car categories it is run for: only their drivers and cars are offered, each driver on their favourite car.',
+    'wizard.auto': 'Automatic planning',
+    'wizard.autoText':
+      'Free practices, qualifying groups and races dealt out for you; two drivers of one car never meet in a session.',
+    'wizard.manual': 'Planning by hand',
+    'wizard.manualText':
+      'Each session in a column, six controllers each: drag the drivers, and the sessions, wherever you like.',
+    'shot.wizard-drivers': 'The drivers of a new championship, with its divisions and categories',
+    'shot.wizard-auto': 'The sessions of a new championship, planned automatically',
+    'shot.wizard-manual': 'The sessions of a new championship, planned by hand',
     'cu.title': 'Bluetooth Control Unit',
     'cu.text':
       'Connects to the Control Unit 30352 through the AppConnect 30369. No track at hand? The simulator runs virtual cars.',
@@ -138,6 +153,7 @@ window.RACEHUBOS_TEXTS = {
       'Logiciel libre et gratuit pour vos courses Carrera Digital 132 et 124 : chronos en direct, championnats, statistiques et équilibrage des voitures. Windows, macOS et Linux.',
     skip: 'Aller au contenu',
     'nav.features': 'Fonctionnalités',
+    'nav.championships': 'Championnats',
     'nav.addons': 'Add-ons',
     'nav.install': 'Installer',
     'nav.open': 'Open source',
@@ -199,6 +215,20 @@ window.RACEHUBOS_TEXTS = {
     'shot.balancing': 'Équilibrage : temps au tour de chaque voiture, avec la médiane',
     'shot.addons': 'Le catalogue des add-ons',
     'shot.carService': 'La page Entretien des voitures',
+    'wizard.title': 'Championnats',
+    'wizard.lead': 'Un nouveau championnat en trois étapes : son nom et son circuit, ses pilotes, puis ses sessions.',
+    'wizard.drivers': 'Pilotes, divisions et catégories',
+    'wizard.driversText':
+      'Choisissez les divisions de pilotes et les catégories de voitures du championnat : seuls leurs pilotes et leurs voitures sont proposés, chaque pilote sur sa voiture préférée.',
+    'wizard.auto': 'Configuration automatique',
+    'wizard.autoText':
+      'Essais libres, groupes de qualifs et courses répartis pour vous ; deux pilotes d’une même voiture ne se retrouvent jamais dans la même session.',
+    'wizard.manual': 'Configuration manuelle',
+    'wizard.manualText':
+      'Chaque session en colonne, six manettes chacune : glissez les pilotes, et les sessions, où vous voulez.',
+    'shot.wizard-drivers': 'Les pilotes d’un nouveau championnat, avec ses divisions et catégories',
+    'shot.wizard-auto': 'Les sessions d’un nouveau championnat, réparties automatiquement',
+    'shot.wizard-manual': 'Les sessions d’un nouveau championnat, réparties à la main',
     'cu.title': 'Control Unit en Bluetooth',
     'cu.text':
       'Connexion à la Control Unit 30352 par l’AppConnect 30369. Pas de circuit sous la main ? Le simulateur fait rouler des voitures virtuelles.',
@@ -272,6 +302,7 @@ window.RACEHUBOS_TEXTS = {
       'Freie, kostenlose Software für deine Rennen auf Carrera Digital 132 und 124: Live-Zeitnahme, Meisterschaften, Statistik und Fahrzeugabgleich. Windows, macOS und Linux.',
     skip: 'Zum Inhalt springen',
     'nav.features': 'Funktionen',
+    'nav.championships': 'Meisterschaften',
     'nav.addons': 'Add-ons',
     'nav.install': 'Installieren',
     'nav.open': 'Open Source',
@@ -334,6 +365,20 @@ window.RACEHUBOS_TEXTS = {
     'shot.balancing': 'Fahrzeugabgleich: Rundenzeiten jedes Autos, mit dem Median',
     'shot.addons': 'Der Add-on-Katalog',
     'shot.carService': 'Die Seite Fahrzeugwartung',
+    'wizard.title': 'Meisterschaften',
+    'wizard.lead': 'Eine neue Meisterschaft in drei Schritten: Name und Strecke, Fahrer, dann die Sitzungen.',
+    'wizard.drivers': 'Fahrer, Divisionen und Kategorien',
+    'wizard.driversText':
+      'Wähle die Fahrerdivisionen und Autokategorien der Meisterschaft: Nur ihre Fahrer und Autos werden angeboten, jeder Fahrer auf seinem Lieblingsauto.',
+    'wizard.auto': 'Automatische Planung',
+    'wizard.autoText':
+      'Freie Trainings, Qualifying-Gruppen und Rennen werden für dich verteilt; zwei Fahrer desselben Autos fahren nie in derselben Sitzung.',
+    'wizard.manual': 'Planung von Hand',
+    'wizard.manualText':
+      'Jede Sitzung in einer Spalte, je sechs Regler: Fahrer und Sitzungen einfach dorthin ziehen, wo du sie willst.',
+    'shot.wizard-drivers': 'Die Fahrer einer neuen Meisterschaft, mit ihren Divisionen und Kategorien',
+    'shot.wizard-auto': 'Die Sitzungen einer neuen Meisterschaft, automatisch verteilt',
+    'shot.wizard-manual': 'Die Sitzungen einer neuen Meisterschaft, von Hand verteilt',
     'cu.title': 'Control Unit per Bluetooth',
     'cu.text':
       'Verbindung mit der Control Unit 30352 über die AppConnect 30369. Keine Bahn zur Hand? Der Simulator lässt virtuelle Autos fahren.',

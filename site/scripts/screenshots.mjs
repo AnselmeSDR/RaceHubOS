@@ -115,6 +115,34 @@ const RACE = {
 
 const CHAMPIONSHIP = 'FINALE C200';
 
+/**
+ * A new championship in the creation wizard, stopped before "Create": its drivers' step with the divisions and
+ * the category it is run for, then its sessions planned automatically and by hand. The drivers of `divisions`,
+ * KEPT_DRIVERS first, at most `drivers`; each gets its profile car, or the next one of `cars`, shared by two
+ * when a car comes twice there.
+ */
+const WIZARD = {
+  name: { fr: 'Coupe d’hiver', en: 'Winter Cup', de: 'Winterpokal' },
+  divisions: ['SILVER', 'BRONZE'],
+  categories: ['GT3'],
+  drivers: 8,
+  cars: [
+    'Ferrari 488 GT3 #23',
+    'McLaren 720S GT3 #02',
+    'Lamborghini Huracán GT3 evo II #92',
+    'BMW M4 GT3 #11',
+    'Audi R8 LMS GT3 #8',
+    'Ferrari 488 GT3 #23',
+    'Porsche 911 GT3 R #75',
+  ],
+};
+
+/**
+ * Car categories given to the cars that have none, by their model, so that the wizard's category filter has
+ * cars to offer; a category set in the app is kept.
+ */
+const CATEGORY_BY_MODEL = { GT3: 'GT3', DTM: 'DTM' };
+
 /** Balancing chart: laps slower than this (crashes, cars back on the track) are left out. */
 const BALANCING_MAX_LAP_MS = 15000;
 
@@ -147,7 +175,19 @@ const CAR_SERVICE = {
 };
 
 /** The screens the website shows, captured by default. */
-const SITE_SCREENS = ['race', 'podium', 'championship', 'stats', 'balancing', 'addons', 'car-service'];
+const SITE_SCREENS = [
+  'race',
+  'podium',
+  'championship',
+  'stats',
+  'balancing',
+  'addons',
+  'car-service',
+  'wizard-drivers',
+  'wizard-auto',
+  'wizard-manual',
+];
+const WIZARD_SCREENS = ['wizard-drivers', 'wizard-auto', 'wizard-manual'];
 /** Not on the website: only with --only. */
 const EXTRA_SCREENS = ['dashboard', 'championship-results', 'addons-installed'];
 const STATIC_SCREENS = [
@@ -409,6 +449,18 @@ function anonymize(db) {
   log(`Anonymized: ${others.length} drivers renamed, ${shown.length} shown as in the database`);
 }
 
+function categorize(db) {
+  const statements = Object.entries(CATEGORY_BY_MODEL).map(
+    ([word, category]) =>
+      `INSERT INTO CarDivision (carId, divisionId, createdAt)
+       SELECT c.id, d.id, ${Date.now()} FROM Car c, Division d
+       WHERE c.deletedAt IS NULL AND c.model LIKE ${sqlText(`%${word}%`)}
+         AND d.scope = 'car' AND d.name = ${sqlText(category)} AND d.deletedAt IS NULL
+         AND NOT EXISTS (SELECT 1 FROM CarDivision o WHERE o.carId = c.id);`
+  );
+  sqlite(db, `BEGIN;\n${statements.join('\n')}\nCOMMIT;`);
+}
+
 function migrate(db) {
   // Never on dev.db: DATABASE_URL is the copy, passed explicitly (prisma.config.js would read .env otherwise)
   const out = execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
@@ -484,7 +536,34 @@ function lookups(db) {
     { json: true }
   );
 
-  return { trackId, grid, carId, championshipId, championshipSessions, balancingTrackId, balancingSessionId };
+  const wizardDrivers = sqlite(
+    db,
+    `SELECT DISTINCT d.name, d.preferredCarId FROM Driver d
+     JOIN DriverDivision dd ON dd.driverId = d.id JOIN Division v ON v.id = dd.divisionId
+     WHERE d.deletedAt IS NULL AND v.deletedAt IS NULL AND v.scope = 'driver'
+       AND v.name IN (${WIZARD.divisions.map(sqlText).join(', ')})
+     ORDER BY CASE WHEN d.name IN (${KEPT_DRIVERS.map(sqlText).join(', ')}) THEN 0 ELSE 1 END, d.name
+     LIMIT ${WIZARD.drivers}`,
+    { json: true }
+  );
+  if (wizardDrivers.length < 2) problem(`Wizard: fewer than 2 drivers in ${WIZARD.divisions.join(', ')}`);
+  const handedOut = [...WIZARD.cars];
+  const wizardLineUp = wizardDrivers.map((driver) => ({
+    name: driver.name,
+    car: driver.preferredCarId ? null : handedOut.shift(),
+  }));
+  WIZARD.cars.forEach(carId);
+
+  return {
+    trackId,
+    grid,
+    carId,
+    championshipId,
+    championshipSessions,
+    balancingTrackId,
+    balancingSessionId,
+    wizardLineUp,
+  };
 }
 
 // ==================== Add-on ====================
@@ -753,9 +832,10 @@ async function useTheme(page, lang, theme) {
   const dark = theme === 'dark';
   await page.emulateMedia({ colorScheme: theme });
   if ((await page.evaluate(() => document.documentElement.classList.contains('dark'))) === dark) return;
+  // Dispatched rather than clicked: under an open dialog the button is out of the pointer's reach
   await page
     .getByRole('button', { name: t(lang, 'layout', dark ? 'theme.nightMode' : 'theme.dayMode'), exact: true })
-    .click();
+    .dispatchEvent('click');
   await page.waitForFunction((wanted) => document.documentElement.classList.contains('dark') === wanted, dark);
 }
 
@@ -832,6 +912,7 @@ async function warmUp(ids) {
     '/',
     '/stats',
     `/championships/${ids.championshipId}`,
+    '/championships',
     '/balancing',
     '/race',
     '/addons',
@@ -977,6 +1058,57 @@ async function raceScreens(lang, ids) {
   await context.close();
 }
 
+async function wizardScreens(lang, ids) {
+  const text = (key) => t(lang, 'championships', key);
+  // No focus ring left on the last button or list used
+  const shoot = async (name, texts) => {
+    await page.evaluate(() => document.activeElement?.blur());
+    if (wanted(name)) await capture(page, lang, name, texts);
+  };
+  const context = await openContext(lang);
+  const page = await context.newPage();
+  await open(page, '/championships');
+  await settle(page, 300);
+  await page.getByTestId('page-add').click();
+  const modal = page.getByTestId('modal');
+
+  // Infos: name and track
+  await modal.getByRole('textbox').first().fill(WIZARD.name[lang]);
+  await modal.getByRole('combobox').first().selectOption(ids.trackId);
+  await modal.getByRole('button', { name: text('wizard.next'), exact: true }).click();
+
+  // Drivers: the divisions and categories, then the line-up and their cars
+  const pick = async (filter, names) => {
+    for (const name of names) {
+      await page.getByTestId(`division-filter-${filter}`).locator('button[aria-haspopup="menu"]').click();
+      await page.getByRole('menuitemcheckbox', { name: new RegExp(`^${name}\\b`) }).click();
+      await page.keyboard.press('Escape');
+    }
+  };
+  await pick('divisions', WIZARD.divisions);
+  await pick('categories', WIZARD.categories);
+  for (const { name, car } of ids.wizardLineUp) {
+    await modal
+      .getByRole('combobox', { name: t(lang, 'glossary', 'driver_one'), exact: true })
+      .last()
+      .selectOption({ label: name });
+    if (!car) continue;
+    const select = modal.getByRole('combobox', { name: text('wizard.carOf').replace('{{name}}', name), exact: true });
+    await select.selectOption(ids.carId(car));
+  }
+  await settle(page, 500);
+  await shoot('wizard-drivers', [text('wizard.sharedCarLegend')]);
+
+  // Configuration: automatic, then by hand
+  await modal.getByRole('button', { name: text('wizard.next'), exact: true }).click();
+  await settle(page, 500);
+  await shoot('wizard-auto', [text('wizard.modeAutoHint')]);
+  await modal.getByRole('radio', { name: text('wizard.modeManual'), exact: true }).click();
+  await settle(page, 500);
+  await shoot('wizard-manual', [text('wizard.modeManualHint')]);
+  await context.close();
+}
+
 async function carServiceScreen(lang) {
   const context = await openContext(lang);
   const page = await context.newPage();
@@ -1002,6 +1134,7 @@ async function main() {
   copyDatabase(db);
   anonymize(db);
   migrate(db);
+  categorize(db);
   const ids = lookups(db);
   installAddon(addonsDir);
   await startServers(db, addonsDir);
@@ -1026,6 +1159,7 @@ async function main() {
     for (const lang of langs) await raceScreens(lang, ids);
   }
   if (wanted('car-service')) for (const lang of langs) await carServiceScreen(lang);
+  if (WIZARD_SCREENS.some(wanted)) for (const lang of langs) await wizardScreens(lang, ids);
 }
 
 let failed = false;

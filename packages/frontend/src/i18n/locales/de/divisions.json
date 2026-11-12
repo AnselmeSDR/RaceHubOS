@@ -56,5 +56,11 @@
     "addDriver": "Fahrer hinzufügen…",
     "addCar": "Auto hinzufügen…",
     "noChampionships": "Keine Meisterschaft wird für diese Division ausgetragen."
+  },
+  "picker": {
+    "drivers_one": "{{count}} Fahrer",
+    "drivers_other": "{{count}} Fahrer",
+    "cars_one": "{{count}} Auto",
+    "cars_other": "{{count}} Autos"
   }
 }

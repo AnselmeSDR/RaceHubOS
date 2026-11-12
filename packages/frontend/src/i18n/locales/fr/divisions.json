@@ -56,5 +56,11 @@
     "addDriver": "Ajouter un pilote…",
     "addCar": "Ajouter une voiture…",
     "noChampionships": "Aucun championnat ne retient cette division."
+  },
+  "picker": {
+    "drivers_one": "{{count}} pilote",
+    "drivers_other": "{{count}} pilotes",
+    "cars_one": "{{count}} voiture",
+    "cars_other": "{{count}} voitures"
   }
 }

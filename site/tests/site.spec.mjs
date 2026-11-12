@@ -438,8 +438,23 @@ test.describe('in French', () => {
     await page.keyboard.press('ArrowUp');
     await expect(page.locator('[data-screen="addons"]')).toBeFocused();
     await expect(screen).toHaveAttribute('src', '../img/fr/addons.webp');
-    // Only the selected tab is reached with Tab
-    expect(await page.locator('[role="tab"][tabindex="0"]').count()).toBe(1);
+    // Only the selected tab of each list is reached with Tab
+    expect(await page.locator('.tour [role="tab"][tabindex="0"]').count()).toBe(1);
+  });
+
+  test('the championships have their own tour: the wizard, step by step, beside the other one', async ({ page }) => {
+    await page.goto('/fr/');
+    const wizard = page.locator('#wizard-screen .shot');
+    await expect(wizard).toHaveAttribute('src', '../img/fr/wizard-drivers.webp');
+    await page.locator('[data-screen="wizard-manual"]').click();
+    await expect(wizard).toHaveAttribute('src', '../img/fr/wizard-manual.webp');
+    await expect(wizard).toHaveAttribute('alt', texts.fr['shot.wizard-manual']);
+    // Its arrows go round its own tabs; the features tour keeps its screen
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('[data-screen="wizard-drivers"]')).toBeFocused();
+    await expect(wizard).toHaveAttribute('src', '../img/fr/wizard-drivers.webp');
+    await expect(page.locator('.tour .shot')).toHaveAttribute('src', '../img/fr/race.webp');
+    await expect(page.locator('[data-screen="race"]')).toHaveAttribute('aria-selected', 'true');
   });
 
   test('the voice reads its announcement in the language of the page', async ({ page }) => {

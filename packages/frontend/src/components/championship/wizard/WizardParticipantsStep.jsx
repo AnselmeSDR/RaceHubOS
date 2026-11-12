@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { Users, X } from 'lucide-react'
 import CarSelect from '../../car/CarSelect'
 import { DivisionBadges } from '../../division/DivisionBadge'
 import DivisionFilters from '../../division/DivisionFilters'
@@ -10,12 +10,15 @@ import { withEmptyRow } from './wizardPlan'
 const OUTSIDE =
   'text-[11px] font-medium rounded-full px-2 py-0.5 bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-100'
 
+// A car run by another participant too
+const SharedCarIcon = () => <Users aria-hidden="true" className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
+
 /**
  * The divisions and categories the championship is run for, then its line-up and the car each one
  * runs: their preferred car unless changed, or none (then picked in each session). The selectors
  * only offer the drivers and cars of the divisions and categories chosen, the preferred car too; a
  * participant already chosen stays, flagged outside them. Each driver can be picked once; a car can
- * be shared.
+ * be shared, marked by an icon explained under the line-up, without blocking anything.
  */
 export default function WizardParticipantsStep({
   participants,
@@ -118,8 +121,9 @@ export default function WizardParticipantsStep({
                       onChange={(carId) => update(i, withCar(p, carId))}
                       label={t('wizard.carOf', { name: p.driver.name })}
                       noneLabel={t('wizard.noCar')}
+                      // Who else runs each other car; the one run carries the icon instead
                       describe={(car) => {
-                        const others = sharing(car.id, i)
+                        const others = car.id !== p.carId && sharing(car.id, i)
                         return others && t('wizard.alsoRuns', { names: others })
                       }}
                     />
@@ -136,8 +140,12 @@ export default function WizardParticipantsStep({
                       </span>
                     )}
                     {shared && (
-                      <span className="text-[11px] text-muted-foreground">
-                        {t('wizard.alsoRuns', { names: shared })}
+                      <span
+                        role="img"
+                        aria-label={t('wizard.sharedCar', { names: shared })}
+                        title={t('wizard.sharedCar', { names: shared })}
+                      >
+                        <SharedCarIcon />
                       </span>
                     )}
                   </div>
@@ -157,6 +165,10 @@ export default function WizardParticipantsStep({
           )
         })}
       </div>
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <SharedCarIcon />
+        {t('wizard.sharedCarLegend')}
+      </p>
     </div>
   )
 }
