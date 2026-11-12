@@ -241,13 +241,12 @@ describe('DELETE and restore', () => {
 });
 
 describe('POST /api/cars/:id/reset-stats', () => {
-  test('erases its laps and entries, and zeroes the totals', async () => {
-    await prisma.car.update({ where: { id: gt.id }, data: { totalRaces: 3 } });
+  test('erases its laps and entries: its figures fall to zero', async () => {
     const res = await api.post(`/api/cars/${gt.id}/reset-stats`);
     expect(res.body).toMatchObject({
       success: true,
       message: 'Statistics reset successfully',
-      data: { totalRaces: 0, bestLap: null, img: '/api/img/gt.png', _count: { sessions: 0 } },
+      data: { races: 0, bestLap: null, img: '/api/img/gt.png', _count: { sessions: 0 } },
     });
     expect(await prisma.lap.count({ where: { carId: gt.id } })).toBe(0);
     expect(await prisma.lap.count({ where: { carId: p911.id } })).toBe(1);

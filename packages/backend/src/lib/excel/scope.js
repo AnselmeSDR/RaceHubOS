@@ -3,12 +3,9 @@ import { emptyRecord, tallyEntry } from './record.js';
 import { divisionsOf } from '../divisions.js';
 
 /**
- * Statistiques calculées sur le périmètre exporté.
- *
- * Les compteurs du modèle (`totalRaces`, `wins`, `podiums`, `bestLap`) ne sont
- * alimentés nulle part et valent zéro pour tout le monde. Et « trois victoires »
- * n'aurait de toute façon pas le même sens selon qu'on exporte une session ou
- * un championnat : ce qui est compté ici, c'est ce que le classeur contient.
+ * Statistiques calculées sur le périmètre exporté : « trois victoires » n'a pas
+ * le même sens selon qu'on exporte une session ou un championnat, ce qui est
+ * compté ici, c'est ce que le classeur contient.
  */
 
 const blankStats = () => ({ ...emptyRecord(), lapCount: 0, lapTimeSum: 0 });

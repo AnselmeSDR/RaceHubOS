@@ -245,7 +245,7 @@ router.get(
   })
 );
 
-// POST /api/drivers/:id/reset-stats - erases laps, entries and records, zeroes the totals
+// POST /api/drivers/:id/reset-stats - erases laps, entries and records: its figures fall to zero
 router.post(
   '/:id/reset-stats',
   route('Failed to reset driver statistics', async (req, res) => {
@@ -254,13 +254,16 @@ router.post(
     const driver = await prisma.$transaction(async (tx) => {
       for (const model of ['lap', 'sessionDriver', 'trackRecord'])
         await tx[model].deleteMany({ where: { driverId: id } });
-      return tx.driver.update({
+      return tx.driver.findUnique({
         where: { id },
-        data: { totalRaces: 0, wins: 0, podiums: 0, bestLap: null },
-        include: { divisions: DIVISIONS_INCLUDE, _count: { select: { sessions: true, laps: true } } },
+        include: {
+          divisions: DIVISIONS_INCLUDE,
+          ...FIGURES_INCLUDE,
+          _count: { select: { sessions: true, laps: true } },
+        },
       });
     });
-    res.json({ success: true, data: shown(driver), message: 'Statistics reset successfully' });
+    res.json({ success: true, data: shown(withFigures(driver)), message: 'Statistics reset successfully' });
   })
 );
 

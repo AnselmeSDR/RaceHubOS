@@ -150,7 +150,7 @@ addDeletionRoutes(router, {
   restore: (id) => restoreCar(prisma, id),
 });
 
-// POST /api/cars/:id/reset-stats - erases its laps and entries, zeroes the totals
+// POST /api/cars/:id/reset-stats - erases its laps and entries: its figures fall to zero
 router.post(
   '/:id/reset-stats',
   route('Failed to reset car statistics', async (req, res) => {
@@ -159,13 +159,12 @@ router.post(
     const car = await prisma.$transaction(async (tx) => {
       await tx.lap.deleteMany({ where: { carId: id } });
       await tx.sessionDriver.deleteMany({ where: { carId: id } });
-      return tx.car.update({
+      return tx.car.findUnique({
         where: { id },
-        data: { totalRaces: 0, bestLap: null },
-        include: { divisions: DIVISIONS_INCLUDE, _count: { select: { sessions: true } } },
+        include: { divisions: DIVISIONS_INCLUDE, ...FIGURES_INCLUDE, _count: { select: { sessions: true } } },
       });
     });
-    res.json({ success: true, data: shown(car), message: 'Statistics reset successfully' });
+    res.json({ success: true, data: shown(withFigures(car)), message: 'Statistics reset successfully' });
   })
 );
 

@@ -13,10 +13,6 @@ model Driver {
   email             String?            @unique
   img               String?
   color             String             @default("#3B82F6")
-  totalRaces        Int                @default(0)
-  wins              Int                @default(0)
-  podiums           Int                @default(0)
-  bestLap           Float?
   deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -61,8 +57,6 @@ model Car {
   frontTrackMm      Float?
   rearTrackMm       Float?
   groundClearanceMm Float?
-  totalRaces        Int                @default(0)
-  bestLap           Float?
   deletedAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

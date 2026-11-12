@@ -91,7 +91,7 @@ function seed(db) {
     ['e2e-c2', 'AMG', 'GT3'],
   ]) {
     insert(
-      "INSERT INTO Car (id, brand, model, color, maxSpeed, brakeForce, fuelCapacity, totalRaces, createdAt, updatedAt) VALUES (?, ?, ?, '#6b7280', 100, 50, 100, 0, ?, ?)",
+      "INSERT INTO Car (id, brand, model, color, maxSpeed, brakeForce, fuelCapacity, createdAt, updatedAt) VALUES (?, ?, ?, '#6b7280', 100, 50, 100, ?, ?)",
       id,
       brand,
       model,

@@ -26,8 +26,7 @@ const kept = { deletedAt: null, session: { deletedAt: null } };
 
 /**
  * What a driver's or car's figures are read from: its entries and its fastest lap, none deleted
- * nor in a deleted session. The counters stored on the record (`wins`, `podiums`, `bestLap`…)
- * are never kept up to date.
+ * nor in a deleted session. They are never stored: always right after a deletion or a restore.
  */
 export const FIGURES_INCLUDE = {
   sessions: { where: kept, select: { finalPos: true, session: { select: { type: true } } } },

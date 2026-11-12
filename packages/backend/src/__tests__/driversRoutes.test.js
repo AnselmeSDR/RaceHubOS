@@ -384,16 +384,15 @@ describe('GET /api/drivers/:id/stats', () => {
 });
 
 describe('POST /api/drivers/:id/reset-stats', () => {
-  test('erases laps, entries and records, and zeroes the totals', async () => {
+  test('erases laps, entries and records: its figures fall to zero', async () => {
     await prisma.trackRecord.create({ data: { trackId: ring.id, driverId: ana.id, carId: gt.id, lapTime: 8100 } });
-    await prisma.driver.update({ where: { id: ana.id }, data: { totalRaces: 2, wins: 1, podiums: 1 } });
 
     const res = await api.post(`/api/drivers/${ana.id}/reset-stats`);
     expect(res.body).toMatchObject({
       success: true,
       message: 'Statistics reset successfully',
       data: {
-        totalRaces: 0,
+        races: 0,
         wins: 0,
         podiums: 0,
         bestLap: null,
