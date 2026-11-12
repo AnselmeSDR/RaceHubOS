@@ -4,7 +4,7 @@ import CarSelect from '../../car/CarSelect'
 import { DivisionBadges } from '../../division/DivisionBadge'
 import DivisionFilters from '../../division/DivisionFilters'
 import { useDivisionFilter } from '@/hooks/useDivisionFilter'
-import { DriverAvatar } from './DriverToken'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { withEmptyRow } from './wizardPlan'
 
 const OUTSIDE =
@@ -91,7 +91,7 @@ export default function WizardParticipantsStep({
             >
               <span className="w-5 text-xs text-muted-foreground">{p.driverId ? i + 1 : ''}</span>
               <div className="flex flex-1 min-w-44 items-center gap-2">
-                {p.driver && <DriverAvatar driver={p.driver} />}
+                {p.driver && <DriverAvatar driver={p.driver} label={p.driver.number} className="size-5" />}
                 <select
                   aria-label={t('glossary:driver_one')}
                   value={p.driverId || ''}

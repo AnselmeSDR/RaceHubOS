@@ -3,7 +3,7 @@ import { Trophy, Flag, BarChart3 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import CardActions from '@/components/crud/CardActions'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from './DriverAvatar'
 
 /** A driver in the grid of the drivers page: picture, number, divisions, results and best lap. */
 export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
@@ -34,20 +34,7 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
           <div className="relative">
-            <div
-              className="absolute inset-0 rounded-full blur-md opacity-50"
-              style={{ backgroundColor: driver.color }}
-            />
-            <div
-              className="relative w-20 h-20 rounded-full flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)` }}
-            >
-              {driver.img ? (
-                <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="drop-shadow-lg">{driver.name?.charAt(0)}</span>
-              )}
-            </div>
+            <DriverAvatar driver={driver} alt={driver.name} className="size-20 font-black" />
             {wins > 0 && (
               <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center ring-2 ring-white shadow-lg">
                 <Trophy className="w-4 h-4 text-white" />

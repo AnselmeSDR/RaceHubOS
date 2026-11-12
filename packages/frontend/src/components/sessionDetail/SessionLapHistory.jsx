@@ -2,7 +2,10 @@ import { useTranslation } from 'react-i18next'
 import { SessionType } from '@racehubos/shared'
 import LapTime from '@/components/race/LapTime'
 import { Card, CardContent } from '@/components/ui/card'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { fastestLapTime } from '@/lib/sessionResults'
+
+const UNKNOWN_DRIVER_COLOR = '#6B7280'
 
 /** Every lap of a stored session in order, with its driver and car, the fastest highlighted; none for balancing. */
 export default function SessionLapHistory({ session }) {
@@ -34,12 +37,10 @@ export default function SessionLapHistory({ session }) {
                     <td className="px-4 py-1.5 font-mono text-muted-foreground">{lap.lapNumber}</td>
                     <td className="px-4 py-1.5">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="size-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                          style={{ backgroundColor: driver?.driver?.color || '#6B7280' }}
-                        >
-                          {(driver?.driver?.name || '?').charAt(0)}
-                        </span>
+                        <DriverAvatar
+                          driver={driver?.driver ?? { name: '?', color: UNKNOWN_DRIVER_COLOR }}
+                          className="size-5"
+                        />
                         <span className="truncate">{driver?.driver?.name || `Ctrl ${lap.controller + 1}`}</span>
                       </div>
                     </td>

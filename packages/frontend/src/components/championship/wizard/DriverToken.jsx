@@ -1,23 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { GripVertical, X } from 'lucide-react'
-import { getImgUrl } from '@/utils/image'
-import CarPicture from '../../car/CarPicture'
-
-/** A driver's round picture on their colour, or their number (else initial) without one. */
-export function DriverAvatar({ driver, className = 'size-6' }) {
-  return (
-    <span
-      className={`${className} rounded-full shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white`}
-      style={{ backgroundColor: driver.color || '#6B7280' }}
-    >
-      {driver.img ? (
-        <img src={getImgUrl(driver.img)} alt="" className="size-full object-cover" />
-      ) : (
-        (driver.number ?? driver.name.charAt(0))
-      )}
-    </span>
-  )
-}
+import CarPicture from '@/components/car/CarPicture'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /**
  * A participant to drag between sessions: picture, name and car. `drag` holds the drag handlers,
@@ -35,9 +19,9 @@ export default function DriverToken({ participant, drag, onRemove, dragging, cla
       } ${className}`}
     >
       <GripVertical aria-hidden="true" className="size-3 shrink-0 text-muted-foreground" />
-      <DriverAvatar driver={driver} className="size-5" />
+      <DriverAvatar driver={driver} label={driver.number} className="size-5" />
       <span className="flex-1 min-w-0 truncate">{driver.name}</span>
-      {car?.img && <CarPicture car={car} className="w-8 h-5" />}
+      {car?.img && <CarPicture car={car} className="size-5" />}
       {onRemove && (
         <button
           type="button"

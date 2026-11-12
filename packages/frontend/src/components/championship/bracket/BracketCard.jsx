@@ -3,8 +3,7 @@ import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react'
 import { SessionStatus, SessionType } from '@racehubos/shared'
 import { STATUS_COLORS } from '@/lib/colors'
 import { bracketTime } from './bracketTime'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 const STATUS_ICONS = {
   [SessionStatus.DRAFT]: Circle,
@@ -23,9 +22,7 @@ function GroupDriver({ entry, isRace, finished }) {
   return (
     <div data-testid="bracket-driver" className="flex items-center gap-2 text-xs">
       {entry.gridPos && <span className="w-4 text-right text-muted-foreground">{entry.gridPos}.</span>}
-      {entry.driver?.img && (
-        <img src={`${API_URL}${entry.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
-      )}
+      {entry.driver?.img && <DriverAvatar driver={entry.driver} className="size-4" />}
       <span className="flex-1 truncate">{entry.driver?.name || '?'}</span>
       {placed && (
         <span

@@ -68,7 +68,7 @@ export default function DriverFormModal({ driver, onClose }) {
       <PhotoUploadField
         value={formData.img}
         onChange={setField('img')}
-        shape="round"
+        color={formData.color}
         onError={setError}
         uploadType="drivers"
       />

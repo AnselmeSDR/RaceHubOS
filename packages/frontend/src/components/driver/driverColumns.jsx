@@ -4,7 +4,7 @@ import { editColumn } from '@/components/crud/editColumn'
 import { filteredColumn } from '@/components/crud/filteredColumn'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { driverColor } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from './DriverAvatar'
 
 /** The columns of the drivers table; `onEdit(driver)` opens a driver's form. */
 export function driverColumns(t, { onEdit }) {
@@ -16,16 +16,7 @@ export function driverColumns(t, { onEdit }) {
         const driver = row.original
         return (
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: driverColor(driver) }}
-            >
-              {driver.img ? (
-                <img src={getImgUrl(driver.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                driver.name?.charAt(0)
-              )}
-            </div>
+            <DriverAvatar driver={driver} />
             <span className="font-semibold">{driver.name}</span>
           </div>
         )

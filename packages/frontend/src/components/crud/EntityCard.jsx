@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react'
 import LapTime from '../race/LapTime'
+import PictureLayer from '@/components/picture/PictureLayer'
 
 export default function EntityCard({
   title,
@@ -35,18 +36,9 @@ export default function EntityCard({
             backgroundSize: '10px 10px',
           }}
         />
-        <div
-          className="relative w-16 h-16 rounded-full ring-4 ring-card shadow-lg overflow-hidden flex items-center justify-center"
-          style={{ backgroundColor: color }}
-        >
-          {image ? (
-            <img src={image} alt={title} className="w-full h-full object-cover" />
-          ) : icon ? (
-            <span className="text-white">{icon}</span>
-          ) : (
-            <span className="text-2xl font-bold text-white">{title?.charAt(0) || '?'}</span>
-          )}
-        </div>
+        <PictureLayer img={image} color={color} alt={title} className="relative size-16">
+          {icon ?? <span className="text-[42cqw]">{title?.charAt(0) || '?'}</span>}
+        </PictureLayer>
         {badge && <div className="absolute top-3 right-3">{badge}</div>}
       </div>
 

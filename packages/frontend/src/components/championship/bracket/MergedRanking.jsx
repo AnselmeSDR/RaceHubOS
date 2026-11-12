@@ -1,8 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next'
 import { ChevronRight } from 'lucide-react'
 import { bracketTime } from './bracketTime'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /** All qualifiers ranked by best lap once every qualifying group has finished; a hint before. */
 export default function MergedRanking({ ranking, ready }) {
@@ -32,9 +31,7 @@ export default function MergedRanking({ ranking, ready }) {
             >
               {entry.position}
             </span>
-            {entry.driver?.img && (
-              <img src={`${API_URL}${entry.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
-            )}
+            {entry.driver?.img && <DriverAvatar driver={entry.driver} className="size-4" />}
             <span className="flex-1 truncate">{entry.driver?.name || '?'}</span>
             <span className="text-muted-foreground tabular-nums">{bracketTime(entry.bestTime)}</span>
           </div>

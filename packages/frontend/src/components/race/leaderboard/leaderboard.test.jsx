@@ -93,10 +93,14 @@ describe('RowIdentity', () => {
       />
     )
     expect(screen.getByAltText('Ana Lopes')).toBeInTheDocument()
-    // The car cut out on its background: whole, with no rounded frame around it
+    // The car whole, in the common layer: no ring or shadow around it
     const carPicture = screen.getByAltText('Ferrari 499P')
     expect(carPicture).toHaveClass('object-contain')
-    expect(carPicture.parentElement.className).not.toMatch(/rounded|overflow-hidden|shadow/)
+    expect(carPicture.parentElement).toHaveClass('rounded-[20%]')
+    expect(carPicture.parentElement.className).not.toMatch(/ring|shadow/)
+    // As big as the driver's picture: a smaller square leaves a tiny car
+    expect(carPicture.parentElement).toHaveClass('size-16')
+    expect(screen.getByAltText('Ana Lopes').parentElement).toHaveClass('size-16')
     expect(screen.getByText('123')).toHaveClass('text-5xl')
     expect(screen.getByText('Lopes')).toBeInTheDocument()
     expect(screen.getByText('Ferrari 499P')).toBeInTheDocument()

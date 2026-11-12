@@ -3,28 +3,11 @@ import { DivisionScope } from '@racehubos/shared'
 import { Card } from '@/components/ui/card'
 import CardActions from '@/components/crud/CardActions'
 import CarPicture from '@/components/car/CarPicture'
-import { divisionColor, textOn } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import { divisionColor } from '@/lib/colors'
 import DivisionBadge from './DivisionBadge'
+import DivisionLogo from './DivisionLogo'
 
 const SHOWN = 3
-
-/** A division's logo, or its short name on its colour. */
-export function DivisionLogo({ division, className = 'w-20 h-20 text-xl' }) {
-  const color = divisionColor(division)
-  const label = division.shortName || division.name
-  if (division.img) {
-    return <img src={getImgUrl(division.img)} alt="" className={`${className} rounded-xl object-cover shadow-md`} />
-  }
-  return (
-    <span
-      className={`${className} rounded-xl flex items-center justify-center font-black shadow-md overflow-hidden`}
-      style={{ backgroundColor: color, color: textOn(color), fontSize: label.length > 4 ? '0.875rem' : undefined }}
-    >
-      {label}
-    </span>
-  )
-}
 
 /** A division in the grid: logo, rank, badge and its first drivers, or a category and its first cars. */
 export default function DivisionCard({ division, onClick, onEdit, onDelete }) {
@@ -73,7 +56,7 @@ export default function DivisionCard({ division, onClick, onEdit, onDelete }) {
           ) : category ? (
             <div className="flex flex-wrap gap-2">
               {members.slice(0, SHOWN).map((car) => (
-                <CarPicture key={car.id} car={car} className="w-[72px] h-[42px]" />
+                <CarPicture key={car.id} car={car} className="size-[42px]" />
               ))}
             </div>
           ) : (

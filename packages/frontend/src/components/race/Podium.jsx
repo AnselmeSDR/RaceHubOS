@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Flag, Timer, Zap } from 'lucide-react'
-import { getImgUrl } from '../../utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { SessionType } from '@racehubos/shared'
 
 function formatLapTime(ms) {
@@ -67,19 +67,7 @@ export default function Podium({ drivers = [], sessionType = SessionType.RACE, s
             const realIdx = podiumIndexOrder[visualIdx]
             return (
               <div key={sd.id} className="flex flex-col items-center flex-1 max-w-[140px]">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden mb-2 shadow-lg ring-2 ring-offset-2 ring-offset-card"
-                  style={{
-                    '--tw-ring-color': sd.driver?.color || '#6B7280',
-                    backgroundColor: sd.driver?.color || '#6B7280',
-                  }}
-                >
-                  {sd.driver?.img ? (
-                    <img src={getImgUrl(sd.driver.img)} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-lg">{sd.driver?.name?.charAt(0) || '?'}</span>
-                  )}
-                </div>
+                <DriverAvatar driver={sd.driver ?? { name: '?' }} className="size-16 mb-2" />
                 <span className="text-xs font-bold text-foreground truncate w-full text-center mb-1">
                   {sd.driver?.name?.split(' ').pop()}
                 </span>

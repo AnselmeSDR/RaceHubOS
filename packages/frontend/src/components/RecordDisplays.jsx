@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
 import LapTime from './race/LapTime'
-import { getImgUrl } from '../utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { SessionType, sessionTypeKey } from '@racehubos/shared'
 import CarPicture from '@/components/car/CarPicture'
 
@@ -55,32 +55,10 @@ export function RecordItem({
         {position === 1 ? <Trophy className="size-3.5" /> : position}
       </span>
 
-      {/* Avatars */}
-      <div className="flex items-center -space-x-2 flex-shrink-0">
-        {showDriverAvatar && driver && (
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card z-10"
-            style={{ backgroundColor: driver.color || '#6B7280' }}
-          >
-            {driver.img ? (
-              <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-            ) : (
-              <span>{driver.name?.charAt(0) || '?'}</span>
-            )}
-          </div>
-        )}
-        {showCarAvatar &&
-          car &&
-          (car.img ? (
-            <CarPicture car={car} className="w-14 h-8" />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold overflow-hidden ring-2 ring-card"
-              style={{ backgroundColor: car.color || '#6B7280' }}
-            >
-              <span>{car.brand?.charAt(0) || '?'}</span>
-            </div>
-          ))}
+      {/* Pictures, side by side: the layer has no ring to overlap them */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {showDriverAvatar && driver && <DriverAvatar driver={{ name: '?', ...driver }} alt={driver.name} />}
+        {showCarAvatar && car && <CarPicture car={car} />}
       </div>
 
       {/* Info */}

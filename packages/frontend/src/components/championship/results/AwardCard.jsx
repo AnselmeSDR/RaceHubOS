@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Activity, Clock, Heart, Timer, TrendingUp, Trophy, Zap } from 'lucide-react'
 import { GAP_COLORS } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
 import { formatLapTime } from './format'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 const AWARD_ICONS = {
   'best-lap': Timer,
@@ -77,9 +77,7 @@ export default function AwardCard({ award }) {
             {t(`results.awardTitles.${award.id}`, { defaultValue: award.title })}
           </div>
           <div className="flex items-center gap-2">
-            {award.driver?.img && (
-              <img src={getImgUrl(award.driver.img)} className="w-6 h-6 rounded-full object-cover" alt="" />
-            )}
+            {award.driver?.img && <DriverAvatar driver={award.driver} className="size-6" />}
             <span className="text-sm font-medium truncate">{award.driver?.name}</span>
           </div>
           <div className="mt-1">{renderValue()}</div>

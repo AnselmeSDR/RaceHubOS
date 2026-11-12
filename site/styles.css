@@ -36,7 +36,6 @@
   --tint: rgb(12 10 9 / 0.025);
   --shadow: 0 1px 2px rgb(12 10 9 / 0.06), 0 1px 3px rgb(12 10 9 / 0.08);
   --app-shadow: 0 30px 60px -30px rgb(28 25 23 / 0.3);
-  --face-shadow: 0 4px 8px rgb(12 10 9 / 0.15);
   --row-glow: 25%;
   --stat-label: #b5b0ac;
   --fastest-bg: #fef9c2;
@@ -89,7 +88,6 @@
   --tint: rgb(255 255 255 / 0.03);
   --shadow: none;
   --app-shadow: 0 40px 80px -40px rgb(0 0 0 / 0.9);
-  --face-shadow: 0 4px 8px rgb(0 0 0 / 0.3);
   --row-glow: 0%;
   --stat-label: #5f5f67;
   --fastest-bg: rgb(115 62 10 / 0.5);
@@ -780,7 +778,7 @@ h3 {
   right: 0;
   left: 0;
   display: grid;
-  grid-template-columns: 3.25rem 3.5rem 4.75rem 4rem minmax(0, 1fr) repeat(4, 5.5rem);
+  grid-template-columns: 3.25rem 3.5rem 4.75rem 3.5rem minmax(0, 1fr) repeat(4, 5.5rem);
   align-items: center;
   column-gap: 12px;
   height: var(--row-h);
@@ -849,15 +847,16 @@ h3 {
   color: #fb2c36;
 }
 
+/* The common picture layer of the app (PictureLayer): a square with corners at 20 %, no ring nor shadow;
+   the driver's colour only fills it when there is no portrait, a cut-out portrait keeps its transparency */
 .face {
   display: grid;
   place-items: center;
   width: 56px;
   height: 56px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 20%;
   background: var(--c);
-  box-shadow: var(--face-shadow);
   color: #fff;
   font-size: 1.25rem;
   font-weight: 900;
@@ -866,6 +865,10 @@ h3 {
 /* Three digits, a size smaller, as in the app */
 .num.long {
   font-size: calc(var(--size) * 0.75);
+}
+
+.face:has(img) {
+  background: none;
 }
 
 .face img {
@@ -884,10 +887,11 @@ h3 {
   letter-spacing: -0.02em;
 }
 
-/* The car cut out on a transparent background, whole and with no frame, as in the app (CarPicture) */
+/* The car cut out on a transparent background, whole in a square as big as the driver's, as in the app (CarPicture) */
 .livery {
-  width: 64px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
+  border-radius: 20%;
   object-fit: contain;
 }
 
@@ -981,7 +985,7 @@ h3 {
 
 @container (max-width: 820px) {
   .row {
-    grid-template-columns: 2.75rem 3rem 3.75rem 4rem minmax(0, 1fr) repeat(2, 5.25rem);
+    grid-template-columns: 2.75rem 3rem 3.75rem 3rem minmax(0, 1fr) repeat(2, 5.25rem);
   }
 
   .row .laps,
@@ -993,7 +997,8 @@ h3 {
     --row-h: 68px;
   }
 
-  .row .face {
+  .row .face,
+  .row .livery {
     width: 48px;
     height: 48px;
   }
@@ -1031,7 +1036,6 @@ h3 {
   .row .face {
     width: 40px;
     height: 40px;
-    border-radius: 8px;
     font-size: 1rem;
   }
 
@@ -1111,10 +1115,6 @@ h3 {
   width: 64px;
   height: 64px;
   margin-bottom: 8px;
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 2px var(--app-bg),
-    0 0 0 4px var(--c);
 }
 
 .place-card > b {

@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getImgUrl } from '../../utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import CarPicture from '@/components/car/CarPicture'
 
 const CONTROLLER_COLORS = {
@@ -70,13 +70,9 @@ export default function ControllerSlot({
       {(selectedDriver?.img || selectedCar?.img) && (
         <div className="flex items-center gap-2 mb-3">
           {selectedDriver?.img && (
-            <img
-              src={getImgUrl(selectedDriver.img)}
-              alt={selectedDriver.name}
-              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-            />
+            <DriverAvatar driver={selectedDriver} alt={selectedDriver.name} className="size-10" />
           )}
-          {selectedCar?.img && <CarPicture car={selectedCar} className="w-16 h-10" />}
+          {selectedCar?.img && <CarPicture car={selectedCar} className="size-10" />}
         </div>
       )}
 

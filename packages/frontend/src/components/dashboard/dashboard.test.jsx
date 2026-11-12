@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import i18n from '@/i18n'
 import { routeFetch as stubFetch } from '@/test/helpers'
 import ActiveSessionBanner from './ActiveSessionBanner'
-import DriverAvatar from './DriverAvatar'
 import DriverLeaderboardCard from './DriverLeaderboardCard'
 import QuickActions from './QuickActions'
 import RecordsCard from './RecordsCard'
@@ -47,24 +46,6 @@ describe('formatLap', () => {
     expect(formatLap(12345)).toBe('12.345s')
     expect(formatLap(0)).toBe('-')
     expect(formatLap(undefined)).toBe('-')
-  })
-})
-
-describe('DriverAvatar', () => {
-  test('the initial on the driver colour, blue by default', () => {
-    const { container, rerender } = render(<DriverAvatar driver={ana} />)
-    expect(screen.getByText('A')).toBeInTheDocument()
-    expect(container.firstChild).toHaveStyle({ backgroundColor: '#FF0000' })
-    expect(container.firstChild).toHaveClass('size-8')
-    rerender(<DriverAvatar driver={{ name: 'Zoé' }} size="size-12" />)
-    expect(container.firstChild).toHaveStyle({ backgroundColor: '#3B82F6' })
-    expect(container.firstChild).toHaveClass('size-12')
-  })
-
-  test('the picture when there is one', () => {
-    const { container } = render(<DriverAvatar driver={ben} />)
-    expect(container.querySelector('img').getAttribute('src')).toContain('ben.png')
-    expect(screen.queryByText('B')).not.toBeInTheDocument()
   })
 })
 

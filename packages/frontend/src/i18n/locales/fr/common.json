@@ -55,11 +55,39 @@
     "hint": "JPG, PNG ou GIF. Max 5MB.",
     "selectImage": "Veuillez sélectionner une image.",
     "readError": "Erreur lors de la lecture du fichier",
-    "uploadError": "Erreur lors de l'upload de l'image"
+    "uploadError": "Erreur lors de l'upload de l'image",
+    "reframe": "Recadrer",
+    "remove": "Retirer l'image"
   },
-  "imageCropper": {
+  "pictureEditor": {
     "title": "Recadrer l'image",
-    "zoom": "Zoom"
+    "hint": "Glissez l'image, zoomez à la molette ou au curseur.",
+    "zoom": "Zoom",
+    "fit": "Ajuster",
+    "fitHint": "L'image entière dans le cadre, le reste prend le fond",
+    "fill": "Remplir",
+    "fillHint": "Le cadre rempli, l'image coupée si besoin",
+    "center": "Centrer",
+    "background": "Fond",
+    "transparent": "Transparent",
+    "plain": "Couleur unie",
+    "recordColour": "Couleur de la fiche",
+    "otherColour": "Autre couleur",
+    "removeBackground": "Retirer le fond",
+    "removeBackgroundHint": "Efface depuis les bords la couleur du fond et ce qui lui ressemble",
+    "eraser": "Gomme",
+    "eraserHint": "Un clic sur l'image retire la zone de cette couleur",
+    "undo": "Défaire",
+    "original": "Image d'origine",
+    "tolerance": "Tolérance",
+    "removed": "{{percent}} % de l'image retiré.",
+    "removedLittle": "Moins de 1 % de l'image retiré : montez la tolérance pour une zone plus grande.",
+    "noPlainEdge": "Aucun fond uni à retirer sur les bords : retirez une zone à la gomme, ou gardez le fond.",
+    "nothingHere": "Rien à retirer ici : la zone est déjà transparente.",
+    "outputTransparent": "Enregistrée en PNG carré de {{side}} px, fond transparent.",
+    "outputPlain": "Enregistrée en PNG carré de {{side}} px, fond {{colour}}.",
+    "loadError": "Impossible d'ouvrir cette image.",
+    "save": "Valider"
   },
   "sidebar": {
     "title": "Barre latérale",

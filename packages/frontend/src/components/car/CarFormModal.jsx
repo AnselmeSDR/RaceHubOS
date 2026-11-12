@@ -73,7 +73,7 @@ export default function CarFormModal({ car, onClose }) {
       <PhotoUploadField
         value={formData.img}
         onChange={setField('img')}
-        shape="rect"
+        color={formData.color}
         onError={setError}
         uploadType="cars"
       />

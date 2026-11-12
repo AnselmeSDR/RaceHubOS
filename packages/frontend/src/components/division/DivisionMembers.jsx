@@ -7,7 +7,7 @@ import CarPicture from '@/components/car/CarPicture'
 import LapTime from '@/components/race/LapTime'
 import { addToDivision, removeFromDivision } from '@/lib/divisionApi'
 import { getData } from '@/lib/sessionApi'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { DivisionBadges } from './DivisionBadge'
 
 const carName = (car) => `${car.brand} ${car.model}`
@@ -29,12 +29,7 @@ const FIGURES = {
 function DriverName({ driver }) {
   return (
     <>
-      <span
-        className="size-8 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-white"
-        style={{ backgroundColor: driver.color || '#6B7280' }}
-      >
-        {driver.img ? <img src={getImgUrl(driver.img)} alt="" className="size-full object-cover" /> : driver.name[0]}
-      </span>
+      <DriverAvatar driver={driver} />
       <Link to={`/drivers/${driver.id}`} className="font-semibold truncate hover:underline">
         {driver.name}
       </Link>
@@ -53,16 +48,7 @@ function DriverName({ driver }) {
 function CarName({ car }) {
   return (
     <>
-      {car.img ? (
-        <CarPicture car={car} alt="" className="w-16 h-9" />
-      ) : (
-        <span
-          className="size-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold text-white"
-          style={{ backgroundColor: car.color || '#6B7280' }}
-        >
-          {car.brand?.[0]}
-        </span>
-      )}
+      <CarPicture car={car} alt="" className="size-9" />
       <Link to={`/cars/${car.id}`} className="min-w-0 truncate hover:underline">
         <span className="font-bold uppercase">{car.brand}</span>{' '}
         <span className="text-muted-foreground">{car.model}</span>

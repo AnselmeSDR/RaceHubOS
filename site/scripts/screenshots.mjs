@@ -386,7 +386,8 @@ function anonymize(db) {
   const texts = [
     ['Session', 'name'],
     ['Championship', 'name'],
-    ['Team', 'name'],
+    ['Division', 'name'],
+    ['Division', 'shortName'],
     ['Track', 'name'],
     ['Car', 'brand'],
     ['Car', 'model'],

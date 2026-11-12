@@ -61,7 +61,7 @@ export default function DivisionFormModal({ division, scope, onClose }) {
         label={t('form.logo')}
         value={formData.img}
         onChange={setField('img')}
-        shape="rect"
+        color={formData.color}
         onError={setError}
         uploadType="divisions"
       />

@@ -55,11 +55,39 @@
     "hint": "JPG, PNG oder GIF. Höchstens 5 MB.",
     "selectImage": "Bitte ein Bild auswählen.",
     "readError": "Datei konnte nicht gelesen werden",
-    "uploadError": "Bild konnte nicht hochgeladen werden"
+    "uploadError": "Bild konnte nicht hochgeladen werden",
+    "reframe": "Zuschneiden",
+    "remove": "Bild entfernen"
   },
-  "imageCropper": {
+  "pictureEditor": {
     "title": "Bild zuschneiden",
-    "zoom": "Vergrößerung"
+    "hint": "Bild ziehen, mit dem Mausrad oder dem Regler zoomen.",
+    "zoom": "Vergrößerung",
+    "fit": "Einpassen",
+    "fitHint": "Das ganze Bild im Rahmen, der Rest bekommt den Hintergrund",
+    "fill": "Füllen",
+    "fillHint": "Der Rahmen gefüllt, das Bild wenn nötig beschnitten",
+    "center": "Zentrieren",
+    "background": "Hintergrund",
+    "transparent": "Transparent",
+    "plain": "Einfarbig",
+    "recordColour": "Farbe des Eintrags",
+    "otherColour": "Andere Farbe",
+    "removeBackground": "Hintergrund entfernen",
+    "removeBackgroundHint": "Entfernt von den Rändern aus die Hintergrundfarbe und Ähnliches",
+    "eraser": "Radierer",
+    "eraserHint": "Ein Klick auf das Bild entfernt die Fläche dieser Farbe",
+    "undo": "Rückgängig",
+    "original": "Originalbild",
+    "tolerance": "Toleranz",
+    "removed": "{{percent}} % des Bildes entfernt.",
+    "removedLittle": "Weniger als 1 % des Bildes entfernt: Toleranz erhöhen für eine größere Fläche.",
+    "noPlainEdge": "Kein einfarbiger Hintergrund an den Rändern zu entfernen: eine Fläche mit dem Radierer entfernen oder den Hintergrund behalten.",
+    "nothingHere": "Hier gibt es nichts zu entfernen: die Fläche ist schon transparent.",
+    "outputTransparent": "Gespeichert als quadratisches PNG mit {{side}} px, transparenter Hintergrund.",
+    "outputPlain": "Gespeichert als quadratisches PNG mit {{side}} px, Hintergrund {{colour}}.",
+    "loadError": "Dieses Bild lässt sich nicht öffnen.",
+    "save": "Bestätigen"
   },
   "sidebar": {
     "title": "Seitenleiste",

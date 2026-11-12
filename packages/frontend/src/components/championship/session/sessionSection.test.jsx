@@ -348,7 +348,7 @@ describe('an automatic championship', () => {
     show(newSession({ type: SessionType.QUALIF, status: SessionStatus.ACTIVE }), { autoMode: true })
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(screen.getByText('Ben')).toBeInTheDocument()
-    expect(screen.getByRole('presentation')).toHaveAttribute('src', '/uploads/ana.png')
+    expect(screen.getByRole('presentation')).toHaveAttribute('src', '/api/img/ana.png')
   })
 
   test('its races wait for the qualifying results', () => {

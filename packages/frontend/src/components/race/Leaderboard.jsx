@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LapTime from './LapTime'
 import GapDisplay from './GapDisplay'
-import { getImgUrl } from '../../utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /**
  * Leaderboard - Real-time race leaderboard with NASCAR-style driver cards
@@ -82,20 +82,11 @@ export default function Leaderboard({ leaderboard = [] }) {
               </div>
 
               {/* Driver Photo */}
-              <div
-                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: driverColor }}
-              >
-                {driver.img ? (
-                  <img
-                    src={getImgUrl(driver.img)}
-                    alt={driver.name || 'Driver'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span>{(driver.name || 'D').charAt(0)}</span>
-                )}
-              </div>
+              <DriverAvatar
+                driver={{ ...driver, name: driver.name || 'D', color: driverColor }}
+                alt={driver.name || 'Driver'}
+                className="size-14 font-black"
+              />
 
               {/* Number - Large NASCAR style */}
               {driver.number && (
@@ -108,7 +99,7 @@ export default function Leaderboard({ leaderboard = [] }) {
 
               {/* Name & Car */}
               <div className="flex-1 min-w-0">
-                <div className="font-black text-xl text-gray-900 uppercase italic truncate">
+                <div className="font-black text-xl text-gray-900 uppercase italic truncate pr-[0.2em]">
                   {(driver.name || t('common:unknown')).split(' ').pop()}
                 </div>
                 <div className="text-sm text-gray-500 truncate">

@@ -13,16 +13,7 @@ export default function CarIdentity({ car }) {
 
   return (
     <div className="flex items-center gap-3" data-testid="car-identity">
-      {car.img ? (
-        <CarPicture car={car} className="w-16 h-10" />
-      ) : (
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0"
-          style={{ backgroundColor: color }}
-        >
-          {car.brand.charAt(0)}
-        </div>
-      )}
+      <CarPicture car={car} className="size-10" />
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-black text-lg" style={{ color }}>

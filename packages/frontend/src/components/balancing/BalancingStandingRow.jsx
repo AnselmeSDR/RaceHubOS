@@ -7,15 +7,7 @@ import CarPicture from '@/components/car/CarPicture'
 const NO_COLOR = '#6B7280'
 
 function CarThumb({ car }) {
-  if (car?.img) return <CarPicture car={car} className="w-14 h-7" />
-  return (
-    <div
-      className="w-10 h-7 rounded flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
-      style={{ backgroundColor: car?.color || NO_COLOR }}
-    >
-      {(car?.brand || 'C').charAt(0)}
-    </div>
-  )
+  return <CarPicture car={{ brand: 'C', color: NO_COLOR, ...car }} className="size-12" />
 }
 
 function Figure({ label, time, children }) {

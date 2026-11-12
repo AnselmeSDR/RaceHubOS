@@ -44,7 +44,7 @@ export default function TrackFormModal({ track, onClose }) {
         label={t('form.photoLabel')}
         value={formData.img}
         onChange={setField('img')}
-        shape="rect"
+        color={formData.color}
         onError={setError}
         uploadType="tracks"
       />

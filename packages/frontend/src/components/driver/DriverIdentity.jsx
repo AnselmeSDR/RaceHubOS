@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import LapTime from '@/components/race/LapTime'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from './DriverAvatar'
 import { driverColor } from '@/lib/colors'
 
 /** Picture, name, number, divisions and figures of a driver, at the top of their profile. */
@@ -11,16 +11,7 @@ export default function DriverIdentity({ driver }) {
 
   return (
     <div className="min-w-0 flex items-center gap-3" data-testid="driver-identity">
-      <div
-        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold ring-2 ring-offset-2 ring-offset-background"
-        style={{ backgroundColor: color, '--tw-ring-color': color }}
-      >
-        {driver.img ? (
-          <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-        ) : (
-          <span>{driver.name.charAt(0)}</span>
-        )}
-      </div>
+      <DriverAvatar driver={driver} alt={driver.name} className="size-10" />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-black text-lg" style={{ color }}>

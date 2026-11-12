@@ -3,7 +3,6 @@ import { formatLevel, levelPercent } from '@racehubos/shared'
 import { editColumn } from '@/components/crud/editColumn'
 import { filteredColumn } from '@/components/crud/filteredColumn'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
-import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
 
 /** The columns of the cars table; `onEdit(car)` opens a car's form. */
@@ -21,16 +20,7 @@ export function carColumns(t, { onEdit }) {
         const car = row.original
         return (
           <div className="flex items-center gap-3">
-            {car.img ? (
-              <CarPicture car={car} alt="" className="w-14 h-8" />
-            ) : (
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: carColor(car) }}
-              >
-                {car.brand?.charAt(0)}
-              </div>
-            )}
+            <CarPicture car={car} alt="" />
             <span className="font-medium">{car.model}</span>
           </div>
         )

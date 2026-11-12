@@ -39,7 +39,7 @@ describe('CarIdentity', () => {
     for (const text of ['1973', formatLevel(80), formatLevel(50), formatLevel(100), '2 Sessions', 'Record', '4.321']) {
       expect(identity).toHaveTextContent(text)
     }
-    expect(within(identity).getByText('P')).toHaveStyle({ backgroundColor: '#FF0000' })
+    expect(within(identity).getByText('P').parentElement).toHaveStyle({ backgroundColor: '#FF0000' })
   })
 
   test('a picture replaces the initial', () => {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Timer } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import DriverAvatar from './DriverAvatar'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { formatLap, PODIUM_COLORS } from './format'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'

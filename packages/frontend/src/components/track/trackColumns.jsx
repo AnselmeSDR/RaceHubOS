@@ -1,7 +1,6 @@
-import { MapPin, RefreshCw, Rocket, Clock } from 'lucide-react'
+import { RefreshCw, Rocket, Clock } from 'lucide-react'
 import { editColumn } from '@/components/crud/editColumn'
-import { trackColor } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import TrackPicture from './TrackPicture'
 
 function formatTime(ms) {
   if (!ms) return '-'
@@ -18,16 +17,7 @@ export function trackColumns(t, { onEdit }) {
         const track = row.original
         return (
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: trackColor(track) }}
-            >
-              {track.img ? (
-                <img src={getImgUrl(track.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <MapPin className="w-4 h-4" />
-              )}
-            </div>
+            <TrackPicture track={track} />
             <span className="font-semibold">{track.name}</span>
           </div>
         )

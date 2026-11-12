@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { GAP_COLORS } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
 import { formatTotalTime } from './format'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /** The final standings: laps, total time and the gap to the leader, in laps or seconds. */
 export default function ResultsStandingsTable({ standings }) {
@@ -61,9 +61,7 @@ export default function ResultsStandingsTable({ standings }) {
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    {entry.driver?.img && (
-                      <img src={getImgUrl(entry.driver.img)} className="w-6 h-6 rounded-full object-cover" alt="" />
-                    )}
+                    {entry.driver?.img && <DriverAvatar driver={entry.driver} className="size-6" />}
                     <div>
                       <div className="font-medium">{entry.driver?.name}</div>
                       {entry.car && (

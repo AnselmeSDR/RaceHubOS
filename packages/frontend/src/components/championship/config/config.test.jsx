@@ -439,7 +439,7 @@ describe('ChampionshipParticipantsPanel', () => {
     const { onChanged } = panel()
     expect(screen.getByText('Participants (2)')).toBeInTheDocument()
     const panelEl = screen.getByTestId('championship-config-participants')
-    expect(panelEl.querySelector('img')).toHaveAttribute('src', '/uploads/ana.png')
+    expect(panelEl.querySelector('img')).toHaveAttribute('src', '/api/img/ana.png')
     const add = screen.getByRole('combobox', { name: 'Add a driver...' })
     expect(
       within(add)

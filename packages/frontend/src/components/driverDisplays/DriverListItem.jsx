@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
@@ -24,18 +24,7 @@ export default function DriverListItem({ driver, position, selected, onClick, sh
       )}
 
       {/* Driver photo/avatar */}
-      <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black text-lg ring-2 ring-white shadow-md flex-shrink-0"
-        style={{
-          background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)`,
-        }}
-      >
-        {driver.img ? (
-          <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full rounded-full object-cover" />
-        ) : (
-          <span>{driver.name.charAt(0)}</span>
-        )}
-      </div>
+      <DriverAvatar driver={driver} alt={driver.name} className="size-12 font-black" />
 
       {/* Driver number - NASCAR style (supports 3 digits) */}
       {driver.number && (

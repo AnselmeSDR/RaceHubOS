@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LapTime from '../LapTime'
-import { getImgUrl } from '../../../utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 export default function FreePracticeEntry({ entry, index }) {
   const { t } = useTranslation('race')
@@ -58,16 +58,11 @@ export default function FreePracticeEntry({ entry, index }) {
       </div>
 
       {/* Driver Photo */}
-      <div
-        className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
-        style={{ backgroundColor: driverColor }}
-      >
-        {entry.driver?.img ? (
-          <img src={getImgUrl(entry.driver.img)} alt={entry.driver.name} className="w-full h-full object-cover" />
-        ) : (
-          <span>{(entry.driver?.name || entry.controller).charAt(0)}</span>
-        )}
-      </div>
+      <DriverAvatar
+        driver={{ ...entry.driver, name: entry.driver?.name || String(entry.controller), color: driverColor }}
+        alt={entry.driver?.name}
+        className="size-14 font-black"
+      />
 
       {/* Number - Large NASCAR style */}
       {entry.driver?.number && (
@@ -80,7 +75,7 @@ export default function FreePracticeEntry({ entry, index }) {
 
       {/* Name & Car */}
       <div className="flex-1 min-w-0">
-        <div className="font-black text-xl text-gray-900 uppercase italic truncate">
+        <div className="font-black text-xl text-gray-900 uppercase italic truncate pr-[0.2em]">
           {entry.driver?.name
             ? entry.driver.name.split(' ').pop()
             : t('freePracticeEntry.controller', { number: entry.controller })}

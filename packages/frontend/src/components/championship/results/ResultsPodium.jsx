@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /** The championship's top three on steps, the winner in the middle; nothing with fewer than two. */
 export default function ResultsPodium({ podium }) {
@@ -28,19 +28,7 @@ export default function ResultsPodium({ podium }) {
         const realIdx = podiumIndexOrder[displayIdx]
         return (
           <div key={entry.driverId} className="flex flex-col items-center w-32">
-            <div
-              className="w-20 h-20 rounded-full border-3 overflow-hidden mb-2 flex items-center justify-center text-white text-xl font-bold shadow-lg"
-              style={{
-                borderColor: realIdx === 0 ? '#facc15' : realIdx === 1 ? '#d1d5db' : '#fb923c',
-                backgroundColor: entry.driver?.color || '#6B7280',
-              }}
-            >
-              {entry.driver?.img ? (
-                <img src={getImgUrl(entry.driver.img)} className="w-full h-full object-cover" alt="" />
-              ) : (
-                entry.driver?.name?.charAt(0) || '?'
-              )}
-            </div>
+            <DriverAvatar driver={entry.driver ?? { name: '?' }} className="size-20 mb-2" />
             <span className="text-sm font-bold mb-0.5">{entry.driver?.name}</span>
             <span className="text-[10px] text-muted-foreground mb-1">
               {t('results.lapsCount', { count: entry.totalLaps })}

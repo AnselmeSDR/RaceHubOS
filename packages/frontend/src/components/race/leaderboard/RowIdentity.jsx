@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useApp } from '@/context/AppContext'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import CarPicture from '@/components/car/CarPicture'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 
@@ -16,18 +16,14 @@ const numberSize = (number, expanded) => {
 export default function RowIdentity({ driver, car, color, expanded }) {
   const { isDark } = useApp()
   const { t } = useTranslation('race')
+  const pictureSize = expanded ? 'size-16' : 'size-14'
   return (
     <>
-      <div
-        className={`${expanded ? 'w-16 h-16' : 'w-14 h-14'} rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0`}
-        style={{ backgroundColor: color }}
-      >
-        {driver.img ? (
-          <img src={getImgUrl(driver.img)} alt={driver.name || 'Driver'} className="w-full h-full object-cover" />
-        ) : (
-          <span>{(driver.name || 'D').charAt(0)}</span>
-        )}
-      </div>
+      <DriverAvatar
+        driver={{ ...driver, name: driver.name || 'D', color }}
+        alt={driver.name || 'Driver'}
+        className={`${pictureSize} font-black`}
+      />
 
       {/* Number - Large NASCAR style (supports 3 digits) */}
       {driver.number && (
@@ -45,11 +41,15 @@ export default function RowIdentity({ driver, car, color, expanded }) {
         </div>
       )}
 
-      {car.img && <CarPicture car={car} className="w-16 h-10" />}
+      {/* As big as the driver's picture: a car is wider than tall, a smaller square makes it tiny */}
+      {car.img && <CarPicture car={car} className={pictureSize} />}
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate`}>
+          {/* Room on the right for the italic slant, which truncate would clip */}
+          <span
+            className={`font-black ${expanded ? 'text-2xl' : 'text-xl'} text-foreground uppercase italic truncate pr-[0.2em]`}
+          >
             {(driver.name || t('common:unknown')).split(' ').pop()}
           </span>
           <DivisionBadges divisions={driver.divisions} className="flex shrink-0 items-center gap-1" />

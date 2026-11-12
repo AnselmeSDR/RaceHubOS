@@ -1,7 +1,7 @@
 import { Trophy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import LinkCell from '@/components/crud/LinkCell'
 import { filteredColumn as filtered } from '@/components/crud/filteredColumn'
 import CarPicture from '@/components/car/CarPicture'
@@ -59,16 +59,7 @@ export function statsColumns(t, { lang, onOpen }) {
             onOpen={onOpen}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0"
-              style={{ backgroundColor: driver?.color || '#666' }}
-            >
-              {driver?.img ? (
-                <img src={getImgUrl(driver.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                driver?.name?.charAt(0)
-              )}
-            </div>
+            {driver && <DriverAvatar driver={driver} />}
             <span className="font-medium truncate">{driver?.name}</span>
           </LinkCell>
         )
@@ -87,16 +78,7 @@ export function statsColumns(t, { lang, onOpen }) {
             onOpen={onOpen}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
-            {car?.img ? (
-              <CarPicture car={car} alt="" className="w-14 h-8" />
-            ) : (
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: car?.color || '#666' }}
-              >
-                {car?.brand?.charAt(0)}
-              </div>
-            )}
+            {car && <CarPicture car={car} alt="" />}
             <span className="text-muted-foreground truncate">
               {car?.brand} {car?.model}
             </span>

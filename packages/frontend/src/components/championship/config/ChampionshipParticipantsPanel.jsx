@@ -4,8 +4,7 @@ import { UserPlus, Users, X } from 'lucide-react'
 import { ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { setChampionshipParticipants } from './championshipConfigApi'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /**
  * The drivers of an automatic championship; none can leave once a qualifying session has started.
@@ -53,9 +52,7 @@ export default function ChampionshipParticipantsPanel({
         {participants.map((p, i) => (
           <div key={p.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
             <span className="text-muted-foreground w-4 text-right">{i + 1}</span>
-            {p.driver?.img && (
-              <img src={`${API_URL}${p.driver.img}`} className="w-5 h-5 rounded-full object-cover" alt="" />
-            )}
+            {p.driver?.img && <DriverAvatar driver={p.driver} className="size-5" />}
             <span className="font-medium flex-1 truncate">{p.driver?.name}</span>
             <DivisionBadges
               divisions={p.driver?.divisions}

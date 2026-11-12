@@ -106,7 +106,10 @@ describe('DriverGridPosition', () => {
       <DriverGridPosition driver={{ ...plain, img: '/api/img/b.png', number: 123 }} side="right" />
     )
     expect(container.firstChild).toHaveClass('flex-row-reverse')
-    expect(screen.getByAltText('Bo')).toBeInTheDocument()
+    // The starting grid shows the picture in the common layer, without shadow
+    const picture = screen.getByAltText('Bo')
+    expect(picture.parentElement).toHaveClass('rounded-[20%]')
+    expect(picture.parentElement.className).not.toMatch(/shadow|ring/)
     expect(screen.getByText('123')).toHaveClass('text-4xl')
   })
 

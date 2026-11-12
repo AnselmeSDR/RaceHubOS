@@ -89,10 +89,10 @@ describe('statsColumns', () => {
     expect(document.querySelector('img').getAttribute('src')).toBe('/api/img/car.png')
     cleanup()
     cell('driver')
-    expect(screen.getByText('A')).toHaveStyle({ backgroundColor: '#FF0000' })
+    expect(screen.getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FF0000' })
     cleanup()
     cell('driver', { driver: { name: 'Bo' } })
-    expect(screen.getByText('B')).toHaveStyle({ backgroundColor: '#666' })
+    expect(screen.getByText('B').parentElement).toHaveStyle({ backgroundColor: '#3B82F6' })
   })
 
   test('a dash outside championships or without a date', () => {

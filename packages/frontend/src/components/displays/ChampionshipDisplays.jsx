@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Flag, Clock, RefreshCw, Trophy, FlaskConical } from 'lucide-react'
 import Leaderboard from '@/components/race/Leaderboard'
 import LapTime from '@/components/race/LapTime'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import FreePracticeLeaderboard from '@/components/race/freePractice/FreePracticeLeaderboard'
 import { SessionStatus, SessionType, sessionTypeFullKey } from '@racehubos/shared'
 import SectionHeader from './SectionHeader'
@@ -257,16 +258,7 @@ export default function ChampionshipDisplays({ drivers, cars, loading }) {
                 >
                   {idx + 1}
                 </span>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: driver.color || '#6B7280' }}
-                >
-                  {driver.img ? (
-                    <img src={driver.img} alt="" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    driver.name?.charAt(0) || '?'
-                  )}
-                </div>
+                <DriverAvatar driver={{ name: '?', ...driver }} />
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 dark:text-white text-sm">{driver.name}</div>
                 </div>

@@ -1,4 +1,4 @@
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
@@ -34,16 +34,7 @@ export default function DriverSelectCard({ driver, selected, onToggle }) {
 
       <div className="flex items-center gap-3">
         {/* Photo */}
-        <div
-          className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-black text-2xl shadow-lg overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: driver.color }}
-        >
-          {driver.img ? (
-            <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-          ) : (
-            <span>{driver.name.charAt(0)}</span>
-          )}
-        </div>
+        <DriverAvatar driver={driver} alt={driver.name} className="size-16 font-black" />
 
         {/* Number - Large (supports 3 digits) */}
         {driver.number && (

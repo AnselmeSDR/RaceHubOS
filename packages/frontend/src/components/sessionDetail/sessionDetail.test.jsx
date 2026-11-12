@@ -177,12 +177,14 @@ describe('SessionLapHistory', () => {
     const [, first, second] = screen.getAllByRole('row')
     expect(first).toHaveClass('bg-purple-500/10')
     expect(within(first).getByText('Ana')).toBeInTheDocument()
-    expect(within(first).getByText('A')).toHaveStyle({ backgroundColor: '#FF0000' })
+    // The driver's mark is the common picture layer, its initial on its colour
+    expect(within(first).getByText('A').parentElement).toHaveClass('rounded-[20%]')
+    expect(within(first).getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FF0000' })
     expect(first).toHaveTextContent('Ferrari 499P')
     // A lap of an unknown controller
     expect(second).not.toHaveClass('bg-purple-500/10')
     expect(within(second).getByText('Ctrl 6')).toBeInTheDocument()
-    expect(within(second).getByText('?')).toHaveStyle({ backgroundColor: '#6B7280' })
+    expect(within(second).getByText('?').parentElement).toHaveStyle({ backgroundColor: '#6B7280' })
   })
 
   test('none without laps, nor for a balancing session', () => {

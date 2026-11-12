@@ -1,6 +1,6 @@
 import { BarChart3, Flag, Trophy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import StatBox from './StatBox'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 
@@ -36,22 +36,7 @@ export default function DriverProfileHeader({ driver }) {
         <div className="flex flex-col sm:flex-row items-start gap-6">
           {/* Large avatar */}
           <div className="relative flex-shrink-0">
-            <div
-              className="absolute inset-0 rounded-2xl blur-xl opacity-50"
-              style={{ backgroundColor: driver.color }}
-            />
-            <div
-              className="relative w-32 h-32 rounded-2xl flex items-center justify-center text-white font-black text-5xl ring-4 ring-white shadow-2xl overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${driver.color} 0%, ${driver.color}CC 100%)`,
-              }}
-            >
-              {driver.img ? (
-                <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="drop-shadow-lg">{driver.name.charAt(0)}</span>
-              )}
-            </div>
+            <DriverAvatar driver={driver} alt={driver.name} className="size-32 font-black" />
 
             {/* Number badge overlay (supports 3 digits) */}
             {driver.number && (

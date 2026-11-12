@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { SessionType } from '@racehubos/shared'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import StandingStats from './StandingStats'
 import { podiumBadge, podiumRow } from '@/lib/podium'
 import { lapCount } from './standingsOrder'
@@ -20,16 +20,7 @@ export default function StandingRow({ standing, driver, position, gap, tab }) {
         {position}
       </span>
 
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
-        style={{ backgroundColor: driver.color || '#6B7280' }}
-      >
-        {driver.img ? (
-          <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-        ) : (
-          driver.name?.charAt(0) || '?'
-        )}
-      </div>
+      <DriverAvatar driver={{ name: '?', ...driver }} alt={driver.name} />
 
       <div className="flex-1 min-w-0">
         <div className="font-medium text-foreground text-sm truncate">{driver.name}</div>

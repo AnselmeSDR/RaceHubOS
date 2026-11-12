@@ -11,9 +11,9 @@ export default function CarSelect({ cars, value, onChange, noneLabel, label, des
   return (
     <div className={`flex items-center gap-2 min-w-0 ${className}`}>
       {car?.img ? (
-        <CarPicture car={car} className="w-11 h-7" />
+        <CarPicture car={car} className="size-7" />
       ) : (
-        <span aria-hidden="true" className="w-11 h-7 shrink-0 rounded border border-dashed border-border" />
+        <span aria-hidden="true" className="size-7 shrink-0 rounded-[20%] border border-dashed border-border" />
       )}
       <select
         aria-label={label}

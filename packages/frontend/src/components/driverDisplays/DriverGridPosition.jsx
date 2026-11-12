@@ -1,5 +1,5 @@
 import { useApp } from '@/context/AppContext'
-import { getImgUrl } from '@/utils/image'
+import DriverAvatar from '@/components/driver/DriverAvatar'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
@@ -24,16 +24,7 @@ export default function DriverGridPosition({ driver, subtitle, side = 'left' }) 
         }}
       >
         {/* Photo */}
-        <div
-          className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-md overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: driverColor }}
-        >
-          {driver.img ? (
-            <img src={getImgUrl(driver.img)} alt={driver.name} className="w-full h-full object-cover" />
-          ) : (
-            <span>{driver.name.charAt(0)}</span>
-          )}
-        </div>
+        <DriverAvatar driver={{ ...driver, color: driverColor }} alt={driver.name} className="size-14 font-black" />
 
         {/* Number - Large NASCAR style (supports 3 digits) */}
         {driver.number && (
@@ -53,7 +44,7 @@ export default function DriverGridPosition({ driver, subtitle, side = 'left' }) 
 
         {/* Name */}
         <div className="flex-1 min-w-0">
-          <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
+          <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate pr-[0.2em]">
             {driver.name.split(' ').pop()}
           </div>
           {subtitle && <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{subtitle}</div>}

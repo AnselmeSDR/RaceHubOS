@@ -55,11 +55,39 @@
     "hint": "JPG, PNG or GIF. Max 5MB.",
     "selectImage": "Please select an image.",
     "readError": "Error reading the file",
-    "uploadError": "Error uploading the image"
+    "uploadError": "Error uploading the image",
+    "reframe": "Reframe",
+    "remove": "Remove the picture"
   },
-  "imageCropper": {
-    "title": "Crop image",
-    "zoom": "Zoom"
+  "pictureEditor": {
+    "title": "Frame the picture",
+    "hint": "Drag the picture, zoom with the wheel or the slider.",
+    "zoom": "Zoom",
+    "fit": "Fit",
+    "fitHint": "The whole picture in the frame, the rest takes the background",
+    "fill": "Fill",
+    "fillHint": "The frame filled, the picture cut if needed",
+    "center": "Centre",
+    "background": "Background",
+    "transparent": "Transparent",
+    "plain": "Plain colour",
+    "recordColour": "The record's colour",
+    "otherColour": "Other colour",
+    "removeBackground": "Remove background",
+    "removeBackgroundHint": "Erases from the edges the background colour and what looks like it",
+    "eraser": "Eraser",
+    "eraserHint": "A click on the picture removes the area of that colour",
+    "undo": "Undo",
+    "original": "Original picture",
+    "tolerance": "Tolerance",
+    "removed": "{{percent}} % of the picture removed.",
+    "removedLittle": "Less than 1 % of the picture removed: raise the tolerance for a larger area.",
+    "noPlainEdge": "No plain background to remove on the edges: remove an area with the eraser, or keep the background.",
+    "nothingHere": "Nothing to remove here: the area is already transparent.",
+    "outputTransparent": "Saved as a square PNG of {{side}} px, transparent background.",
+    "outputPlain": "Saved as a square PNG of {{side}} px, {{colour}} background.",
+    "loadError": "This picture cannot be opened.",
+    "save": "Confirm"
   },
   "sidebar": {
     "title": "Sidebar",

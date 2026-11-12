@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : images personnalisées</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --softer: #fafaf9;
+  --primary: #4338ca;
+  --card: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+.page-title h1 { margin: 0 0 6px; font-size: 28px; }
+.page-title p, .page-title li { color: var(--muted); max-width: 940px; line-height: 1.5; }
+.page-title ul { margin: 6px 0 0; padding-left: 20px; }
+.screen > h2 { margin: 0 0 4px; font-size: 20px; }
+.screen > .why { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 940px; }
+.stage { background: var(--soft); border-radius: 16px; padding: 28px; overflow-x: auto; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+button { font: 500 13px Inter, system-ui, sans-serif; cursor: pointer; }
+.btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 0 12px; height: 32px; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { background: var(--softer); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.on { background: #eef2ff; border-color: #a5b4fc; color: var(--primary); font-weight: 600; }
+.btn.save { border: none; background: var(--primary); color: #fff; font-weight: 600; }
+.seg { display: inline-flex; background: var(--soft); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; border-radius: 7px; padding: 5px 11px; color: var(--muted); }
+.seg button.on { background: #fff; color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.mock-note { width: 100%; font-size: 12px; color: var(--faint); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mock-note b { color: var(--muted); }
+.mock-note input[type=range] { width: 110px; accent-color: var(--primary); }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* The cropper, in the app's modal */
+.modal { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(28,25,23,.1); padding: 20px; display: flex; flex-direction: column; gap: 12px; width: 562px; }
+.modal-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.modal-head b { font-size: 17px; }
+.modal-head span { font-size: 13px; color: var(--faint); }
+#stageCanvas { width: 520px; height: 340px; border-radius: 10px; cursor: grab; touch-action: none; display: block; }
+#stageCanvas:active { cursor: grabbing; }
+#stageCanvas.eraser { cursor: crosshair; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.row > label { font-size: 13px; font-weight: 600; min-width: 46px; }
+.row input[type=range] { flex: 1; min-width: 120px; accent-color: var(--primary); }
+.row .val { font: 600 12px ui-monospace, monospace; width: 46px; text-align: right; color: var(--muted); }
+.group { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.swatch { width: 24px; height: 24px; border-radius: 6px; border: 1px solid rgba(0,0,0,.15); padding: 0; }
+.swatch.on { outline: 2px solid var(--primary); outline-offset: 2px; }
+.swatch.entity { position: relative; }
+.swatch.entity::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px; border-radius: 99px; background: #fff; border: 1px solid #a8a29e; }
+input[type=color] { width: 30px; height: 26px; border: 1px solid var(--border); border-radius: 6px; padding: 1px; background: #fff; }
+.msg { font-size: 12px; color: var(--faint); }
+.msg.warn { color: #9a3412; }
+.out { margin: 0; font-size: 12px; color: var(--muted); background: var(--softer); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
+
+/* Result previews */
+.results { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+.results h3 { margin: 0; font-size: 15px; }
+.results .hint { margin: -6px 0 0; font-size: 12px; color: var(--faint); }
+.tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+.tile { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 118px; }
+.tile .shot { min-height: 84px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.tile .name { font-size: 12px; font-weight: 600; text-align: center; }
+.tile .where { font-size: 11px; color: var(--faint); text-align: center; max-width: 170px; line-height: 1.35; }
+.tile .note { font-size: 11px; color: #9a3412; background: #ffedd5; border-radius: 6px; padding: 2px 6px; text-align: center; max-width: 170px; }
+canvas.free { display: block; }
+.pid { position: absolute; top: 8px; left: 8px; color: #fff; font: 800 11px Inter, system-ui, sans-serif; border-radius: 999px; padding: 1px 7px; }
+
+/* Today's frames (before / after only) */
+.avatar { border-radius: 999px; overflow: hidden; display: inline-flex; flex-shrink: 0; }
+.avatar.ring { box-shadow: 0 0 0 4px #fff, 0 8px 18px rgba(0,0,0,.18); }
+.shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); border-radius: 12px; }
+
+/* No picture: the colour fills the same layer */
+.fallback { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; overflow: hidden; text-align: center; line-height: 1; }
+
+/* Everywhere: light / dark */
+.everywhere { background: var(--soft); border-radius: 16px; padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 22px; }
+.everywhere.dark { --card: #1c1917; --border: #44403c; --faint: #a8a29e; background: #0c0a09; color: #e7e5e4; }
+.everywhere.dark .tile .note { background: #431407; color: #fdba74; }
+.everywhere h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+.everywhere h3 small { font-weight: 500; color: var(--faint); font-size: 12px; }
+.kind-desc { margin: -4px 0 12px; font-size: 13px; color: var(--faint); max-width: 900px; line-height: 1.45; }
+
+/* Before / after */
+.pairs { display: flex; flex-wrap: wrap; gap: 20px; }
+.pair { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px; width: 400px; display: flex; flex-direction: column; gap: 12px; }
+.pair h4 { margin: 0; font-size: 14px; }
+.pair p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.ba { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; }
+.ba > div { background: var(--softer); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 150px; justify-content: space-between; }
+.ba .slot { display: flex; gap: 14px; align-items: flex-end; justify-content: center; flex: 1; }
+.ba .slot figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--faint); }
+.ba .tag { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
+.ba .before .tag { background: #fee2e2; color: #991b1b; }
+.ba .after .tag { background: #dcfce7; color: #166534; }
+
+
+/* Decisions */
+.decisions { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; max-width: 980px; }
+.decisions ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+.decisions li { line-height: 1.5; color: var(--muted); }
+.decisions li b { color: var(--fg); }
+code { font-size: 12px; background: var(--soft); border-radius: 4px; padding: 1px 4px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="page-title">
+  <h1>Images personnalisées : un calque carré arrondi partout</h1>
+  <p>Les images envoyées pour les pilotes, voitures, circuits et divisions s'affichent toutes dans <b>le même calque : un carré aux coins arrondis, sans bordure</b> (ni anneau, ni ombre, ni tuile de couleur derrière). Ce qui n'est pas l'image est <b>transparent ou d'une couleur unie</b>, choisi à l'envoi. Aujourd'hui : JPEG sans transparence, pas de dézoom, un cadre différent par endroit, fichiers trop lourds, recadreur non traduit.</p>
+</header>
+
+<!-- 1. The cropper -->
+<section class="screen">
+  <h2>1. Le recadreur</h2>
+  <p class="why">Il s'ouvre dans une fenêtre de l'app, traduite. Le cadre est toujours carré. Le zoom descend à 10 % : l'image peut tenir entière dans le cadre, le reste prend le fond choisi (l'inverse du recadrage). Le damier montre ce qui sera transparent. « Retirer le fond » efface un fond uni à partir des bords, la gomme retire la zone cliquée ; la tolérance se règle après coup. Essayez aussi avec votre propre image.</p>
+  <div class="stage">
+    <div class="mock-note">
+      <b>Maquette :</b>
+      <span class="seg" id="typeSeg"></span>
+      <span class="seg" id="sampleSeg"></span>
+      <span class="btn file-btn">Votre image…<input type="file" id="fileInput" accept="image/*"></span>
+      <span>Arrondi du calque <input type="range" id="radius" min="0" max="50" step="1" value="20"> <b id="radiusVal">20 %</b> (partout)</span>
+    </div>
+    <div class="modal">
+      <div class="modal-head"><b>Recadrer l'image</b><span>Glissez l'image, zoomez à la molette ou au curseur.</span></div>
+      <canvas id="stageCanvas"></canvas>
+      <div class="row">
+        <label for="zoom">Zoom</label>
+        <input type="range" id="zoom" min="10" max="300" step="1">
+        <span class="val" id="zoomVal">100 %</span>
+        <button class="btn" id="fitBtn" title="L'image entière dans le cadre, le reste prend le fond">Ajuster</button>
+        <button class="btn" id="fillBtn" title="Le cadre rempli, l'image coupée si besoin">Remplir</button>
+        <button class="btn" id="centerBtn">Centrer</button>
+      </div>
+      <div class="group">
+        <div class="row">
+          <label>Fond</label>
+          <span class="seg" id="bgSeg"><button data-bg="none">Transparent</button><button data-bg="color">Couleur unie</button></span>
+          <span class="row" id="swatches"></span>
+        </div>
+        <div class="row">
+          <button class="btn" id="removeBtn" title="Efface depuis les bords la couleur du fond et ce qui lui ressemble">Retirer le fond</button>
+          <button class="btn" id="eraserBtn" title="Un clic sur l'image retire la zone de cette couleur">Gomme</button>
+          <button class="btn" id="undoBtn">Annuler</button>
+          <button class="btn" id="originalBtn">Image d'origine</button>
+        </div>
+        <div class="row">
+          <label for="tolerance">Tolérance</label>
+          <input type="range" id="tolerance" min="0" max="100" step="1" value="25">
+          <span class="val" id="toleranceVal">25</span>
+        </div>
+        <span class="msg" id="removeMsg"></span>
+      </div>
+      <p class="out" id="outInfo"></p>
+      <div class="modal-foot"><button class="btn">Annuler</button><button class="btn save">Valider</button></div>
+    </div>
+    <div class="results">
+      <h3>Aperçu dans l'app</h3>
+      <p class="hint" id="resultHint"></p>
+      <div class="tiles" id="previewTiles"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Before / after -->
+<section class="screen">
+  <h2>2. Avant / après</h2>
+  <p class="why">Les cas qui posent problème aujourd'hui, avec les images de la base. « Retirer le fond » y est calculé pour de vrai, à la tolérance par défaut.</p>
+  <div class="stage"><div class="pairs" id="pairs"></div></div>
+</section>
+
+<!-- 3. Everywhere -->
+<section class="screen">
+  <h2>3. Partout où une image envoyée apparaît</h2>
+  <p class="why">À la taille réelle, avec l'image, le cadrage et le fond choisis dans le recadreur (changez-les en 1, tout se met à jour).</p>
+  <div class="row" style="margin-bottom:12px"><span class="seg" id="themeSeg"><button class="on" data-theme="light">Clair</button><button data-theme="dark">Sombre</button></span></div>
+  <div class="everywhere" id="everywhere"></div>
+</section>
+
+<!-- 4. Decisions -->
+<section class="screen">
+  <h2>4. Décisions (validées le 2026-11-12)</h2>
+  <div class="decisions">
+    <ol>
+      <li><b>Un seul calque partout : carré, coins arrondis à <span id="radiusText">20 %</span> du côté</b> (même allure de 16 à 80 px), sans bordure, anneau, ombre ni couleur derrière. Les coins sont arrondis à l'affichage : le fichier reste un carré. Sans image, la couleur de la fiche remplit le même calque (initiale, icône du circuit, nom court de la division, qui n'est plus coupé par le rond).</li>
+      <li><b>Fond transparent ou couleur unie</b>, choisi au recadrage et enregistré dans le fichier. La couleur de la fiche est proposée en premier (pastille marquée d'un point). Changer ensuite la couleur de la fiche ne change pas l'image : il faut la recadrer.</li>
+      <li><b>« Retirer le fond »</b> efface un fond uni à partir des bords, la gomme retire une zone de plus, « Annuler » revient en arrière, la tolérance se règle après coup. Un fond de photo (X-Wald) ne s'enlève pas ainsi : le détourage automatique par IA serait un add-on, plus tard.</li>
+      <li><b>Voiture aussi dans le carré.</b> Le calque prend la hauteur de la place d'aujourd'hui : carte 80 × 80 au lieu de 144 × 80, listes 32 × 32 au lieu de 56 × 32. Une voiture large y paraît plus petite (V1 à V9).</li>
+      <li><b>Fichier : PNG carré, 512 px de côté au plus</b>, jamais agrandi.</li>
+      <li><b>Images déjà envoyées : inchangées</b>, affichées dans le calque. Un bouton « Recadrer » à côté de « Changer » rouvre le recadreur sur l'image actuelle.</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<script src="images-samples.js"></script>
+<script>
+const dpr = Math.max(2, window.devicePixelRatio || 1);
+let radius = 0.2;
+
+/** Each kind: its samples (data URIs, so the canvas may read their pixels) and the colour of their record. */
+const KINDS = {
+  driver: {
+    label: 'Pilote',
+    samples: [
+      { label: 'Portrait détouré (GRE)', key: 'driver-gre', color: '#0a2180', name: 'Amelia GRE' },
+      { label: 'Portrait détouré (PEL)', key: 'driver-pel', color: '#a73044', name: 'Damien PEL' },
+    ],
+  },
+  car: {
+    label: 'Voiture',
+    samples: [
+      { label: 'Photo sur fond noir', key: 'car-black', color: '#b0b0b0', name: 'AMG GT3 #8' },
+      { label: 'PNG détouré', key: 'car-cut', color: '#b0b0b0', name: 'AMG GT3 #8' },
+    ],
+  },
+  track: {
+    label: 'Circuit',
+    samples: [{ label: 'Logo sur photo (X-Wald)', key: 'track-xwald', color: '#478060', name: 'X-Wald Ring' }],
+  },
+  division: {
+    label: 'Division',
+    samples: [
+      { label: 'Insigne BRONZE', key: 'div-bronze', color: '#945434', name: 'BRONZE' },
+      { label: 'Blason sur fond noir', key: 'div-crest', color: '#7c2d12', name: 'Blason' },
+    ],
+  },
+};
+for (const k of Object.values(KINDS)) for (const s of k.samples) s.src = globalThis.SAMPLES[s.key];
+
+/** The framing chosen per kind: sample, scale (1 = fills the frame), offset in frame widths, background. */
+const state = {
+  driver: { sample: 0, s: 1, ox: 0, oy: 0, bg: null },
+  car: { sample: 0, s: 1, ox: 0, oy: 0, bg: null },
+  track: { sample: 0, s: 1, ox: 0, oy: 0, bg: null },
+  division: { sample: 0, s: 1, ox: 0, oy: 0, bg: null },
+};
+let kind = 'car';
+const images = {};
+/** Edited copies, per kind and sample: the canvas and the undo history. */
+const edits = new Map();
+const editKey = (k) => `${k}:${state[k].sample}`;
+const sampleOf = (k) => KINDS[k].samples[state[k].sample];
+
+function load(src) {
+  if (images[src]) return images[src];
+  images[src] = new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  return images[src];
+}
+
+/** What the kind shows: the edited copy, or the sample itself. */
+async function source(k) {
+  return edits.get(editKey(k))?.canvas ?? (await load(sampleOf(k).src));
+}
+
+const dims = (img) => [img.naturalWidth || img.width, img.naturalHeight || img.height];
+
+// --- Drawing ---
+const checker = (() => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 16;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, 16, 16);
+  x.fillStyle = '#e2e2e2'; x.fillRect(0, 0, 8, 8); x.fillRect(8, 8, 8, 8);
+  return c;
+})();
+
+function layerPath(ctx, x, y, size) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, size, size, size * radius);
+}
+
+/** Where the image falls in the square frame `b` ({ x, y, w }) as framed by `st`. */
+function placement(img, st, b) {
+  const [nw, nh] = dims(img);
+  const r = nw / nh;
+  const iw = Math.max(1, r) * st.s * b.w;
+  return { iw, ih: iw / r, cx: b.x + b.w / 2 + st.ox * b.w, cy: b.y + b.w / 2 + st.oy * b.w };
+}
+
+function drawImage(ctx, img, st, b) {
+  const { iw, ih, cx, cy } = placement(img, st, b);
+  ctx.drawImage(img, cx - iw / 2, cy - ih / 2, iw, ih);
+}
+
+function setup(canvas, w, h) {
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return ctx;
+}
+
+/** The saved file as every place shows it: the rounded square layer, its background, the image. */
+function layer(img, st, size) {
+  const c = document.createElement('canvas');
+  c.className = 'free';
+  const ctx = setup(c, size, size);
+  layerPath(ctx, 0, 0, size);
+  ctx.clip();
+  if (st.bg) { ctx.fillStyle = st.bg; ctx.fillRect(0, 0, size, size); }
+  if (img) drawImage(ctx, img, st, { x: 0, y: 0, w: size });
+  return c;
+}
+
+/** No picture: the record's colour fills the layer, with its initial, the track pin or the division's name. */
+function fallback(k, sample, size) {
+  const el = document.createElement('span');
+  el.className = 'fallback';
+  Object.assign(el.style, { width: `${size}px`, height: `${size}px`, borderRadius: `${size * radius}px`, background: sample.color });
+  if (k === 'track') {
+    const s = Math.round(size * 0.5);
+    el.innerHTML = `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
+  } else if (k === 'division') {
+    el.textContent = sample.name;
+    el.style.fontSize = `${Math.max(5, Math.min(size * 0.3, (size * 1.15) / sample.name.length))}px`;
+    el.style.padding = '0 2px';
+  } else {
+    el.textContent = sample.name.charAt(0);
+    el.style.fontSize = `${Math.max(7, size * 0.42)}px`;
+  }
+  return el;
+}
+
+// --- Background removal ---
+async function ensureWork(k) {
+  const key = editKey(k);
+  if (edits.has(key)) return edits.get(key);
+  const img = await load(sampleOf(k).src);
+  const [w, h] = dims(img);
+  const scale = Math.min(1, 1024 / Math.max(w, h));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  canvas.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, canvas.width, canvas.height);
+  const edit = { canvas, history: [] };
+  edits.set(key, edit);
+  return edit;
+}
+
+const tolerance = () => Number(document.getElementById('tolerance').value) * 1.6;
+
+function borderPixels(w, h) {
+  const out = [];
+  for (let x = 0; x < w; x++) out.push(x, (h - 1) * w + x);
+  for (let y = 1; y < h - 1; y++) out.push(y * w, y * w + w - 1);
+  return out;
+}
+
+/** The colour most of the border shares, or null when the border is not one colour. */
+function borderColour(px, seeds) {
+  const buckets = new Map();
+  let opaque = 0;
+  for (const p of seeds) {
+    const i = p * 4;
+    if (px[i + 3] < 128) continue;
+    opaque++;
+    const key = ((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4);
+    const b = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+    b.n++; b.r += px[i]; b.g += px[i + 1]; b.b += px[i + 2];
+    buckets.set(key, b);
+  }
+  let best = null;
+  for (const b of buckets.values()) if (!best || b.n > best.n) best = b;
+  if (!best || best.n < Math.max(8, opaque * 0.2)) return null;
+  return [best.r / best.n, best.g / best.n, best.b / best.n];
+}
+
+/**
+ * Erases the pixels close to `ref`, connected to the seeds; the edge just beyond the tolerance fades.
+ * Returns the number of pixels erased.
+ */
+function floodErase(canvas, seeds, ref, tol) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const { width: w, height: h } = canvas;
+  const data = ctx.getImageData(0, 0, w, h);
+  const px = data.data;
+  const dist = (p) => {
+    const i = p * 4;
+    const dr = px[i] - ref[0], dg = px[i + 1] - ref[1], db = px[i + 2] - ref[2];
+    return Math.sqrt(dr * dr + dg * dg + db * db);
+  };
+  const erased = new Uint8Array(w * h);
+  const queue = new Int32Array(w * h);
+  let head = 0, tail = 0;
+  const visit = (p) => {
+    if (erased[p] || px[p * 4 + 3] === 0 || dist(p) > tol) return;
+    erased[p] = 1;
+    queue[tail++] = p;
+  };
+  for (const p of seeds) visit(p);
+  while (head < tail) {
+    const p = queue[head++];
+    px[p * 4 + 3] = 0;
+    const x = p % w;
+    if (x > 0) visit(p - 1);
+    if (x < w - 1) visit(p + 1);
+    if (p >= w) visit(p - w);
+    if (p < w * (h - 1)) visit(p + w);
+  }
+  // Soften the cut edge
+  const soft = 12 + tol * 0.5;
+  for (let p = 0; p < w * h; p++) {
+    if (erased[p] || px[p * 4 + 3] === 0) continue;
+    const x = p % w;
+    const nextToCut = (x > 0 && erased[p - 1]) || (x < w - 1 && erased[p + 1]) || (p >= w && erased[p - w]) || (p < w * (h - 1) && erased[p + w]);
+    if (!nextToCut) continue;
+    const d = dist(p);
+    if (d < tol + soft) px[p * 4 + 3] = Math.round(px[p * 4 + 3] * Math.max(0, (d - tol) / soft));
+  }
+  ctx.putImageData(data, 0, 0);
+  return tail;
+}
+
+/** Runs a removal on the canvas: from the edges, or from one pixel. Null when there is nothing to remove. */
+function runRemoval(canvas, action, tol) {
+  const { width: w, height: h } = canvas;
+  const px = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  if (action.type === 'edges') {
+    const seeds = borderPixels(w, h);
+    const ref = borderColour(px, seeds);
+    if (!ref) return null;
+    return { count: floodErase(canvas, seeds, ref, tol), total: w * h };
+  }
+  const i = action.pixel * 4;
+  if (px[i + 3] === 0) return null;
+  return { count: floodErase(canvas, [action.pixel], [px[i], px[i + 1], px[i + 2]], tol), total: w * h };
+}
+
+function report(result, action) {
+  const msg = document.getElementById('removeMsg');
+  msg.className = 'msg';
+  if (!result) {
+    msg.className = 'msg warn';
+    msg.textContent = action.type === 'edges'
+      ? 'Pas de fond uni sur les bords : retirez une zone à la gomme, ou gardez le fond.'
+      : 'Rien à retirer ici : la zone est déjà transparente.';
+    return;
+  }
+  const share = (result.count / result.total) * 100;
+  const how = action.type === 'edges' ? ' depuis les bords' : ' à la gomme';
+  msg.textContent = share < 1
+    ? `Moins de 1 % de l'image retiré${how} : montez la tolérance pour une zone plus grande.`
+    : `${Math.round(share)} % de l'image retiré${how}.`;
+}
+
+async function remove(action) {
+  const edit = await ensureWork(kind);
+  const ctx = edit.canvas.getContext('2d', { willReadFrequently: true });
+  const before = ctx.getImageData(0, 0, edit.canvas.width, edit.canvas.height);
+  const result = runRemoval(edit.canvas, action, tolerance());
+  report(result, action);
+  if (result) edit.history.push({ before, action });
+  redraw();
+}
+
+/** A new tolerance redoes the last removal. */
+function retune() {
+  const edit = edits.get(editKey(kind));
+  const last = edit?.history.at(-1);
+  if (!last) return;
+  edit.canvas.getContext('2d', { willReadFrequently: true }).putImageData(last.before, 0, 0);
+  report(runRemoval(edit.canvas, last.action, tolerance()), last.action);
+  redraw();
+}
+
+function undo() {
+  const edit = edits.get(editKey(kind));
+  const last = edit?.history.pop();
+  if (!last) return;
+  edit.canvas.getContext('2d', { willReadFrequently: true }).putImageData(last.before, 0, 0);
+  document.getElementById('removeMsg').textContent = '';
+  redraw();
+}
+
+// --- The cropper ---
+const stageCanvas = document.getElementById('stageCanvas');
+const STAGE = { w: 520, h: 340 };
+const frameBox = () => ({ x: (STAGE.w - 270) / 2, y: (STAGE.h - 270) / 2, w: 270 });
+
+async function drawStage() {
+  const ctx = setup(stageCanvas, STAGE.w, STAGE.h);
+  ctx.fillStyle = '#292524';
+  ctx.fillRect(0, 0, STAGE.w, STAGE.h);
+  const img = await source(kind);
+  if (!img) return;
+  const st = state[kind];
+  const b = frameBox();
+  // What falls outside the frame, dimmed
+  ctx.globalAlpha = 0.28;
+  drawImage(ctx, img, st, b);
+  ctx.globalAlpha = 1;
+  ctx.save();
+  layerPath(ctx, b.x, b.y, b.w);
+  ctx.clip();
+  ctx.fillStyle = st.bg || ctx.createPattern(checker, 'repeat');
+  ctx.fillRect(b.x, b.y, b.w, b.w);
+  drawImage(ctx, img, st, b);
+  ctx.restore();
+  // The cropper's guide only: the layer has no border
+  ctx.setLineDash([5, 4]);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(255,255,255,.7)';
+  layerPath(ctx, b.x, b.y, b.w);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/** The pixel of the edited copy under a point of the stage, or null outside the image. */
+async function pixelAt(e) {
+  const edit = await ensureWork(kind);
+  const rect = stageCanvas.getBoundingClientRect();
+  const { iw, ih, cx, cy } = placement(edit.canvas, state[kind], frameBox());
+  const u = (e.clientX - rect.left - (cx - iw / 2)) / iw;
+  const v = (e.clientY - rect.top - (cy - ih / 2)) / ih;
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return null;
+  const { width: w, height: h } = edit.canvas;
+  return Math.floor(v * h) * w + Math.floor(u * w);
+}
+
+function syncControls() {
+  const st = state[kind];
+  document.getElementById('zoom').value = Math.round(st.s * 100);
+  document.getElementById('zoomVal').textContent = `${Math.round(st.s * 100)} %`;
+  document.querySelectorAll('#bgSeg button').forEach((b) => b.classList.toggle('on', (b.dataset.bg === 'color') === !!st.bg));
+  const edit = edits.get(editKey(kind));
+  document.getElementById('undoBtn').disabled = !edit?.history.length;
+  document.getElementById('originalBtn').disabled = !edit;
+  document.getElementById('eraserBtn').classList.toggle('on', eraser);
+  stageCanvas.classList.toggle('eraser', eraser);
+  const touched = edit?.history.length ? ', fond retiré' : '';
+  document.getElementById('outInfo').textContent =
+    `Enregistrée en PNG carré, 512 × 512 au plus, ${st.bg ? `fond ${st.bg}` : 'fond transparent'}${touched}. Les coins sont arrondis à l'affichage.`;
+  renderSegs();
+  renderSwatches();
+}
+
+let pending = false;
+function redraw() {
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(async () => {
+    pending = false;
+    syncControls();
+    await drawStage();
+    await renderPreviews();
+    await renderEverywhere();
+  });
+}
+
+async function fit(mode) {
+  const img = await source(kind);
+  if (!img) return;
+  const [w, h] = dims(img);
+  const r = w / h;
+  Object.assign(state[kind], { s: mode === 'fit' ? Math.min(1, r) / Math.max(1, r) : 1, ox: 0, oy: 0 });
+  redraw();
+}
+
+// Drag, zoom, eraser clicks
+let drag = null;
+let eraser = false;
+stageCanvas.addEventListener('pointerdown', (e) => {
+  drag = { x: e.clientX, y: e.clientY, moved: 0 };
+  stageCanvas.setPointerCapture(e.pointerId);
+});
+stageCanvas.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const b = frameBox();
+  drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
+  state[kind].ox += (e.clientX - drag.x) / b.w;
+  state[kind].oy += (e.clientY - drag.y) / b.w;
+  drag.x = e.clientX;
+  drag.y = e.clientY;
+  redraw();
+});
+stageCanvas.addEventListener('pointerup', async (e) => {
+  const click = drag && drag.moved < 4;
+  drag = null;
+  if (!click || !eraser) return;
+  const pixel = await pixelAt(e);
+  if (pixel !== null) remove({ type: 'point', pixel });
+});
+stageCanvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const st = state[kind];
+  st.s = Math.min(3, Math.max(0.1, st.s * Math.exp(-e.deltaY * 0.0015)));
+  redraw();
+}, { passive: false });
+document.getElementById('zoom').addEventListener('input', (e) => {
+  state[kind].s = Number(e.target.value) / 100;
+  redraw();
+});
+document.getElementById('fitBtn').onclick = () => fit('fit');
+document.getElementById('fillBtn').onclick = () => fit('fill');
+document.getElementById('centerBtn').onclick = () => { Object.assign(state[kind], { ox: 0, oy: 0 }); redraw(); };
+document.getElementById('removeBtn').onclick = () => remove({ type: 'edges' });
+document.getElementById('eraserBtn').onclick = () => { eraser = !eraser; redraw(); };
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('originalBtn').onclick = () => {
+  edits.delete(editKey(kind));
+  document.getElementById('removeMsg').textContent = '';
+  redraw();
+};
+document.getElementById('tolerance').addEventListener('input', (e) => {
+  document.getElementById('toleranceVal').textContent = e.target.value;
+  requestAnimationFrame(retune);
+});
+document.querySelectorAll('#bgSeg button').forEach((b) => {
+  b.onclick = () => {
+    state[kind].bg = b.dataset.bg === 'color' ? state[kind].bg || sampleOf(kind).color : null;
+    redraw();
+  };
+});
+document.getElementById('radius').addEventListener('input', (e) => {
+  radius = Number(e.target.value) / 100;
+  document.getElementById('radiusVal').textContent = document.getElementById('radiusText').textContent = `${e.target.value} %`;
+  redraw();
+  renderPairs();
+});
+document.getElementById('fileInput').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const list = KINDS[kind].samples;
+  const own = { label: 'Votre image', src: URL.createObjectURL(file), color: list[0].color, name: list[0].name, own: true };
+  const at = list.findIndex((s) => s.own);
+  const index = at >= 0 ? at : list.length;
+  list[index] = own;
+  state[kind].sample = index;
+  edits.delete(editKey(kind));
+  document.getElementById('removeMsg').textContent = '';
+  e.target.value = '';
+  fit('fit');
+};
+
+function seg(el, items, current, onPick) {
+  el.innerHTML = '';
+  for (const [value, label] of items) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.className = value === current ? 'on' : '';
+    b.onclick = () => onPick(value);
+    el.appendChild(b);
+  }
+}
+
+function renderSegs() {
+  seg(document.getElementById('typeSeg'), Object.entries(KINDS).map(([k, v]) => [k, v.label]), kind, (k) => {
+    kind = k;
+    document.getElementById('removeMsg').textContent = '';
+    redraw();
+  });
+  seg(document.getElementById('sampleSeg'), KINDS[kind].samples.map((s, i) => [i, s.label]), state[kind].sample, (i) => {
+    state[kind].sample = i;
+    document.getElementById('removeMsg').textContent = '';
+    fit(kind === 'car' ? 'fit' : 'fill');
+  });
+}
+
+/** The record's colour first, then neutral colours, then any colour. */
+function renderSwatches() {
+  const root = document.getElementById('swatches');
+  const st = state[kind];
+  const entity = sampleOf(kind).color;
+  const colours = [entity, '#ffffff', '#f5f5f4', '#1c1917', '#000000'].filter((c, i, all) => all.indexOf(c) === i);
+  const buttons = colours.map((c) => {
+    const b = document.createElement('button');
+    b.className = `swatch${c === entity ? ' entity' : ''}${st.bg === c ? ' on' : ''}`;
+    b.style.background = c;
+    b.title = c === entity ? `Couleur de la fiche (${c})` : c;
+    b.onclick = () => { st.bg = c; redraw(); };
+    return b;
+  });
+  const picker = document.createElement('input');
+  picker.type = 'color';
+  picker.value = st.bg || entity;
+  picker.title = 'Autre couleur';
+  picker.oninput = () => { st.bg = picker.value; redraw(); };
+  root.replaceChildren(...buttons, picker);
+}
+
+// --- The places ---
+const PLACES = {
+  driver: [
+    { id: 'P1', name: 'Carte pilote', where: 'Pilotes, vue en grille', size: 80, note: 'aujourd\'hui rond, anneau blanc' },
+    { id: 'P2', name: 'Podium des résultats', where: 'Championnat terminé › Résultats', size: 80 },
+    { id: 'P3', name: 'Formulaire', where: 'Créer ou modifier un pilote', size: 80 },
+    { id: 'P4', name: 'Podium d\'une course', where: 'Page d\'une session, session d\'un championnat', size: 64, note: 'aujourd\'hui rond, anneau de couleur' },
+    { id: 'P5', name: 'Classement d\'une course', where: 'Page d\'une session, championnat, course en direct (64 px agrandi)', size: 56 },
+    { id: 'P6', name: 'En-tête de la fiche', where: 'Fiche pilote', size: 40 },
+    { id: 'P7', name: 'Listes et classements', where: 'Accueil, Pilotes en liste, Statistiques, records des fiches, classement général, page d\'une division', size: 32 },
+    { id: 'P8', name: 'Résultats et prix', where: 'Championnat terminé › Résultats', size: 24 },
+    { id: 'P9', name: 'Assistant et participants', where: 'Création d\'un championnat, configuration d\'un championnat automatique', size: 20 },
+    { id: 'P10', name: 'Tableau final, pilotes automatiques', where: 'Championnat automatique', size: 16, note: 'chemin d\'image écrit à la main aujourd\'hui' },
+  ],
+  car: [
+    { id: 'V1', name: 'Carte voiture', where: 'Voitures, vue en grille', size: 80, today: '144×80' },
+    { id: 'V2', name: 'Formulaire', where: 'Créer ou modifier une voiture', size: 80 },
+    { id: 'V3', name: 'Carte d\'une catégorie', where: 'Divisions › Voitures, vue en grille', size: 42, today: '72×42' },
+    { id: 'V4', name: 'Classement d\'une course, fiche', where: 'Page d\'une session, championnat, fiche voiture', size: 40, today: '64×40' },
+    { id: 'V5', name: 'Page d\'une catégorie', where: 'Divisions › page d\'une catégorie', size: 36, today: '64×36' },
+    { id: 'V6', name: 'Listes', where: 'Voitures en liste, Statistiques, records des fiches', size: 32, today: '56×32' },
+    { id: 'V7', name: 'Équilibrage', where: 'Équilibrage, une fois les voitures choisies', size: 28, today: '56×28' },
+    { id: 'V8', name: 'Sélecteur de voiture', where: 'Formulaire pilote (voiture préférée), création d\'un championnat › Pilotes', size: 28, today: '44×28' },
+    { id: 'V9', name: 'Jeton de l\'assistant', where: 'Création d\'un championnat › Configuration', size: 20, today: '32×20' },
+  ],
+  track: [
+    { id: 'C1', name: 'Carte circuit', where: 'Circuits, vue en grille', size: 80, note: 'aujourd\'hui dans un carré de couleur avec un anneau' },
+    { id: 'C2', name: 'Formulaire', where: 'Créer ou modifier un circuit', size: 80 },
+    { id: 'C3', name: 'En-tête de la fiche', where: 'Fiche circuit', size: 40 },
+    { id: 'C4', name: 'Liste', where: 'Circuits, vue en liste', size: 32 },
+  ],
+  division: [
+    { id: 'D1', name: 'Carte', where: 'Divisions, vue en grille', size: 80, note: 'aujourd\'hui avec une ombre' },
+    { id: 'D2', name: 'Formulaire', where: 'Créer ou modifier une division', size: 80 },
+    { id: 'D3', name: 'En-tête de la page', where: 'Page d\'une division', size: 44 },
+    { id: 'D4', name: 'Liste', where: 'Divisions, vue en liste', size: 32 },
+  ],
+};
+
+const PLACE_COLORS = { P: '#e11d48', V: '#16a34a', C: '#0284c7', D: '#9333ea' };
+
+function tileFor(place, shot) {
+  const t = document.createElement('div');
+  t.className = 'tile';
+  t.innerHTML = `<span class="pid"></span><div class="shot"></div><div class="name"></div><div class="where"></div>`;
+  const pid = t.querySelector('.pid');
+  pid.textContent = place.id;
+  pid.style.background = PLACE_COLORS[place.id[0]] || '#78716c';
+  t.querySelector('.shot').append(...[].concat(shot));
+  t.querySelector('.name').textContent = `${place.name} · ${place.size} px`;
+  t.querySelector('.where').textContent = place.where;
+  const note = place.today ? `aujourd'hui ${place.today}` : place.note;
+  if (note) {
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = note;
+    t.appendChild(n);
+  }
+  return t;
+}
+
+async function renderPreviews() {
+  const img = await source(kind);
+  const places = PLACES[kind].filter((p) => p.name !== 'Formulaire').slice(0, 6);
+  document.getElementById('previewTiles').replaceChildren(...places.map((p) => tileFor(p, layer(img, state[kind], p.size))));
+  document.getElementById('resultHint').textContent = `Les plus grands des ${PLACES[kind].length} endroits ; tous en section 3.`;
+}
+
+const KIND_DESCS = {
+  driver: 'Le même calque partout : plus de rond, d\'anneau ni de couleur du pilote derrière (sauf si elle est choisie comme fond).',
+  car: 'La voiture entière dans le carré, à la hauteur de la place d\'aujourd\'hui : elle paraît plus petite qu\'en 16:10.',
+  track: 'Plus de carré de couleur ni d\'anneau : l\'image seule, dans le calque.',
+  division: 'Comme un circuit. Sans image, le nom tient dans le calque au lieu d\'être coupé par le rond.',
+};
+
+/** The record without a picture, in the same layer. */
+function fallbackTile(k) {
+  const samples = k === 'division' ? [KINDS.division.samples[0], { color: '#7c3aed', name: 'Classique' }] : [KINDS[k].samples[0]];
+  const shots = samples.flatMap((s) => [fallback(k, s, 80), fallback(k, s, 32)]);
+  return tileFor({ id: '∅', name: 'Sans image', size: '80 et 32', where: 'La couleur de la fiche, avec l\'initiale, l\'icône ou le nom' }, shots);
+}
+
+async function renderEverywhere() {
+  const root = document.getElementById('everywhere');
+  const blocks = [];
+  for (const k of Object.keys(KINDS)) {
+    const img = await source(k);
+    const block = document.createElement('div');
+    block.innerHTML = `<h3>${KINDS[k].label} <small>${PLACES[k].length} endroits</small></h3><p class="kind-desc">${KIND_DESCS[k]}</p><div class="tiles"></div>`;
+    block.querySelector('.tiles').replaceChildren(...PLACES[k].map((p) => tileFor(p, layer(img, state[k], p.size))), fallbackTile(k));
+    blocks.push(block);
+  }
+  root.replaceChildren(...blocks);
+}
+
+document.querySelectorAll('#themeSeg button').forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll('#themeSeg button').forEach((x) => x.classList.toggle('on', x === b));
+    document.getElementById('everywhere').classList.toggle('dark', b.dataset.theme === 'dark');
+  };
+});
+
+// --- Before / after ---
+const figure = (label, el) => {
+  const f = document.createElement('figure');
+  f.append(el);
+  if (label) f.append(label);
+  return f;
+};
+
+function pairCard(title, text, before, afters) {
+  const card = document.createElement('div');
+  card.className = 'pair';
+  card.innerHTML = `<h4></h4><p></p><div class="ba"><div class="before"><span class="slot"></span><span class="tag">Aujourd'hui</span></div><div class="after"><span class="slot"></span><span class="tag">Proposé</span></div></div>`;
+  card.querySelector('h4').textContent = title;
+  card.querySelector('p').textContent = text;
+  card.querySelector('.before .slot').append(before);
+  card.querySelector('.after .slot').append(...afters.map(([label, el]) => figure(label, el)));
+  return card;
+}
+
+/** Today's cropper: the image covers a square, flattened on black (JPEG), drawn in a w×h box under a clip. */
+function todayShot(img, w, h, clip) {
+  const c = document.createElement('canvas');
+  c.className = 'free';
+  const ctx = setup(c, w, h);
+  const side = Math.min(w, h);
+  const b = { x: (w - side) / 2, y: (h - side) / 2, w: side };
+  ctx.save();
+  clip(ctx, b);
+  ctx.clip();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(b.x, b.y, side, side);
+  drawImage(ctx, img, { s: 1, ox: 0, oy: 0 }, b);
+  ctx.restore();
+  return c;
+}
+
+/** A copy of an image with its background removed from the edges, at the default tolerance. */
+function withoutBackground(img) {
+  const [w, h] = dims(img);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  c.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0);
+  runRemoval(c, { type: 'edges' }, 25 * 1.6);
+  return c;
+}
+
+const contain = (img) => { const [w, h] = dims(img); return Math.min(w, h) / Math.max(w, h); };
+
+async function renderPairs() {
+  const gre = KINDS.driver.samples[0];
+  const portrait = await load(gre.src);
+  const carCut = await load(KINDS.car.samples[1].src);
+  const carBlack = await load(KINDS.car.samples[0].src);
+  const crest = await load(KINDS.division.samples[1].src);
+  const full = { s: 1, ox: 0, oy: 0, bg: null };
+  const cards = [];
+
+  // A transparent portrait flattened to JPEG, in a round with a ring
+  const avatar = document.createElement('span');
+  avatar.className = 'avatar ring';
+  avatar.style.cssText = `width:80px;height:80px;background:${gre.color}`;
+  avatar.append(todayShot(portrait, 80, 80, (ctx, b) => { ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.w); }));
+  cards.push(pairCard('Portrait détouré', 'Le JPEG remplit la transparence de noir. Proposé : le portrait reste transparent, ou prend un fond uni choisi à l\'envoi.',
+    avatar, [['transparent', layer(portrait, full, 80)], ['couleur de la fiche', layer(portrait, { ...full, bg: gre.color }, 80)]]));
+
+  // A wide car squeezed in a square crop
+  const fitted = { ...full, s: contain(carCut) * 0.96 };
+  cards.push(pairCard('Voiture large', 'Recadrée en carré sans pouvoir dézoomer : l\'avant et l\'arrière sont coupés, sur fond noir. Proposé : dézoomée, entière, le reste transparent.',
+    todayShot(carCut, 144, 80, (ctx, b) => { ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.w); }),
+    [['80 px', layer(carCut, fitted, 80)], ['32 px', layer(carCut, fitted, 32)]]));
+
+  // A car photographed on black: « Retirer le fond »
+  const cleaned = withoutBackground(carBlack);
+  const fittedBlack = { ...full, s: contain(carBlack) * 0.98 };
+  cards.push(pairCard('Voiture sur fond noir', 'La photo garde son fond. Proposé : « Retirer le fond » efface le noir depuis les bords ; l\'ombre sous la voiture dépend de la tolérance.',
+    todayShot(carBlack, 144, 80, (ctx, b) => { ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.w); }),
+    [['fond retiré', layer(cleaned, fittedBlack, 80)], ['fond blanc', layer(cleaned, { ...fittedBlack, bg: '#ffffff' }, 80)]]));
+
+  // A crest on black, in a rounded tile with a shadow
+  const tile = document.createElement('span');
+  tile.className = 'shadow-md';
+  tile.style.cssText += ';display:inline-flex;overflow:hidden';
+  tile.append(todayShot(crest, 80, 80, (ctx, b) => { ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.w, 12); }));
+  const crestClean = withoutBackground(crest);
+  cards.push(pairCard('Blason sur fond noir', 'Aujourd\'hui en carré arrondi avec une ombre. Proposé : fond retiré, le blason seul ; ou un fond uni.',
+    tile, [['fond retiré', layer(crestClean, full, 80)], ['couleur de la fiche', layer(crestClean, { ...full, bg: KINDS.division.samples[1].color }, 80)]]));
+
+  document.getElementById('pairs').replaceChildren(...cards);
+}
+
+(async () => {
+  await fit('fit');
+  renderPairs();
+})();
+</script>
+</body>
+</html>

@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { MapPin, RefreshCw, Rocket, Clock, Trophy } from 'lucide-react'
+import { RefreshCw, Rocket, Clock, Trophy } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import CardActions from '@/components/crud/CardActions'
 import { trackColor } from '@/lib/colors'
-import { getImgUrl } from '@/utils/image'
+import TrackPicture from './TrackPicture'
 
 /** A track in the grid of the tracks page: picture, length, corners, record and races count. */
 export default function TrackCard({ track, onClick, onEdit, onDelete }) {
@@ -24,19 +24,7 @@ export default function TrackCard({ track, onClick, onEdit, onDelete }) {
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: color }} />
-            <div
-              className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white ring-4 ring-white shadow-xl overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)` }}
-            >
-              {track.img ? (
-                <img src={getImgUrl(track.img)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <MapPin className="w-10 h-10 drop-shadow-lg" />
-              )}
-            </div>
-          </div>
+          <TrackPicture track={track} className="size-20" />
           {track.bestLap && (
             <Badge className="bg-yellow-500 text-white shadow-md">
               <Trophy className="w-3 h-3" />

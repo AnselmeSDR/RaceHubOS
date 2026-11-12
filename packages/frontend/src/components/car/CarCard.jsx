@@ -26,19 +26,7 @@ export default function CarCard({ car, onClick, onEdit, onDelete }) {
 
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
-          {car.img ? (
-            <CarPicture car={car} alt="" className="w-36 h-20" />
-          ) : (
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl blur-md opacity-50" style={{ backgroundColor: color }} />
-              <div
-                className="relative w-20 h-20 rounded-xl flex items-center justify-center text-white font-black text-3xl ring-4 ring-white shadow-xl overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)` }}
-              >
-                <span className="drop-shadow-lg">{car.brand?.charAt(0)}</span>
-              </div>
-            </div>
-          )}
+          <CarPicture car={car} alt="" className="size-20" />
           <div className="flex flex-col items-end gap-2">
             {car.year && (
               <Badge variant="secondary" className="shadow-md">

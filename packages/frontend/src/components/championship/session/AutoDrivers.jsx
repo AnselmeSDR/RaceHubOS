@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { SessionType } from '@racehubos/shared'
 import { CONTROLLER_COLORS } from '@/lib/colors'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
+import DriverAvatar from '@/components/driver/DriverAvatar'
 
 /**
  * A session of an automatic championship, set by the server: its drivers once it runs, or for a
@@ -22,9 +21,7 @@ export default function AutoDrivers({ session, entries, canEdit }) {
               >
                 {sd.controller + 1}
               </span>
-              {sd.driver?.img && (
-                <img src={`${API_URL}${sd.driver.img}`} className="w-4 h-4 rounded-full object-cover" alt="" />
-              )}
+              {sd.driver?.img && <DriverAvatar driver={sd.driver} className="size-4" />}
               <span className="font-medium">{sd.driver?.name || '?'}</span>
             </div>
           ))}

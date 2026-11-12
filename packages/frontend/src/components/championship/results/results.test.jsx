@@ -46,7 +46,7 @@ describe('ResultsPodium', () => {
   test('a picture, an initial, or a question mark', () => {
     const { container } = render(<ResultsPodium podium={[...podium.slice(0, 2), { driverId: 'x', totalLaps: 1 }]} />)
     expect(container.querySelector('img').getAttribute('src')).toBe('/api/img/ana.png')
-    expect(screen.getByText('B')).toHaveStyle({ backgroundColor: '#6B7280' })
+    expect(screen.getByText('B').parentElement).toHaveStyle({ backgroundColor: '#3B82F6' })
     expect(screen.getByText('?')).toBeInTheDocument()
   })
 
