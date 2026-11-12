@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2026-11-12
+
+### Added
+- Championships: as many free practice sessions as wanted, added, reordered and edited like qualifying and races, each with an optional time and/or lap limit, also set in the creation wizard; the practice standings take the best lap over all of them.
+- Championship creation: a car per driver, offered from their profile's new preferred car, two drivers of the same car never in one session; settings and preview on one page, automatic or planned by hand by dragging drivers and sessions, free practices split like qualifying.
+
+### Fixed
+- A session added to a championship without a name was named in English whatever the interface language.
+
 ## [1.27.1] - 2026-11-11
 
 ### Fixed
