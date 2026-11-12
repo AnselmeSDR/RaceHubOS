@@ -763,10 +763,17 @@ async function useTheme(page, lang, theme) {
 const rowPlaces = (page) =>
   page.$$eval('[data-testid="leaderboard-row"]', (rows) =>
     rows
-      .map((row) => row.getBoundingClientRect())
-      .map((box) => `${Math.round(box.x)},${Math.round(box.y)}`)
+      .map((row) => [row.getBoundingClientRect(), getComputedStyle(row).opacity])
+      .map(([box, opacity]) => `${Math.round(box.x)},${Math.round(box.y)},${opacity}`)
       .join(' ')
   );
+
+/** Every row drawn whole, each in its own place: a row fading in or out, or two on one place, leaves a gap. */
+const rowsSettled = (page) =>
+  page.$$eval('[data-testid="leaderboard-row"]', (rows) => {
+    const tops = rows.map((row) => Math.round(row.getBoundingClientRect().y));
+    return rows.every((row) => getComputedStyle(row).opacity === '1') && new Set(tops).size === tops.length;
+  });
 
 /** Waits until no leaderboard row has moved for a moment. */
 async function stillRows(page) {
@@ -784,9 +791,10 @@ async function stillShot(page, png) {
   for (let attempt = 1; ; attempt++) {
     await stillRows(page);
     const before = await rowPlaces(page);
+    const settled = await rowsSettled(page);
     await page.screenshot({ path: png, animations: 'disabled' });
-    if ((await rowPlaces(page)) === before) return;
-    if (attempt === 5) return problem(`${png}: the leaderboard kept moving`);
+    if (settled && (await rowPlaces(page)) === before) return;
+    if (attempt === 5) return problem(`${png}: the leaderboard kept moving or missed a row`);
   }
 }
 
