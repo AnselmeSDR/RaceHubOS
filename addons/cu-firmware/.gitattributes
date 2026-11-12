@@ -1,0 +1,2 @@
+# Preserve exact firmware bytes and hashes (HMF uses CRLF by design).
+*.hmf -text -diff

@@ -1,0 +1,49 @@
+# Shared symbol map for build_image.py: name address [code|ram]
+# A file's own `/* 0xADDR */` comments take precedence (some names differ between files).
+# RAM
+serial_state        0x00E5 ram
+serial_rx_timeout   0x00E6 ram
+cmd_g_param         0x00E7 ram
+prog_mode_param     0x00E8 ram
+event_ring          0x00E9 ram
+event_ring_wr       0x00DB ram
+ctl_cmd_table       0x00DD ram
+rx_byte             0x0119 ram
+serial_ptr          0x011A ram
+serial_buf          0x011D ram
+ctl_table_stamp     0x017D ram
+event_ring_rd       0x017E ram
+prog_buf            0x0190 ram
+prog_ticks          0x0190 ram
+cfg_car_count       0x01A0 ram
+btn_b0_held         0x01B4 ram
+btn_c6_held         0x01B5 ram
+ta_off_flag         0x020F ram
+flag_213            0x0213 ram
+sm_state            0x0218 ram
+status_byte_219     0x0219 ram
+slot_tab            0x021C ram
+# code
+reply_append_checksum 0x01EA code
+serial_init         0x01CE code
+cmd_dispatch        0x06A8 code
+__eerd_block_m16    0x365A code
+__eewr_block_m16    0x367A code
+eewr                0x368E code
+cmd_e_pending       0x00DA ram
+# flash data (progmem), code-space addresses
+id339               0x37FB code
+# command handlers called by the dispatcher, and functions called by main
+cmd_button_set      0x033A code
+cmd_ctl_table_set   0x0346 code
+cmd_exclusion_set   0x0232 code
+cmd_i_send          0x0540 code
+cmd_timer_reset     0x024A code
+cmd_version_send    0x0202 code
+cmd_status_send     0x0374 code
+prog_buf_set_defaults 0x0B5C code
+rail_events_process 0x0EB8 code
+rail_tx_init        0x31F8 code
+event_ring_reset    0x01A6 code
+button_cmd          0x00D9 ram
+button_latch        0x006E ram
