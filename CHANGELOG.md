@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2026-11-12
+
+### Changed
+- Championship wizard: a car shared by several drivers is marked by an icon, explained under the line-up; the division and category menus show how many drivers or cars each holds.
+
 ## [1.31.0] - 2026-11-12
 
 ### Changed
