@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] - 2026-11-12
+
+### Added
+- Divisions replace teams: drivers go in divisions and cars in categories (GT3, GTE, DTM, Formula, Classic to start), several each, shown as badges on cards, profiles and the leaderboard, filterable in the driver and car lists, and chosen per championship to narrow the drivers and cars offered; each division has its own page to add or remove members and see its championships, exported to Excel with its links.
+
+### Fixed
+- Driver and car cards, lists and profiles showed 0 wins and podiums and an outdated best lap: they now come from the results.
+
 ## [1.28.0] - 2026-11-12
 
 ### Added
