@@ -70,12 +70,12 @@ export function lapsProgressOf(session, current) {
 
 /**
  * A session's short label: its type and rank among the championship's sessions of that type
- * (`Q2`), the type alone for free practice or outside a championship, none for balancing.
+ * (`Q2`, `FP3`), the type alone for a free practice outside a championship, none for balancing.
  */
 export function sessionLabelOf(session, sessions, t) {
   if (session.type === SessionType.BALANCING) return ''
   const abbr = t(sessionTypeAbbrKey(session.type))
-  if (session.type === SessionType.PRACTICE) return abbr
+  if (session.type === SessionType.PRACTICE && !session.championshipId) return abbr
   const sameType = sessions
     .filter((s) => s.type === session.type)
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))

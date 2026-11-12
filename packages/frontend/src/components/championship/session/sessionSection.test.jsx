@@ -104,8 +104,13 @@ describe('the header', () => {
     expect(title()).toBe('Q1 - Heat')
   })
 
-  test('free practice has no number, balancing no label; outside a championship, no number', () => {
-    const { unmount } = show(newSession({ type: SessionType.PRACTICE }))
+  test('free practices are numbered in a championship; balancing has no label; outside a championship, no number', () => {
+    const fp1 = newSession({ id: 'fp1', type: SessionType.PRACTICE, createdAt: '2026-01-01T00:00:00Z' })
+    const fp2 = newSession({ id: 'fp2', type: SessionType.PRACTICE, createdAt: '2026-01-03T00:00:00Z' })
+    const championshipPractice = show(fp2, { sessions: [fp2, fp1] })
+    expect(title()).toBe('FP2 - Free Practice')
+    championshipPractice.unmount()
+    const { unmount } = show({ ...fp1, championshipId: null }, { sessions: [fp1, fp2] })
     expect(title()).toBe('FP - Free Practice')
     unmount()
     const balancing = show(newSession({ type: SessionType.BALANCING }))
@@ -325,8 +330,11 @@ describe('the limits of a draft', () => {
     expect(limit('Max time (sec)')).toHaveValue(null)
   })
 
-  test('free practice has no limits; a running session shows no settings', () => {
-    const { unmount } = show(newSession({ type: SessionType.PRACTICE }))
+  test('a free practice has limits in a championship only; a running session shows no settings', () => {
+    const inChampionship = show(newSession({ type: SessionType.PRACTICE, maxLaps: 15 }))
+    expect(limit('Max laps')).toHaveValue(15)
+    inChampionship.unmount()
+    const { unmount } = show(newSession({ type: SessionType.PRACTICE, championshipId: null }))
     expect(screen.queryByText('Duration (min)')).not.toBeInTheDocument()
     expect(screen.getAllByRole('combobox')).toHaveLength(12)
     unmount()

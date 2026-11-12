@@ -64,7 +64,12 @@ export class ChampionshipService {
       },
     });
 
-    let order = 1; // 0 is the practice
+    // After the free practices, which run first (order 0 when there is just one)
+    const practices = await this.prisma.session.aggregate({
+      where: { championshipId, type: SessionType.PRACTICE, deletedAt: null },
+      _max: { order: true },
+    });
+    let order = (practices._max.order ?? 0) + 1;
     const draft = (type, group, maxDuration, maxLaps, drivers = []) =>
       this.prisma.session.create({
         data: {

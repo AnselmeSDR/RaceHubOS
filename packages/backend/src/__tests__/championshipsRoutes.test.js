@@ -446,12 +446,16 @@ describe('GET /api/championships/:id/standings', () => {
     ]);
   });
 
-  test('practice: best lap of the practice session, deleted laps included; none without one', async () => {
+  test('practice: best lap over every practice session, deleted laps included; none without one', async () => {
     const { championship } = await raced();
+    const second = await newSession(championship.id, SessionType.PRACTICE, SessionStatus.FINISHED, { name: 'EL2' });
+    await lap(second, ana, car1, 6800);
+    await lap(second, cid, car2, 7100);
     const res = await api.get(`/api/championships/${championship.id}/standings?type=${SessionType.PRACTICE}`);
     expect(res.body.standings.map((s) => [s.driver.name, s.bestTime])).toEqual([
+      ['Ana', 6800],
       ['Ben', 6900],
-      ['Ana', 7000],
+      ['Cid', 7100],
     ]);
 
     const bare = await newChampionship();

@@ -127,7 +127,8 @@ export default function SessionSection({
             onChange={changeController}
             onCopyPractice={practice ? copyPractice : undefined}
           />
-          {session.type !== SessionType.PRACTICE && (
+          {/* A free practice has limits only in a championship */}
+          {(session.type !== SessionType.PRACTICE || session.championshipId) && (
             <SessionLimits
               session={session}
               maxLapTime={maxLapTime}

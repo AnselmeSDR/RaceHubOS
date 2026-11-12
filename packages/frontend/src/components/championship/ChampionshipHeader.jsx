@@ -45,7 +45,6 @@ export default function ChampionshipHeader({
 }) {
   const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
-    if (session.type === SessionType.PRACTICE) return t(sessionTypeAbbrKey(SessionType.PRACTICE))
     const sameType = sessions
       .filter((s) => s.type === session.type)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
@@ -60,9 +59,8 @@ export default function ChampionshipHeader({
   const allSessionsFinished = qrSessions.length > 0 && qrSessions.every((s) => s.status === SessionStatus.FINISHED)
   const canFinish = allSessionsFinished && !isFinished
 
+  // The running order, as set in the configuration; the oldest first on a tie
   const sortedSessions = [...sessions].sort((a, b) => {
-    if (a.type === SessionType.PRACTICE) return -1
-    if (b.type === SessionType.PRACTICE) return 1
     if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0)
     return new Date(a.createdAt) - new Date(b.createdAt)
   })

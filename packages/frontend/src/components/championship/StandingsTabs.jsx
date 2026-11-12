@@ -7,7 +7,7 @@ import { gapToLeader, standingsFor } from './standings/standingsOrder'
 
 /**
  * StandingsTabs - Three tabs for Practice, Qualifications and Races standings
- * Practice tab: sorted by best lap time from practice session
+ * Practice tab: sorted by best lap time over the practice sessions
  * Qualif tab: sorted by qualifBestTime
  * Race tab: sorted by raceTotalLaps desc, then raceTotalTime asc
  */

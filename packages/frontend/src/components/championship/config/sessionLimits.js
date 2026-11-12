@@ -1,21 +1,28 @@
-import { Clock, Flag } from 'lucide-react'
-import { SessionType } from '@racehubos/shared'
+import { Clock, Flag, FlaskConical } from 'lucide-react'
+import { SessionType, sessionTypeAbbrKey, sessionTypeFullKey } from '@racehubos/shared'
+import { SESSION_COLORS } from '@/lib/colors'
 
-// The two kinds of session a championship schedules besides its free practice
+// The kinds of session a championship schedules, each as many times as wanted
 export const SESSION_TYPE_STYLE = {
+  [SessionType.PRACTICE]: {
+    labelKey: sessionTypeFullKey(SessionType.PRACTICE),
+    color: `${SESSION_COLORS.practice.bg} ${SESSION_COLORS.practice.text}`,
+    icon: FlaskConical,
+  },
   [SessionType.QUALIF]: {
     labelKey: 'configModal.sessionTypes.qualif',
-    prefix: 'Q',
     color: 'bg-blue-500/15 text-blue-600',
     icon: Clock,
   },
   [SessionType.RACE]: {
     labelKey: 'configModal.sessionTypes.race',
-    prefix: 'R',
     color: 'bg-green-500/15 text-green-600',
     icon: Flag,
   },
 }
+
+// A free practice may run without limits; qualifying and races need a time or a lap count
+export const needsLimit = (type) => type !== SessionType.PRACTICE
 
 export const NEW_SESSION_FORM = { name: '', duration: 5, maxLaps: 10, useTime: true, useLaps: false }
 
@@ -33,20 +40,20 @@ export const limitsBody = (form) => ({
   maxLaps: form.useLaps ? form.maxLaps : null,
 })
 
-// Qualifying sessions and races in their running order, the oldest first on a tie
-export const qualifRaceSessions = (sessions) =>
+// Free practices, qualifying sessions and races in their running order, the oldest first on a tie
+export const scheduledSessions = (sessions) =>
   sessions
-    .filter((s) => s.type === SessionType.QUALIF || s.type === SessionType.RACE)
+    .filter((s) => SESSION_TYPE_STYLE[s.type])
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || new Date(a.createdAt) - new Date(b.createdAt))
 
-// Q1, Q2… R1, R2…: the rank of a session among those of its type
-export function sessionLabel(session, scheduled) {
+// FP1, Q1, Q2… R1: the type's abbreviation and the rank of the session among those of its type
+export function sessionLabel(session, scheduled, t) {
   const sameType = scheduled.filter((s) => s.type === session.type)
-  return `${SESSION_TYPE_STYLE[session.type].prefix}${sameType.findIndex((s) => s.id === session.id) + 1}`
+  return `${t(sessionTypeAbbrKey(session.type))}${sameType.findIndex((s) => s.id === session.id) + 1}`
 }
 
-export const nextSessionLabel = (type, scheduled) =>
-  `${SESSION_TYPE_STYLE[type].prefix}${scheduled.filter((s) => s.type === type).length + 1}`
+export const nextSessionLabel = (type, scheduled, t) =>
+  `${t(sessionTypeAbbrKey(type))}${scheduled.filter((s) => s.type === type).length + 1}`
 
 export function limitsText(session) {
   const minutes = session.maxDuration ? `${Math.round(session.maxDuration / 60000)}min` : ''

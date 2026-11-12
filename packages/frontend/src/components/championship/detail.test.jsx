@@ -1,7 +1,9 @@
 import { act, cleanup, render, renderHook, screen } from '@testing-library/react'
-import { SessionType } from '@racehubos/shared'
+import userEvent from '@testing-library/user-event'
+import { SessionStatus, SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
 import ChampionshipBracketPanel from './ChampionshipBracketPanel'
+import ChampionshipHeader from './ChampionshipHeader'
 import ChampionshipStandingsPanel from './ChampionshipStandingsPanel'
 import { useStandingsTab } from './useStandingsTab'
 
@@ -68,4 +70,22 @@ describe('useStandingsTab', () => {
     rerender({ type: SessionType.RACE })
     expect(result.current[0]).toBe(SessionType.RACE)
   })
+})
+
+test('the header lists the sessions in running order, free practices numbered like the others', async () => {
+  const session = (id, type, order, createdAt) => ({ id, type, order, createdAt, status: SessionStatus.DRAFT })
+  const sessions = [
+    session('r1', SessionType.RACE, 3, '2026-01-04'),
+    session('fp2', SessionType.PRACTICE, 2, '2026-01-05'),
+    session('q1', SessionType.QUALIF, 1, '2026-01-02'),
+    session('fp1', SessionType.PRACTICE, 0, '2026-01-01'),
+  ]
+  const onSelectSession = vi.fn()
+  render(<ChampionshipHeader championship={{ name: 'Cup' }} sessions={sessions} onSelectSession={onSelectSession} />)
+  const labels = ['FP1', 'Q1', 'FP2', 'R1']
+  expect(
+    screen.getAllByRole('button', { name: new RegExp(`^(${labels.join('|')})$`) }).map((b) => b.textContent)
+  ).toEqual(labels)
+  await userEvent.click(screen.getByRole('button', { name: 'FP2' }))
+  expect(onSelectSession).toHaveBeenCalledWith(sessions[1])
 })

@@ -107,6 +107,25 @@ describe('generating the sessions of an auto championship', () => {
     ]);
   });
 
+  test('generated sessions come after the free practices', async () => {
+    const championship = await autoChampionship(2, { driversPerQualif: 2, driversPerRace: 2 });
+    for (const [order, deletedAt] of [
+      [0, null],
+      [1, null],
+      [5, new Date()],
+    ]) {
+      await prisma.session.create({
+        data: { name: `EL${order}`, type: SessionType.PRACTICE, ...linked(championship), order, deletedAt },
+      });
+    }
+    await service.generateAutoSessions(championship.id, NAMES);
+    const generated = (await sessionsOf(championship.id)).filter((s) => s.type !== SessionType.PRACTICE);
+    expect(generated.map((s) => [s.type, s.order])).toEqual([
+      [SessionType.QUALIF, 2],
+      [SessionType.RACE, 3],
+    ]);
+  });
+
   test('regenerating replaces the drafts only, and skips unlinked participants', async () => {
     const championship = await autoChampionship(3, { driversPerQualif: 2 });
     const practice = await prisma.session.create({

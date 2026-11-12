@@ -24,7 +24,7 @@ import {
   limitsBody,
   limitsText,
   nextSessionLabel,
-  qualifRaceSessions,
+  scheduledSessions,
   sessionFormOf,
   sessionLabel,
 } from './sessionLimits'
@@ -92,10 +92,12 @@ describe('session limits', () => {
     })
   })
 
-  test('qualifying sessions and races in running order, the oldest first on a tie', () => {
+  test('free practices, qualifying sessions and races in running order, the oldest first on a tie', () => {
     const late = draft('late', SessionType.RACE, { createdAt: '2026-02-01' })
     const early = draft('early', SessionType.RACE, { createdAt: '2026-01-01' })
-    expect(qualifRaceSessions([r1, practice, late, q2, early, q1]).map((s) => s.id)).toEqual([
+    const balancing = draft('b', SessionType.BALANCING)
+    expect(scheduledSessions([r1, practice, late, q2, balancing, early, q1]).map((s) => s.id)).toEqual([
+      'p',
       'early',
       'late',
       'q1',
@@ -104,12 +106,14 @@ describe('session limits', () => {
     ])
   })
 
-  test('labels: rank among the sessions of the same type', () => {
-    const scheduled = [q1, q2, r1]
-    expect(sessionLabel(q2, scheduled)).toBe('Q2')
-    expect(sessionLabel(r1, scheduled)).toBe('R1')
-    expect(nextSessionLabel(SessionType.QUALIF, scheduled)).toBe('Q3')
-    expect(nextSessionLabel(SessionType.RACE, [])).toBe('R1')
+  test("labels: the type's abbreviation in the language, and the rank among the sessions of that type", () => {
+    const scheduled = [practice, q1, q2, r1]
+    expect(sessionLabel(practice, scheduled, i18n.t)).toBe('FP1')
+    expect(sessionLabel(q2, scheduled, i18n.t)).toBe('Q2')
+    expect(sessionLabel(r1, scheduled, i18n.t)).toBe('R1')
+    expect(nextSessionLabel(SessionType.PRACTICE, scheduled, i18n.t)).toBe('FP2')
+    expect(nextSessionLabel(SessionType.QUALIF, scheduled, i18n.t)).toBe('Q3')
+    expect(nextSessionLabel(SessionType.RACE, [], i18n.t)).toBe('R1')
   })
 
   test('limits shown as minutes and laps', () => {
@@ -291,8 +295,8 @@ describe('ChampionshipSessionsPanel', () => {
 
   test('none yet: add a qualifying session at the end of the order', async () => {
     const mock = routeFetch({ 'POST /api/championships/c1/sessions': { success: true } })
-    const { onChanged } = panel({ sessions: [practice] })
-    expect(screen.getByText('No session. Add a qualification or a race.')).toBeInTheDocument()
+    const { onChanged } = panel()
+    expect(screen.getByText('No session. Add a practice, a qualification or a race.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Qualif' }))
     expect(screen.queryByText(/No session/)).not.toBeInTheDocument()
     expect(within(screen.getByTestId('config-session-editor')).getByText('Q1')).toBeInTheDocument()
@@ -308,6 +312,29 @@ describe('ChampionshipSessionsPanel', () => {
       sessionNames: expect.any(Object),
     })
     expect(screen.queryByTestId('config-session-editor')).not.toBeInTheDocument()
+  })
+
+  test('free practices: as many as wanted, in the running order, with or without limits', async () => {
+    const mock = routeFetch({ 'POST /api/championships/c1/sessions': { success: true } })
+    const { onChanged } = panel({ sessions: [q1, practice] })
+    const [first, second] = screen.getAllByTestId('config-session-row')
+    expect(within(first).getByText('FP1')).toBeInTheDocument()
+    expect(within(first).getByText('Free Practice')).toBeInTheDocument()
+    expect(within(second).getByText('Q1')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Practice' }))
+    const editor = screen.getByTestId('config-session-editor')
+    expect(within(editor).getByText('FP2')).toBeInTheDocument()
+    await userEvent.click(within(editor).getByRole('checkbox', { name: 'min' }))
+    await userEvent.click(within(editor).getByRole('button', { name: 'Create' }))
+    await waitFor(() => expect(onChanged).toHaveBeenCalled())
+    expect(bodyOf(mock, 'POST')).toEqual({
+      type: SessionType.PRACTICE,
+      maxDuration: null,
+      maxLaps: null,
+      order: 2,
+      sessionNames: expect.any(Object),
+    })
   })
 
   test('a race needs a limit; a refused creation reports its error and stays open', async () => {
@@ -370,6 +397,7 @@ describe('ChampionshipSessionsPanel', () => {
 
   test('a finished championship adds nothing', () => {
     panel({ championship: finished })
+    expect(screen.getByRole('button', { name: 'Practice' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Qualif' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Race' })).toBeDisabled()
   })

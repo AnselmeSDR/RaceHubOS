@@ -62,7 +62,7 @@ const withPeople = { include: { driver: true, car: true } };
 /**
  * Per standings type: the sessions it counts, the laps it reads, and how it ranks them.
  * Qualifying: best lap over finished qualifs. Race: laps then time over finished races.
- * Practice: best lap of the practice session, deleted laps included.
+ * Practice: best lap over every practice session, deleted laps included.
  */
 const STANDINGS = {
   [SessionType.QUALIF]: {
@@ -78,7 +78,7 @@ const STANDINGS = {
   [SessionType.PRACTICE]: {
     sessions: { type: SessionType.PRACTICE },
     laps: withPeople,
-    rank: (sessions) => bestLapStandings(sessions[0]?.laps ?? []),
+    rank: (sessions) => bestLapStandings(sessions.flatMap((s) => s.laps)),
   },
 };
 
