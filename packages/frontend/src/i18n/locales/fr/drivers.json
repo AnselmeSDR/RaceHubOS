@@ -19,6 +19,9 @@
     "email": "Email",
     "emailPlaceholder": "lewis@example.com",
     "noTeam": "Aucune équipe",
+    "preferredCar": "Voiture préférée",
+    "noPreferredCar": "Aucune",
+    "preferredCarHint": "Reprise quand le pilote est inscrit à un championnat, modifiable pour chacun.",
     "saved": "Pilote sauvegardé"
   },
   "profile": {

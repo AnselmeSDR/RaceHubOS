@@ -1,11 +1,21 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User } from 'lucide-react'
-import { FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '@/components/crud'
+import { FormField, FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '@/components/crud'
 import { useEntityForm } from '@/hooks/useEntityForm'
+import { getData } from '@/lib/sessionApi'
+import CarSelect from '../car/CarSelect'
 
-/** Create a driver, or edit `driver`: name, number, email, picture, colour and team among `teams`. */
+/**
+ * Create a driver, or edit `driver`: name, number, email, picture, colour, team among `teams` and
+ * the preferred car, offered when the driver joins a championship.
+ */
 export default function DriverFormModal({ driver, teams, onClose }) {
   const { t } = useTranslation('drivers')
+  const [cars, setCars] = useState([])
+  useEffect(() => {
+    getData('/api/cars?limit=1000').then((data) => setCars(data ?? []))
+  }, [])
   const { formData, setFormData, setField, setError, formProps } = useEntityForm({
     endpoint: '/api/drivers',
     record: driver,
@@ -16,6 +26,7 @@ export default function DriverFormModal({ driver, teams, onClose }) {
       img: driver?.img || '',
       color: driver?.color || '#3B82F6',
       teamId: driver?.teamId || '',
+      preferredCarId: driver?.preferredCarId || null,
     },
     savedMessage: t('form.saved'),
     onClose,
@@ -65,6 +76,16 @@ export default function DriverFormModal({ driver, teams, onClose }) {
         options={teams.map((team) => ({ value: team.id, label: team.name }))}
         placeholder={t('form.noTeam')}
       />
+      <FormField label={t('form.preferredCar')}>
+        <CarSelect
+          cars={cars}
+          value={formData.preferredCarId}
+          onChange={setField('preferredCarId')}
+          label={t('form.preferredCar')}
+          noneLabel={t('form.noPreferredCar')}
+        />
+        <p className="text-xs text-muted-foreground mt-1">{t('form.preferredCarHint')}</p>
+      </FormField>
     </FormModal>
   )
 }

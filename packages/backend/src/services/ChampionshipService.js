@@ -1,5 +1,5 @@
 import { createPrismaClient } from '../lib/prisma.js';
-import { ChampionshipMode, SessionStatus, SessionType } from '@racehubos/shared';
+import { ChampionshipMode, groupCount, SessionStatus, SessionType } from '@racehubos/shared';
 import { sessionName } from '../lib/sessionNames.js';
 import {
   bracketGroup,
@@ -44,10 +44,12 @@ export class ChampionshipService {
 
   /**
    * Replaces the draft qualifying and race sessions of an auto championship: qualifying groups
-   * interleave the participants, races are empty until the qualifying results are in.
+   * interleave the participants, never two of the same car in one; races are empty until the
+   * qualifying results are in. Each driver runs the car the championship gives them.
    * @param {object} [sessionNames] - names by session type, in the interface language
+   * @param {string[][]} [qualifGroups] - driver ids by qualifying, as arranged by hand (already checked)
    */
-  async generateAutoSessions(championshipId, sessionNames = {}) {
+  async generateAutoSessions(championshipId, sessionNames = {}, qualifGroups = null) {
     const championship = await this.autoChampionship(championshipId, {
       participants: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
     });
@@ -82,20 +84,28 @@ export class ChampionshipService {
           maxLaps,
           order: order++,
           autoGroup: group,
-          drivers: { create: drivers.map(({ driverId }, controller) => ({ driverId, controller })) },
+          drivers: {
+            create: drivers.map(({ driverId, carId }, controller) => ({ driverId, carId: carId ?? null, controller })),
+          },
         },
       });
 
-    const qualifGroups = distributeEvenly(participants, driversPerQualif);
-    for (const [g, group] of qualifGroups.entries()) {
+    const byDriver = new Map(participants.map((p) => [p.driverId, p]));
+    const groups = qualifGroups
+      ? qualifGroups.map((ids) => ids.map((id) => byDriver.get(id)))
+      : distributeEvenly(participants, driversPerQualif, (p) => p.carId);
+    for (const [g, group] of groups.entries()) {
       await draft(SessionType.QUALIF, g, championship.qualifMaxDuration, championship.qualifMaxLaps, group);
     }
-    for (let g = 0; g < Math.ceil(participants.length / driversPerRace); g++) {
+    for (let g = 0; g < groupCount(participants, driversPerRace, (p) => p.carId); g++) {
       await draft(SessionType.RACE, g, championship.raceMaxDuration, championship.raceMaxLaps);
     }
   }
 
-  /** Fills the races from the qualifying results: balanced groups, fastest first, grid in that order. */
+  /**
+   * Fills the races from the qualifying results: balanced groups, fastest first, grid in that order;
+   * two drivers of the same car are split, the slower one swapped with the nearest race.
+   */
   async assignDriversToRaces(championshipId) {
     const championship = await this.autoChampionship(championshipId, { participants: { where: { deletedAt: null } } });
     if (!championship) return;
@@ -109,13 +119,14 @@ export class ChampionshipService {
       where: { championshipId, type: SessionType.RACE, deletedAt: null },
       orderBy: { autoGroup: 'asc' },
     });
-    const raceGroups = distributeSequential(ranking, championship.driversPerRace);
+    const cars = new Map(championship.participants.map((p) => [p.driverId, p.carId]));
+    const raceGroups = distributeSequential(ranking, championship.driversPerRace, (entry) => cars.get(entry.driverId));
 
     for (const [r, race] of raceSessions.entries()) {
       await this.prisma.sessionDriver.deleteMany({ where: { sessionId: race.id } });
       for (const [i, { driverId }] of (raceGroups[r] ?? []).entries()) {
         await this.prisma.sessionDriver.create({
-          data: { sessionId: race.id, driverId, controller: i, gridPos: i + 1 },
+          data: { sessionId: race.id, driverId, carId: cars.get(driverId) ?? null, controller: i, gridPos: i + 1 },
         });
       }
     }

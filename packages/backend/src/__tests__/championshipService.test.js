@@ -47,6 +47,19 @@ async function autoChampionship(count, settings = {}) {
   });
 }
 
+/** Gives the participants of `championship` their car, by driver index; makes the cars as needed. */
+async function giveCars(championship, carsByDriver) {
+  const cars = {};
+  for (const [index, name] of Object.entries(carsByDriver)) {
+    cars[name] ??= await prisma.car.create({ data: { brand: name, model: 'GT3' } });
+    await prisma.championshipParticipant.updateMany({
+      where: { championshipId: championship.id, driverId: drivers[index].id },
+      data: { carId: cars[name].id },
+    });
+  }
+  return cars;
+}
+
 const linked = (championship) => ({ championshipId: championship.id, trackId: track.id });
 const sessionsOf = (championshipId) =>
   prisma.session.findMany({
@@ -105,6 +118,42 @@ describe('generating the sessions of an auto championship', () => {
     expect([sessions[0].maxDuration, sessions[0].maxLaps, sessions[3].maxDuration, sessions[3].maxLaps]).toEqual([
       120000, 10, 300000, 20,
     ]);
+  });
+
+  test('two drivers of the same car never share a qualifying; each runs the car of the championship', async () => {
+    const championship = await autoChampionship(6, { driversPerQualif: 3 });
+    // Dealt: Q1 D0 D2 D4, Q2 D1 D3 D5 — D0 and D2 share the Audi
+    const cars = await giveCars(championship, { 0: 'Audi', 2: 'Audi', 1: 'BMW', 4: 'AMG' });
+    await service.generateAutoSessions(championship.id, NAMES);
+    const [q1, q2] = await sessionsOf(championship.id);
+    expect(namesOf(q1.drivers)).toEqual(['D0', 'D1', 'D4']);
+    expect(namesOf(q2.drivers)).toEqual(['D2', 'D3', 'D5']);
+    expect(q1.drivers.map((d) => d.carId)).toEqual([cars.Audi.id, cars.BMW.id, cars.AMG.id]);
+    expect(q2.drivers.map((d) => d.carId)).toEqual([cars.Audi.id, null, null]);
+  });
+
+  test('as many qualifying sessions and races as drivers sharing one car, so that they run apart', async () => {
+    // Three drivers fit one qualifying and one race, but D0 and D2 share the Audi
+    const championship = await autoChampionship(3);
+    await giveCars(championship, { 0: 'Audi', 2: 'Audi' });
+    await service.generateAutoSessions(championship.id, NAMES);
+    const sessions = await sessionsOf(championship.id);
+    expect(sessions.map((s) => s.type)).toEqual([
+      SessionType.QUALIF,
+      SessionType.QUALIF,
+      SessionType.RACE,
+      SessionType.RACE,
+    ]);
+    expect(sessions.slice(0, 2).map((s) => namesOf(s.drivers))).toEqual([['D0', 'D1'], ['D2']]);
+  });
+
+  test('qualifying groups arranged by hand are kept as they are', async () => {
+    const championship = await autoChampionship(3, { driversPerQualif: 2 });
+    const ids = drivers.map((d) => d.id);
+    await service.generateAutoSessions(championship.id, NAMES, [[ids[1], ids[0]], [ids[2]]]);
+    const [q1, q2] = await sessionsOf(championship.id);
+    expect(namesOf(q1.drivers)).toEqual(['D1', 'D0']);
+    expect(namesOf(q2.drivers)).toEqual(['D2']);
   });
 
   test('generated sessions come after the free practices', async () => {
@@ -185,6 +234,25 @@ describe('assigning the races from the qualifying results', () => {
     expect(namesOf(r2.drivers)).toEqual(['D3', 'D2']);
     expect(emitted('championship:races_assigned')).toEqual([
       { championshipId: championship.id, timestamp: expect.any(String) },
+    ]);
+  });
+
+  test('two drivers of the same car are split: the slower one swaps with the nearest race', async () => {
+    const championship = await autoChampionship(4, { driversPerQualif: 4, driversPerRace: 2 });
+    const cars = await giveCars(championship, { 0: 'Audi', 1: 'Audi', 2: 'BMW' });
+    await service.generateAutoSessions(championship.id, NAMES);
+    // Two qualifying sessions for the two Audis: D0 D2, then D1 D3
+    const [q1, q2] = await sessionsOf(championship.id);
+    await finishQualif(q1, { 0: 7000, 2: 7200 });
+    await finishQualif(q2, { 1: 7100, 3: 7300 });
+
+    await service.assignDriversToRaces(championship.id);
+    const [, , r1, r2] = await sessionsOf(championship.id);
+    expect(namesOf(r1.drivers)).toEqual(['D0', 'D2']);
+    expect(namesOf(r2.drivers)).toEqual(['D1', 'D3']);
+    expect(r1.drivers.map((d) => [d.carId, d.gridPos])).toEqual([
+      [cars.Audi.id, 1],
+      [cars.BMW.id, 2],
     ]);
   });
 

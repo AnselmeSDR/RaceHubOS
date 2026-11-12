@@ -12,6 +12,8 @@ export default function Modal({ open, onClose, title, icon, children, size = 'md
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
     '3xl': 'max-w-3xl',
+    '5xl': 'max-w-5xl',
+    '7xl': 'max-w-7xl',
   }
 
   return (

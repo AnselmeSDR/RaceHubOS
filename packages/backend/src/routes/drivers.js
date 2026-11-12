@@ -125,11 +125,19 @@ router.get(
   })
 );
 
+/** Refuses a preferred car that does not exist or was deleted; none is fine. */
+async function checkPreferredCar(preferredCarId) {
+  if (!preferredCarId) return;
+  const car = await prisma.car.findFirst({ where: { id: preferredCarId, deletedAt: null } });
+  if (!car) throw new HttpError(400, 'Preferred car not found');
+}
+
 router.post(
   '/',
   route('Failed to create driver', async (req, res) => {
-    const { name, number, email, img, color, teamId } = req.body;
+    const { name, number, email, img, color, teamId, preferredCarId } = req.body;
     if (!name?.trim()) throw new HttpError(400, 'Name is required');
+    await checkPreferredCar(preferredCarId);
 
     const driver = await prisma.driver
       .create({
@@ -140,6 +148,7 @@ router.post(
           img: img || null,
           color: color || '#3B82F6',
           teamId: teamId || null,
+          preferredCarId: preferredCarId || null,
         },
         include: { team: true },
       })
@@ -148,13 +157,22 @@ router.post(
   })
 );
 
-const EDITABLE = { name: trimmed, number: orNull, email: trimmedOrNull, img: kept, color: kept, teamId: orNull };
+const EDITABLE = {
+  name: trimmed,
+  number: orNull,
+  email: trimmedOrNull,
+  img: kept,
+  color: kept,
+  teamId: orNull,
+  preferredCarId: orNull,
+};
 
 router.put(
   '/:id',
   route('Failed to update driver', async (req, res) => {
     const { id } = req.params;
     await findOr404(prisma.driver, id, 'Driver');
+    await checkPreferredCar(req.body.preferredCarId);
     const driver = await prisma.driver
       .update({ where: { id }, data: changesFrom(req.body, EDITABLE), include: { team: true } })
       .catch(refuseTaken);

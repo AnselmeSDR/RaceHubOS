@@ -1,9 +1,8 @@
 import express from 'express';
 import { createPrismaClient } from '../lib/prisma.js';
 import { attachExtras } from '../addons/extras.js';
-import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared';
+import { ChampionshipMode, ChampionshipStatus } from '@racehubos/shared';
 import { championshipWorkbook, championshipsWorkbook, idsFromQuery, sendWorkbook } from '../lib/exportQueries.js';
-import { sessionName } from '../lib/sessionNames.js';
 import { purgeChampionship, restoreChampionship, softDeleteChampionship } from '../lib/softDelete.js';
 import { DETAIL_INCLUDE, LIST_INCLUDE, SAVED_INCLUDE } from '../lib/championships/includes.js';
 import { isComputedSort, listWhere, sortComputed } from '../lib/championships/list.js';
@@ -11,9 +10,11 @@ import {
   hasStartedQualif,
   lockedDriverIds,
   newChampionshipError,
+  participantCars,
   participantsError,
   setParticipants,
 } from '../lib/championships/participants.js';
+import { createPlannedSessions, createPractices } from '../lib/championships/plan.js';
 import { championshipResults } from '../lib/championships/results.js';
 import { championshipStandings, standingsInclude, STANDINGS_TYPES } from '../lib/championships/standings.js';
 import { route } from '../lib/http.js';
@@ -85,17 +86,19 @@ router.get(
   })
 );
 
-// POST /api/championships - a manual or automatic championship, with its practice and generated sessions
+// POST /api/championships - a manual or automatic championship, with its free practices and generated sessions
 router.post(
   '/',
   route('Failed to create championship', async (req, res) => {
     const error = await newChampionshipError(prisma, req.body);
     if (error) return res.status(400).json({ success: false, error });
 
-    const { name, season, status, trackId, mode, participants, sessionNames } = req.body;
+    const { name, season, status, trackId, mode, participants = [], sessionNames, sessions } = req.body;
+    const { qualifGroups, practiceGroups } = req.body;
     const auto = mode === ChampionshipMode.AUTO;
     const { driversPerQualif, driversPerRace, qualifMaxDuration, qualifMaxLaps, raceMaxDuration, raceMaxLaps } =
       req.body;
+    const { practiceCount = 1 } = req.body;
 
     const championship = await prisma.championship.create({
       data: {
@@ -113,26 +116,18 @@ router.post(
       },
     });
 
-    if (auto) {
-      await setParticipants(
-        prisma,
-        championship.id,
-        participants.map((p) => p.driverId)
-      );
+    if (participants.length) await setParticipants(prisma, championship.id, participants);
+    const championshipId = championship.id;
+    const cars = await participantCars(prisma, championshipId);
+    if (!auto && sessions) {
+      // Planned by hand: every session, free practices included, in its running order
+      await createPlannedSessions(prisma, { championshipId, trackId, sessions, cars, body: req.body });
+    } else if (trackId) {
+      // A championship on a track starts with its free practices (one unless told), numbered when several
+      const groups = auto ? practiceGroups : undefined;
+      await createPractices(prisma, { championshipId, trackId, count: practiceCount, groups, cars, body: req.body });
     }
-    // Every championship on a track keeps a free practice session
-    if (trackId) {
-      await prisma.session.create({
-        data: {
-          name: sessionName(SessionType.PRACTICE, sessionNames),
-          type: SessionType.PRACTICE,
-          status: SessionStatus.DRAFT,
-          championshipId: championship.id,
-          trackId,
-        },
-      });
-    }
-    if (auto) await championshipService.generateAutoSessions(championship.id, sessionNames);
+    if (auto) await championshipService.generateAutoSessions(championshipId, sessionNames, qualifGroups);
 
     const result = await prisma.championship.findUnique({
       where: { id: championship.id },
@@ -250,7 +245,7 @@ router.put(
       }
     }
 
-    await setParticipants(prisma, id, driverIds);
+    await setParticipants(prisma, id, participants);
     // Before any qualif the sessions are regenerated; afterwards a newcomer needs a qualif added by hand
     if (!started) await championshipService.generateAutoSessions(id, sessionNames);
 

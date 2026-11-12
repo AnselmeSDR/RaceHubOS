@@ -214,6 +214,33 @@ describe('PUT /api/drivers/:id', () => {
     expect(res.body.data).toMatchObject({ name: 'Ben', number: 9, email: 'b@example.com', team: { name: 'Red' } });
   });
 
+  test('a preferred car is set, cleared, refused when unknown or deleted; erasing the car forgets it', async () => {
+    const created = await api.post('/api/drivers').send({ name: 'Eve', preferredCarId: gt.id });
+    expect(created.status).toBe(201);
+    expect(created.body.data.preferredCarId).toBe(gt.id);
+
+    expect((await api.put(`/api/drivers/${ana.id}`).send({ preferredCarId: p911.id })).body.data.preferredCarId).toBe(
+      p911.id
+    );
+    const bin = await prisma.car.create({ data: { brand: 'Old', model: 'Bin', deletedAt: new Date() } });
+    for (const preferredCarId of ['nope', bin.id]) {
+      const res = await api.put(`/api/drivers/${ana.id}`).send({ preferredCarId });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Preferred car not found');
+    }
+    expect((await api.post('/api/drivers').send({ name: 'Fay', preferredCarId: 'nope' })).status).toBe(400);
+
+    await prisma.lap.deleteMany({ where: { carId: p911.id } });
+    await prisma.sessionDriver.deleteMany({ where: { carId: p911.id } });
+    await prisma.car.delete({ where: { id: p911.id } });
+    expect((await prisma.driver.findUnique({ where: { id: ana.id } })).preferredCarId).toBeNull();
+    expect(
+      (await api.put(`/api/drivers/${created.body.data.id}`).send({ preferredCarId: '' })).body.data
+    ).toMatchObject({
+      preferredCarId: null,
+    });
+  });
+
   test('404 when missing, 400 on a taken number, 500 otherwise', async () => {
     expect((await api.put('/api/drivers/nope').send({ name: 'X' })).status).toBe(404);
     let res = await api.put(`/api/drivers/${ben.id}`).send({ number: 7 });

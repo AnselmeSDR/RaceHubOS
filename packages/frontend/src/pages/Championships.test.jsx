@@ -17,8 +17,7 @@ const { received, spy } = vi.hoisted(() => {
   })
   return { received, spy }
 })
-vi.mock('@/components/championship/AutoChampionshipWizard', () => spy('AutoChampionshipWizard'))
-vi.mock('@/components/championship/ChampionshipFormModal', () => spy('ChampionshipFormModal'))
+vi.mock('@/components/championship/ChampionshipWizard', () => spy('ChampionshipWizard'))
 
 const tracks = [{ id: 't1', name: 'Monza' }]
 let mock
@@ -88,44 +87,21 @@ test.each([
   await waitFor(() => expect(listQueries().at(-1)).toMatchObject(expected))
 })
 
-test('adding opens the wizard; switching keeps what was typed', async () => {
+test('adding opens the wizard; closing it reloads the list', async () => {
   await shown()
   await userEvent.click(screen.getByRole('button', { name: 'New championship' }))
-  expect(received.AutoChampionshipWizard).toMatchObject({ tracks, initialName: '', initialTrackId: '' })
-  act(() => received.AutoChampionshipWizard.onFormChange({ name: 'Cup', trackId: 't1' }))
-  act(() => received.AutoChampionshipWizard.onSwitchManual())
-  expect(screen.queryByTestId('AutoChampionshipWizard')).not.toBeInTheDocument()
-  expect(received.ChampionshipFormModal).toMatchObject({ tracks, initialData: { name: 'Cup', trackId: 't1' } })
-  act(() => received.ChampionshipFormModal.onSwitchAuto())
-  expect(screen.queryByTestId('ChampionshipFormModal')).not.toBeInTheDocument()
-  expect(received.AutoChampionshipWizard).toMatchObject({ initialName: 'Cup', initialTrackId: 't1' })
-})
-
-test('closing forgets what was typed and reloads the list', async () => {
-  await shown()
-  await userEvent.click(screen.getByRole('button', { name: 'New championship' }))
-  act(() => received.AutoChampionshipWizard.onFormChange({ name: 'Cup', trackId: 't1' }))
+  expect(received.ChampionshipWizard).toMatchObject({ tracks })
   const before = listQueries().length
-  act(() => received.AutoChampionshipWizard.onClose())
-  expect(screen.queryByTestId('AutoChampionshipWizard')).not.toBeInTheDocument()
+  act(() => received.ChampionshipWizard.onClose())
+  expect(screen.queryByTestId('ChampionshipWizard')).not.toBeInTheDocument()
   await waitFor(() => expect(listQueries().length).toBe(before + 1))
-  await userEvent.click(screen.getByRole('button', { name: 'New championship' }))
-  expect(received.AutoChampionshipWizard).toMatchObject({ initialName: '', initialTrackId: '' })
 })
 
 test('a championship created by the wizard reloads the list', async () => {
   await shown()
   await userEvent.click(screen.getByRole('button', { name: 'New championship' }))
   const before = listQueries().length
-  act(() => received.AutoChampionshipWizard.onCreated())
+  act(() => received.ChampionshipWizard.onCreated())
   await waitFor(() => expect(listQueries().length).toBe(before + 1))
-  expect(screen.getByTestId('AutoChampionshipWizard')).toBeInTheDocument()
-})
-
-test('the manual form closes the same way', async () => {
-  await shown()
-  await userEvent.click(screen.getByRole('button', { name: 'New championship' }))
-  act(() => received.AutoChampionshipWizard.onSwitchManual())
-  act(() => received.ChampionshipFormModal.onClose())
-  expect(screen.queryByTestId('ChampionshipFormModal')).not.toBeInTheDocument()
+  expect(screen.getByTestId('ChampionshipWizard')).toBeInTheDocument()
 })

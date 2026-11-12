@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : création de championnat</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --softer: #fafaf9;
+  --primary: #4338ca;
+  --yellow: #eab308;
+  --el: #7e22ce;
+  --el-bg: #faf5ff;
+  --el-bd: #e9d5ff;
+  --q: #1d4ed8;
+  --q-bg: #eff6ff;
+  --q-bd: #bfdbfe;
+  --r: #15803d;
+  --r-bg: #f0fdf4;
+  --r-bd: #bbf7d0;
+  --bad: #b91c1c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+.page-title h1 { margin: 0 0 6px; font-size: 28px; }
+.page-title p { margin: 0; color: var(--muted); max-width: 900px; line-height: 1.5; }
+.screen > h2 { margin: 0 0 4px; font-size: 20px; }
+.screen > .why { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 900px; }
+.stage { background: var(--soft); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.modal { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(28, 25, 23, 0.1); padding: 24px; display: flex; flex-direction: column; gap: 18px; margin: 0 auto; }
+.w-sm { width: 520px; }
+.w-md { width: 864px; }
+.w-lg { width: 944px; }
+.w-xl { width: 1224px; }
+.mh { display: flex; align-items: center; gap: 10px; }
+.mh h3 { margin: 0; font-size: 18px; font-weight: 600; flex: 1; }
+.icon-btn { border: none; background: transparent; padding: 4px; border-radius: 6px; color: #a8a29e; display: inline-flex; cursor: pointer; }
+.steps { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.steps .step { display: flex; align-items: center; gap: 8px; }
+.steps .dot { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.steps .done .dot { background: #16a34a; color: #fff; }
+.steps .now .dot { background: var(--yellow); color: var(--fg); }
+.steps .now { font-weight: 600; }
+.steps .todo .dot { background: var(--soft); border: 1px solid var(--border); color: var(--faint); }
+.steps .todo { color: var(--faint); }
+.steps .line { flex: 1; height: 2px; background: var(--border); }
+.steps .line.done { background: #16a34a; }
+.seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; flex-shrink: 0; }
+.seg button { border: none; background: transparent; border-radius: 7px; padding: 0 14px; height: 30px; font: 500 13px Inter, system-ui, sans-serif; color: var(--muted); }
+.seg button[aria-pressed='true'] { background: #fff; box-shadow: 0 1px 3px rgba(28, 25, 23, 0.15); font-weight: 600; color: var(--fg); }
+.mode { display: flex; align-items: center; gap: 16px; }
+.hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.45; }
+.footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+.footer .total { margin: 0; font-size: 13px; color: var(--muted); flex: 1; }
+.btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 0 14px; height: 36px; font: 500 14px Inter, system-ui, sans-serif; color: var(--fg); }
+.btn.go { border: none; background: var(--yellow); font-weight: 600; }
+.btn.save { border: none; background: var(--primary); color: #fff; font-weight: 600; }
+.num { width: 44px; height: 28px; border: 1px solid var(--border); border-radius: 6px; text-align: center; font: 13px Inter, system-ui, sans-serif; color: var(--fg); }
+.num.sm { width: 40px; height: 26px; font-size: 12px; }
+.checks { display: flex; gap: 12px; align-items: center; font-size: 12px; color: #44403c; flex-wrap: wrap; }
+.checks label { display: flex; align-items: center; gap: 5px; }
+.checks .unit { display: flex; align-items: center; gap: 4px; }
+.avatar { border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; color: #fff; font-weight: 700; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.car { object-fit: contain; flex-shrink: 0; }
+.tag { font-size: 11px; font-weight: 500; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.tag.pref { color: #854d0e; background: #fef9c3; }
+.tag.changed { color: #44403c; background: var(--soft); }
+.tag.new { color: #3730a3; background: #eef2ff; }
+.note { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.grip { color: #a8a29e; display: inline-flex; cursor: grab; }
+
+/* Participants table */
+.table { border: 1px solid var(--border); border-radius: 10px; }
+.trow { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.45fr) 44px; align-items: center; border-bottom: 1px solid #f0efee; }
+.trow.head { background: var(--softer); border-bottom-color: var(--border); border-radius: 10px 10px 0 0; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.trow.head > div { padding: 9px 8px; }
+.trow.head > div:first-child { padding-left: 14px; }
+.trow.empty { background: var(--softer); border-bottom: none; border-radius: 0 0 10px 10px; }
+.trow .idx { padding: 6px 14px; font-size: 12px; color: var(--faint); }
+.trow .who { padding: 6px 8px; display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
+.trow .who span.n { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trow .carcell { padding: 5px 8px; position: relative; }
+.carsel { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; background: #fff; font-size: 13px; }
+.carsel.open { border-color: #6366f1; box-shadow: 0 0 0 3px #e0e7ff; }
+.carsel .cn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carsel.none { border-style: dashed; border-color: #d6d3d1; background: var(--softer); padding: 8px 10px; color: var(--muted); }
+.menu { position: absolute; top: calc(100% - 2px); left: 8px; right: 8px; z-index: 5; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 28px rgba(28, 25, 23, 0.16); padding: 4px; }
+.menu .item { display: flex; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 6px; font-size: 13px; }
+.menu .item.sel { background: #eef2ff; }
+.menu .item .cn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu .foot { border-top: 1px solid #f0efee; margin-top: 4px; padding: 8px; font-size: 12px; color: var(--muted); }
+
+/* Type cards and sessions */
+.tcard { border: 1px solid; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.tcard h4 { margin: 0; font-size: 13px; font-weight: 600; }
+.tcard .line { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #44403c; gap: 8px; }
+.el { border-color: var(--el-bd); }
+.q { border-color: var(--q-bd); }
+.r { border-color: var(--r-bd); }
+.tcard.el { background: var(--el-bg); }
+.tcard.q { background: var(--q-bg); }
+.tcard.r { background: var(--r-bg); }
+.el h4, .el .lbl { color: var(--el); }
+.q h4, .q .lbl { color: var(--q); }
+.r h4, .r .lbl { color: var(--r); }
+.group { border-width: 1px; border-style: solid; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff; }
+.group .gh { display: flex; justify-content: space-between; padding: 0 4px 2px; font-size: 12px; }
+.group .lbl { font-weight: 600; }
+.group .cnt { font-size: 11px; color: var(--muted); }
+.group.drop { background: #f8faff; }
+.drow { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 7px; background: #fff; border: 1px solid var(--border); font-size: 13px; }
+.drow .n { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow.dragging { border-color: #6366f1; box-shadow: 0 6px 16px rgba(67, 56, 202, 0.25); }
+.slot { border: 1px dashed #d6d3d1; border-radius: 7px; padding: 5px 8px; font-size: 11px; color: var(--faint); }
+.slot.target { border-color: #6366f1; color: #3730a3; background: #eef2ff; }
+.pos { display: flex; gap: 4px; flex-wrap: wrap; }
+.pos span { font-size: 11px; color: var(--r); background: var(--r-bg); border: 1px solid var(--r-bd); border-radius: 6px; padding: 3px 7px; }
+.info { display: flex; align-items: center; gap: 8px; background: var(--softer); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #44403c; }
+.badge { color: #fff; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 4px 8px; min-width: 22px; text-align: center; }
+.badge.el { background: var(--el); }
+.badge.q { background: var(--q); }
+.badge.r { background: var(--r); }
+
+/* Manual list */
+.srow { display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--border); background: #fff; border-radius: 10px; padding: 8px 10px; }
+.srow.refused { border-color: #fca5a5; background: #fff7f7; }
+.srow .ord { font-size: 12px; color: var(--faint); width: 14px; padding-top: 6px; }
+.srow .body { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.srow .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.srow .cnt { font-size: 11px; color: var(--muted); padding-top: 6px; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 2px; background: #fff; font-size: 12px; white-space: nowrap; }
+.chip.ghost { border-style: dashed; border-color: #dc2626; background: #fef2f2; box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25); }
+.emptychip { border: 1px dashed #d6d3d1; border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--muted); }
+.refusal { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--bad); }
+.bench { border: 1px dashed #a8a29e; border-radius: 10px; padding: 12px; background: var(--softer); display: flex; flex-direction: column; gap: 10px; }
+.bench h4, .aside h4 { margin: 0; font-size: 13px; font-weight: 600; }
+.aside { border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.drop-line { height: 3px; border-radius: 2px; background: #6366f1; margin: -3px 0 -3px 34px; }
+
+/* Manual timeline */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-size: 13px; }
+.toolbar label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid; border-radius: 999px; padding: 4px 10px; font-size: 12px; background: #fff; }
+.benchstrip { display: flex; align-items: center; gap: 10px; border: 1px dashed #a8a29e; border-radius: 10px; padding: 8px 12px; background: var(--softer); font-size: 12px; color: var(--muted); }
+.lanes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.lane { border: 1px solid var(--border); border-radius: 10px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+.lane.refused { border-color: #fca5a5; }
+.lane.moving { border-color: #6366f1; box-shadow: 0 10px 24px rgba(67, 56, 202, 0.22); transform: rotate(-1.5deg); }
+.lane .lh { display: flex; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border); }
+.lane .lh .cnt { margin-left: auto; font-size: 11px; color: var(--muted); }
+.lane .ls { display: flex; flex-direction: column; gap: 4px; padding: 6px; }
+.mslot { display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 7px; padding: 3px 5px; font-size: 12px; min-height: 30px; }
+.mslot .k { font-size: 10px; color: var(--faint); width: 10px; text-align: center; }
+.mslot .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mslot.free { border-style: dashed; border-color: #d6d3d1; color: var(--faint); font-size: 11px; }
+.mslot.ghost { border-style: dashed; border-color: #dc2626; background: #fef2f2; }
+.lane .open { padding: 12px 8px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+/* Driver form */
+.f { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; }
+.f .ctl { border: 1px solid var(--border); border-radius: 8px; height: 36px; padding: 0 10px; display: flex; align-items: center; gap: 10px; font: 400 14px Inter, system-ui, sans-serif; color: var(--fg); background: #fff; }
+.f .ctl.big { height: 44px; }
+.f .ctl.hl { border-color: #6366f1; box-shadow: 0 0 0 3px #e0e7ff; }
+.f .ctl .grow { flex: 1; }
+.f small { font-weight: 400; color: var(--muted); font-size: 12px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.swatches { display: flex; gap: 6px; }
+.swatches span { width: 24px; height: 24px; border-radius: 999px; }
+.swatches span.on { outline: 2px solid var(--fg); outline-offset: 2px; }
+.open-points { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; }
+.open-points h2 { margin: 0 0 10px; font-size: 18px; }
+.open-points ul { margin: 0; padding-left: 20px; line-height: 1.6; color: #44403c; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="page-title">
+    <h1>Création de championnat : maquettes</h1>
+    <p>Un seul assistant en 3 étapes (Infos, Pilotes, Configuration). L'aperçu fusionne avec la configuration ; le mode automatique ou manuel se choisit à l'étape 3. Le manuel part toujours de ce que l'automatique a réparti.</p>
+  </div>
+
+  <section class="screen">
+    <h2>1. Profil pilote : voiture préférée</h2>
+    <p class="why">Nouvelle colonne <code>Driver.preferredCarId</code>, réglée dans la fiche du pilote. Elle est proposée d'office quand le pilote est inscrit à un championnat.</p>
+    <div class="stage">
+      <div class="modal w-sm">
+        <div class="mh"><h3>Modifier le pilote</h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="f">Nom<div class="ctl">Sarah MIL</div></div>
+        <div class="two">
+          <div class="f">Numéro<div class="ctl">7</div></div>
+          <div class="f">E-mail<div class="ctl" style="color: var(--faint)">pilote@exemple.fr</div></div>
+        </div>
+        <div class="f">Photo<div style="display: flex; align-items: center; gap: 12px"><span data-avatar="mil" data-size="48"></span><button class="btn">Changer</button></div></div>
+        <div class="f">Couleur<div class="swatches"><span style="background: #3b82f6"></span><span style="background: #dc2626"></span><span style="background: #16a34a"></span><span class="on" style="background: #9900ff"></span><span style="background: #eab308"></span><span style="background: #3b3a38"></span></div></div>
+        <div class="f">Équipe<div class="ctl"><span class="grow">Aucune</span><span data-icon="chev"></span></div></div>
+        <div class="f">
+          <span style="display: flex; align-items: center; gap: 8px">Voiture préférée <span class="tag new">Nouveau</span></span>
+          <div class="ctl big hl"><span data-car="amg" data-w="46" data-h="29"></span><span class="grow">AMG GT3 #8</span><span data-icon="chev"></span></div>
+          <small>Reprise quand le pilote est inscrit à un championnat, modifiable pour chacun.</small>
+        </div>
+        <div class="footer" style="justify-content: flex-end"><button class="btn">Annuler</button><button class="btn save">Enregistrer</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>2. Étape Pilotes : une voiture par pilote</h2>
+    <p class="why">La voiture préférée est reprise d'office (★ Profil) et se change ici (Modifiée). Une voiture peut être partagée : la liste dit qui l'a déjà. Sans voiture, elle se choisit dans chaque session, comme aujourd'hui.</p>
+    <div class="stage">
+      <div class="modal w-md">
+        <div class="mh"><span data-icon="trophy"></span><h3>Nouveau championnat</h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="steps" data-steps="2"></div>
+        <div style="display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--muted)">
+          <span>9 participants</span><span>★ Voiture préférée du profil, reprise d'office et modifiable</span>
+        </div>
+        <div class="table" id="lineup">
+          <div class="trow head"><div>#</div><div>Pilote</div><div>Voiture</div><div></div></div>
+        </div>
+        <div class="footer" style="justify-content: flex-end"><button class="btn">Annuler</button><button class="btn">‹ Retour</button><button class="btn go">Suivant ›</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>3. Configuration et aperçu : automatique</h2>
+    <p class="why">Chaque colonne porte ses réglages (nombre, limites) au-dessus de ses sessions. Les pilotes se glissent d'un groupe de qualif à l'autre ; les courses se remplissent après les qualifs d'après le classement. L'assistant ne met jamais deux pilotes de la même voiture dans une session.</p>
+    <div class="stage">
+      <div class="modal w-lg">
+        <div class="mh"><span data-icon="trophy"></span><h3>Nouveau championnat</h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="steps" data-steps="3"></div>
+        <div class="mode">
+          <div class="seg"><button aria-pressed="true">Automatique</button><button aria-pressed="false">Manuel</button></div>
+          <p class="hint">Qualifs réparties, courses remplies d'après le classement des qualifs. Passer en manuel garde cette répartition.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.15fr) 22px minmax(0, 1fr); gap: 12px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="tcard el">
+              <h4>Essais libres</h4>
+              <div class="line">Nombre<input class="num" value="1" readonly></div>
+              <div class="checks"><label><input type="checkbox">Durée</label><label><input type="checkbox">Tours</label></div>
+              <p class="hint" style="font-size: 11px">Sans limite : arrêtés à la main.</p>
+            </div>
+            <div class="group el"><div class="gh"><span class="lbl">EL1</span></div><span style="font-size: 12px; color: var(--muted); padding: 0 4px 4px">Ouvert aux 9 pilotes, choisis au lancement</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="tcard q">
+              <h4>Qualifications</h4>
+              <div class="line"><span>Pilotes par qualif <span style="color: var(--muted)">· 3 groupes</span></span><input class="num" value="4" readonly></div>
+              <div class="checks"><label><input type="checkbox" checked>Durée</label><span class="unit"><input class="num sm" value="5" readonly aria-label="Durée">min</span><label><input type="checkbox">Tours</label></div>
+            </div>
+            <div class="group q drop"><div class="gh"><span class="lbl">Q1</span><span class="cnt">3 / 4</span></div><div data-rows="sdr bou fis"></div><div class="slot target">Déposer ici</div></div>
+            <div class="group q"><div class="gh"><span class="lbl">Q2</span><span class="cnt">3 / 4</span></div><div data-rows="dan mil neu"></div><div class="slot">Place libre</div></div>
+            <div class="group q"><div class="gh"><span class="lbl">Q3</span><span class="cnt">3 / 4</span></div><div data-rows="pel hau mol:dragging"></div><div class="slot">Place libre</div></div>
+          </div>
+          <div style="padding-top: 230px; color: #a8a29e" data-icon="arrow"></div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="tcard r">
+              <h4>Courses</h4>
+              <div class="line"><span>Pilotes par course <span style="color: var(--muted)">· 2 courses</span></span><input class="num" value="6" readonly></div>
+              <div class="checks"><label><input type="checkbox" checked>Durée</label><span class="unit"><input class="num sm" value="10" readonly aria-label="Durée">min</span><label><input type="checkbox">Tours</label></div>
+            </div>
+            <p class="hint" style="font-size: 11px; padding: 0 4px">Remplies après les qualifs, d'après le classement global (meilleur tour).</p>
+            <div class="group r"><div class="gh"><span class="lbl">R1</span><span class="cnt">5 pilotes · positions 1 à 5</span></div><div class="pos"><span>P1</span><span>P2</span><span>P3</span><span>P4</span><span>P5</span></div></div>
+            <div class="group r"><div class="gh"><span class="lbl">R2</span><span class="cnt">4 pilotes · positions 6 à 9</span></div><div class="pos"><span>P6</span><span>P7</span><span>P8</span><span>P9</span></div></div>
+          </div>
+        </div>
+        <div class="info"><span data-icon="info"></span>Glissez un pilote d'un groupe de qualif à l'autre. Deux pilotes de la même voiture ne sont jamais mis dans la même session.</div>
+        <div class="footer"><p class="total">Total : 6 sessions (1 EL + 3 qualifs + 2 courses)</p><button class="btn">Annuler</button><button class="btn">‹ Retour</button><button class="btn go">Créer le championnat</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>4. Manuel, proposition A : liste ordonnée</h2>
+    <p class="why">Les nombres de pilotes par groupe deviennent des nombres de sessions. Une seule liste dans l'ordre de passage : la poignée déplace la session, les pastilles se glissent d'une session à l'autre, × renvoie un pilote « de côté » s'il n'est plus dans aucune session. Ici Grace MOL est glissée sur Q2 : refusé, sa BMW y roule déjà avec Sarah MIL.</p>
+    <div class="stage">
+      <div class="modal w-lg">
+        <div class="mh"><span data-icon="trophy"></span><h3>Nouveau championnat</h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="steps" data-steps="3"></div>
+        <div class="mode">
+          <div class="seg"><button aria-pressed="false">Automatique</button><button aria-pressed="true">Manuel</button></div>
+          <p class="hint">Part de la répartition automatique. Glissez les pilotes d'une session à l'autre et les sessions pour changer l'ordre ; une session peut rester vide.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div class="tcard el"><div class="line"><h4>Essais libres</h4><input class="num" value="1" readonly></div><div class="checks"><label><input type="checkbox">Durée</label><label><input type="checkbox">Tours</label><span style="color: var(--muted)">sans limite</span></div></div>
+          <div class="tcard q"><div class="line"><h4>Qualifications</h4><input class="num" value="4" readonly></div><div class="checks"><label><input type="checkbox" checked>Durée</label><span class="unit"><input class="num sm" value="5" readonly aria-label="Durée">min</span><label><input type="checkbox">Tours</label></div></div>
+          <div class="tcard r"><div class="line"><h4>Courses</h4><input class="num" value="2" readonly></div><div class="checks"><label><input type="checkbox" checked>Durée</label><span class="unit"><input class="num sm" value="10" readonly aria-label="Durée">min</span><label><input type="checkbox">Tours</label></div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 8px" id="manual-list">
+            <span style="font-size: 12px; font-weight: 500; color: var(--muted)">Ordre des sessions</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 26px">
+            <div class="bench">
+              <h4>De côté <span style="font-weight: 400; color: var(--muted)">· 1</span></h4>
+              <p class="hint">Inscrits au championnat, dans aucune session.</p>
+              <div data-chips="fis"></div>
+              <p class="hint" style="font-size: 11px">Glissez-les vers une session. Le × d'un pilote le renvoie ici s'il n'est plus nulle part.</p>
+            </div>
+            <div class="aside"><h4>Voitures</h4><p class="hint" style="font-size: 11px">Une voiture peut servir à plusieurs pilotes, jamais deux fois dans la même session : le dépôt est refusé.</p></div>
+          </div>
+        </div>
+        <div class="footer"><p class="total">Total : 7 sessions (1 EL + 4 qualifs + 2 courses)</p><button class="btn">Annuler</button><button class="btn">‹ Retour</button><button class="btn go">Créer le championnat</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>5. Manuel, proposition B : frise et manettes</h2>
+    <p class="why">Les sessions en colonnes, de gauche à droite dans l'ordre de passage ; chacune montre ses 6 manettes, comme la table des manettes d'une session. Une colonne se déplace par son en-tête (ici R1 en cours de déplacement). Plus large : l'assistant passe en plein écran.</p>
+    <div class="stage">
+      <div class="modal w-xl">
+        <div class="mh"><span data-icon="trophy"></span><h3>Nouveau championnat</h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="steps" data-steps="3"></div>
+        <div class="mode">
+          <div class="seg"><button aria-pressed="false">Automatique</button><button aria-pressed="true">Manuel</button></div>
+          <div class="toolbar">
+            <label class="el" style="color: var(--el)">Essais libres<input class="num" value="1" readonly></label>
+            <label style="color: var(--q)">Qualifications<input class="num" value="4" readonly></label>
+            <label style="color: var(--r)">Courses<input class="num" value="2" readonly></label>
+            <span class="pill el" style="color: var(--el)">EL : sans limite <span data-icon="chev"></span></span>
+            <span class="pill q" style="color: var(--q)">Q : 5 min <span data-icon="chev"></span></span>
+            <span class="pill r" style="color: var(--r)">R : 10 min <span data-icon="chev"></span></span>
+          </div>
+        </div>
+        <div class="benchstrip"><strong style="color: var(--fg)">De côté</strong><div data-chips="fis"></div><span>Glissez un pilote sur une manette libre.</span></div>
+        <div class="lanes" id="lanes"></div>
+        <div class="refusal"><span data-icon="warn"></span>Q2 : Grace MOL refusée, la BMW M4 GT3 #11 y roule déjà avec Sarah MIL.</div>
+        <div class="footer"><p class="total">Total : 7 sessions (1 EL + 4 qualifs + 2 courses)</p><button class="btn">Annuler</button><button class="btn">‹ Retour</button><button class="btn go">Créer le championnat</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="open-points">
+    <h2>À trancher</h2>
+    <ul>
+      <li>Passage en manuel : les qualifs gardent leurs groupes ; les courses (remplies en auto d'après le classement) partent de la liste des participants découpée dans l'ordre (R1 = 5 premiers, R2 = 4 suivants), à réarranger.</li>
+      <li>Essais libres : ouverts à tous, pilotes choisis au lancement (une session ne prend que 6 manettes). Ou faut-il aussi les répartir ?</li>
+      <li>Repasser de manuel à automatique : on recalcule tout (les changements faits à la main sont perdus, avec confirmation).</li>
+      <li>Une voiture déjà dans la session : dépôt refusé (proposé) ou accepté avec un avertissement à corriger avant de créer.</li>
+      <li>Après création : les mêmes réglages et le même glisser-déposer dans la configuration du championnat, ou seulement à la création ?</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+  const IMG = '../../site/img/'
+  const DRIVERS = {
+    sdr: { name: 'Anselme SDR', num: 42, color: '#3b3a38', img: 'drivers/sdr.png', car: 'porsche' },
+    dan: { name: 'Romain DAN', num: 71, color: '#2fabf1', img: 'drivers/dan.png', car: 'mclaren' },
+    pel: { name: 'Damien PEL', num: 13, color: '#a73044', img: 'drivers/pel.png', car: 'lambo' },
+    bou: { name: 'Léa BOU', num: 782, color: '#dd0b17', img: 'drivers/bou.png', car: 'audi' },
+    mil: { name: 'Sarah MIL', num: 7, color: '#9900ff', img: 'drivers/mil.png', car: 'bmw' },
+    hau: { name: 'Leonie HAU', num: 11, color: '#e7d037', img: 'drivers/hau.png', car: 'amg' },
+    neu: { name: 'Jakob NEU', num: 2, color: '#f12835', car: 'porsche' },
+    fis: { name: 'Lena FIS', num: 8, color: '#db2777', car: null },
+    mol: { name: 'Grace MOL', num: 57, color: '#2563eb', car: 'bmw' },
+  }
+  const CARS = {
+    porsche: { name: 'Porsche 911 GT3 R #75', img: 'cars/porsche.png' },
+    mclaren: { name: 'McLaren 720S GT3 #02', img: 'cars/mclaren.png' },
+    lambo: { name: 'Lamborghini Huracán GT3 evo II #92', img: 'cars/lamborghini.png' },
+    audi: { name: 'Audi R8 LMS GT3 #8', img: 'cars/audi.png' },
+    bmw: { name: 'BMW M4 GT3 #11', img: 'cars/bmw.png' },
+    amg: { name: 'AMG GT3 #8', img: 'cars/amg.png' },
+  }
+  const svg = (body, size = 16, extra = '') =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${body}</svg>`
+  const ICONS = {
+    x: svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 16),
+    chev: svg('<path d="m6 9 6 6 6-6"/>', 14, 'style="color:#a8a29e"'),
+    check: svg('<path d="M20 6 9 17l-5-5"/>', 16),
+    arrow: svg('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 20),
+    info: svg('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>', 16, 'style="color:#4338ca"'),
+    warn: svg('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>', 14),
+    trophy: svg('<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', 20, 'style="color:#4338ca"'),
+    grip: '<svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>',
+  }
+  const avatar = (id, size = 22) => {
+    const d = DRIVERS[id]
+    const inner = d.img ? `<img src="${IMG}${d.img}" alt="">` : d.num
+    return `<span class="avatar" style="width:${size}px;height:${size}px;background:${d.color};font-size:${Math.round(size * 0.4)}px">${inner}</span>`
+  }
+  const carPic = (key, w = 36, h = 22) =>
+    key ? `<img class="car" src="${IMG}${CARS[key].img}" alt="${CARS[key].name}" style="width:${w}px;height:${h}px">` : ''
+  const grip = (label) => `<button class="icon-btn grip" aria-label="Déplacer ${label}">${ICONS.grip}</button>`
+  const remove = (name) => `<button class="icon-btn" aria-label="Mettre ${name} de côté">${svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 12)}</button>`
+
+  // A driver in a session list: avatar, name, car; `ghost` is a refused drop
+  const chip = (spec) => {
+    const [id, state] = spec.split(':')
+    const d = DRIVERS[id]
+    const car = d.car ? carPic(d.car, 30, 19) : '<span class="note">sans voiture</span>'
+    return `<span class="chip ${state || ''}">${avatar(id)}${d.name}${car}${remove(d.name)}</span>`
+  }
+  // A driver in an auto qualif group: draggable row
+  const row = (spec) => {
+    const [id, state] = spec.split(':')
+    const d = DRIVERS[id]
+    const car = d.car ? carPic(d.car) : '<span class="note">sans voiture</span>'
+    return `<div class="drow ${state || ''}">${grip(d.name)}${avatar(id)}<span class="n">${d.name}</span>${car}</div>`
+  }
+
+  document.querySelectorAll('[data-icon]').forEach((el) => (el.innerHTML = ICONS[el.dataset.icon]))
+  document.querySelectorAll('[data-avatar]').forEach((el) => (el.outerHTML = avatar(el.dataset.avatar, +el.dataset.size)))
+  document.querySelectorAll('[data-car]').forEach((el) => (el.outerHTML = carPic(el.dataset.car, +el.dataset.w, +el.dataset.h)))
+  document.querySelectorAll('[data-rows]').forEach((el) => {
+    el.style.cssText = 'display:flex;flex-direction:column;gap:4px'
+    el.innerHTML = el.dataset.rows.split(' ').map(row).join('')
+  })
+  document.querySelectorAll('[data-chips]').forEach((el) => {
+    el.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px'
+    el.innerHTML = el.dataset.chips.split(' ').map(chip).join('')
+  })
+
+  // Wizard steps
+  const STEPS = ['Infos', 'Pilotes', 'Configuration']
+  document.querySelectorAll('[data-steps]').forEach((el) => {
+    const now = +el.dataset.steps
+    el.innerHTML = STEPS.map((label, i) => {
+      const n = i + 1
+      const state = n < now ? 'done' : n === now ? 'now' : 'todo'
+      const dot = state === 'done' ? ICONS.check : n
+      const line = i ? `<div class="line ${n <= now ? 'done' : ''}"></div>` : ''
+      return `${line}<div class="step ${state}"><span class="dot">${dot}</span>${label}</div>`
+    }).join('')
+  })
+
+  // Participants with their car: [driver, car, how it was chosen, sharing, menu open]
+  const LINEUP = [
+    ['sdr', 'porsche', 'pref', 'Jakob NEU'],
+    ['dan', 'mclaren', 'pref'],
+    ['pel', 'lambo', 'pref'],
+    ['bou', 'audi', 'pref'],
+    ['mil', 'bmw', 'changed', 'Grace MOL', true],
+    ['hau', 'amg', 'pref'],
+    ['neu', 'porsche', 'pref', 'Anselme SDR'],
+    ['fis', null],
+    ['mol', 'bmw', 'pref', 'Sarah MIL'],
+  ]
+  const MENU = [
+    ['bmw', '✓ aussi Grace MOL', 'sel'],
+    ['amg', '★ préférée · aussi Leonie HAU'],
+    ['porsche', 'aussi Anselme SDR, Jakob NEU'],
+    ['mclaren', 'aussi Romain DAN'],
+    ['lambo', 'aussi Damien PEL'],
+    ['audi', 'aussi Léa BOU'],
+  ]
+  const menu = () =>
+    `<div class="menu">${MENU.map(([car, note, sel]) => `<div class="item ${sel || ''}">${carPic(car, 40, 25)}<span class="cn">${CARS[car].name}</span><span class="note">${note}</span></div>`).join('')}<div class="foot">Aucune : choisie dans chaque session</div></div>`
+  document.getElementById('lineup').insertAdjacentHTML(
+    'beforeend',
+    LINEUP.map(([id, car, how, shared, open], i) => {
+      const d = DRIVERS[id]
+      const tag = how === 'pref' ? '<span class="tag pref">★ Profil</span>' : how === 'changed' ? '<span class="tag changed">Modifiée</span>' : ''
+      const sharing = shared ? `<span class="note">aussi : ${shared}</span>` : ''
+      const select = car
+        ? `<div class="carsel ${open ? 'open' : ''}">${carPic(car, 46, 29)}<span class="cn">${CARS[car].name}</span>${tag}${sharing}${ICONS.chev}</div>`
+        : `<div class="carsel none"><span class="cn">Aucune voiture : choisie dans chaque session</span>${ICONS.chev}</div>`
+      return `<div class="trow"><div class="idx">${i + 1}</div><div class="who">${avatar(id, 28)}<span class="n">${d.name}</span>${ICONS.chev}</div><div class="carcell">${select}${open ? menu() : ''}</div><div style="display:flex;justify-content:center"><button class="icon-btn" aria-label="Retirer ${d.name}">${ICONS.x}</button></div></div>`
+    }).join('') + '<div class="trow empty"><div></div><div class="who" style="color:var(--faint)">Pilote…</div><div></div><div></div></div>',
+  )
+
+  // Manual sessions, in running order; `mol:ghost` is Grace MOL dropped where her car already runs
+  const SESSIONS = [
+    { label: 'EL1', type: 'el', open: true },
+    { label: 'Q1', type: 'q', drivers: 'sdr bou' },
+    { label: 'Q2', type: 'q', drivers: 'dan mil neu mol:ghost', refused: true },
+    { label: 'Q3', type: 'q', drivers: 'pel hau mol' },
+    { label: 'Q4', type: 'q', drivers: '' },
+    { label: 'R1', type: 'r', drivers: 'sdr dan pel bou mil', moving: true },
+    { label: 'R2', type: 'r', drivers: 'hau neu mol' },
+  ]
+  const specs = (s) => (s.drivers ? s.drivers.split(' ') : [])
+  const placed = (s) => specs(s).filter((spec) => !spec.endsWith(':ghost')).length
+
+  document.getElementById('manual-list').insertAdjacentHTML(
+    'beforeend',
+    SESSIONS.map((s, i) => {
+      const chips = s.open
+        ? '<span class="hint" style="padding:5px 0">Ouvert à tous : pilotes choisis au lancement</span>'
+        : specs(s).length
+          ? specs(s).map(chip).join('')
+          : '<span class="emptychip">Session vide : glissez des pilotes ici</span>'
+      const refusal = s.refused
+        ? `<span class="refusal">${ICONS.warn}Impossible ici : la BMW M4 GT3 #11 roule déjà avec Sarah MIL dans cette session</span>`
+        : ''
+      const line = s.label === 'R1' ? '<div class="drop-line" title="Emplacement si on lâche la session déplacée"></div>' : ''
+      return `${line}<div class="srow ${s.refused ? 'refused' : ''}">${grip(s.label)}<span class="ord">${i + 1}</span><span class="badge ${s.type}">${s.label}</span><div class="body"><div class="chips">${chips}</div>${refusal}</div><span class="cnt">${s.open ? '' : placed(s) + ' / 6'}</span></div>`
+    }).join(''),
+  )
+
+  document.getElementById('lanes').innerHTML = SESSIONS.map((s) => {
+    let slots
+    if (s.open) slots = '<div class="open">Ouvert à tous : pilotes choisis au lancement.</div>'
+    else {
+      const list = specs(s)
+      slots = Array.from({ length: 6 }, (_, k) => {
+        const spec = list[k]
+        if (!spec) return `<div class="mslot free"><span class="k">${k + 1}</span>Manette libre</div>`
+        const [id, state] = spec.split(':')
+        const d = DRIVERS[id]
+        return `<div class="mslot ${state || ''}"><span class="k">${k + 1}</span>${avatar(id, 20)}<span class="n">${d.name}</span>${carPic(d.car, 28, 18)}</div>`
+      }).join('')
+      slots = `<div class="ls">${slots}</div>`
+    }
+    const cls = [s.type, s.refused ? 'refused' : '', s.moving ? 'moving' : ''].join(' ')
+    return `<div class="lane ${cls}"><div class="lh">${grip(s.label)}<span class="badge ${s.type}">${s.label}</span><span class="cnt">${s.open ? '' : placed(s) + ' / 6'}</span></div>${slots}</div>`
+  }).join('')
+</script>
+</body>
+</html>

@@ -189,6 +189,18 @@ describe('exports', () => {
 
 describe('POST /api/championships', () => {
   const create = (body) => api.post('/api/championships').send(body);
+  const seat = (driver, controller) => ({ driverId: driver.id, controller });
+  const planned = (overrides = {}) => ({
+    name: 'Manual',
+    season: '2026',
+    trackId: track.id,
+    participants: [
+      { driverId: ana.id, carId: car1.id },
+      { driverId: ben.id, carId: car2.id },
+    ],
+    sessions: [],
+    ...overrides,
+  });
   const auto = (overrides = {}) => ({
     name: 'Auto',
     season: '2026',
@@ -211,6 +223,86 @@ describe('POST /api/championships', () => {
     [() => auto({ driversPerQualif: 7 }), 'driversPerQualif must be between 2 and 6'],
     [() => auto({ driversPerQualif: undefined }), 'driversPerQualif must be between 2 and 6'],
     [() => auto({ driversPerRace: 1 }), 'driversPerRace must be between 2 and 6'],
+    [() => auto({ practiceCount: 21 }), 'practiceCount must be between 0 and 20'],
+    [() => auto({ practiceCount: -1 }), 'practiceCount must be between 0 and 20'],
+    [() => ({ name: 'X', season: '2026', practiceCount: 1.5 }), 'practiceCount must be between 0 and 20'],
+    [
+      () => auto({ participants: [{ driverId: ana.id, carId: 'nope' }, { driverId: ben.id }] }),
+      'One or more cars not found',
+    ],
+    [() => ({ name: 'X', season: '2026', participants: [{ driverId: ana.id }] }), 'At least 2 participants required'],
+    [() => auto({ qualifGroups: [[ana.id], [ben.id]] }), 'qualifGroups must be 1 groups of 1 to 2 drivers'],
+    [() => auto({ qualifGroups: [[ana.id, ana.id]] }), 'qualifGroups must hold every participant once'],
+    // Ana and Ben share a car: one group each, whatever the size
+    [
+      () =>
+        auto({
+          participants: [
+            { driverId: ana.id, carId: car1.id },
+            { driverId: ben.id, carId: car1.id },
+          ],
+          qualifGroups: [[ana.id, ben.id]],
+        }),
+      'qualifGroups must be 2 groups of 1 to 2 drivers',
+    ],
+    [
+      () =>
+        auto({
+          participants: [
+            { driverId: ana.id, carId: car1.id },
+            { driverId: ben.id, carId: car1.id },
+            { driverId: cid.id },
+          ],
+          qualifGroups: [[ana.id, ben.id], [cid.id]],
+        }),
+      'Same car twice in a session',
+    ],
+    [
+      () => auto({ practiceCount: 2, practiceGroups: [[ana.id, ben.id]] }),
+      'practiceGroups must be 2 groups of 0 to 6 drivers',
+    ],
+    [() => auto({ practiceGroups: [[ana.id]] }), 'practiceGroups must hold every participant once'],
+    [
+      () =>
+        auto({
+          participants: [
+            { driverId: ana.id, carId: car1.id },
+            { driverId: ben.id, carId: car1.id },
+          ],
+          practiceGroups: [[ana.id, ben.id]],
+        }),
+      'Same car twice in a session',
+    ],
+    [() => planned({ trackId: undefined }), 'Track is required for planned sessions'],
+    [() => planned({ sessions: 'R1' }), 'sessions must be a list'],
+    [() => planned({ sessions: [{ type: SessionType.BALANCING }] }), 'Unknown session type'],
+    [
+      () => planned({ sessions: [{ type: SessionType.RACE, drivers: Array(7).fill(seat(ana, 0)) }] }),
+      'Too many drivers in a session',
+    ],
+    [
+      () => planned({ sessions: [{ type: SessionType.RACE, drivers: [seat(cid, 0)] }] }),
+      'Session drivers must be participants on controllers 0 to 5',
+    ],
+    [
+      () => planned({ sessions: [{ type: SessionType.RACE, drivers: [seat(ana, 6)] }] }),
+      'Session drivers must be participants on controllers 0 to 5',
+    ],
+    [
+      () => planned({ sessions: [{ type: SessionType.RACE, drivers: [seat(ana, 0), seat(ben, 0)] }] }),
+      'A driver or a controller twice in a session',
+    ],
+    [
+      () =>
+        planned({
+          participants: [
+            { driverId: ana.id, carId: car1.id },
+            { driverId: ben.id, carId: car1.id },
+          ],
+          sessions: [{ type: SessionType.RACE, drivers: [seat(ana, 0), seat(ben, 1)] }],
+        }),
+      'Same car twice in a session',
+    ],
   ])('refused: %#', async (body, error) => {
     const res = await create(body());
     expect(res.status).toBe(400);
@@ -241,6 +333,20 @@ describe('POST /api/championships', () => {
     expect(service.generateAutoSessions).not.toHaveBeenCalled();
   });
 
+  test('free practices as many as asked, numbered when several, with their limits; none when zero', async () => {
+    const res = await create(auto({ practiceCount: 2, practiceMaxLaps: 15, sessionNames: { practice: 'EL' } }));
+    expect(res.status).toBe(201);
+    const practices = res.body.data.sessions.sort((a, b) => a.order - b.order);
+    expect(practices.map((s) => [s.name, s.type, s.order, s.maxLaps, s.maxDuration])).toEqual([
+      ['EL 1', SessionType.PRACTICE, 0, 15, null],
+      ['EL 2', SessionType.PRACTICE, 1, 15, null],
+    ]);
+
+    const none = await create(auto({ practiceCount: 0 }));
+    expect(none.status).toBe(201);
+    expect(none.body.data.sessions).toEqual([]);
+  });
+
   test('without a track, no session', async () => {
     const res = await create({ name: 'X', season: '2026', status: ChampionshipStatus.ACTIVE });
     expect(res.status).toBe(201);
@@ -253,7 +359,84 @@ describe('POST /api/championships', () => {
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ mode: ChampionshipMode.AUTO, driversPerQualif: 2, driversPerRace: 2 });
     expect(res.body.data.participants.map((p) => p.driver.name)).toEqual(['Ben', 'Ana']);
-    expect(service.generateAutoSessions).toHaveBeenCalledWith(res.body.data.id, names);
+    expect(service.generateAutoSessions).toHaveBeenCalledWith(res.body.data.id, names, undefined);
+  });
+
+  test('each participant runs the car given, or else their preferred one; hand-made groups go to the generation', async () => {
+    await prisma.driver.update({ where: { id: ben.id }, data: { preferredCarId: car2.id } });
+    const groups = [[ben.id, ana.id]];
+    const res = await create(
+      auto({ participants: [{ driverId: ana.id, carId: car1.id }, { driverId: ben.id }], qualifGroups: groups })
+    );
+    expect(res.status).toBe(201);
+    const participants = await prisma.championshipParticipant.findMany({ orderBy: { order: 'asc' } });
+    expect(participants.map((p) => [p.driverId, p.carId])).toEqual([
+      [ana.id, car1.id],
+      [ben.id, car2.id],
+    ]);
+    expect(service.generateAutoSessions).toHaveBeenCalledWith(res.body.data.id, undefined, groups);
+  });
+
+  test('the free practices of an automatic championship take the groups given, each driver with their car', async () => {
+    const res = await create(
+      auto({
+        participants: [{ driverId: ana.id, carId: car1.id }, { driverId: ben.id }, { driverId: cid.id }],
+        practiceCount: 3,
+        practiceGroups: [[cid.id, ana.id], [ben.id], []],
+      })
+    );
+    expect(res.status).toBe(201);
+    const practices = await prisma.session.findMany({
+      where: { championshipId: res.body.data.id, type: SessionType.PRACTICE },
+      include: { drivers: { orderBy: { controller: 'asc' } } },
+      orderBy: { order: 'asc' },
+    });
+    expect(practices.map((s) => s.drivers.map((d) => [d.driverId, d.controller, d.carId]))).toEqual([
+      [
+        [cid.id, 0, null],
+        [ana.id, 1, car1.id],
+      ],
+      [[ben.id, 0, null]],
+      [],
+    ]);
+  });
+
+  test('a championship planned by hand: its sessions in order, numbered, limited by type, drivers on their controller with their car', async () => {
+    const res = await create(
+      planned({
+        sessionNames: { practice: 'EL', qualif: 'Q', race: 'R' },
+        practiceCount: 3,
+        qualifMaxLaps: 8,
+        raceMaxDuration: 600000,
+        practiceMaxLaps: 20,
+        sessions: [
+          { type: SessionType.PRACTICE },
+          { type: SessionType.QUALIF, drivers: [seat(ben, 2), seat(ana, 0)] },
+          { type: SessionType.RACE, drivers: [] },
+          { type: SessionType.QUALIF, drivers: [seat(ana, 5)] },
+        ],
+      })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body.data.mode).toBe(ChampionshipMode.MANUAL);
+    const sessions = await prisma.session.findMany({
+      where: { championshipId: res.body.data.id },
+      include: { drivers: { orderBy: { controller: 'asc' } } },
+      orderBy: { order: 'asc' },
+    });
+    expect(sessions.map((s) => [s.name, s.type, s.order, s.maxDuration, s.maxLaps, s.autoGroup])).toEqual([
+      ['EL', SessionType.PRACTICE, 0, null, 20, null],
+      ['Q 1', SessionType.QUALIF, 1, null, 8, null],
+      ['R 1', SessionType.RACE, 2, 600000, null, null],
+      ['Q 2', SessionType.QUALIF, 3, null, 8, null],
+    ]);
+    expect(sessions[1].drivers.map((d) => [d.driverId, d.controller, d.carId])).toEqual([
+      [ana.id, 0, car1.id],
+      [ben.id, 2, car2.id],
+    ]);
+    expect(sessions[3].drivers.map((d) => [d.driverId, d.controller])).toEqual([[ana.id, 5]]);
+    expect(await prisma.championshipParticipant.count({ where: { championshipId: res.body.data.id } })).toBe(2);
+    expect(service.generateAutoSessions).not.toHaveBeenCalled();
   });
 
   test('500 when generating fails', async () => {
@@ -508,6 +691,23 @@ describe('PUT /api/championships/:id/participants (validation)', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.participants.map((p) => p.driver.name)).toEqual(['Ana', 'Cid']);
     expect(service.generateAutoSessions).not.toHaveBeenCalled();
+  });
+
+  test('a participant kept keeps their car; a newcomer takes their preferred one', async () => {
+    const auto = await newChampionship({ mode: ChampionshipMode.AUTO });
+    await prisma.championshipParticipant.create({
+      data: { championshipId: auto.id, driverId: ana.id, carId: car1.id },
+    });
+    await prisma.driver.update({ where: { id: ana.id }, data: { preferredCarId: car2.id } });
+    await prisma.driver.update({ where: { id: ben.id }, data: { preferredCarId: car2.id } });
+
+    expect((await put(auto.id, [ana.id, ben.id, cid.id])).status).toBe(200);
+    const participants = await prisma.championshipParticipant.findMany({ orderBy: { order: 'asc' } });
+    expect(participants.map((p) => [p.driverId, p.carId])).toEqual([
+      [ana.id, car1.id],
+      [ben.id, car2.id],
+      [cid.id, null],
+    ]);
   });
 
   test('before any qualif, the sessions are regenerated with the names given', async () => {

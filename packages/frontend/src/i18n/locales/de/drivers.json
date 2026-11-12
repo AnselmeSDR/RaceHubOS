@@ -19,6 +19,9 @@
     "email": "E-Mail",
     "emailPlaceholder": "lewis@example.com",
     "noTeam": "Kein Team",
+    "preferredCar": "Lieblingsauto",
+    "noPreferredCar": "Keins",
+    "preferredCarHint": "Wird übernommen, wenn der Fahrer an einer Meisterschaft teilnimmt, und ist dort änderbar.",
     "saved": "Fahrer gespeichert"
   },
   "profile": {

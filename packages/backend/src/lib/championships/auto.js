@@ -1,31 +1,7 @@
-import { SessionType } from '@racehubos/shared';
+import { distributeEvenly, distributeSequential, SessionType } from '@racehubos/shared';
 
-/**
- * Round-robin groups, as few as `maxPerGroup` allows:
- * 10 items, max 4 → [0,3,6,9] [1,4,7] [2,5,8].
- */
-export function distributeEvenly(items, maxPerGroup) {
-  const groups = Array.from({ length: Math.ceil(items.length / maxPerGroup) }, () => []);
-  items.forEach((item, i) => groups[i % groups.length].push(item));
-  return groups;
-}
-
-/**
- * Balanced consecutive groups, order kept: 10 items, max 6 → 5 + 5 rather than 6 + 4.
- */
-export function distributeSequential(items, maxPerGroup) {
-  const count = Math.ceil(items.length / maxPerGroup);
-  const base = Math.floor(items.length / count);
-  const extra = items.length % count;
-  const groups = [];
-  let offset = 0;
-  for (let g = 0; g < count; g++) {
-    const size = base + (g < extra ? 1 : 0);
-    groups.push(items.slice(offset, offset + size));
-    offset += size;
-  }
-  return groups;
-}
+// Moved to the shared package, which the interface's preview uses too
+export { distributeEvenly, distributeSequential };
 
 /**
  * Each driver's best lap across the qualifying sessions, fastest first (`Infinity` without a lap).

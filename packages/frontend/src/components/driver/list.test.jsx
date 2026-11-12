@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import i18n from '@/i18n'
-import { field, jsonReply, renderCell, sortValue } from '@/test/helpers'
+import { field, jsonReply, renderCell, routeFetch, sortValue } from '@/test/helpers'
 import DriverCard from './DriverCard'
 import DriverFormModal from './DriverFormModal'
 import { driverColumns } from './driverColumns'
@@ -140,6 +140,19 @@ describe('DriverFormModal', () => {
     { id: 'tm1', name: 'McLaren' },
     { id: 'tm2', name: 'Williams' },
   ]
+  const cars = [
+    { id: 'car1', brand: 'Ferrari', model: '488 GT3', img: 'cars/ferrari.png' },
+    { id: 'car2', brand: 'BMW', model: 'M4 GT3', img: null },
+  ]
+  // The cars offered, then what was saved
+  beforeEach(() => {
+    fetchMock = routeFetch({
+      '/api/cars': { success: true, data: cars },
+      'POST /api/drivers': { success: true },
+      'PUT /api/drivers': { success: true },
+    })
+  })
+  const saved = () => fetchMock.mock.calls.find(([, init]) => init?.method)
 
   test('a new driver, with a number, email and team', async () => {
     const user = userEvent.setup()
@@ -149,9 +162,11 @@ describe('DriverFormModal', () => {
     await user.type(field('Number'), '5')
     await user.type(field('Email'), 'nigel@example.com')
     await user.selectOptions(field('Team'), 'tm2')
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Preferred car' }), 'car1')
+    expect(screen.getByRole('img', { name: 'Ferrari 488 GT3' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
-    const [url, options] = fetchMock.mock.calls[0]
+    const [url, options] = saved()
     expect(url).toMatch(/\/api\/drivers$/)
     expect(JSON.parse(options.body)).toEqual({
       name: 'Nigel',
@@ -160,22 +175,31 @@ describe('DriverFormModal', () => {
       img: '',
       color: '#3B82F6',
       teamId: 'tm2',
+      preferredCarId: 'car1',
     })
     expect(await screen.findByText('Driver saved')).toBeInTheDocument()
   })
 
-  test('editing: clearing the number and leaving the team', async () => {
+  test('editing: clearing the number, leaving the team and dropping the preferred car', async () => {
     const user = userEvent.setup()
-    render(<DriverFormModal driver={driver} teams={teams} onClose={vi.fn()} />)
+    render(<DriverFormModal driver={{ ...driver, preferredCarId: 'car2' }} teams={teams} onClose={vi.fn()} />)
     expect(screen.getByText('Edit driver')).toBeInTheDocument()
     expect(field('Team')).toHaveValue('tm1')
+    const preferred = await screen.findByRole('combobox', { name: 'Preferred car' })
+    await waitFor(() => expect(preferred).toHaveValue('car2'))
     await user.clear(field('Number'))
     await user.selectOptions(field('Team'), '')
+    await user.selectOptions(preferred, '')
     fireEvent.change(screen.getByPlaceholderText('#000000'), { target: { value: '#123456' } })
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
-    const [url, options] = fetchMock.mock.calls[0]
+    const [url, options] = saved()
     expect(url).toMatch(/\/api\/drivers\/d1$/)
-    expect(JSON.parse(options.body)).toMatchObject({ number: '', teamId: null, color: '#123456' })
+    expect(JSON.parse(options.body)).toMatchObject({
+      number: '',
+      teamId: null,
+      color: '#123456',
+      preferredCarId: null,
+    })
   })
 })
