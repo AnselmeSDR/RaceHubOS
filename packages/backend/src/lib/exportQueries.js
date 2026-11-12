@@ -6,6 +6,8 @@ import {
   exportFileName,
 } from './excelExport.js';
 import { buildCarsWorkbook, buildDriversWorkbook } from './entityExport.js';
+import { DIVISION_DETAIL, DIVISIONS_INCLUDE, divisionDetail } from './divisions.js';
+import { buildDivisionsWorkbook } from './divisionExport.js';
 
 /** Everything a session sheet needs, in one query. */
 const sessionInclude = {
@@ -13,12 +15,18 @@ const sessionInclude = {
   championship: true,
   drivers: {
     where: { deletedAt: null },
-    include: { driver: { include: { team: true } }, car: true },
+    include: {
+      driver: { include: { divisions: DIVISIONS_INCLUDE } },
+      car: { include: { divisions: DIVISIONS_INCLUDE } },
+    },
     orderBy: { controller: 'asc' },
   },
   laps: {
     where: { deletedAt: null },
-    include: { driver: { include: { team: true } }, car: true },
+    include: {
+      driver: { include: { divisions: DIVISIONS_INCLUDE } },
+      car: { include: { divisions: DIVISIONS_INCLUDE } },
+    },
     orderBy: { lapNumber: 'asc' },
   },
 };
@@ -103,7 +111,7 @@ const entryInclude = {
   where: { deletedAt: null },
   include: {
     car: true,
-    driver: { include: { team: true } },
+    driver: { include: { divisions: DIVISIONS_INCLUDE } },
     session: { include: { track: true, championship: true } },
   },
 };
@@ -113,7 +121,7 @@ export async function driversWorkbook(prisma, ids) {
 
   const drivers = await prisma.driver.findMany({
     where: { id: { in: ids }, deletedAt: null },
-    include: { team: true, sessions: entryInclude },
+    include: { divisions: DIVISIONS_INCLUDE, sessions: entryInclude },
     orderBy: { name: 'asc' },
   });
   if (drivers.length === 0) return null;
@@ -127,7 +135,7 @@ export async function carsWorkbook(prisma, ids) {
 
   const cars = await prisma.car.findMany({
     where: { id: { in: ids }, deletedAt: null },
-    include: { sessions: entryInclude },
+    include: { divisions: DIVISIONS_INCLUDE, sessions: entryInclude },
     orderBy: [{ brand: 'asc' }, { model: 'asc' }],
   });
   if (cars.length === 0) return null;
@@ -136,8 +144,24 @@ export async function carsWorkbook(prisma, ids) {
   return { workbook: buildCarsWorkbook(cars), fileName: exportFileName(label) };
 }
 
+/** Divisions and their links: drivers' divisions first, each scope by rank. */
+export async function divisionsWorkbook(prisma, ids) {
+  if (ids.length === 0) return null;
+
+  const divisions = await prisma.division.findMany({
+    where: { id: { in: ids }, deletedAt: null },
+    include: DIVISION_DETAIL,
+    orderBy: [{ scope: 'desc' }, { order: 'asc' }, { name: 'asc' }],
+  });
+  if (divisions.length === 0) return null;
+
+  const label = divisions.length === 1 ? divisions[0].name : `${divisions.length}-divisions`;
+  return { workbook: buildDivisionsWorkbook(divisions.map(divisionDetail)), fileName: exportFileName(label) };
+}
+
 export const driverWorkbook = (prisma, id) => driversWorkbook(prisma, [id]);
 export const carWorkbook = (prisma, id) => carsWorkbook(prisma, [id]);
+export const divisionWorkbook = (prisma, id) => divisionsWorkbook(prisma, [id]);
 
 /** Streams a workbook as an .xlsx download. */
 export async function sendWorkbook(res, { workbook, fileName }) {

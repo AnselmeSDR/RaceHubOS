@@ -1,10 +1,6 @@
 import { SessionType } from '@racehubos/shared';
-import { lapFigures, pointsFor, sessionFilterOf } from '../lib/stats/figures.js';
+import { lapFigures, sessionFilterOf } from '../lib/stats/figures.js';
 import { sessionLeaderboard } from '../lib/stats/leaderboards.js';
-
-test('team points on the F1 scale, none past tenth or unplaced', () => {
-  expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, null].map(pointsFor)).toEqual([25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0]);
-});
 
 test('lap figures leave deleted laps out', () => {
   expect(lapFigures([{ lapTime: 10, deletedAt: new Date() }])).toEqual({ bestLap: null, avgLapTime: null });

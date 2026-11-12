@@ -1,0 +1,60 @@
+{
+  "searchDivision": "Division suchen...",
+  "searchCategory": "Kategorie suchen...",
+  "addDivision": "Neue Division",
+  "addCategory": "Neue Kategorie",
+  "emptyDivisions": "Keine Divisionen",
+  "emptyDivisionsHint": "Ordne deine Fahrer ein: GOLD, SILVER, BRONZE…",
+  "emptyCategories": "Keine Kategorien",
+  "emptyCategoriesHint": "Ordne deine Autos ein: GT3, DTM, Formel…",
+  "add": "Hinzufügen",
+  "remove": "{{name}} entfernen",
+  "noneYet": "Noch keine: lege sie unter Divisionen an.",
+  "pickerHint": "Keine, eine oder mehrere.",
+  "noDivision": "Keine Division",
+  "noCategory": "Keine Kategorie",
+  "columns": {
+    "rank": "Stufe",
+    "order": "Reihenfolge"
+  },
+  "card": {
+    "rank": "Stufe {{n}}",
+    "order": "Reihenfolge {{n}}",
+    "noDrivers": "Keine Fahrer",
+    "noCars": "Keine Autos",
+    "more_one": "+{{count}} weiterer",
+    "more_other": "+{{count}} weitere"
+  },
+  "form": {
+    "createDivision": "Neue Division",
+    "editDivision": "Division bearbeiten",
+    "createCategory": "Neue Kategorie",
+    "editCategory": "Kategorie bearbeiten",
+    "name": "Name",
+    "shortName": "Kurzname",
+    "shortNameHint": "Auf dem Abzeichen; sonst der Name.",
+    "logo": "Logo",
+    "rank": "Stufe",
+    "rankHint": "Kleinster Wert = die höchste (0 erlaubt). Reihenfolge der Listen und Filter; dient später Auf- und Abstieg.",
+    "order": "Reihenfolge",
+    "orderHint": "Reihenfolge der Listen und Filter.",
+    "orderInvalid": "Eine ganze Zahl, 0 oder mehr.",
+    "preview": "Vorschau",
+    "saved": "Gespeichert"
+  },
+  "filters": {
+    "divisions": "Divisionen",
+    "categories": "Kategorien",
+    "hint": "Nur Fahrer und Autos dieser Divisionen und Kategorien werden angeboten; keine Auswahl = alle. Bleibt bei der Meisterschaft gespeichert.",
+    "configHint": "Dieselben Filter wie im Assistenten: Sie begrenzen die hinzuzufügenden Fahrer und die Autos.",
+    "outOfDivision": "außerhalb der Divisionen",
+    "outOfCategory": "außerhalb der Kategorien"
+  },
+  "profile": {
+    "notFound": "Division nicht gefunden",
+    "since": "Mitglied seit",
+    "addDriver": "Fahrer hinzufügen…",
+    "addCar": "Auto hinzufügen…",
+    "noChampionships": "Keine Meisterschaft wird für diese Division ausgetragen."
+  }
+}

@@ -10,6 +10,15 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function expectWithin(container, children) {
+  // A sheet slides in: measured mid-way, its frame and its buttons would be caught at different places
+  await container.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished)
+    )
+  )
   const bounds = await container.boundingBox()
   for (const child of await children.all()) {
     const box = await child.boundingBox()
@@ -73,10 +82,12 @@ test('free-session types and actions remain inside a narrow screen', async ({ pa
 })
 
 test('long German names and dark demo headings remain readable', async ({ page, request }) => {
-  const name = `Testteam Langstreckenmeisterschaft-${Date.now()}`
-  const team = (await (await request.post('http://localhost:3101/api/teams', { data: { name } })).json()).data
-  await request.put('http://localhost:3101/api/drivers/e2e-d1', { data: { teamId: team.id } })
-  await page.goto('/teams')
+  const name = `Division Langstreckenmeisterschaft-${Date.now()}`
+  const division = (
+    await (await request.post('http://localhost:3101/api/divisions', { data: { name, scope: 'driver' } })).json()
+  ).data
+  await request.put('http://localhost:3101/api/drivers/e2e-d1', { data: { divisionIds: [division.id] } })
+  await page.goto('/divisions')
   const heading = page.getByTestId('entity-card').filter({ hasText: name }).getByRole('heading')
   await expect(heading).toHaveText(name)
   expect(await heading.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
@@ -87,7 +98,7 @@ test('long German names and dark demo headings remain readable', async ({ page, 
   await page.goto('/drivers/e2e-d1')
   const header = page.getByTestId('driver-profile-header')
   await expect(header).toContainText(name)
-  const badge = page.getByTestId('driver-team-badge')
+  const badge = header.getByTestId('division-badge')
   await expect(badge).toHaveText(name)
   expect(await badge.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(
     true

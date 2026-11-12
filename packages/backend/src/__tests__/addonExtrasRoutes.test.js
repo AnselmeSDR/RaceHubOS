@@ -5,7 +5,7 @@ import { createExtras } from '../addons/extras.js';
 import carsRouter from '../routes/cars.js';
 import driversRouter from '../routes/drivers.js';
 import tracksRouter from '../routes/tracks.js';
-import teamsRouter from '../routes/teams.js';
+import divisionsRouter from '../routes/divisions.js';
 import championshipsRouter from '../routes/championships.js';
 import sessionsRouter, { setSessionService } from '../routes/sessions.js';
 
@@ -15,7 +15,7 @@ app.use(express.json());
 app.use('/api/cars', carsRouter);
 app.use('/api/drivers', driversRouter);
 app.use('/api/tracks', tracksRouter);
-app.use('/api/teams', teamsRouter);
+app.use('/api/divisions', divisionsRouter);
 app.use('/api/championships', championshipsRouter);
 app.use('/api/sessions', sessionsRouter);
 setSessionService({ prisma });
@@ -26,7 +26,7 @@ const records = {
   car: () => prisma.car.create({ data: { brand: 'Porsche', model: '911' } }),
   driver: () => prisma.driver.create({ data: { name: 'Romain' } }),
   track: () => prisma.track.create({ data: { name: 'Ring' } }),
-  team: () => prisma.team.create({ data: { name: 'Red' } }),
+  division: () => prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } }),
   championship: () => prisma.championship.create({ data: { name: 'Cup', season: '2026' } }),
   session: async () => {
     const track = await prisma.track.create({ data: { name: 'Session ring' } });
@@ -38,7 +38,7 @@ const paths = {
   car: '/api/cars',
   driver: '/api/drivers',
   track: '/api/tracks',
-  team: '/api/teams',
+  division: '/api/divisions',
   championship: '/api/championships',
   session: '/api/sessions',
 };

@@ -79,7 +79,11 @@ const entriesOf = (sessionId) =>
 const sessionRow = (id) => prisma.session.findUnique({ where: { id } });
 
 describe('loading a session', () => {
-  test('its drivers by controller, its settings and an empty leaderboard', async () => {
+  test('its drivers by controller with their divisions, its settings and an empty leaderboard', async () => {
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
+    await prisma.driverDivision.create({ data: { driverId: ana.id, divisionId: gold.id } });
+    await prisma.carDivision.create({ data: { carId: gt.id, divisionId: gt3.id } });
     const session = await newSession({ maxLaps: 5, pauses: JSON.stringify([{ start: 1, end: 2 }]) }, [
       { totalLaps: 2, totalTime: 20000, bestLapTime: 9000, lastLapTime: 11000, position: 1 },
       {},
@@ -102,6 +106,8 @@ describe('loading a session', () => {
       [0, 'Ana', 2, 2, 1],
       [1, 'Ben', 0, 0, 2],
     ]);
+    expect(service.sessionDrivers[0].driver.divisions).toMatchObject([{ name: 'GOLD' }]);
+    expect(service.sessionDrivers[0].car.divisions).toMatchObject([{ name: 'GT3' }]);
     expect(
       sent('session:leaderboard')
         .at(-1)

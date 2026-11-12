@@ -1,4 +1,5 @@
 import { SESSION_TYPES, SessionStatus, SessionType, isSessionType } from '@racehubos/shared';
+import { PEOPLE_INCLUDE, plainDivisions } from '../divisions.js';
 import { sessionName } from '../sessionNames.js';
 
 /** Where a new session runs: its track, else its championship's. Throws when it has none. */
@@ -62,17 +63,18 @@ export async function createSessionFromControllers(prisma, params) {
     });
   }
 
-  return prisma.session.findUnique({
+  const created = await prisma.session.findUnique({
     where: { id: session.id },
     include: {
       track: true,
       championship: true,
       drivers: {
-        include: { driver: true, car: true },
+        include: PEOPLE_INCLUDE,
         orderBy: isRace ? { gridPos: 'asc' } : { controller: 'asc' },
       },
     },
   });
+  return plainDivisions(created);
 }
 
 /** Back to draft: its laps hidden (they stay in the statistics' history), its entries zeroed, its times cleared. */

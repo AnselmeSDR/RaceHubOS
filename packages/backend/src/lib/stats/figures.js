@@ -1,8 +1,6 @@
 import { SessionType } from '@racehubos/shared';
 
 const PODIUM = 3;
-// Simple F1 scale for team standings (a championship's own points system was never stored)
-const POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
 /** Best and average time of the laps not deleted; null for each when there are none. */
 export function lapFigures(laps) {
@@ -24,8 +22,28 @@ export const raceCounts = (races) => ({
   podiums: races.filter(isPodium).length,
 });
 
-/** The points a race place earns in team standings. */
-export const pointsFor = (finalPos) => POINTS[finalPos - 1] ?? 0;
+const kept = { deletedAt: null, session: { deletedAt: null } };
+
+/**
+ * What a driver's or car's figures are read from: its entries and its fastest lap, none deleted
+ * nor in a deleted session. The counters stored on the record (`wins`, `podiums`, `bestLap`…)
+ * are never kept up to date.
+ */
+export const FIGURES_INCLUDE = {
+  sessions: { where: kept, select: { finalPos: true, session: { select: { type: true } } } },
+  laps: { where: kept, select: { lapTime: true }, orderBy: { lapTime: 'asc' }, take: 1 },
+};
+
+/** The record with its races, wins, podiums and best lap, read from `FIGURES_INCLUDE`. */
+export const withFigures = ({ sessions = [], laps = [], ...record }) => ({
+  ...record,
+  ...raceCounts(raceEntries(sessions)),
+  bestLap: laps[0]?.lapTime ?? null,
+});
+
+/** The figures of one driver or car of `model`. */
+export const figuresOf = async (model, id) =>
+  withFigures(await model.findUnique({ where: { id }, select: FIGURES_INCLUDE }));
 
 /** Most wins first, then most podiums, then most races. */
 export const bySuccess = (a, b) => b.wins - a.wins || b.podiums - a.podiums || b.races - a.races;

@@ -39,7 +39,7 @@ Built by slot racers, for slot racers. 🏎️
 ## ✨ Features
 
 - 📊 Real-time race leaderboard with animated positions
-- 👤 Driver, car, track and team management
+- 👤 Driver, car and track management, drivers in divisions and cars in categories
 - 🏆 Championship system: manual or automatic mode (auto bracket, qualif groups, race progression)
 
 - 📈 Standings and statistics per championship and session type

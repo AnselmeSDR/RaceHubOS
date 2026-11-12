@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : divisions et catégories</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --softer: #fafaf9;
+  --primary: #4338ca;
+  --blue: #2563eb;
+  --orange: #f97316;
+  --yellow: #eab308;
+  --green: #16a34a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+.page-title h1 { margin: 0 0 6px; font-size: 28px; }
+.page-title p { margin: 0 0 6px; color: var(--muted); max-width: 920px; line-height: 1.5; }
+.screen > h2 { margin: 0 0 4px; font-size: 20px; }
+.screen > .why { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 920px; }
+.stage { background: var(--soft); border-radius: 16px; padding: 28px; overflow-x: auto; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+.caption { font-size: 12px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.panel { background: #fff; border: 1px solid var(--border); border-radius: 16px; }
+.modal { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(28, 25, 23, 0.1); padding: 24px; display: flex; flex-direction: column; gap: 16px; width: 512px; }
+.modal h3 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.field > label { font-weight: 600; font-size: 14px; }
+.field .req { color: #dc2626; }
+.input { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font: 14px Inter, system-ui, sans-serif; color: var(--fg); background: #fff; }
+.input.ph { color: var(--faint); }
+.hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.45; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+.btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 0 14px; height: 34px; font: 500 14px Inter, system-ui, sans-serif; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; }
+.btn.save { border: none; background: var(--primary); color: #fff; font-weight: 600; }
+.btn.add { border: none; background: #7c3aed; color: #fff; font-weight: 600; height: 30px; font-size: 13px; }
+.btn.ghost { border-style: dashed; color: var(--muted); height: 28px; font-size: 12px; padding: 0 10px; border-radius: 999px; }
+.swatches { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sw { width: 22px; height: 22px; border-radius: 999px; }
+.sw.on { outline: 2px solid var(--fg); outline-offset: 2px; }
+.logo { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.logo.lg { width: 84px; height: 84px; border-radius: 16px; border: 3px solid #fff; }
+.avatar { border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; color: #fff; font-weight: 700; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.car { object-fit: contain; flex-shrink: 0; }
+svg.i { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* The two badges: a division is filled with its colour, a category outlined */
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; line-height: 18px; }
+.pill.cat { background: #fff; border: 1.5px solid; padding: 0 8px; }
+.pill.lg { font-size: 12px; padding: 2px 10px; }
+.pill .x { opacity: 0.6; font-weight: 600; }
+.pill.out { opacity: 0.45; }
+.tag { font-size: 11px; font-weight: 500; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.tag.warn { color: #9a3412; background: #ffedd5; }
+.tag.service { color: #b91c1c; background: #fee2e2; }
+
+/* Sidebar */
+.side { width: 210px; background: #fafaf9; border-radius: 14px; padding: 14px 10px; font-size: 14px; }
+.side .nav { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; color: #292524; }
+.side .nav.on { background: #eeedec; font-weight: 600; }
+.side .nav.gone { text-decoration: line-through; color: #a8a29e; }
+
+/* Page bar */
+.bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.bar .ic { width: 30px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+.bar .t { font-weight: 600; font-size: 14px; }
+.bar .s { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; background: var(--soft); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg span { border-radius: 7px; padding: 4px 12px; font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.seg span.on { background: #fff; box-shadow: 0 1px 3px rgba(28,25,23,0.15); font-weight: 600; color: var(--fg); }
+.seg .n { font-size: 11px; color: var(--faint); font-weight: 500; }
+
+/* Division cards, after the team cards */
+.grid3 { display: grid; grid-template-columns: repeat(3, 300px); gap: 20px; padding: 20px; }
+.dcard { position: relative; border-radius: 18px; border: 1px solid var(--border); border-left-width: 4px; padding: 22px 20px; display: flex; flex-direction: column; gap: 14px; }
+.dcard .top { display: flex; align-items: flex-start; justify-content: space-between; }
+.dcard .chips { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.dcard .rank { font-size: 11px; font-weight: 700; color: var(--muted); background: #fff; border-radius: 999px; padding: 2px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.dcard .name { font-size: 26px; font-weight: 900; margin: 0; letter-spacing: -0.02em; }
+.dcard .uline { width: 64px; height: 4px; border-radius: 4px; }
+.dcard .who { background: rgba(255,255,255,0.75); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.dcard .who .h { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--muted); font-size: 12px; letter-spacing: 0.04em; }
+.dcard .who .h b { font-size: 22px; }
+.dcard .who .li { display: flex; align-items: center; gap: 8px; }
+.dcard .cars { display: flex; gap: 4px; align-items: center; }
+
+/* Driver card and car card, as in the app */
+.pcard { width: 300px; border-radius: 18px; border: 1px solid var(--border); border-left-width: 4px; padding: 22px 20px; display: flex; flex-direction: column; gap: 12px; background: repeating-linear-gradient(135deg, #f4f4f5 0 14px, #fafafa 14px 28px); }
+.pcard .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.pcard .number { font-size: 34px; font-weight: 900; color: #fff; border-radius: 12px; padding: 2px 10px; }
+.pcard .badges { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.pcard .nm { font-size: 24px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: -0.02em; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats div { background: rgba(255,255,255,0.8); border-radius: 10px; padding: 8px; text-align: center; font-size: 11px; color: var(--muted); }
+.stats b { display: block; font-size: 18px; color: var(--fg); }
+.year { font-size: 12px; font-weight: 600; background: #fff; border-radius: 999px; padding: 2px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+/* Profile headers */
+.phead { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border: 1px solid var(--border); border-radius: 14px; width: 620px; }
+.phead .nm { font-size: 20px; font-weight: 800; }
+.phead .sub { font-size: 12px; color: var(--muted); display: flex; gap: 10px; }
+
+/* Lists */
+.tbl { width: 760px; border-collapse: collapse; font-size: 14px; }
+.tbl th { text-align: left; font-weight: 500; color: var(--muted); padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl td { padding: 9px 10px; border-bottom: 1px solid #f0efee; }
+.tbl .who { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.tbl .num { display: inline-block; min-width: 30px; text-align: center; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 700; padding: 1px 6px; }
+.th-filter { display: inline-flex; align-items: center; gap: 6px; position: relative; }
+.th-filter .f { display: inline-flex; align-items: center; gap: 3px; color: var(--primary); background: #eef2ff; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 600; }
+.menu { position: absolute; top: 28px; left: 0; z-index: 5; width: 230px; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 28px rgba(28, 25, 23, 0.16); padding: 4px; font-size: 13px; color: var(--fg); font-weight: 400; text-transform: none; }
+.menu .item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; }
+.menu .item.sel { background: #f5f5ff; }
+.menu .box { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid #a8a29e; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
+.menu .sel .box { background: var(--primary); border-color: var(--primary); }
+.menu .sep { border-top: 1px solid #f0efee; margin: 4px 0; }
+.menu .foot { padding: 6px 8px; font-size: 12px; color: var(--muted); }
+
+/* Multiple choice field */
+.picker { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 7px 8px; position: relative; }
+.picker.open { border-color: #6366f1; box-shadow: 0 0 0 3px #e0e7ff; }
+.picker .menu { top: calc(100% + 4px); left: 0; width: 100%; }
+.menu.flow { position: static; width: 100%; margin-top: 4px; }
+
+/* Leaderboard */
+.lb { width: 1000px; display: flex; flex-direction: column; gap: 10px; }
+.lrow { display: flex; align-items: center; gap: 22px; border-radius: 16px; padding: 12px 22px; border-left: 4px solid; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.lrow .pos { font-size: 30px; font-weight: 900; width: 30px; text-align: center; }
+.lrow .face { width: 64px; height: 64px; border-radius: 12px; overflow: hidden; }
+.lrow .face img { width: 100%; height: 100%; object-fit: cover; }
+.lrow .bignum { font-size: 52px; font-weight: 900; font-style: italic; width: 110px; }
+.lrow .id { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.lrow .id .nm { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 900; font-style: italic; }
+.lrow .id .cr { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 15px; white-space: nowrap; }
+.lrow .dot { width: 9px; height: 9px; border-radius: 999px; }
+.lrow .fig { text-align: center; font-family: ui-monospace, monospace; }
+.lrow .fig small { display: block; font-family: Inter, system-ui, sans-serif; font-size: 12px; color: #a8a29e; }
+.lrow .fig b { font-size: 24px; }
+
+/* Wizard */
+.steps { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.steps .step { display: flex; align-items: center; gap: 8px; }
+.steps .dot { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.steps .done .dot { background: var(--green); color: #fff; }
+.steps .now .dot { background: var(--yellow); }
+.steps .now { font-weight: 600; }
+.steps .todo .dot { background: var(--soft); border: 1px solid var(--border); color: var(--faint); }
+.steps .todo { color: var(--faint); }
+.steps .line { flex: 1; height: 2px; background: var(--border); }
+.steps .line.done { background: var(--green); }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; background: var(--softer); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.filters .fl { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; flex-wrap: wrap; }
+.ptable { border: 1px solid var(--border); border-radius: 10px; }
+.prow { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr) 40px; align-items: center; border-bottom: 1px solid #f0efee; font-size: 14px; }
+.prow.head { background: var(--softer); font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.prow > div { padding: 7px 8px; }
+.prow .idx { color: var(--faint); font-size: 12px; padding-left: 14px; }
+.prow .who { display: flex; align-items: center; gap: 8px; min-width: 0; position: relative; }
+.prow .who .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carsel { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; font-size: 13px; }
+.carsel .cn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dsel { display: flex; align-items: center; gap: 8px; border: 1px solid #6366f1; box-shadow: 0 0 0 3px #e0e7ff; border-radius: 8px; padding: 6px 10px; font-size: 13px; color: var(--faint); width: 100%; }
+.prow .menu { top: calc(100% - 2px); left: 8px; width: 300px; }
+
+/* Championship header */
+.chead { display: flex; align-items: center; gap: 18px; padding: 12px 16px; background: #fff; border: 1px solid var(--border); border-radius: 14px; width: 900px; }
+.chead .t { font-weight: 600; }
+.chead .s { font-size: 12px; color: var(--muted); }
+.chead .tabs { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+.chead .tabs .on { color: #7e22ce; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 999px; padding: 2px 10px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const PORTRAITS = '../../site/sources/drivers/portraits/'
+const CARS = '../../site/sources/cars/transparent/'
+// The current team logos, read from the local uploads: missing outside this computer
+const LOGOS = '../../packages/backend/public/uploads/teams/'
+
+// Light colours take dark text: the badge stays readable (SILVER, GOLD, PLATINIUM today are white on pale)
+function textOn(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#1c1917' : '#fff'
+}
+
+const DIV = {
+  platinium: { name: 'PLATINIUM', color: '#d1f6ff', logo: '1779090969745-535312566.jpg', rank: 1, drivers: [] },
+  gold: { name: 'GOLD', color: '#f5d13c', logo: '1779090817888-520169026.jpg', rank: 2, drivers: [] },
+  silver: { name: 'SILVER', color: '#c4c4c4', logo: '1779090996790-543694531.jpg', rank: 3, drivers: ['Anselme SDR', 'Henry WAL', 'Lukas BRE', 'Léa BOU', 'Romain DAN'] },
+  bronze: { name: 'BRONZE', color: '#945434', logo: '1779090765029-204617326.jpg', rank: 4, drivers: ['Damien PEL', 'Sarah MIL'] },
+  debutant: { name: 'DÉBUTANT', color: '#96e351', logo: '1779090790078-746206209.jpg', rank: 5, drivers: ['Amelia GRE', 'Antoine GIR', 'Felix WAG'], more: 13 },
+  invite: { name: 'INVITÉ', color: '#424242', logo: '1779091015726-290562425.jpg', rank: 6, drivers: ['Inès ROU'] },
+}
+const CAT = {
+  gt3: { name: 'GT3', full: 'GT3', color: '#e11d48', cars: ['amg-gt3-8', 'bmw-m4-gt3-11', 'porsche-911-gt3-r-75'], count: 10 },
+  gte: { name: 'GTE', full: 'GT Endurance', color: '#7c3aed', cars: ['chevrolet-corvette-c7r-3', 'ford-gt-68'], count: 4 },
+  dtm: { name: 'DTM', full: 'DTM', color: '#0284c7', cars: ['audi-rs5-dtm-51'], count: 1 },
+  procar: { name: 'PROCAR', full: 'Procar', color: '#ea580c', cars: ['bmw-m1-procar-7', 'bmw-m1-procar-1'], count: 2 },
+}
+const D = {
+  sdr: { name: 'Anselme SDR', short: 'SDR', num: 42, color: '#3b3a38', file: 'anselme-sdr.png' },
+  pel: { name: 'Damien PEL', short: 'PEL', num: 13, color: '#a73044', file: 'damien-pel.png' },
+  dan: { name: 'Romain DAN', short: 'DAN', num: 71, color: '#2fabf1', file: 'romain-dan.png' },
+  wal: { name: 'Henry WAL', short: 'WAL', num: 77, color: '#4d4d4d', file: 'henry-wal.png' },
+  bre: { name: 'Lukas BRE', short: 'BRE', num: 999, color: '#e61116', file: 'lukas-bre.png' },
+  bou: { name: 'Léa BOU', short: 'BOU', num: 782, color: '#dd0b17', file: 'lea-bou.png' },
+  neu: { name: 'Jakob NEU', short: 'NEU', num: 2, color: '#f12835', file: 'jakob-neu.png' },
+  rou: { name: 'Inès ROU', short: 'ROU', num: null, color: '#3B82F6', file: 'ines-rou.png' },
+  mil: { name: 'Sarah MIL', short: 'MIL', num: 7, color: '#9900ff', file: 'sarah-mil.png' },
+  gre: { name: 'Amelia GRE', short: 'GRE', num: 14, color: '#0a2180', file: 'amelia-gre.png' },
+}
+
+const ICON = {
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  medal: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><circle cx="12" cy="17" r="5"/>',
+  car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  list: '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  image: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  flask: '<path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/>',
+}
+const icon = (name, style = '') => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${style}">${ICON[name]}</svg>`
+
+const div = (key, { lg = false, x = false, out = false } = {}) => {
+  const d = DIV[key]
+  return `<span class="pill${lg ? ' lg' : ''}${out ? ' out' : ''}" style="background:${d.color};color:${textOn(d.color)}">${d.name}${x ? ' <span class="x">×</span>' : ''}</span>`
+}
+const cat = (key, { lg = false, x = false } = {}) => {
+  const c = CAT[key]
+  return `<span class="pill cat${lg ? ' lg' : ''}" style="border-color:${c.color};color:${c.color}">${c.name}${x ? ' <span class="x">×</span>' : ''}</span>`
+}
+const avatar = (d, size = 28) =>
+  `<span class="avatar" style="width:${size}px;height:${size}px;background:${d.color}"><img src="${PORTRAITS}${d.file}" alt=""></span>`
+const carImg = (file, w = 48, h = 28) => `<img class="car" src="${CARS}${file}.png" alt="" style="width:${w}px;height:${h}px">`
+const box = (on) => `<span class="box">${on ? '✓' : ''}</span>`
+
+function screen(title, why, stage) {
+  return `<section class="screen"><h2>${title}</h2><p class="why">${why}</p><div class="stage">${stage}</div></section>`
+}
+const block = (caption, html) => `<div class="col"><p class="caption">${caption}</p>${html}</div>`
+
+// ---------- 1. Navigation ----------
+const sidebar = (after) => `<div class="side">
+  ${['Tableau de bord', 'Mode libre', 'Championnats', 'Historique', 'Circuits'].map((n) => `<div class="nav">${n}</div>`).join('')}
+  ${after ? `<div class="nav on">${icon('medal')} Divisions</div>` : `<div class="nav on">${icon('users')} Équipes</div>`}
+  ${['Pilotes', 'Voitures', 'Statistiques', 'Équilibrage', 'Add-ons', 'Paramètres'].map((n) => `<div class="nav">${n}</div>`).join('')}
+</div>`
+
+// ---------- 2. Divisions page ----------
+const pageBar = (tab) => `<div class="bar">
+  <span class="ic" style="background:#f3e8ff;color:#7c3aed">${icon('medal')}</span>
+  <div><div class="t">Divisions</div><div class="s">${tab === 'driver' ? '6' : '4'} résultats</div></div>
+  <span class="seg" style="margin-left:24px"><span class="${tab === 'driver' ? 'on' : ''}">${icon('users')} Pilotes <span class="n">6</span></span><span class="${tab === 'car' ? 'on' : ''}">${icon('car')} Voitures <span class="n">4</span></span></span>
+  <span style="flex:1"></span>
+  <span class="seg"><span class="on">${icon('grid')} Grille</span><span>${icon('list')} Liste</span></span>
+  <span class="btn add">${icon('plus')} ${tab === 'driver' ? 'Nouvelle division' : 'Nouvelle catégorie'}</span>
+</div>`
+
+function divisionCard(key) {
+  const d = DIV[key]
+  const names = d.drivers.length
+    ? d.drivers.slice(0, 3).map((n) => `<div class="li"><span class="dot" style="width:7px;height:7px;border-radius:9px;background:${d.color}"></span><b style="font-weight:600">${n}</b></div>`).join('') +
+      (d.drivers.length > 3 || d.more ? `<i style="font-size:11px;color:var(--faint)">+${(d.more ?? 0) + Math.max(0, d.drivers.length - 3)} de plus</i>` : '')
+    : '<i style="color:var(--faint)">Aucun pilote</i>'
+  const count = d.drivers.length + (d.more ?? 0)
+  return `<div class="dcard" style="border-left-color:${d.color};background:linear-gradient(160deg, ${d.color}22, #fff 60%)">
+    <div class="top"><img class="logo lg" src="${LOGOS}${d.logo}" alt=""><div class="chips"><span class="rank">Échelon ${d.rank}</span>${div(key)}</div></div>
+    <p class="name">${d.name}</p><span class="uline" style="background:${d.color}"></span>
+    <div class="who"><div class="h"><span>PILOTES</span><b style="color:${d.color === '#d1f6ff' ? '#7dd3fc' : d.color}">${count}</b></div>${names}</div>
+  </div>`
+}
+function categoryCard(key) {
+  const c = CAT[key]
+  return `<div class="dcard" style="border-left-color:${c.color};background:linear-gradient(160deg, ${c.color}14, #fff 60%)">
+    <div class="top"><span class="logo lg" style="display:flex;align-items:center;justify-content:center;background:${c.color};color:#fff;font-weight:900;font-size:${c.name.length > 4 ? 14 : 20}px">${c.name}</span><div class="chips"><span class="rank">Ordre ${Object.keys(CAT).indexOf(key) + 1}</span>${cat(key)}</div></div>
+    <p class="name">${c.full}</p><span class="uline" style="background:${c.color}"></span>
+    <div class="who"><div class="h"><span>VOITURES</span><b style="color:${c.color}">${c.count}</b></div>
+      <div class="cars">${c.cars.map((f) => carImg(f, 72, 42)).join('')}</div>${c.count > c.cars.length ? `<i style="font-size:11px;color:var(--faint)">+${c.count - c.cars.length} de plus</i>` : ''}</div>
+  </div>`
+}
+
+// ---------- 3. Division form ----------
+const divisionForm = `<div class="modal">
+  <h3>${icon('medal')} Nouvelle division <span style="flex:1"></span><span style="color:#a8a29e">${icon('x')}</span></h3>
+  <p class="hint" style="margin-top:-8px">Pour les <b>pilotes</b> (onglet ouvert). Une catégorie de voitures a le même formulaire.</p>
+  <div class="row2">
+    <div class="field"><label>Nom <span class="req">*</span></label><span class="input">GOLD</span></div>
+    <div class="field"><label>Nom court</label><span class="input ph">GOLD</span><p class="hint">Sur la pastille ; le nom sinon.</p></div>
+  </div>
+  <div class="field"><label>Logo</label><div style="display:flex;gap:14px;align-items:center"><img class="logo" src="${LOGOS}${DIV.gold.logo}" alt=""><span class="btn" style="height:30px;font-size:13px">Choisir une image</span></div></div>
+  <div class="field"><label>Couleur</label><div class="swatches">${['#ef4444', '#f97316', '#f5d13c', '#96e351', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#945434', '#c4c4c4', '#424242'].map((c) => `<span class="sw${c === '#f5d13c' ? ' on' : ''}" style="background:${c}"></span>`).join('')}</div></div>
+  <div class="field"><label>Échelon</label><div style="display:flex;gap:10px;align-items:center"><span class="input" style="width:70px;text-align:center">2</span><p class="hint">1 = la plus haute. Ordre des listes et des filtres ; servira à la montée et à la descente.</p></div></div>
+  <div class="field"><label>Aperçu</label><div style="display:flex;gap:8px;align-items:center">${div('gold')} ${div('gold', { lg: true })} <span class="hint">texte sombre sur une couleur claire</span></div></div>
+  <div class="footer"><span class="btn">Annuler</span><span class="btn save">Enregistrer</span></div>
+</div>`
+
+// ---------- 4. Driver and car forms ----------
+const driverForm = `<div class="modal">
+  <h3>${icon('users')} Modifier le pilote <span style="flex:1"></span><span style="color:#a8a29e">${icon('x')}</span></h3>
+  <div class="field"><label>Nom <span class="req">*</span></label><span class="input">Inès ROU</span></div>
+  <p class="hint" style="text-align:center">… numéro, e-mail, photo, couleur inchangés …</p>
+  <div class="field"><label>Divisions</label>
+    <div class="picker open">${div('debutant', { x: true })} ${div('invite', { x: true })} <span class="btn ghost">${icon('plus')} Ajouter</span></div>
+      <div class="menu flow">
+        ${['platinium', 'gold', 'silver', 'bronze', 'debutant', 'invite'].map((k) => `<div class="item${['debutant', 'invite'].includes(k) ? ' sel' : ''}">${box(['debutant', 'invite'].includes(k))}${div(k)}<span style="flex:1"></span><span style="font-size:11px;color:var(--faint)">${DIV[k].rank}</span></div>`).join('')}
+      </div>
+    <p class="hint">Aucune, une ou plusieurs. Remplace « Équipe ».</p>
+  </div>
+  <div class="field"><label>Voiture préférée</label><span class="input">Audi R8 LMS GT3 #8</span></div>
+  <div class="footer"><span class="btn">Annuler</span><span class="btn save">Enregistrer</span></div>
+</div>`
+const carForm = `<div class="modal">
+  <h3>${icon('car')} Modifier la voiture <span style="flex:1"></span><span style="color:#a8a29e">${icon('x')}</span></h3>
+  <div class="row2"><div class="field"><label>Marque <span class="req">*</span></label><span class="input">Chevrolet</span></div><div class="field"><label>Modèle</label><span class="input">Corvette C7R #3</span></div></div>
+  <div class="field"><label>Catégories</label>
+    <div class="picker">${cat('gte', { x: true })} <span class="btn ghost">${icon('plus')} Ajouter</span></div>
+    <p class="hint">Aucune, une ou plusieurs.</p>
+  </div>
+  <p class="hint" style="text-align:center">… année, photo, couleur, réglages, équipement inchangés …</p>
+  <div class="footer"><span class="btn">Annuler</span><span class="btn save">Enregistrer</span></div>
+</div>`
+
+// ---------- 5. Cards ----------
+const driverCard = `<div class="pcard" style="border-left-color:${D.sdr.color}">
+  <div class="top">${avatar(D.sdr, 84)}<div class="badges"><span class="number" style="background:${D.sdr.color}">42</span>${div('silver')}${div('invite')}</div></div>
+  <p class="nm" style="color:${D.sdr.color}">Anselme SDR</p><span class="uline" style="width:64px;height:4px;border-radius:4px;background:${D.sdr.color}"></span>
+  <div class="stats"><div>COURSES<b>39</b></div><div>PODIUMS<b>0</b></div><div>TOURS<b>963</b></div></div>
+</div>`
+const carCard = `<div class="pcard" style="border-left-color:#a1a1aa;background:#fafafa">
+  <div class="top">${carImg('amg-gt3-8', 150, 80)}<div class="badges"><span class="year">2022</span>${cat('gt3')}</div></div>
+  <p class="nm">AMG</p><p class="nm" style="color:#a1a1aa;font-size:20px;margin-top:-10px">GT3 #8</p>
+  <div class="stats"><div>VITESSE<b>7/10</b></div><div>FREIN<b>5/10</b></div><div>COURSES<b>34</b></div></div>
+</div>`
+
+// ---------- 6. Profile headers ----------
+const driverHead = `<div class="phead"><span>←</span>${avatar(D.neu, 48)}<div><div style="display:flex;align-items:center;gap:8px"><span class="nm" style="color:${D.neu.color}">Jakob NEU</span><i style="color:var(--muted);font-weight:700">#2</i>${div('debutant')}${div('invite')}</div><div class="sub"><span style="color:#2563eb">15 Courses</span><span style="color:#f59e0b">0 Victoires</span><span>290 Tours</span></div></div></div>`
+const carHead = `<div class="phead"><span>←</span>${carImg('chevrolet-corvette-c7r-3', 64, 36)}<div><div style="display:flex;align-items:center;gap:8px"><span class="nm" style="color:#eab308">Chevrolet Corvette C7R #3</span><span style="color:var(--muted)">2017</span>${cat('gte')}<span class="tag service">Entretien dû</span></div><div class="sub"><span>7/10</span><span>6/10</span><span>10/10</span><span>43 Sessions</span></div></div></div>`
+
+// ---------- 7. Lists ----------
+const filterMenu = (keys, picked, none) => `<div class="menu">
+  ${keys.map((k) => `<div class="item${picked.includes(k) ? ' sel' : ''}">${box(picked.includes(k))}${DIV[k] ? div(k) : cat(k)}</div>`).join('')}
+  <div class="sep"></div>
+  <div class="item">${box(false)}<i>${none}</i></div>
+  <div class="sep"></div>
+  <div class="foot">Effacer le filtre</div>
+</div>`
+const driverRows = [D.sdr, D.wal, D.bre, D.bou, D.dan]
+const driverList = `<div class="panel" style="padding-bottom:6px">
+  <div class="bar" style="border:none"><span class="ic" style="background:#dbeafe;color:#2563eb">${icon('users')}</span><div><div class="t">Pilotes</div><div class="s">5 résultats · filtré</div></div></div>
+  <table class="tbl">
+    <tr><th>Pilote</th><th>N°</th><th><span class="th-filter">Division <span class="f">${icon('filter', 'width:11px;height:11px')} 2</span>${filterMenu(['platinium', 'gold', 'silver', 'bronze', 'debutant', 'invite'], ['gold', 'silver'], 'Sans division')}</span></th><th>Tours</th><th>Courses</th></tr>
+    ${driverRows.map((d, i) => `<tr><td><span class="who">${avatar(d)}${d.name}</span></td><td><span class="num" style="background:${d.color}">${d.num}</span></td><td>${div('silver')}${i === 0 ? ' ' + div('invite') : ''}</td><td>${[963, 572, 410, 388, 701][i]}</td><td>${[39, 16, 14, 12, 28][i]}</td></tr>`).join('')}
+  </table>
+</div>`
+const carRows = [
+  ['AMG', 'GT3 #8', 'amg-gt3-8', ['gt3']],
+  ['Audi', 'RS5 DTM #51', 'audi-rs5-dtm-51', ['dtm']],
+  ['BMW', 'M1 Procar #7', 'bmw-m1-procar-7', ['procar']],
+  ['Chevrolet', 'Corvette C7R #3', 'chevrolet-corvette-c7r-3', ['gte']],
+  ['Toyota', 'Supra #35', 'toyota-supra-35', []],
+]
+const carList = `<div class="panel" style="padding-bottom:6px">
+  <div class="bar" style="border:none"><span class="ic" style="background:#dcfce7;color:#16a34a">${icon('car')}</span><div><div class="t">Voitures</div><div class="s">18 résultats</div></div></div>
+  <table class="tbl" style="width:620px">
+    <tr><th>Marque</th><th>Modèle</th><th><span class="th-filter">Catégorie ${icon('filter', 'width:12px;height:12px;color:#a8a29e')}</span></th><th>Année</th></tr>
+    ${carRows.map(([b, m, f, cats]) => `<tr><td><b>${b}</b></td><td><span class="who" style="font-weight:500">${carImg(f)}${m}</span></td><td>${cats.map((c) => cat(c)).join(' ') || '<span style="color:var(--faint)">–</span>'}</td><td>2022</td></tr>`).join('')}
+  </table>
+</div>`
+
+// ---------- 8. Leaderboard ----------
+const lrow = (pos, d, car, carName, carDot, divs, cats, bg, fig) => `<div class="lrow" style="background:linear-gradient(90deg, ${d.color}30, #fff 70%);border-left-color:${d.color}">
+  <span class="pos" style="color:${pos === 1 ? '#eab308' : '#9ca3af'}">${pos}</span>
+  <span class="face" style="background:${d.color}"><img src="${PORTRAITS}${d.file}" alt=""></span>
+  <span class="bignum" style="color:${d.color}">${d.num}</span>
+  ${carImg(car, 70, 40)}
+  <div class="id"><div class="nm">${d.short} ${divs.map((k) => div(k)).join('')}</div><div class="cr"><span class="dot" style="background:${carDot}"></span>${carName} ${cats.map((k) => cat(k)).join('')}</div></div>
+  ${fig}
+</div>`
+const figs = (laps, best, last, tail) => `<div class="fig"><small>TOURS</small><b>${laps}</b></div><div class="fig"><small>MEILLEUR</small><b>${best}</b></div><div class="fig"><small>DERNIER</small><b>${last}</b></div><div class="fig"><small>${tail[0]}</small><b style="${tail[0] === 'ÉCART' ? 'color:#a855f7;font-size:16px' : ''}">${tail[1]}</b></div>`
+const leaderboard = `<div class="lb">
+  ${lrow(1, D.pel, 'audi-r8-lms-gt3-16', 'Audi R8 LMS GT3 #16', '#db2777', ['bronze'], ['gt3'], '', figs(57, '8.659', '8.895', ['TOTAL', '10:04.851']))}
+  ${lrow(2, D.dan, 'amg-gt3-8', 'AMG GT3 #8', '#a1a1aa', ['silver'], ['gt3'], '', figs(55, '8.794', '9.067', ['ÉCART', '+2 tours']))}
+  ${lrow(3, D.bou, 'bmw-m1-procar-7', 'BMW M1 Procar #7', '#1e3a8a', ['silver', 'invite'], ['procar'], '', figs(51, '8.908', '13.344', ['ÉCART', '+6 tours']))}
+</div>`
+
+// ---------- 9. Wizard ----------
+const wizard = `<div class="modal" style="width:900px">
+  <h3>🏆 Nouveau championnat <span style="flex:1"></span><span style="color:#a8a29e">${icon('x')}</span></h3>
+  <div class="steps"><div class="step done"><span class="dot">✓</span>Infos</div><span class="line done"></span><div class="step now"><span class="dot">2</span>Pilotes</div><span class="line"></span><div class="step todo"><span class="dot">3</span>Configuration</div></div>
+  <div class="filters">
+    <div class="fl">${icon('medal', 'color:#7c3aed')} Divisions ${div('gold', { x: true })} ${div('silver', { x: true })} <span class="btn ghost">${icon('plus')}</span></div>
+    <div class="fl">${icon('car', 'color:#16a34a')} Catégories ${cat('gt3', { x: true })} <span class="btn ghost">${icon('plus')}</span></div>
+    <p class="hint" style="flex-basis:100%">Les pilotes et les voitures proposés se limitent à ces divisions et catégories ; aucun choix = tous. Gardés sur le championnat.</p>
+  </div>
+  <div class="ptable">
+    <div class="prow head"><div class="idx">#</div><div>Pilote</div><div>Voiture</div><div></div></div>
+    <div class="prow"><div class="idx">1</div><div class="who">${avatar(D.sdr, 26)}<span class="n">Anselme SDR</span>${div('silver')}</div><div><div class="carsel">${carImg('amg-gt3-8', 40, 24)}<span class="cn">AMG GT3 #8</span>${cat('gt3')}<span class="tag" style="color:#854d0e;background:#fef9c3">★ Profil</span></div></div><div style="color:#a8a29e">${icon('x')}</div></div>
+    <div class="prow"><div class="idx">2</div><div class="who">${avatar(D.dan, 26)}<span class="n">Romain DAN</span>${div('silver')}</div><div><div class="carsel">${carImg('bmw-m4-gt3-11', 40, 24)}<span class="cn">BMW M4 GT3 #11</span>${cat('gt3')}</div></div><div style="color:#a8a29e">${icon('x')}</div></div>
+    <div class="prow"><div class="idx">3</div><div class="who">${avatar(D.rou, 26)}<span class="n">Inès ROU</span>${div('invite', { out: true })}<span class="tag warn">hors division</span></div><div><div class="carsel">${carImg('bmw-m1-procar-7', 40, 24)}<span class="cn">BMW M1 Procar #7</span>${cat('procar')}<span class="tag warn">hors catégorie</span></div></div><div style="color:#a8a29e">${icon('x')}</div></div>
+    <div class="prow" style="border:none;background:var(--softer);border-radius:0 0 10px 10px;align-items:start"><div class="idx" style="padding-top:12px">4</div>
+      <div class="who"><span class="dsel">Pilote… <span style="flex:1"></span>${icon('chev')}</span>
+        <div class="menu">
+          ${[D.wal, D.bre, D.bou].map((d) => `<div class="item">${avatar(d, 22)}<span style="flex:1">${d.name}</span>${div('silver')}</div>`).join('')}
+          <div class="sep"></div><div class="foot">Seuls les pilotes GOLD et SILVER sont proposés.</div>
+        </div>
+      </div><div style="height:150px"></div><div></div></div>
+  </div>
+  <div class="footer"><span class="btn">Retour</span><span class="btn" style="border:none;background:var(--yellow);font-weight:600">Suivant</span></div>
+</div>`
+
+// ---------- 10. Championship ----------
+const champHead = `<div class="chead"><div><div class="t" style="display:flex;gap:6px;align-items:center">Coupe d'hiver ${div('gold')}${div('silver')}${cat('gt3')}</div><div class="s">CREUTZWALD RING BoP 70%</div></div>
+  <div class="tabs"><span class="on">${icon('flask', 'width:13px;height:13px')} EL1</span><span>Q1</span><span>R1</span><span>Q2</span><span>R2</span><span>${icon('trophy', 'width:13px;height:13px')} Résultats</span></div></div>`
+const champConfig = `<div class="modal" style="width:560px">
+  <h3 style="font-size:16px">Participants</h3>
+  <div class="filters">
+    <div class="fl">Divisions ${div('gold', { x: true })} ${div('silver', { x: true })} <span class="btn ghost">${icon('plus')}</span></div>
+    <div class="fl">Catégories ${cat('gt3', { x: true })} <span class="btn ghost">${icon('plus')}</span></div>
+  </div>
+  <p class="hint">Mêmes filtres que l'assistant : ils restreignent le choix des pilotes à ajouter et des voitures.</p>
+</div>`
+
+document.getElementById('app').innerHTML = `
+<div class="page-title">
+  <h1>Maquettes : divisions et catégories</h1>
+  <p>Les <b>divisions</b> classent les pilotes et remplacent les équipes : les six équipes actuelles (GOLD, SILVER, BRONZE, DÉBUTANT, PLATINIUM, INVITÉ) deviennent des divisions avec leur logo et leur couleur, chaque pilote garde la sienne. Les <b>catégories</b> classent les voitures (exemples : GT3, GTE, DTM, Procar).</p>
+  <p>Un pilote ou une voiture peut en avoir 0, 1 ou plusieurs. Division de pilote : toujours une pastille <b>pleine</b> de sa couleur. Catégorie de voiture : toujours un fond <b>blanc</b>, bordure et texte de sa couleur. Logos lus dans les fichiers envoyés de ce poste.</p>
+</div>
+${screen('1. Menu', '« Équipes » devient « Divisions », à la même place. L\'adresse /teams renvoie vers /divisions.', block('Avant', sidebar(false)) + block('Après', sidebar(true)))}
+${screen('2. Page Divisions, onglet Pilotes', 'Même page que les équipes (grille ou liste, recherche, supprimés), avec deux onglets : Pilotes et Voitures. Une carte par division, dans l\'ordre des échelons, avec sa pastille et ses pilotes.', `<div class="panel">${pageBar('driver')}<div class="grid3">${divisionCard('gold')}${divisionCard('silver')}${divisionCard('debutant')}</div></div>`)}
+${screen('3. Page Divisions, onglet Voitures', 'Les catégories : même carte, avec les voitures de la catégorie. Pas de logo imposé : sans image, la carte montre le nom court sur la couleur.', `<div class="panel">${pageBar('car')}<div class="grid3">${categoryCard('gt3')}${categoryCard('gte')}${categoryCard('procar')}</div></div>`)}
+${screen('4. Formulaire d\'une division', 'Nom, nom court pour la pastille, logo, couleur, échelon. La pastille choisit seule un texte sombre sur une couleur claire (SILVER, GOLD, PLATINIUM sont illisibles aujourd\'hui).', divisionForm)}
+${screen('5. Fiche pilote et fiche voiture : formulaires', 'Le menu « Équipe » devient un choix multiple « Divisions » (cases à cocher, pastilles retirables). Même champ « Catégories » dans le formulaire d\'une voiture.', driverForm + carForm)}
+${screen('6. Cartes des listes en grille', 'La pastille d\'équipe sous le numéro devient les pastilles de division ; la carte d\'une voiture montre ses catégories sous l\'année.', driverCard + carCard)}
+${screen('7. En-têtes des fiches', 'Pastilles après le numéro du pilote, après l\'année de la voiture.', `<div class="col">${driverHead}${carHead}</div>`)}
+${screen('8. Listes : colonne et filtre', 'La colonne « Équipe » devient « Division », filtrable comme les colonnes des championnats : une ou plusieurs divisions, ou « Sans division » ; aucune case = pas de filtre. Même chose pour la colonne « Catégorie » des voitures.', block('Pilotes, filtre ouvert', driverList) + block('Voitures', carList))}
+${screen('9. Leaderboard', 'Division du pilote à côté de son nom, catégorie de la voiture à côté de son nom. Les deux pour l\'instant ; à alléger quand on retouchera le leaderboard (inutile s\'il n\'y a qu\'une division).', leaderboard)}
+${screen('10. Assistant de championnat, étape Pilotes', 'Filtres Divisions et Catégories au-dessus de la liste : le sélecteur de pilote et celui de voiture ne proposent que leurs pilotes et voitures, la voiture préférée seulement si elle en fait partie. Un participant déjà choisi reste, signalé hors filtre. Les choix sont gardés sur le championnat.', wizard)}
+${screen('11. Championnat', 'Les divisions et catégories du championnat dans son en-tête ; les mêmes filtres dans la configuration des participants.', `<div class="col">${champHead}${champConfig}</div>`)}
+`
+</script>
+</body>
+</html>

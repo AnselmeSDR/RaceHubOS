@@ -46,7 +46,7 @@ const driver = (entries) => ({
   id: 'd-1',
   name: 'Anselme SDR',
   number: 42,
-  team: { name: 'SILVER' },
+  divisions: [{ division: { name: 'SILVER' } }, { division: { name: 'INVITÉ' } }],
   sessions: entries,
 });
 
@@ -90,6 +90,7 @@ describe("export d'un pilote", () => {
   it('résume son palmarès', () => {
     const sheet = workbook.getWorksheet('Anselme SDR');
 
+    expect(fieldValue(sheet, 'Divisions')).toBe('SILVER, INVITÉ');
     expect(fieldValue(sheet, 'Sessions')).toBe(3);
     expect(fieldValue(sheet, 'dont courses')).toBe(2);
     expect(fieldValue(sheet, 'dont qualifications')).toBe(1);

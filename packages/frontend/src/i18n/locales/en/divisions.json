@@ -1,0 +1,60 @@
+{
+  "searchDivision": "Search for a division...",
+  "searchCategory": "Search for a category...",
+  "addDivision": "New division",
+  "addCategory": "New category",
+  "emptyDivisions": "No divisions",
+  "emptyDivisionsHint": "Rank your drivers: GOLD, SILVER, BRONZE…",
+  "emptyCategories": "No categories",
+  "emptyCategoriesHint": "Sort your cars: GT3, DTM, Formula…",
+  "add": "Add",
+  "remove": "Remove {{name}}",
+  "noneYet": "None yet: create some in Divisions.",
+  "pickerHint": "None, one or several.",
+  "noDivision": "No division",
+  "noCategory": "No category",
+  "columns": {
+    "rank": "Rank",
+    "order": "Order"
+  },
+  "card": {
+    "rank": "Rank {{n}}",
+    "order": "Order {{n}}",
+    "noDrivers": "No drivers",
+    "noCars": "No cars",
+    "more_one": "+{{count}} more",
+    "more_other": "+{{count}} more"
+  },
+  "form": {
+    "createDivision": "New division",
+    "editDivision": "Edit division",
+    "createCategory": "New category",
+    "editCategory": "Edit category",
+    "name": "Name",
+    "shortName": "Short name",
+    "shortNameHint": "On the badge; the name otherwise.",
+    "logo": "Logo",
+    "rank": "Rank",
+    "rankHint": "The lowest value = the highest (0 allowed). Order of lists and filters; will drive promotion and relegation.",
+    "order": "Order",
+    "orderHint": "Order of lists and filters.",
+    "orderInvalid": "A whole number, 0 or more.",
+    "preview": "Preview",
+    "saved": "Saved"
+  },
+  "filters": {
+    "divisions": "Divisions",
+    "categories": "Categories",
+    "hint": "Only drivers and cars of these divisions and categories are offered; none chosen = all. Kept with the championship.",
+    "configHint": "Same filters as the wizard: they narrow the drivers you can add and the cars.",
+    "outOfDivision": "outside divisions",
+    "outOfCategory": "outside categories"
+  },
+  "profile": {
+    "notFound": "Division not found",
+    "since": "Member since",
+    "addDriver": "Add a driver…",
+    "addCar": "Add a car…",
+    "noChampionships": "No championship is run for this division."
+  }
+}

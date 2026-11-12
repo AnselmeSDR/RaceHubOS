@@ -18,33 +18,8 @@ async function main() {
   });
   console.log('✅ Simulator device created');
 
-  // Create Teams
-  console.log('Creating teams...');
-  const redBull = await prisma.team.create({
-    data: {
-      name: 'Red Bull Racing',
-      color: '#1E3A5F',
-      img: null,
-    },
-  });
-
-  const ferrari = await prisma.team.create({
-    data: {
-      name: 'Scuderia Ferrari',
-      color: '#DC0000',
-      img: null,
-    },
-  });
-
-  const porsche = await prisma.team.create({
-    data: {
-      name: 'Porsche Motorsport',
-      color: '#C9A227',
-      img: null,
-    },
-  });
-
-  console.log(`✅ Created ${3} teams`);
+  // Driver divisions and car categories: the ones the migrations put in an empty database
+  const division = (id) => ({ divisions: { create: [{ divisionId: id }] } });
 
   // Create Drivers
   console.log('Creating drivers...');
@@ -55,7 +30,7 @@ async function main() {
         number: 42,
         email: 'anselme@example.com',
         color: '#060d08',
-        teamId: null,
+        ...division('division-silver'),
       },
     }),
     prisma.driver.create({
@@ -64,7 +39,7 @@ async function main() {
         number: 2,
         email: 'fanny@example.com',
         color: '#f12835',
-        teamId: null,
+        ...division('division-gold'),
       },
     }),
     prisma.driver.create({
@@ -73,7 +48,7 @@ async function main() {
         number: 71,
         email: 'romain@example.com',
         color: '#74b9d2',
-        teamId: null,
+        ...division('division-bronze'),
       },
     }),
     prisma.driver.create({
@@ -82,7 +57,7 @@ async function main() {
         number: 7,
         email: 'lisa@example.com',
         color: '#c5b9d5',
-        teamId: null,
+        ...division('division-silver'),
       },
     }),
   ]);
@@ -96,6 +71,7 @@ async function main() {
       data: {
         brand: 'Mercedes-Benz',
         model: 'CLK DTM Vodafone',
+        ...division('category-dtm'),
         year: 2005,
         color: '#C0C0C0',
         maxSpeed: 95,
@@ -107,6 +83,7 @@ async function main() {
       data: {
         brand: 'Ferrari',
         model: '488 GT3 #68',
+        ...division('category-gt3'),
         year: 2018,
         color: '#DC0000',
         maxSpeed: 98,
@@ -118,6 +95,7 @@ async function main() {
       data: {
         brand: 'McLaren',
         model: '720S GT3 #03',
+        ...division('category-gt3'),
         year: 2020,
         color: '#FF8C00',
         maxSpeed: 97,
@@ -129,6 +107,7 @@ async function main() {
       data: {
         brand: 'Porsche',
         model: '911 RSR Project 1 #56',
+        ...division('category-gte'),
         year: 2018,
         color: '#FFD700',
         maxSpeed: 96,
@@ -140,6 +119,7 @@ async function main() {
       data: {
         brand: 'Red Bull',
         model: 'RB12 F1 #33',
+        ...division('category-formule'),
         year: 2016,
         color: '#1E3A5F',
         maxSpeed: 100,
@@ -151,6 +131,7 @@ async function main() {
       data: {
         brand: 'BMW',
         model: 'M4 DTM BMW Bank #7',
+        ...division('category-dtm'),
         year: 2017,
         color: '#1C1C1C',
         maxSpeed: 94,
@@ -199,7 +180,6 @@ async function main() {
   console.log('\n✅ Seed completed successfully!');
   console.log(`
 📊 Summary:
-   Teams: ${2}
    Drivers: ${drivers.length}
    Cars: ${cars.length}
    Tracks: ${tracks.length}

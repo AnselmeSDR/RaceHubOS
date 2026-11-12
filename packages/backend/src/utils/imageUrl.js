@@ -33,7 +33,7 @@ export function withImageUrls(entities) {
 }
 
 /**
- * Transform nested entities (driver, car, team, track) with img
+ * Transform nested entities (driver, car, track) with img
  */
 export function withNestedImageUrls(entity) {
   if (!entity) return entity;
@@ -54,10 +54,6 @@ export function withNestedImageUrls(entity) {
 
   if (result.track) {
     result.track = withImageUrl(result.track);
-  }
-
-  if (result.team?.img) {
-    result.team = { ...result.team, img: addImageUrl(result.team.img) };
   }
 
   if (result.drivers) {

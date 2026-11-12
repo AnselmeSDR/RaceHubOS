@@ -79,4 +79,20 @@ export const FASTEST_LAP_COLOR = 'text-fastest-lap'
 export const carColor = (car) => car.color || '#22C55E'
 export const trackColor = (track) => track.color || '#9333EA'
 export const driverColor = (driver) => driver.color || '#3B82F6'
-export const teamColor = (team) => team.color || '#F97316'
+export const divisionColor = (division) => division.color || '#6B7280'
+
+const brightness = (hex) => {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex ?? '')
+  if (!match) return null
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b
+}
+
+/** Dark text on a light colour, white on the others: a badge stays readable (SILVER, GOLD, PLATINIUM). */
+export const textOn = (hex) => ((brightness(hex) ?? 0) > 160 ? '#1c1917' : '#fff')
+
+/** The colour itself as text on white, unless too pale to read: then dark text. */
+export const textOnWhite = (hex) => ((brightness(hex) ?? 0) > 200 ? '#1c1917' : hex)
+
+/** The colour itself as text on the dark theme, unless too dark to read: then light text. */
+export const textOnDark = (hex) => ((brightness(hex) ?? 255) < 80 ? '#e7e5e4' : hex)

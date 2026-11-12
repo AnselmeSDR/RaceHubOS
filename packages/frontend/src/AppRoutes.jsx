@@ -35,6 +35,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         {PAGE_ROUTES.map(pageRoute)}
+        {/* The teams became divisions: an old bookmark still lands */}
+        <Route path="teams" element={<Navigate to="/divisions" replace />} />
         {addonPages.filter((route) => route.layout).map(addonRoute)}
       </Route>
       {addonPages.filter((route) => !route.layout).map(addonRoute)}

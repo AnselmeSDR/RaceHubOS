@@ -20,7 +20,10 @@ const driver = {
   color: '#FFCC00',
   img: null,
   number: 12,
-  team: { name: 'McLaren', color: '#FF8000' },
+  divisions: [
+    { id: 'dv1', name: 'BRONZE', color: '#945434', scope: 'driver' },
+    { id: 'dv2', name: 'Guests', shortName: 'INV', color: '#424242', scope: 'driver' },
+  ],
   wins: 3,
   podiums: 5,
   bestLap: 7654,
@@ -30,7 +33,7 @@ const driver = {
 const inRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('DriverIdentity', () => {
-  test('name, number, team and figures in the driver colour', () => {
+  test('name, number, divisions and figures in the driver colour', () => {
     render(<DriverIdentity driver={driver} />)
     const identity = screen.getByTestId('driver-identity')
     expect(screen.getByRole('heading', { name: 'Ayrton' })).toHaveStyle({ color: '#FFCC00' })
@@ -38,8 +41,11 @@ describe('DriverIdentity', () => {
       expect(identity).toHaveTextContent(text)
     }
     expect(within(identity).getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FFCC00' })
-    expect(screen.getByTestId('driver-team-badge')).toHaveTextContent('McLaren')
-    expect(screen.getByTestId('driver-team-badge')).toHaveStyle({ color: '#FF8000' })
+    // Each division by its short name, white on a dark colour
+    const badges = screen.getAllByTestId('division-badge')
+    expect(badges.map((b) => b.textContent)).toEqual(['BRONZE', 'INV'])
+    expect(badges[0]).toHaveStyle({ backgroundColor: '#945434', color: '#fff' })
+    expect(badges[1]).toHaveAttribute('title', 'Guests')
   })
 
   test('a picture replaces the initial', () => {
@@ -48,20 +54,15 @@ describe('DriverIdentity', () => {
     expect(screen.queryByText('A')).not.toBeInTheDocument()
   })
 
-  test('a team without colour takes the driver colour', () => {
-    render(<DriverIdentity driver={{ ...driver, team: { name: 'Privateer', color: null } }} />)
-    expect(screen.getByTestId('driver-team-badge')).toHaveStyle({ color: '#FFCC00' })
-  })
-
-  test('without colour, number, team, record or figures', () => {
-    const bare = { ...driver, color: null, number: null, team: null, bestLap: null, wins: 0, podiums: null }
+  test('without colour, number, division, record or figures', () => {
+    const bare = { ...driver, color: null, number: null, divisions: [], bestLap: null, wins: 0, podiums: null }
     expect(driverColor(bare)).toBe('#3B82F6')
     render(<DriverIdentity driver={{ ...bare, _count: undefined }} />)
     const identity = screen.getByTestId('driver-identity')
     for (const text of ['0 Races', '0 Wins', '0 Podiums', '0 Laps']) expect(identity).toHaveTextContent(text)
     expect(identity).not.toHaveTextContent('#')
     expect(identity).not.toHaveTextContent('Record')
-    expect(screen.queryByTestId('driver-team-badge')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('division-badge')).not.toBeInTheDocument()
   })
 })
 

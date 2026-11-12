@@ -1,5 +1,6 @@
 import DriverBadge from './DriverBadge'
 import { useTranslation } from 'react-i18next'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
  * DriverStanding - Pour classements avec position
@@ -41,7 +42,7 @@ export default function DriverStanding({ driver, position, points, change }) {
         <DriverBadge driver={driver} size="md" showName={false} />
         <div className="flex-1 min-w-0">
           <div className="font-bold text-gray-900 dark:text-white truncate uppercase">{driver.name}</div>
-          {driver.team && <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>}
+          <DivisionBadges divisions={driver.divisions} className="flex flex-wrap gap-1 mt-0.5" />
         </div>
       </div>
 

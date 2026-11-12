@@ -65,11 +65,11 @@ describe('ctx.extra', () => {
 
   test('works on every record type', async () => {
     const track = await prisma.track.create({ data: { name: 'Ring' } });
-    const team = await prisma.team.create({ data: { name: 'Red' } });
+    const division = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
     const driver = await prisma.driver.create({ data: { name: 'Andi' } });
     const championship = await prisma.championship.create({ data: { name: 'Cup', season: '2026' } });
     const session = await prisma.session.create({ data: { type: 'race', trackId: track.id } });
-    const records = { car, track, team, driver, championship, session };
+    const records = { car, track, division, driver, championship, session };
 
     for (const [type, record] of Object.entries(records)) {
       await tyres.set(type, record.id, { type });

@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User } from 'lucide-react'
-import { FormField, FormModal, TextField, SelectField, PhotoUploadField, ColorPickerField } from '@/components/crud'
+import { DivisionScope } from '@racehubos/shared'
+import { FormField, FormModal, TextField, PhotoUploadField, ColorPickerField } from '@/components/crud'
+import DivisionPicker from '@/components/division/DivisionPicker'
+import { useDivisions } from '@/hooks/useDivisions'
 import { useEntityForm } from '@/hooks/useEntityForm'
 import { getData } from '@/lib/sessionApi'
 import CarSelect from '../car/CarSelect'
 
 /**
- * Create a driver, or edit `driver`: name, number, email, picture, colour, team among `teams` and
- * the preferred car, offered when the driver joins a championship.
+ * Create a driver, or edit `driver`: name, number, email, picture, colour, divisions and the
+ * preferred car, offered when the driver joins a championship.
  */
-export default function DriverFormModal({ driver, teams, onClose }) {
+export default function DriverFormModal({ driver, onClose }) {
   const { t } = useTranslation('drivers')
+  const divisions = useDivisions(DivisionScope.DRIVER)
   const [cars, setCars] = useState([])
   useEffect(() => {
     getData('/api/cars?limit=1000').then((data) => setCars(data ?? []))
@@ -25,7 +29,7 @@ export default function DriverFormModal({ driver, teams, onClose }) {
       email: driver?.email || '',
       img: driver?.img || '',
       color: driver?.color || '#3B82F6',
-      teamId: driver?.teamId || '',
+      divisionIds: driver?.divisions?.map((division) => division.id) ?? [],
       preferredCarId: driver?.preferredCarId || null,
     },
     savedMessage: t('form.saved'),
@@ -69,13 +73,16 @@ export default function DriverFormModal({ driver, teams, onClose }) {
         uploadType="drivers"
       />
       <ColorPickerField value={formData.color} onChange={setField('color')} />
-      <SelectField
-        label={t('glossary:team', { count: 1 })}
-        value={formData.teamId}
-        onChange={setField('teamId')}
-        options={teams.map((team) => ({ value: team.id, label: team.name }))}
-        placeholder={t('form.noTeam')}
-      />
+      <FormField label={t('glossary:division', { count: 2 })}>
+        <DivisionPicker
+          testId="driver-divisions"
+          divisions={divisions}
+          value={formData.divisionIds}
+          onChange={setField('divisionIds')}
+          label={t('divisions:addDivision')}
+        />
+        <p className="text-xs text-muted-foreground mt-1">{t('divisions:pickerHint')}</p>
+      </FormField>
       <FormField label={t('form.preferredCar')}>
         <CarSelect
           cars={cars}

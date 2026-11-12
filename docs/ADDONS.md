@@ -288,7 +288,7 @@ Read and write them freely. For example, the track planner saves to `Track.layou
 
 ### Extra fields on core records
 
-To add fields to a car, a driver, a track, a team, a session or a championship, don't add a column. The core has one extension table per record type: `CarExtra`, `DriverExtra`, `TrackExtra`, `TeamExtra`, `SessionExtra` and `ChampionshipExtra`. Each holds **one row per record and per add-on**, with that add-on's fields as JSON:
+To add fields to a car, a driver, a track, a division, a session or a championship, don't add a column. The core has one extension table per record type: `CarExtra`, `DriverExtra`, `TrackExtra`, `DivisionExtra`, `SessionExtra` and `ChampionshipExtra`. Each holds **one row per record and per add-on**, with that add-on's fields as JSON:
 
 ```
 CarExtra
@@ -309,7 +309,13 @@ const byCar = await ctx.extra.all('car') // { [carId]: data } for this add-on
 - **From the web side**, read them from that `extras` field. Write them with `PUT /api/addons/<id>/extras/car/:carId` (JSON body, merged like `set`), and delete them with `DELETE` on the same path.
 - **No index on these fields.** That's fine for tens or hundreds of records. For data you need to search or sort quickly, use your own database.
 
-The record types are `car`, `driver`, `track`, `team`, `session` and `championship`.
+The record types are `car`, `driver`, `track`, `division`, `session` and `championship`. A `division` is a driver division or a car category (its `scope` says which); it replaced the teams in 1.29.0, and their extras moved with them.
+
+### A record type of your own
+
+An add-on can bring its own kind of record: its tables in [its own database](#own-database), its API on `ctx.router`, its list page and cards with the core components (`ListPage`, `FormModal`…), and its own link table to the drivers or cars (join on `core.Driver`).
+
+Showing it in the core screens (a badge on driver cards, a column and its filter in the driver list) is done with an override for now. Named extension points are planned for this; an add-on will **add** its options, columns and badges to the core filters, never replace them.
 
 ### Own database
 

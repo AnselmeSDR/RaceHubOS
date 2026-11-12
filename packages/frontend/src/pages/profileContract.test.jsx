@@ -2,6 +2,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { render, screen } from '@testing-library/react'
 import i18n from '@/i18n'
 import CarProfile from './CarProfile'
+import DivisionProfile from './DivisionProfile'
 import DriverProfile from './DriverProfile'
 import TrackProfile from './TrackProfile'
 
@@ -26,6 +27,10 @@ vi.mock('@/components/track/TrackRecentSessions', () => spy('TrackRecentSessions
 vi.mock('@/components/driver/DriverIdentity', () => spy('DriverIdentity'))
 vi.mock('@/components/driver/DriverProfileActions', () => spy('DriverProfileActions'))
 vi.mock('@/components/driver/DriverRecentSessions', () => spy('DriverRecentSessions'))
+vi.mock('@/components/division/DivisionIdentity', () => spy('DivisionIdentity'))
+vi.mock('@/components/division/DivisionProfileActions', () => spy('DivisionProfileActions'))
+vi.mock('@/components/division/DivisionMembers', () => spy('DivisionMembers'))
+vi.mock('@/components/division/DivisionChampionships', () => spy('DivisionChampionships'))
 
 beforeAll(() => i18n.changeLanguage('en'))
 afterEach(() => vi.unstubAllGlobals())
@@ -59,4 +64,26 @@ test.each([
       onDelete: expect.any(Function),
     })
   )
+})
+
+test('the division page hands the whole division to each of its pieces; its members can change it', async () => {
+  const division = { id: 'x1', name: 'GOLD', scope: 'driver', drivers: [], cars: [], championships: [] }
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => ({ success: true, data: division }) }))
+  )
+  render(
+    <MemoryRouter initialEntries={['/divisions/x1']}>
+      <Routes>
+        <Route path="/divisions/:id" element={<DivisionProfile />} />
+      </Routes>
+    </MemoryRouter>
+  )
+  const pieces = ['DivisionIdentity', 'DivisionProfileActions', 'DivisionMembers', 'DivisionChampionships']
+  await screen.findByTestId(pieces[0])
+  for (const piece of pieces) expect(received[piece].division).toEqual(division)
+  expect(received.DivisionProfileActions).toEqual(
+    expect.objectContaining({ onEdit: expect.any(Function), onDelete: expect.any(Function) })
+  )
+  expect(received.DivisionMembers.onChange).toEqual(expect.any(Function))
 })

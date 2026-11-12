@@ -22,37 +22,35 @@ import {
 } from './labels.js';
 import { addCarStandings, addDriverStandings } from './standings.js';
 import { carKey, driverKey, referencesOf, statsBy, trackBests } from './scope.js';
+import { divisionsOf } from '../divisions.js';
 
-/** The overview: standings of every driver and car exported, then the teams and tracks. */
+/** The divisions (or categories) of the members exported, each with the members in it. */
+function addDivisions(sheet, heading, divisions, members, { countHeader, nameOf }) {
+  if (divisions.length === 0) return;
+  const membersOf = (division) => members.filter((m) => divisionsOf(m).some((d) => d.id === division.id));
+  title(sheet, heading);
+  addTable(
+    sheet,
+    [
+      { header: 'Nom', value: (d) => d.name, width: 22 },
+      { header: 'Couleur', value: () => null, swatch: (d) => d.color, width: 9 },
+      { header: countHeader, value: (d) => membersOf(d).length, width: 9 },
+      { header: 'Composition', value: (d) => membersOf(d).map(nameOf).join(', '), width: 46 },
+    ],
+    divisions
+  );
+  sheet.addRow([]);
+}
+
+/** The overview: standings of every driver and car exported, then the divisions, categories and tracks. */
 export function addReferenceSheet(workbook, sessions) {
-  const { drivers, cars, teams, tracks } = referencesOf(sessions);
+  const { drivers, cars, divisions, categories, tracks } = referencesOf(sessions);
   const sheet = newSheet(workbook, 'Référence', TAB_COLORS.reference);
 
   addDriverStandings(sheet, drivers, statsBy(sessions, driverKey));
   addCarStandings(sheet, cars, statsBy(sessions, carKey));
-
-  if (teams.length > 0) {
-    const membersOf = (team) => drivers.filter((d) => d.teamId === team.id);
-    title(sheet, 'Équipes');
-    addTable(
-      sheet,
-      [
-        { header: 'Nom', value: (t) => t.name, width: 22 },
-        { header: 'Couleur', value: () => null, swatch: (t) => t.color, width: 9 },
-        { header: 'Pilotes', value: (t) => membersOf(t).length, width: 9 },
-        {
-          header: 'Composition',
-          value: (t) =>
-            membersOf(t)
-              .map((d) => d.name)
-              .join(', '),
-          width: 46,
-        },
-      ],
-      teams
-    );
-    sheet.addRow([]);
-  }
+  addDivisions(sheet, 'Divisions', divisions, drivers, { countHeader: 'Pilotes', nameOf: (d) => d.name });
+  addDivisions(sheet, 'Catégories', categories, cars, { countHeader: 'Voitures', nameOf: carLabel });
 
   if (tracks.length > 0) {
     const bests = trackBests(sessions);

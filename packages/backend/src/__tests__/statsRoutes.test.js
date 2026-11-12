@@ -16,7 +16,7 @@ async function wipe() {
   await prisma.session.deleteMany();
   await prisma.championship.deleteMany();
   await prisma.driver.deleteMany();
-  await prisma.team.deleteMany();
+  await prisma.division.deleteMany();
   await prisma.car.deleteMany();
   await prisma.track.deleteMany();
 }
@@ -25,16 +25,17 @@ let f;
 let lapNumber = 0;
 
 /**
- * Ana (team Red) wins the championship race R1 on Ring and is third on Oval (R2); Ben is second
+ * Ana (GOLD) wins the championship race R1 on Ring and is third on Oval (R2); Ben is second
  * then DNF. Ana also sets a qualif lap (Q1) and a deleted lap; Ben the fastest practice lap.
  */
 async function fixture() {
   const ring = await prisma.track.create({ data: { name: 'Ring' } });
   const oval = await prisma.track.create({ data: { name: 'Oval' } });
   const empty = await prisma.track.create({ data: { name: 'Empty', bestLap: 6000 } });
-  const red = await prisma.team.create({ data: { name: 'Red' } });
-  const blue = await prisma.team.create({ data: { name: 'Blue' } });
-  const ana = await prisma.driver.create({ data: { name: 'Ana', teamId: red.id } });
+  const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+  const ana = await prisma.driver.create({
+    data: { name: 'Ana', divisions: { create: [{ divisionId: gold.id }] } },
+  });
   const ben = await prisma.driver.create({ data: { name: 'Ben' } });
   const cid = await prisma.driver.create({ data: { name: 'Cid' } });
   const gt = await prisma.car.create({ data: { brand: 'Ford', model: 'GT' } });
@@ -88,7 +89,7 @@ async function fixture() {
   await entry(r2, ben, p911, 1, {});
   await entry(q1, ana, gt, 0, { position: 1 });
 
-  return { ring, oval, empty, red, blue, ana, ben, cid, gt, p911, cup, r1, q1, r2, p, laps };
+  return { ring, oval, empty, ana, ben, cid, gt, p911, cup, r1, q1, r2, p, laps };
 }
 
 beforeEach(async () => {
@@ -108,7 +109,7 @@ describe('GET /api/stats/drivers', () => {
   test('races, wins, podiums, poles, DNFs and lap times; the most successful first', async () => {
     const res = await api.get('/api/stats/drivers');
     expect(res.body.data.map((d) => d.name)).toEqual(['Ana', 'Ben', 'Cid']);
-    expect(res.body.data[0].team.name).toBe('Red');
+    expect(res.body.data[0].divisions).toMatchObject([{ name: 'GOLD' }]);
     expect(res.body.filters).toEqual({});
     const { Ana, Ben, Cid } = await stats();
     expect(Ana).toEqual({
@@ -270,18 +271,6 @@ describe('GET /api/stats/leaderboard/drivers', () => {
     expect(res.body.filters).toEqual({ limit: 10 });
     res = await api.get('/api/stats/leaderboard/drivers?limit=1');
     expect(res.body.data).toHaveLength(1);
-  });
-});
-
-describe('GET /api/stats/leaderboard/teams', () => {
-  test("points from the drivers' race places, the gap to the leader; per championship", async () => {
-    let res = await api.get('/api/stats/leaderboard/teams');
-    expect(res.body.data.map((e) => [e.position, e.team.name, e.points, e.wins, e.podiums, e.races, e.gap])).toEqual([
-      [1, 'Red', 40, 1, 2, 2, null],
-      [2, 'Blue', 0, 0, 0, 0, 40],
-    ]);
-    res = await api.get(`/api/stats/leaderboard/teams?championshipId=${f.cup.id}`);
-    expect(res.body.data[0]).toMatchObject({ points: 25, races: 1 });
   });
 });
 

@@ -18,7 +18,7 @@ beforeAll(async () => {
   // Clean database before tests
   // Children first: several tables reference drivers, cars and tracks with
   // onDelete: Restrict, so they must go before their parents.
-  for (const model of ['carExtra', 'driverExtra', 'trackExtra', 'teamExtra', 'sessionExtra', 'championshipExtra']) {
+  for (const model of ['carExtra', 'driverExtra', 'trackExtra', 'divisionExtra', 'sessionExtra', 'championshipExtra']) {
     await prisma[model].deleteMany();
   }
   await prisma.trackRecord.deleteMany();
@@ -31,7 +31,7 @@ beforeAll(async () => {
   await prisma.driver.deleteMany();
   await prisma.car.deleteMany();
   await prisma.track.deleteMany();
-  await prisma.team.deleteMany();
+  await prisma.division.deleteMany();
 });
 
 afterAll(async () => {

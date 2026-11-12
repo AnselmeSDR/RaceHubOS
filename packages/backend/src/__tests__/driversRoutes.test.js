@@ -10,20 +10,26 @@ const { default: driversRouter } = await import('../routes/drivers.js');
 const api = apiFor('/api/drivers', driversRouter);
 const { session, entry, lap } = recorder(prisma);
 
-let red, ana, ben, cid, dan, gt, p911, ring, oval, s1, s2;
+let gold, silver, gt3, ana, ben, cid, dan, gt, p911, ring, oval, s1, s2;
 
 /**
- * Ana (team Red, best 8000) races s1 on Ring and s2 on Oval, Ben (no team, no best) only s1, Cid
- * (team Blue, best 7000) nothing; Dan is deleted.
+ * Ana (GOLD) races s1 on Ring (wins it) and s2 on Oval, Ben (only in OLD, in the bin) only s1 (second),
+ * Cid (SILVER) nothing; Dan is deleted. GT3 is a car category.
  */
 beforeEach(async () => {
   await wipe(prisma);
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  red = await prisma.team.create({ data: { name: 'Red', img: '/uploads/red.png' } });
-  const blue = await prisma.team.create({ data: { name: 'Blue' } });
-  ana = await prisma.driver.create({ data: { name: 'Ana', teamId: red.id, bestLap: 8000, img: 'ana.png', number: 7 } });
-  ben = await prisma.driver.create({ data: { name: 'Ben', email: 'ben@example.com' } });
-  cid = await prisma.driver.create({ data: { name: 'Cid', teamId: blue.id, bestLap: 7000 } });
+  const division = (data) => prisma.division.create({ data: { scope: 'driver', ...data } });
+  gold = await division({ name: 'GOLD', order: 1, img: '/uploads/gold.png' });
+  silver = await division({ name: 'SILVER', order: 2 });
+  const old = await division({ name: 'OLD', order: 3, deletedAt: new Date() });
+  gt3 = await division({ name: 'GT3', scope: 'car' });
+  const inDivision = (d) => ({ divisions: { create: [{ divisionId: d.id }] } });
+  ana = await prisma.driver.create({
+    data: { name: 'Ana', img: 'ana.png', number: 7, ...inDivision(gold) },
+  });
+  ben = await prisma.driver.create({ data: { name: 'Ben', email: 'ben@example.com', ...inDivision(old) } });
+  cid = await prisma.driver.create({ data: { name: 'Cid', ...inDivision(silver) } });
   dan = await prisma.driver.create({ data: { name: 'Dan', deletedAt: new Date() } });
   gt = await prisma.car.create({ data: { brand: 'Ford', model: 'GT' } });
   p911 = await prisma.car.create({ data: { brand: 'Porsche', model: '911' } });
@@ -44,27 +50,45 @@ afterEach(() => jest.restoreAllMocks());
 const names = async (query) => (await api.get(`/api/drivers?${query}`)).body.data.map((d) => d.name);
 
 describe('GET /api/drivers', () => {
-  test('drivers not deleted by name, with team, counts, image URLs and extras', async () => {
+  test('drivers not deleted by name, with divisions, counts, image URLs and extras', async () => {
     const res = await api.get('/api/drivers');
     expect(res.body).toMatchObject({ success: true, total: 3, hasMore: false });
     expect(res.body.data.map((d) => d.name)).toEqual(['Ana', 'Ben', 'Cid']);
     expect(res.body.data[0]).toMatchObject({
       img: '/api/img/ana.png',
-      team: { name: 'Red', img: '/api/img/red.png' },
+      divisions: [{ name: 'GOLD', img: '/api/img/gold.png' }],
       _count: { laps: 2, sessions: 2 },
       extras: {},
     });
+    // Figures from the races and the laps not deleted
+    expect(res.body.data.map(({ races, wins, podiums, bestLap }) => [races, wins, podiums, bestLap])).toEqual([
+      [2, 1, 1, 8100],
+      [1, 0, 1, 9000],
+      [0, 0, 0, null],
+    ]);
+    // A division in the bin shows nowhere
+    expect(res.body.data[1].divisions).toEqual([]);
     expect(await names('deleted=true')).toEqual(['Dan']);
   });
 
-  test('sorted by a column, a count, the team name or the best lap, then paginated', async () => {
+  test('filtered on one or several divisions, or none (the ones in the bin do not count)', async () => {
+    expect(await names(`divisionId=${gold.id}`)).toEqual(['Ana']);
+    expect(await names(`divisionId=${gold.id},${silver.id}`)).toEqual(['Ana', 'Cid']);
+    expect(await names('divisionId=none')).toEqual(['Ben']);
+    expect(await names(`divisionId=${silver.id},none`)).toEqual(['Ben', 'Cid']);
+    expect((await api.get(`/api/drivers?divisionId=${gold.id}`)).body.total).toBe(1);
+  });
+
+  test('sorted by a column, a count, the division rank or the best lap, then paginated', async () => {
     expect(await names('sortBy=sessions&sortOrder=desc')).toEqual(['Ana', 'Ben', 'Cid']);
     expect(await names('sortBy=laps&sortOrder=asc')).toEqual(['Cid', 'Ben', 'Ana']);
-    expect(await names('sortBy=team&sortOrder=asc')).toEqual(['Ben', 'Cid', 'Ana']);
-    expect(await names('sortBy=team&sortOrder=desc')).toEqual(['Ana', 'Cid', 'Ben']);
-    expect(await names('sortBy=bestLap&sortOrder=asc')).toEqual(['Cid', 'Ana', 'Ben']);
-    expect(await names('sortBy=bestLap&sortOrder=desc')).toEqual(['Ben', 'Ana', 'Cid']);
-    expect(await names('sortBy=bestLap&limit=1&offset=1')).toEqual(['Ana']);
+    expect(await names('sortBy=divisions&sortOrder=asc')).toEqual(['Ana', 'Cid', 'Ben']);
+    expect(await names('sortBy=divisions&sortOrder=desc')).toEqual(['Ben', 'Cid', 'Ana']);
+    expect(await names('sortBy=bestLap&sortOrder=asc')).toEqual(['Ana', 'Ben', 'Cid']);
+    expect(await names('sortBy=bestLap&sortOrder=desc')).toEqual(['Cid', 'Ben', 'Ana']);
+    expect(await names('sortBy=bestLap&limit=1&offset=1')).toEqual(['Ben']);
+    expect((await names('sortBy=wins&sortOrder=desc'))[0]).toBe('Ana');
+    expect((await names('sortBy=podiums&sortOrder=asc'))[0]).toBe('Cid');
 
     const res = await api.get('/api/drivers?sortBy=name&sortOrder=desc&limit=2');
     expect(res.body.data.map((d) => d.name)).toEqual(['Cid', 'Ben']);
@@ -147,13 +171,17 @@ describe('exports', () => {
 });
 
 describe('GET /api/drivers/:id', () => {
-  test('with team, latest sessions first, counts and the best lap per car and track', async () => {
+  test('with divisions, latest sessions first, counts and the best lap per car and track', async () => {
     const res = await api.get(`/api/drivers/${ana.id}`);
     expect(res.body.data).toMatchObject({
       name: 'Ana',
       img: '/api/img/ana.png',
-      team: { name: 'Red' },
+      divisions: [{ name: 'GOLD' }],
       _count: { sessions: 2, laps: 3 },
+      races: 2,
+      wins: 1,
+      podiums: 1,
+      bestLap: 8100,
       extras: {},
     });
     expect(res.body.data.sessions.map((s) => s.session.track.name)).toEqual(['Oval', 'Ring']);
@@ -167,7 +195,9 @@ describe('GET /api/drivers/:id', () => {
 
 describe('POST /api/drivers', () => {
   test('a trimmed driver with defaults, 400 without a name', async () => {
-    const res = await api.post('/api/drivers').send({ name: '  Eve ', email: ' eve@example.com ', teamId: red.id });
+    const res = await api
+      .post('/api/drivers')
+      .send({ name: '  Eve ', email: ' eve@example.com ', divisionIds: [silver.id, gold.id] });
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({
       name: 'Eve',
@@ -175,7 +205,7 @@ describe('POST /api/drivers', () => {
       number: null,
       img: null,
       color: '#3B82F6',
-      team: { name: 'Red' },
+      divisions: [{ name: 'GOLD' }, { name: 'SILVER' }],
     });
     for (const body of [{}, { name: '   ' }]) {
       expect((await api.post('/api/drivers').send(body)).body).toEqual({ success: false, error: 'Name is required' });
@@ -190,28 +220,62 @@ describe('POST /api/drivers', () => {
     expect(res.body.error).toBe('Email already exists');
   });
 
+  test('a division unknown, in the bin, of cars or not in a list answers 400', async () => {
+    const error = async (divisionIds) => (await api.post('/api/drivers').send({ name: 'Eve', divisionIds })).body.error;
+    expect(await error(['nope'])).toBe('Division not found');
+    const old = await prisma.division.findFirst({ where: { name: 'OLD' } });
+    expect(await error([old.id])).toBe('Division not found');
+    expect(await error([gt3.id])).toBe('Only driver divisions can be given');
+    expect(await error(gold.id)).toBe('divisionIds must be an array of ids');
+    expect(await prisma.driver.count({ where: { name: 'Eve' } })).toBe(0);
+  });
+
   test('another failure answers 500', async () => {
-    const res = await api.post('/api/drivers').send({ name: 'Eve', teamId: 'nope' });
+    jest.spyOn(prisma.driver, 'create').mockRejectedValueOnce(new Error('db down'));
+    const res = await api.post('/api/drivers').send({ name: 'Eve' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Failed to create driver');
   });
 });
 
 describe('PUT /api/drivers/:id', () => {
-  test('updates the fields given; empty number, email and team become null', async () => {
+  test('updates the fields given; empty number and email become null; divisions untouched unless given', async () => {
     let res = await api
       .put(`/api/drivers/${ana.id}`)
-      .send({ name: ' Anna ', number: '', email: '  ', teamId: '', img: 'new.png', color: '#000000' });
+      .send({ name: ' Anna ', number: '', email: '  ', img: 'new.png', color: '#000000' });
     expect(res.body.data).toMatchObject({
       name: 'Anna',
       number: null,
       email: null,
-      teamId: null,
       img: '/api/img/new.png',
       color: '#000000',
+      divisions: [{ name: 'GOLD' }],
     });
-    res = await api.put(`/api/drivers/${ben.id}`).send({ number: 9, email: 'b@example.com', teamId: red.id });
-    expect(res.body.data).toMatchObject({ name: 'Ben', number: 9, email: 'b@example.com', team: { name: 'Red' } });
+    res = await api.put(`/api/drivers/${ben.id}`).send({ number: 9, email: 'b@example.com' });
+    expect(res.body.data).toMatchObject({ name: 'Ben', number: 9, email: 'b@example.com' });
+  });
+
+  test('divisionIds sets exactly those: a kept one keeps its date, one in the bin stays for its restore', async () => {
+    const since = async (driver, division) =>
+      (
+        await prisma.driverDivision.findUnique({
+          where: { driverId_divisionId: { driverId: driver.id, divisionId: division.id } },
+        })
+      )?.createdAt;
+    const goldSince = await since(ana, gold);
+
+    let res = await api.put(`/api/drivers/${ana.id}`).send({ divisionIds: [silver.id, gold.id] });
+    expect(res.body.data.divisions.map((d) => d.name)).toEqual(['GOLD', 'SILVER']);
+    expect(await since(ana, gold)).toEqual(goldSince);
+    res = await api.put(`/api/drivers/${ana.id}`).send({ divisionIds: [] });
+    expect(res.body.data.divisions).toEqual([]);
+
+    res = await api.put(`/api/drivers/${ben.id}`).send({ divisionIds: [silver.id] });
+    expect(res.body.data.divisions.map((d) => d.name)).toEqual(['SILVER']);
+    await prisma.division.updateMany({ where: { name: 'OLD' }, data: { deletedAt: null } });
+    expect((await api.get(`/api/drivers/${ben.id}`)).body.data.divisions.map((d) => d.name)).toEqual(['SILVER', 'OLD']);
+
+    expect((await api.put(`/api/drivers/${ana.id}`).send({ divisionIds: [gt3.id] })).status).toBe(400);
   });
 
   test('a preferred car is set, cleared, refused when unknown or deleted; erasing the car forgets it', async () => {
@@ -246,7 +310,8 @@ describe('PUT /api/drivers/:id', () => {
     let res = await api.put(`/api/drivers/${ben.id}`).send({ number: 7 });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Number already exists');
-    res = await api.put(`/api/drivers/${ben.id}`).send({ teamId: 'nope' });
+    jest.spyOn(prisma, '$transaction').mockRejectedValueOnce(new Error('db down'));
+    res = await api.put(`/api/drivers/${ben.id}`).send({ name: 'Bob' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Failed to update driver');
   });
@@ -306,7 +371,7 @@ describe('GET /api/drivers/:id/stats', () => {
         totalLaps: 3,
         wins: 1,
         podiums: 1,
-        bestLapTime: 8000,
+        bestLapTime: 8100,
         avgLapTime: 8266.666666666666,
         winRate: 50,
         podiumRate: 50,
@@ -327,7 +392,14 @@ describe('POST /api/drivers/:id/reset-stats', () => {
     expect(res.body).toMatchObject({
       success: true,
       message: 'Statistics reset successfully',
-      data: { totalRaces: 0, wins: 0, podiums: 0, bestLap: null, _count: { sessions: 0, laps: 0 }, team: {} },
+      data: {
+        totalRaces: 0,
+        wins: 0,
+        podiums: 0,
+        bestLap: null,
+        _count: { sessions: 0, laps: 0 },
+        divisions: [{ name: 'GOLD' }],
+      },
     });
     expect(await prisma.trackRecord.count({ where: { driverId: ana.id } })).toBe(0);
     expect(await prisma.lap.count({ where: { driverId: ben.id } })).toBe(1);

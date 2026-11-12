@@ -18,7 +18,7 @@ afterEach(() => {
 const form = (options = {}) =>
   renderHook(() =>
     useEntityForm({
-      endpoint: '/api/teams',
+      endpoint: '/api/divisions',
       initial: { name: 'Red' },
       savedMessage: 'Saved!',
       onClose: vi.fn(),
@@ -37,7 +37,7 @@ test('a new record is POSTed, then the form says so and closes', async () => {
   await act(() => result.current.formProps.onSubmit())
 
   const [url, options] = fetchMock.mock.calls[0]
-  expect(url).toMatch(/\/api\/teams$/)
+  expect(url).toMatch(/\/api\/divisions$/)
   expect(options).toMatchObject({ method: 'POST', body: JSON.stringify({ name: 'Blue' }) })
   expect(result.current.formProps).toMatchObject({ success: 'Saved!', saving: false })
   expect(onClose).not.toHaveBeenCalled()
@@ -52,7 +52,7 @@ test('an existing record is PUT to its own url, shaped by toBody', async () => {
   await act(() => result.current.formProps.onSubmit())
 
   const [url, options] = fetchMock.mock.calls[0]
-  expect(url).toMatch(/\/api\/teams\/t1$/)
+  expect(url).toMatch(/\/api\/divisions\/t1$/)
   expect(options).toMatchObject({ method: 'PUT', body: JSON.stringify({ label: 'GREEN' }) })
 })
 

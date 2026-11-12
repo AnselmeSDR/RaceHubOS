@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
 import { routeFetch, withStatus } from '@/test/helpers'
+import { fitsDivisions } from '@/hooks/useDivisionFilter'
 import ChampionshipConfigModal from '../ChampionshipConfigModal'
 import ChampionshipConfigFooter from './ChampionshipConfigFooter'
 import ChampionshipInfoFields from './ChampionshipInfoFields'
@@ -59,6 +60,19 @@ const auto = {
   ],
 }
 const finished = { ...championship, status: ChampionshipStatus.FINISHED }
+
+const GOLD = { id: 'gold', name: 'GOLD', color: '#F5D13C', scope: 'driver' }
+const GT3 = { id: 'gt3', name: 'GT3', color: '#E11D48', scope: 'car' }
+const divisionRoutes = {
+  '/api/divisions?scope=driver': { success: true, data: [GOLD] },
+  '/api/divisions?scope=car': { success: true, data: [GT3] },
+}
+// A filter as useDivisionFilter gives it for the ids chosen
+const filterOf = (driverIds = [], carIds = []) => ({
+  driverFits: (driver) => fitsDivisions(driver, driverIds),
+  carFits: (car) => fitsDivisions(car, carIds),
+})
+const writes = (mock) => mock.mock.calls.filter(([, init]) => init?.method)
 
 const bodyOf = (mock, method, url) =>
   JSON.parse(mock.mock.calls.find(([u, init]) => init?.method === method && (!url || u === url))[1].body)
@@ -407,7 +421,15 @@ describe('ChampionshipParticipantsPanel', () => {
   function panel(props = {}) {
     const handlers = { onChanged: vi.fn(), onError: vi.fn() }
     render(
-      <ChampionshipParticipantsPanel championship={auto} sessions={[q1]} drivers={drivers} {...handlers} {...props} />
+      <ChampionshipParticipantsPanel
+        championship={auto}
+        sessions={[q1]}
+        drivers={drivers}
+        cars={[]}
+        filter={filterOf()}
+        {...handlers}
+        {...props}
+      />
     )
     return handlers
   }
@@ -426,7 +448,11 @@ describe('ChampionshipParticipantsPanel', () => {
     ).toEqual(['Add a driver...', 'Cid'])
     await userEvent.selectOptions(add, 'd3')
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
-    expect(bodyOf(mock, 'PUT').participants).toEqual([{ driverId: 'd1' }, { driverId: 'd2' }, { driverId: 'd3' }])
+    expect(bodyOf(mock, 'PUT').participants).toEqual([
+      { driverId: 'd1' },
+      { driverId: 'd2' },
+      { driverId: 'd3', carId: null },
+    ])
   })
 
   test('removing a participant; a refusal is reported', async () => {
@@ -456,6 +482,42 @@ describe('ChampionshipParticipantsPanel', () => {
     panel({ championship: { ...auto, participants: undefined } })
     expect(screen.getByText('Participants (0)')).toBeInTheDocument()
     expect(within(screen.getByRole('combobox')).getAllByRole('option')).toHaveLength(4)
+  })
+
+  test('only drivers of its divisions join, with their preferred car if of its categories; one outside is flagged', async () => {
+    const mock = routeFetch({ 'PUT /api/championships/c1/participants': { success: true } })
+    const cars = [
+      { id: 'ferrari', divisions: [GT3] },
+      { id: 'bmw', divisions: [] },
+    ]
+    const cid = { id: 'd3', name: 'Cid', divisions: [GOLD], preferredCarId: 'ferrari' }
+    const dan = { id: 'd4', name: 'Dan', divisions: [GOLD], preferredCarId: 'bmw' }
+    const eva = { id: 'd5', name: 'Eva', divisions: [] }
+    const championship = {
+      ...auto,
+      participants: [{ ...auto.participants[0], driver: { ...drivers[0], divisions: [GOLD] } }, auto.participants[1]],
+    }
+    const { onChanged } = panel({
+      championship,
+      drivers: [...drivers.slice(0, 2), cid, dan, eva],
+      cars,
+      filter: filterOf(['gold'], ['gt3']),
+    })
+    // Ben, in no division, stays but is flagged
+    expect(screen.getAllByText('outside divisions')).toHaveLength(1)
+    const add = screen.getByRole('combobox', { name: 'Add a driver...' })
+    expect(
+      within(add)
+        .getAllByRole('option')
+        .map((o) => o.textContent)
+    ).toEqual(['Add a driver...', 'Cid', 'Dan'])
+    await userEvent.selectOptions(add, 'd3')
+    await waitFor(() => expect(onChanged).toHaveBeenCalled())
+    expect(bodyOf(mock, 'PUT').participants.at(-1)).toEqual({ driverId: 'd3', carId: 'ferrari' })
+    mock.mockClear()
+    await userEvent.selectOptions(add, 'd4')
+    await waitFor(() => expect(writes(mock)).toHaveLength(1))
+    expect(bodyOf(mock, 'PUT').participants.at(-1)).toEqual({ driverId: 'd4', carId: null })
   })
 })
 
@@ -570,7 +632,7 @@ describe('ChampionshipConfigModal', () => {
     await userEvent.clear(screen.getByDisplayValue('Cup'))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Name is required')
-    expect(mock).not.toHaveBeenCalled()
+    expect(writes(mock)).toEqual([])
   })
 
   test('saving hands the championship back, then closes', async () => {
@@ -582,6 +644,28 @@ describe('ChampionshipConfigModal', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(saved))
     expect(onClose).toHaveBeenCalled()
     expect(bodyOf(mock, 'PUT')).toEqual({ name: 'Cup!', trackId: 't1' })
+  })
+
+  test('the filters are saved at once with the championship; a refusal is shown', async () => {
+    const user = userEvent.setup()
+    const mock = routeFetch({ ...divisionRoutes, 'PUT /api/championships/c1': { success: true, data: {} } })
+    const { onSessionsChange } = sheet({ championship: { ...championship, divisions: [GOLD] } })
+    const categories = screen.getByTestId('division-filter-categories')
+    await user.click(within(categories).getByRole('button', { name: 'New category' }))
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /GT3/ }))
+    await waitFor(() => expect(onSessionsChange).toHaveBeenCalled())
+    expect(bodyOf(mock, 'PUT')).toEqual({ divisionIds: ['gold', 'gt3'] })
+    await user.keyboard('{Escape}')
+    cleanup()
+    routeFetch({ ...divisionRoutes, 'PUT /api/championships/c1': withStatus(400, { error: 'Division not found' }) })
+    sheet()
+    await user.click(
+      within(screen.getByTestId('division-filter-divisions')).getByRole('button', { name: 'New division' })
+    )
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /GOLD/ }))
+    // The menu stays open for another choice; the sheet shows again once it closes
+    await user.keyboard('{Escape}')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Division not found')
   })
 
   test("a refused save shows the server's error", async () => {

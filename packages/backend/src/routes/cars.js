@@ -9,24 +9,42 @@ import { findOr404, HttpError, route } from '../lib/http.js';
 import { addDeletionRoutes } from '../lib/entities/deletion.js';
 import { changesFrom, kept, trimmed } from '../lib/entities/fields.js';
 import { byBestLap, listPage } from '../lib/entities/list.js';
+import {
+  byDivision,
+  checkDivisions,
+  DIVISIONS_INCLUDE,
+  divisionWhere,
+  setDivisions,
+  withDivisions,
+} from '../lib/divisions.js';
 import { bestLapRecords } from '../lib/entities/records.js';
+import { FIGURES_INCLUDE, figuresOf, withFigures } from '../lib/stats/figures.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
 
 const LIST = {
   sortBy: 'brand',
-  include: { _count: { select: { sessions: { where: { deletedAt: null } } } } },
+  include: {
+    divisions: DIVISIONS_INCLUDE,
+    ...FIGURES_INCLUDE,
+    _count: { select: { sessions: { where: { deletedAt: null } } } },
+  },
   counts: ['sessions'],
-  computed: { bestLap: byBestLap },
+  computed: { divisions: byDivision, bestLap: byBestLap },
+  shape: withFigures,
 };
 
-// GET /api/cars - filtered (deleted), sorted and paginated
+/** A car for the interface: image URL, categories as plain divisions. */
+const shown = (car) => withImageUrl(withDivisions(car));
+
+// GET /api/cars - filtered (deleted, divisionId=a,b or none), sorted and paginated
 router.get(
   '/',
   route('Failed to fetch cars', async (req, res) => {
-    const { page, ...rest } = await listPage(prisma.car, req.query, LIST);
-    res.json({ success: true, data: await attachExtras(prisma, 'car', page.map(withImageUrl)), ...rest });
+    const where = divisionWhere(req.query.divisionId);
+    const { page, ...rest } = await listPage(prisma.car, req.query, { ...LIST, where });
+    res.json({ success: true, data: await attachExtras(prisma, 'car', page.map(shown)), ...rest });
   })
 );
 
@@ -50,11 +68,12 @@ router.get(
   })
 );
 
-// GET /api/cars/:id - with latest sessions, entry count and best lap per driver and track
+// GET /api/cars/:id - with categories, latest sessions, entry count and best lap per driver and track
 router.get(
   '/:id',
   route('Failed to fetch car', async (req, res) => {
     const car = await findOr404(prisma.car, req.params.id, 'Car', {
+      divisions: DIVISIONS_INCLUDE,
       sessions: {
         include: { session: { include: { track: true } } },
         orderBy: { session: { createdAt: 'desc' } },
@@ -63,7 +82,9 @@ router.get(
       _count: { select: { sessions: true } },
     });
     const records = await bestLapRecords(prisma, 'car', car.id);
-    res.json({ success: true, data: await attachExtras(prisma, 'car', withNestedImageUrls({ ...car, records })) });
+    const figures = await figuresOf(prisma.car, car.id);
+    const data = withNestedImageUrls(withDivisions({ ...car, ...figures, records }));
+    res.json({ success: true, data: await attachExtras(prisma, 'car', data) });
   })
 );
 
@@ -73,6 +94,7 @@ router.post(
     const { brand, model, year, img, color, maxSpeed, brakeForce, fuelCapacity } = req.body;
     if (!brand?.trim()) throw new HttpError(400, 'Brand is required');
     if (!model?.trim()) throw new HttpError(400, 'Model is required');
+    const divisionIds = await checkDivisions(prisma, 'car', req.body.divisionIds);
 
     const car = await prisma.car.create({
       data: {
@@ -86,9 +108,11 @@ router.post(
         brakeForce,
         fuelCapacity,
         ...carSpecsFrom(req.body),
+        divisions: { create: (divisionIds ?? []).map((divisionId) => ({ divisionId })) },
       },
+      include: { divisions: DIVISIONS_INCLUDE },
     });
-    res.status(201).json({ success: true, data: withImageUrl(car) });
+    res.status(201).json({ success: true, data: shown(car) });
   })
 );
 
@@ -109,7 +133,12 @@ router.put(
     const { id } = req.params;
     await findOr404(prisma.car, id, 'Car');
     const data = { ...changesFrom(req.body, EDITABLE), ...carSpecsFrom(req.body, { partial: true }) };
-    res.json({ success: true, data: withImageUrl(await prisma.car.update({ where: { id }, data })) });
+    const divisionIds = await checkDivisions(prisma, 'car', req.body.divisionIds);
+    const car = await prisma.$transaction(async (tx) => {
+      await setDivisions(tx, 'car', id, divisionIds);
+      return tx.car.update({ where: { id }, data, include: { divisions: DIVISIONS_INCLUDE } });
+    });
+    res.json({ success: true, data: shown(car) });
   })
 );
 
@@ -133,10 +162,10 @@ router.post(
       return tx.car.update({
         where: { id },
         data: { totalRaces: 0, bestLap: null },
-        include: { _count: { select: { sessions: true } } },
+        include: { divisions: DIVISIONS_INCLUDE, _count: { select: { sessions: true } } },
       });
     });
-    res.json({ success: true, data: withImageUrl(car), message: 'Statistics reset successfully' });
+    res.json({ success: true, data: shown(car), message: 'Statistics reset successfully' });
   })
 );
 

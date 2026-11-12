@@ -17,7 +17,12 @@ const ENTITIES = [
   { label: 'pilote', path: '/drivers', endpoint: '/api/drivers', create: () => ({ name: stamp() }) },
   { label: 'voiture', path: '/cars', endpoint: '/api/cars', create: () => ({ brand: 'E2E', model: stamp() }) },
   { label: 'circuit', path: '/tracks', endpoint: '/api/tracks', create: () => ({ name: stamp(), length: 20 }) },
-  { label: 'équipe', path: '/teams', endpoint: '/api/teams', create: () => ({ name: stamp() }) },
+  {
+    label: 'division',
+    path: '/divisions',
+    endpoint: '/api/divisions',
+    create: () => ({ name: stamp(), scope: 'driver' }),
+  },
 ]
 
 async function apiCreate(request, endpoint, body) {

@@ -11,13 +11,13 @@ const { session, entry, lap } = recorder(prisma);
 
 let gt, p911, ana, ben, ring, oval;
 
-/** The GT (best 7000) races s1 on Ring and s2 on Oval, the 911 (no best) s1, the R8 (best 8000) nothing. */
+/** The GT races s1 on Ring and s2 on Oval, the 911 s1, the R8 nothing. */
 beforeEach(async () => {
   await wipe(prisma);
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  gt = await prisma.car.create({ data: { brand: 'Ford', model: 'GT', bestLap: 7000, img: 'gt.png' } });
+  gt = await prisma.car.create({ data: { brand: 'Ford', model: 'GT', img: 'gt.png' } });
   p911 = await prisma.car.create({ data: { brand: 'Porsche', model: '911' } });
-  await prisma.car.create({ data: { brand: 'Audi', model: 'R8', bestLap: 8000 } });
+  await prisma.car.create({ data: { brand: 'Audi', model: 'R8' } });
   await prisma.car.create({ data: { brand: 'Opel', model: 'Manta', deletedAt: new Date() } });
   ana = await prisma.driver.create({ data: { name: 'Ana' } });
   ben = await prisma.driver.create({ data: { name: 'Ben' } });
@@ -45,14 +45,34 @@ describe('GET /api/cars', () => {
     expect(res.body).toMatchObject({ success: true, total: 3, hasMore: false });
     expect(res.body.data.map((c) => c.brand)).toEqual(['Audi', 'Ford', 'Porsche']);
     expect(res.body.data[1]).toMatchObject({ img: '/api/img/gt.png', _count: { sessions: 2 }, extras: {} });
+    // Figures from the races and the laps not deleted
+    expect(res.body.data.map(({ races, bestLap }) => [races, bestLap])).toEqual([
+      [0, null],
+      [2, 8100],
+      [1, 9000],
+    ]);
     expect(await brands('deleted=true')).toEqual(['Opel']);
+  });
+
+  test('with their categories, filtered on one or several, or none', async () => {
+    const category = (name, order) => prisma.division.create({ data: { name, order, scope: 'car' } });
+    const gt3 = await category('GT3', 1);
+    const gte = await category('GTE', 2);
+    await api.put(`/api/cars/${gt.id}`).send({ divisionIds: [gte.id, gt3.id] });
+    await api.put(`/api/cars/${p911.id}`).send({ divisionIds: [gte.id] });
+
+    const res = await api.get(`/api/cars?divisionId=${gt3.id}`);
+    expect(res.body.data.map((c) => [c.brand, c.divisions.map((d) => d.name)])).toEqual([['Ford', ['GT3', 'GTE']]]);
+    expect(await brands(`divisionId=${gt3.id},${gte.id}`)).toEqual(['Ford', 'Porsche']);
+    expect(await brands('divisionId=none')).toEqual(['Audi']);
+    expect(await brands('sortBy=divisions')).toEqual(['Ford', 'Porsche', 'Audi']);
   });
 
   test('sorted by a column, the entry count or the best lap, then paginated', async () => {
     expect(await brands('sortBy=sessions&sortOrder=desc')).toEqual(['Ford', 'Porsche', 'Audi']);
-    expect(await brands('sortBy=bestLap&sortOrder=asc')).toEqual(['Ford', 'Audi', 'Porsche']);
-    expect(await brands('sortBy=bestLap&sortOrder=desc')).toEqual(['Porsche', 'Audi', 'Ford']);
-    expect(await brands('sortBy=bestLap&limit=1&offset=1')).toEqual(['Audi']);
+    expect(await brands('sortBy=bestLap&sortOrder=asc')).toEqual(['Ford', 'Porsche', 'Audi']);
+    expect(await brands('sortBy=bestLap&sortOrder=desc')).toEqual(['Audi', 'Porsche', 'Ford']);
+    expect(await brands('sortBy=bestLap&limit=1&offset=1')).toEqual(['Porsche']);
     const res = await api.get('/api/cars?sortBy=model&limit=2');
     expect(res.body.data.map((c) => c.model)).toEqual(['911', 'GT']);
     expect(res.body).toMatchObject({ total: 3, hasMore: true });
@@ -81,7 +101,14 @@ describe('exports', () => {
 describe('GET /api/cars/:id', () => {
   test('latest sessions first, entry count and the best lap per driver and track', async () => {
     const res = await api.get(`/api/cars/${gt.id}`);
-    expect(res.body.data).toMatchObject({ model: 'GT', img: '/api/img/gt.png', _count: { sessions: 3 }, extras: {} });
+    expect(res.body.data).toMatchObject({
+      model: 'GT',
+      img: '/api/img/gt.png',
+      _count: { sessions: 3 },
+      races: 2,
+      bestLap: 8100,
+      extras: {},
+    });
     expect(res.body.data.sessions.map((s) => s.session.track.name)).toEqual(['Oval', 'Oval', 'Ring']);
     expect(res.body.data.records.map((r) => [r.lapTime, r.driver.name, r.track.name, r.sessionType])).toEqual([
       [8100, 'Ana', 'Ring', 'race'],
@@ -116,6 +143,19 @@ describe('POST /api/cars', () => {
       .post('/api/cars')
       .send({ brand: 'A', model: 'B', maxSpeed: 0, brakeForce: 10, fuelCapacity: 5 });
     expect(tuned.body.data).toMatchObject({ maxSpeed: 0, brakeForce: 10, fuelCapacity: 5 });
+  });
+
+  test('in the categories given, never a driver division', async () => {
+    const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    const res = await api.post('/api/cars').send({ brand: 'Ford', model: 'Capri', divisionIds: [gt3.id] });
+    expect(res.body.data.divisions).toMatchObject([{ name: 'GT3' }]);
+    expect((await api.get(`/api/cars/${res.body.data.id}`)).body.data.divisions).toMatchObject([{ name: 'GT3' }]);
+
+    const refused = await api.post('/api/cars').send({ brand: 'Ford', model: 'Capri', divisionIds: [gold.id] });
+    expect(refused.status).toBe(400);
+    expect(refused.body.error).toBe('Only car divisions can be given');
+    expect((await api.put(`/api/cars/${gt.id}`).send({ divisionIds: [gold.id] })).status).toBe(400);
   });
 
   test('400 without a brand or a model, 500 on failure', async () => {
@@ -153,13 +193,12 @@ describe('PUT /api/cars/:id', () => {
       fuelCapacity: 80,
       motor: null,
       guide: 'Deep',
-      bestLap: 7000,
     });
   });
 
   test('404 when missing, 500 on failure', async () => {
     expect((await api.put('/api/cars/nope').send({ brand: 'X' })).status).toBe(404);
-    jest.spyOn(prisma.car, 'update').mockRejectedValueOnce(new Error('db down'));
+    jest.spyOn(prisma, '$transaction').mockRejectedValueOnce(new Error('db down'));
     const res = await api.put(`/api/cars/${gt.id}`).send({ brand: 'X' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Failed to update car');

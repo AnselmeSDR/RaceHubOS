@@ -8,6 +8,7 @@ import { ACTIONS, applyTransition, statusError, transitionError } from '../lib/s
 import { isComputedSort, LIST_INCLUDE, listWhere, sortComputed, sortField } from '../lib/sessions/list.js';
 import { storedLeaderboard } from '../lib/sessions/storedLeaderboard.js';
 import { HttpError, route } from '../lib/http.js';
+import { PEOPLE_INCLUDE, plainDivisions } from '../lib/divisions.js';
 import { changesFrom, kept, orNull } from '../lib/entities/fields.js';
 
 const router = express.Router();
@@ -19,12 +20,13 @@ export function setSessionService(service) {
 
 const prisma = () => sessionService.prisma;
 
-const withPeople = { include: { driver: true, car: true } };
+const withPeople = { include: PEOPLE_INCLUDE };
 /** A session as the actions return it: track, championship and entries. */
 const SESSION_INCLUDE = { track: true, championship: true, drivers: withPeople };
 
 const notFound = (res) => res.status(404).json({ success: false, error: 'Session not found' });
-const findSession = (id, include) => prisma().session.findUnique({ where: { id }, include });
+const findSession = async (id, include) =>
+  plainDivisions(await prisma().session.findUnique({ where: { id }, include }));
 
 // GET /api/sessions - filtered (status, trackId, type, championshipId, deleted), sorted and paginated
 router.get(
@@ -79,7 +81,7 @@ router.get(
       },
     });
     if (!session) return notFound(res);
-    res.json({ success: true, data: await attachExtras(prisma(), 'session', session) });
+    res.json({ success: true, data: await attachExtras(prisma(), 'session', plainDivisions(session)) });
   })
 );
 

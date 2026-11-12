@@ -43,6 +43,7 @@ export default function ChampionshipWizard({ tracks, onClose, onCreated }) {
   const [name, setName] = useState('')
   const [trackId, setTrackId] = useState('')
   const [participants, setParticipants] = useState([])
+  const [divisionIds, setDivisionIds] = useState([]) // driver divisions and car categories
   const [config, setConfig] = useState(DEFAULT_WIZARD_CONFIG)
   const [mode, setMode] = useState(ChampionshipMode.AUTO)
   const [movedPractices, setMovedPractices] = useState(null) // { key, groups } once a driver was moved
@@ -92,6 +93,7 @@ export default function ChampionshipWizard({ tracks, onClose, onCreated }) {
       const body = championshipBody({
         name,
         trackId,
+        divisionIds,
         participants: complete,
         config,
         mode,
@@ -141,6 +143,8 @@ export default function ChampionshipWizard({ tracks, onClose, onCreated }) {
           participants={participants}
           drivers={drivers}
           cars={cars}
+          divisionIds={divisionIds}
+          onDivisionsChange={setDivisionIds}
           onChange={changeParticipants}
         />
       )}

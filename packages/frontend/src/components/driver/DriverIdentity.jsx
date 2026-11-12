@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { Badge } from '@/components/ui/badge'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import LapTime from '@/components/race/LapTime'
 import { getImgUrl } from '@/utils/image'
 import { driverColor } from '@/lib/colors'
 
-/** Picture, name, number, team and figures of a driver, at the top of their profile. */
+/** Picture, name, number, divisions and figures of a driver, at the top of their profile. */
 export default function DriverIdentity({ driver }) {
   const { t } = useTranslation('drivers')
   const color = driverColor(driver)
@@ -27,19 +27,7 @@ export default function DriverIdentity({ driver }) {
             {driver.name}
           </h1>
           {driver.number && <span className="text-sm font-black italic text-muted-foreground">#{driver.number}</span>}
-          {driver.team && (
-            <Badge
-              variant="secondary"
-              data-testid="driver-team-badge"
-              className="inline-block h-auto max-w-full whitespace-normal break-words"
-              style={{
-                backgroundColor: `${driver.team.color || color}20`,
-                color: driver.team.color || color,
-              }}
-            >
-              {driver.team.name}
-            </Badge>
-          )}
+          <DivisionBadges divisions={driver.divisions} />
         </div>
         <div className="text-xs flex flex-wrap items-center gap-3">
           <span className="text-blue-500 font-medium">

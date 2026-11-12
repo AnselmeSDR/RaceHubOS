@@ -27,6 +27,7 @@ async function wipe() {
   await prisma.driver.deleteMany();
   await prisma.car.deleteMany();
   await prisma.track.deleteMany();
+  await prisma.division.deleteMany();
 }
 
 let track, ana, ben, cid, car1, car2;
@@ -150,8 +151,11 @@ describe('GET /api/championships', () => {
 });
 
 describe('GET /api/championships/:id', () => {
-  test('with its participants in order and its sessions with entries and laps', async () => {
+  test('with its divisions, its participants in order and its sessions with entries and laps', async () => {
     const { championship } = await raced();
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    await prisma.driverDivision.create({ data: { driverId: ana.id, divisionId: gold.id } });
+    await prisma.championshipDivision.create({ data: { championshipId: championship.id, divisionId: gold.id } });
     await prisma.championshipParticipant.createMany({
       data: [
         { championshipId: championship.id, driverId: ben.id, order: 1 },
@@ -161,6 +165,8 @@ describe('GET /api/championships/:id', () => {
     const res = await api.get(`/api/championships/${championship.id}`);
     expect(res.status).toBe(200);
     expect(res.body.data.participants.map((p) => p.driver.name)).toEqual(['Ana', 'Ben']);
+    expect(res.body.data.divisions).toMatchObject([{ name: 'GOLD' }]);
+    expect(res.body.data.participants[0].driver.divisions).toMatchObject([{ name: 'GOLD' }]);
     expect(res.body.data.sessions.map((s) => s.name)).toEqual(['EL', 'Q1', 'R1']);
     expect(res.body.data.sessions[1].laps).toHaveLength(3);
     expect(res.body.data.sessions[2].drivers).toHaveLength(3);
@@ -307,6 +313,18 @@ describe('POST /api/championships', () => {
     const res = await create(body());
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ success: false, error });
+  });
+
+  test('run for the driver divisions and car categories given; an unknown one is a 400', async () => {
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
+    const res = await create({ name: 'Coupe', season: '2026', divisionIds: [gt3.id, gold.id] });
+    expect(res.status).toBe(201);
+    expect(res.body.data.divisions.map((d) => d.name).sort()).toEqual(['GOLD', 'GT3']);
+
+    const refused = await create({ name: 'Coupe', season: '2026', divisionIds: ['nope'] });
+    expect(refused.status).toBe(400);
+    expect(refused.body.error).toBe('Division not found');
   });
 
   test('a manual championship on a track gets its free practice session', async () => {
@@ -460,6 +478,17 @@ describe('PUT /api/championships/:id', () => {
     res = await put({ pointsSystem: '{}', mode: ChampionshipMode.AUTO });
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ name: 'New', mode: ChampionshipMode.MANUAL });
+  });
+
+  test('the divisions given replace its own, kept when not given', async () => {
+    const championship = await newChampionship();
+    const put = (body) => api.put(`/api/championships/${championship.id}`).send(body);
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
+
+    expect((await put({ divisionIds: [gold.id, gt3.id] })).body.data.divisions).toHaveLength(2);
+    expect((await put({ name: 'New' })).body.data.divisions).toHaveLength(2);
+    expect((await put({ divisionIds: [gt3.id] })).body.data.divisions).toMatchObject([{ name: 'GT3' }]);
   });
 
   test('404 when missing', async () => {

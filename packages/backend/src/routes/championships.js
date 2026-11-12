@@ -18,6 +18,7 @@ import { createPlannedSessions, createPractices } from '../lib/championships/pla
 import { championshipResults } from '../lib/championships/results.js';
 import { championshipStandings, standingsInclude, STANDINGS_TYPES } from '../lib/championships/standings.js';
 import { route } from '../lib/http.js';
+import { checkDivisions, DIVISIONS_INCLUDE, plainDivisions, setDivisions } from '../lib/divisions.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -82,16 +83,18 @@ router.get(
       include: DETAIL_INCLUDE,
     });
     if (!championship) return notFound(res);
-    res.json({ success: true, data: await attachExtras(prisma, 'championship', championship) });
+    res.json({ success: true, data: await attachExtras(prisma, 'championship', plainDivisions(championship)) });
   })
 );
 
-// POST /api/championships - a manual or automatic championship, with its free practices and generated sessions
+// POST /api/championships - a manual or automatic championship, with its free practices and generated sessions,
+// run for `divisionIds` (driver divisions and car categories; none: everyone)
 router.post(
   '/',
   route('Failed to create championship', async (req, res) => {
     const error = await newChampionshipError(prisma, req.body);
     if (error) return res.status(400).json({ success: false, error });
+    const divisionIds = await checkDivisions(prisma, 'championship', req.body.divisionIds);
 
     const { name, season, status, trackId, mode, participants = [], sessionNames, sessions } = req.body;
     const { qualifGroups, practiceGroups } = req.body;
@@ -113,6 +116,7 @@ router.post(
         qualifMaxLaps: qualifMaxLaps || null,
         raceMaxDuration: raceMaxDuration || null,
         raceMaxLaps: raceMaxLaps || null,
+        divisions: { create: (divisionIds ?? []).map((divisionId) => ({ divisionId })) },
       },
     });
 
@@ -133,25 +137,29 @@ router.post(
       where: { id: championship.id },
       include: { track: true, ...SAVED_INCLUDE },
     });
-    res.status(201).json({ success: true, data: result });
+    res.status(201).json({ success: true, data: plainDivisions(result) });
   })
 );
 
-// PUT /api/championships/:id - name, season and status
+// PUT /api/championships/:id - name, season, status and divisions (`divisionIds`)
 router.put(
   '/:id',
   route('Failed to update championship', async (req, res) => {
     const { id } = req.params;
     const { name, season, status } = req.body;
     if (!(await prisma.championship.findUnique({ where: { id } }))) return notFound(res);
+    const divisionIds = await checkDivisions(prisma, 'championship', req.body.divisionIds);
 
     const data = {};
     if (name !== undefined) data.name = name.trim();
     if (season !== undefined) data.season = season.trim();
     if (status !== undefined) data.status = status;
 
-    const championship = await prisma.championship.update({ where: { id }, data, include: { sessions: true } });
-    res.json({ success: true, data: championship });
+    const championship = await prisma.$transaction(async (tx) => {
+      await setDivisions(tx, 'championship', id, divisionIds);
+      return tx.championship.update({ where: { id }, data, include: { sessions: true, divisions: DIVISIONS_INCLUDE } });
+    });
+    res.json({ success: true, data: plainDivisions(championship) });
   })
 );
 
@@ -249,7 +257,8 @@ router.put(
     // Before any qualif the sessions are regenerated; afterwards a newcomer needs a qualif added by hand
     if (!started) await championshipService.generateAutoSessions(id, sessionNames);
 
-    res.json({ success: true, data: await prisma.championship.findUnique({ where: { id }, include: SAVED_INCLUDE }) });
+    const saved = await prisma.championship.findUnique({ where: { id }, include: SAVED_INCLUDE });
+    res.json({ success: true, data: plainDivisions(saved) });
   })
 );
 

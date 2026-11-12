@@ -1,6 +1,8 @@
 import { Flag } from 'lucide-react'
 import { formatLevel, levelPercent } from '@racehubos/shared'
 import { editColumn } from '@/components/crud/editColumn'
+import { filteredColumn } from '@/components/crud/filteredColumn'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
 
@@ -34,6 +36,18 @@ export function carColumns(t, { onEdit }) {
         )
       },
     },
+    filteredColumn(
+      'divisions',
+      'divisionId',
+      t('glossary:category', { count: 1 }),
+      (row) => row.divisions?.map((d) => d.name).join(', ') ?? '',
+      ({ row }) =>
+        row.original.divisions?.length ? (
+          <DivisionBadges divisions={row.original.divisions} />
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )
+    ),
     {
       id: 'year',
       accessorKey: 'year',

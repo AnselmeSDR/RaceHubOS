@@ -9,8 +9,17 @@ import { driverWorkbook, driversWorkbook, idsFromQuery, sendWorkbook } from '../
 import { findOr404, HttpError, route } from '../lib/http.js';
 import { addDeletionRoutes } from '../lib/entities/deletion.js';
 import { changesFrom, kept, orNull, trimmed, trimmedOrNull } from '../lib/entities/fields.js';
-import { byBestLap, byTeamName, listPage } from '../lib/entities/list.js';
+import { byBestLap, byNumber, listPage } from '../lib/entities/list.js';
+import {
+  byDivision,
+  checkDivisions,
+  DIVISIONS_INCLUDE,
+  divisionWhere,
+  setDivisions,
+  withDivisions,
+} from '../lib/divisions.js';
 import { bestLapRecords } from '../lib/entities/records.js';
+import { FIGURES_INCLUDE, figuresOf, lapFigures, withFigures } from '../lib/stats/figures.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -18,10 +27,18 @@ const prisma = createPrismaClient();
 const notDeleted = { where: { deletedAt: null } };
 const LIST = {
   sortBy: 'name',
-  include: { team: true, _count: { select: { laps: notDeleted, sessions: notDeleted } } },
+  include: {
+    divisions: DIVISIONS_INCLUDE,
+    ...FIGURES_INCLUDE,
+    _count: { select: { laps: notDeleted, sessions: notDeleted } },
+  },
   counts: ['sessions', 'laps'],
-  computed: { team: byTeamName, bestLap: byBestLap },
+  computed: { divisions: byDivision, bestLap: byBestLap, wins: byNumber('wins'), podiums: byNumber('podiums') },
+  shape: withFigures,
 };
+
+/** A driver for the interface: image URLs, divisions as plain divisions. */
+const shown = (driver) => withNestedImageUrls(withDivisions(driver));
 
 /** A number or an email already used by another driver is a 400, not a server failure. */
 function refuseTaken(error) {
@@ -32,12 +49,13 @@ function refuseTaken(error) {
 
 const withImage = (driver) => (driver ? withImageUrl(driver) : null);
 
-// GET /api/drivers - filtered (deleted), sorted and paginated
+// GET /api/drivers - filtered (deleted, divisionId=a,b or none), sorted and paginated
 router.get(
   '/',
   route('Failed to fetch drivers', async (req, res) => {
-    const { page, ...rest } = await listPage(prisma.driver, req.query, LIST);
-    res.json({ success: true, data: await attachExtras(prisma, 'driver', page.map(withNestedImageUrls)), ...rest });
+    const where = divisionWhere(req.query.divisionId);
+    const { page, ...rest } = await listPage(prisma.driver, req.query, { ...LIST, where });
+    res.json({ success: true, data: await attachExtras(prisma, 'driver', page.map(shown)), ...rest });
   })
 );
 
@@ -104,12 +122,12 @@ router.get(
   })
 );
 
-// GET /api/drivers/:id - with team, latest sessions, counts and best lap per car and track
+// GET /api/drivers/:id - with divisions, latest sessions, counts and best lap per car and track
 router.get(
   '/:id',
   route('Failed to fetch driver', async (req, res) => {
     const driver = await findOr404(prisma.driver, req.params.id, 'Driver', {
-      team: true,
+      divisions: DIVISIONS_INCLUDE,
       sessions: {
         include: { session: { include: { track: true } } },
         orderBy: { session: { createdAt: 'desc' } },
@@ -118,9 +136,10 @@ router.get(
       _count: { select: { sessions: true, laps: true } },
     });
     const records = await bestLapRecords(prisma, 'driver', driver.id);
+    const figures = await figuresOf(prisma.driver, driver.id);
     res.json({
       success: true,
-      data: await attachExtras(prisma, 'driver', withNestedImageUrls({ ...driver, records })),
+      data: await attachExtras(prisma, 'driver', shown({ ...driver, ...figures, records })),
     });
   })
 );
@@ -135,9 +154,10 @@ async function checkPreferredCar(preferredCarId) {
 router.post(
   '/',
   route('Failed to create driver', async (req, res) => {
-    const { name, number, email, img, color, teamId, preferredCarId } = req.body;
+    const { name, number, email, img, color, preferredCarId } = req.body;
     if (!name?.trim()) throw new HttpError(400, 'Name is required');
     await checkPreferredCar(preferredCarId);
+    const divisionIds = await checkDivisions(prisma, 'driver', req.body.divisionIds);
 
     const driver = await prisma.driver
       .create({
@@ -147,13 +167,13 @@ router.post(
           email: email?.trim() || null,
           img: img || null,
           color: color || '#3B82F6',
-          teamId: teamId || null,
           preferredCarId: preferredCarId || null,
+          divisions: { create: (divisionIds ?? []).map((divisionId) => ({ divisionId })) },
         },
-        include: { team: true },
+        include: { divisions: DIVISIONS_INCLUDE },
       })
       .catch(refuseTaken);
-    res.status(201).json({ success: true, data: withNestedImageUrls(driver) });
+    res.status(201).json({ success: true, data: shown(driver) });
   })
 );
 
@@ -163,7 +183,6 @@ const EDITABLE = {
   email: trimmedOrNull,
   img: kept,
   color: kept,
-  teamId: orNull,
   preferredCarId: orNull,
 };
 
@@ -173,10 +192,18 @@ router.put(
     const { id } = req.params;
     await findOr404(prisma.driver, id, 'Driver');
     await checkPreferredCar(req.body.preferredCarId);
-    const driver = await prisma.driver
-      .update({ where: { id }, data: changesFrom(req.body, EDITABLE), include: { team: true } })
+    const divisionIds = await checkDivisions(prisma, 'driver', req.body.divisionIds);
+    const driver = await prisma
+      .$transaction(async (tx) => {
+        await setDivisions(tx, 'driver', id, divisionIds);
+        return tx.driver.update({
+          where: { id },
+          data: changesFrom(req.body, EDITABLE),
+          include: { divisions: DIVISIONS_INCLUDE },
+        });
+      })
       .catch(refuseTaken);
-    res.json({ success: true, data: withNestedImageUrls(driver) });
+    res.json({ success: true, data: shown(driver) });
   })
 );
 
@@ -208,7 +235,7 @@ router.get(
           totalLaps,
           wins,
           podiums,
-          bestLapTime: driver.bestLap,
+          bestLapTime: lapFigures(driver.laps).bestLap,
           avgLapTime: totalLaps > 0 ? driver.laps.reduce((sum, lap) => sum + lap.lapTime, 0) / totalLaps : null,
           winRate: rate(wins),
           podiumRate: rate(podiums),
@@ -230,10 +257,10 @@ router.post(
       return tx.driver.update({
         where: { id },
         data: { totalRaces: 0, wins: 0, podiums: 0, bestLap: null },
-        include: { team: true, _count: { select: { sessions: true, laps: true } } },
+        include: { divisions: DIVISIONS_INCLUDE, _count: { select: { sessions: true, laps: true } } },
       });
     });
-    res.json({ success: true, data: withNestedImageUrls(driver), message: 'Statistics reset successfully' });
+    res.json({ success: true, data: shown(driver), message: 'Statistics reset successfully' });
   })
 );
 

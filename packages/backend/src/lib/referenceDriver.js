@@ -1,4 +1,5 @@
 import { SessionType } from '@racehubos/shared';
+import { DIVISIONS_INCLUDE, withDivisions } from './divisions.js';
 /**
  * Reference driver ("Le STIG"): the constant behind every balancing run.
  *
@@ -14,10 +15,11 @@ const STIG_DEFAULTS = {
 
 /** @returns the reference driver, or null when none is configured */
 export async function getReferenceDriver(prisma) {
-  return prisma.driver.findFirst({
+  const driver = await prisma.driver.findFirst({
     where: { isReference: true, deletedAt: null },
-    include: { team: true },
+    include: { divisions: DIVISIONS_INCLUDE },
   });
+  return withDivisions(driver);
 }
 
 /**
@@ -35,7 +37,9 @@ export async function setReferenceDriver(prisma, driverId) {
     if (driver.deletedAt) throw new Error('Cannot use a deleted driver as reference');
 
     await tx.driver.update({ where: { id: driverId }, data: { isReference: true } });
-    return tx.driver.findUnique({ where: { id: driverId }, include: { team: true } });
+    return withDivisions(
+      await tx.driver.findUnique({ where: { id: driverId }, include: { divisions: DIVISIONS_INCLUDE } })
+    );
   });
 }
 

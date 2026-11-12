@@ -1,3 +1,5 @@
+import { withDivisions } from '../divisions.js';
+
 /** A session entry as the live session tracks it, from its stored row (with driver and car). */
 export function liveDriverOf(entry) {
   return {
@@ -5,8 +7,8 @@ export function liveDriverOf(entry) {
     controller: entry.controller,
     driverId: entry.driverId,
     carId: entry.carId,
-    driver: entry.driver,
-    car: entry.car,
+    driver: withDivisions(entry.driver),
+    car: withDivisions(entry.car),
     gridPos: entry.gridPos,
     position: entry.position || 0,
     totalLaps: entry.totalLaps || 0,

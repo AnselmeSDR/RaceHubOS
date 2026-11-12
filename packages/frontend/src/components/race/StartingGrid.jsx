@@ -73,12 +73,16 @@ export default function StartingGrid({ entries = [] }) {
                   number: driver.number,
                   color: driver.color || car.color || '#3B82F6',
                   img: driver.img,
-                  team: car.brand ? { name: `${car.brand} ${car.model || ''}` } : null,
+                  divisions: driver.divisions,
                 }
 
                 return (
                   <div key={entry.id || `ctrl-${entry.controller}`} className={posInRow === 1 ? 'mt-6' : ''}>
-                    <DriverGridPosition driver={driverData} side={posInRow === 0 ? 'left' : 'right'} />
+                    <DriverGridPosition
+                      driver={driverData}
+                      subtitle={car.brand ? `${car.brand} ${car.model || ''}` : null}
+                      side={posInRow === 0 ? 'left' : 'right'}
+                    />
                   </div>
                 )
               })}

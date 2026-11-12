@@ -1,5 +1,6 @@
 import { carLabel } from './labels.js';
 import { emptyRecord, tallyEntry } from './record.js';
+import { divisionsOf } from '../divisions.js';
 
 /**
  * Statistiques calculées sur le périmètre exporté.
@@ -48,17 +49,19 @@ export const statOf = (stats) => (item) => stats.get(item.id) ?? NO_STATS;
 
 export const averageLap = (stat) => (stat.lapCount ? stat.lapTimeSum / stat.lapCount : null);
 
-/** Every driver, car, track and team the given sessions actually used. */
+/** Every driver, car, track, driver division and car category the given sessions actually used. */
 export function referencesOf(sessions) {
   const byId = (items) => [...new Map(items.filter(Boolean).map((i) => [i.id, i])).values()];
   const entries = sessions.flatMap((s) => s.drivers ?? []);
 
   const drivers = byId(entries.map((e) => e.driver));
+  const cars = byId(entries.map((e) => e.car));
   return {
     drivers,
-    cars: byId(entries.map((e) => e.car)),
+    cars,
     tracks: byId(sessions.map((s) => s.track)),
-    teams: byId(drivers.map((d) => d.team)),
+    divisions: byId(drivers.flatMap(divisionsOf)),
+    categories: byId(cars.flatMap(divisionsOf)),
   };
 }
 

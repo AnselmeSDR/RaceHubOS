@@ -195,35 +195,3 @@ describe.each(profiles)('$name profile', (profile) => {
     expect(calls(fetchMock, new RegExp(`/api${list}/${record.id}$`), 'DELETE')).toHaveLength(1)
   })
 })
-
-describe('driver profile teams', () => {
-  const driverProfile = profiles.find((p) => p.name === 'driver')
-
-  test.each([
-    ['refused', async () => json({ success: false })],
-    ['empty', async () => json({ success: true })],
-    ['unreachable', async () => Promise.reject(new Error('offline'))],
-  ])('the teams list %s: the profile still shows', async (_, teamsAnswer) => {
-    const fetchMock = stubApi(driverProfile)
-    const original = fetchMock.getMockImplementation()
-    fetchMock.mockImplementation((url, options) =>
-      url.endsWith('/api/teams') ? teamsAnswer() : original(url, options)
-    )
-    renderProfile(driverProfile)
-    expect(await screen.findByRole('heading', { name: 'Ayrton' })).toBeInTheDocument()
-  })
-
-  test('the edit form lists the teams', async () => {
-    const fetchMock = stubApi(driverProfile)
-    const original = fetchMock.getMockImplementation()
-    fetchMock.mockImplementation(async (url, options) =>
-      url.endsWith('/api/teams')
-        ? json({ success: true, data: [{ id: 'tm1', name: 'McLaren' }] })
-        : original(url, options)
-    )
-    renderProfile(driverProfile)
-    await screen.findByRole('heading', { name: 'Ayrton' })
-    await userEvent.click(within(screen.getByTestId('driver-profile-actions')).getAllByRole('button')[0])
-    expect(within(screen.getByTestId('modal')).getByText('McLaren')).toBeInTheDocument()
-  })
-})

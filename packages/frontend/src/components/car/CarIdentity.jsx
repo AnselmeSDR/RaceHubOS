@@ -4,6 +4,7 @@ import { formatLevel } from '@racehubos/shared'
 import LapTime from '@/components/race/LapTime'
 import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /** Picture, name and figures of a car, at the top of its profile. */
 export default function CarIdentity({ car }) {
@@ -23,11 +24,12 @@ export default function CarIdentity({ car }) {
         </div>
       )}
       <div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-black text-lg" style={{ color }}>
             {car.brand} {car.model}
           </h1>
           {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}
+          <DivisionBadges divisions={car.divisions} />
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-3">
           <span className="flex items-center gap-1">

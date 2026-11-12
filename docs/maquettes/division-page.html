@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : page d'une division</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --softer: #fafaf9;
+  --primary: #4338ca;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+.page-title h1 { margin: 0 0 6px; font-size: 28px; }
+.page-title p { margin: 0 0 6px; color: var(--muted); max-width: 920px; line-height: 1.5; }
+.screen > h2 { margin: 0 0 4px; font-size: 20px; }
+.screen > .why { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 920px; }
+.stage { background: var(--soft); border-radius: 16px; padding: 28px; overflow-x: auto; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+svg.i { width: 16px; height: 16px; flex-shrink: 0; }
+.avatar { border-radius: 999px; display: inline-flex; overflow: hidden; flex-shrink: 0; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.car { object-fit: contain; flex-shrink: 0; }
+.pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; line-height: 18px; }
+.pill.cat { background: #fff; border: 1.5px solid; padding: 0 8px; }
+.pill.lg { font-size: 12px; padding: 2px 10px; }
+.chip { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--soft); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.status { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.status.run { color: #166534; background: #dcfce7; }
+.status.done { color: var(--muted); background: var(--soft); }
+.status.plan { color: #1e40af; background: #dbeafe; }
+
+/* The page, as the driver and car profiles */
+.app { background: #fff; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.head .back { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--muted); }
+.logo { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.2); flex-shrink: 0; }
+.logo.txt { display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #fff; }
+.head .nm { font-size: 18px; font-weight: 900; letter-spacing: -0.01em; }
+.head .sub { font-size: 12px; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 2px; }
+.head .acts { margin-left: auto; display: flex; gap: 8px; }
+.ibtn { width: 34px; height: 32px; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; }
+.body { padding: 16px; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; background: var(--softer); }
+.body.narrow { grid-template-columns: minmax(0, 1fr); }
+.card { background: #fff; border: 1px solid var(--border); border-radius: 14px; }
+.card > .t { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 15px; }
+.card > .t .n { color: var(--faint); font-weight: 500; }
+
+/* Members of a division */
+.mrow { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid #f0efee; font-size: 14px; }
+.mrow .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.mrow .who b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .num { min-width: 34px; text-align: center; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 700; padding: 1px 6px; }
+.mrow .fig { width: 64px; text-align: right; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.mrow .fig b { color: var(--fg); }
+.mrow .since { width: 104px; text-align: right; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.mrow .x { color: #a8a29e; }
+.mrow.headr { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; padding-top: 6px; padding-bottom: 6px; }
+.add { display: flex; align-items: center; gap: 8px; padding: 10px 16px; color: var(--muted); font-size: 13px; }
+.add .sel { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+
+/* Cars of a category */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 14px 16px; }
+.tile { position: relative; border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.tile .x { position: absolute; top: 6px; right: 8px; color: #a8a29e; }
+.tile .b { font-weight: 800; text-transform: uppercase; font-size: 12px; }
+.tile .m { color: var(--muted); }
+.tile.new { border-style: dashed; align-items: center; justify-content: center; color: var(--muted); min-height: 130px; }
+
+/* Championships */
+.crow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 16px; border-bottom: 1px solid #f0efee; font-size: 14px; }
+.crow .c { flex: 1; min-width: 160px; }
+.crow .c b { display: block; }
+.crow .c span { font-size: 12px; color: var(--faint); }
+.empty { padding: 18px 16px; color: var(--faint); font-size: 13px; font-style: italic; }
+.note { border: 1px dashed #c4b5fd; background: #faf5ff; color: #6b21a8; border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+.questions { background: #fff; border-radius: 14px; padding: 18px 22px; line-height: 1.6; max-width: 920px; }
+.questions h2 { margin: 0 0 8px; font-size: 20px; }
+.questions ol { margin: 0; padding-left: 20px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const PORTRAITS = '../../site/sources/drivers/portraits/'
+const CARS = '../../site/sources/cars/transparent/'
+// The division logos, read from the local uploads: missing outside this computer
+const LOGOS = '../../packages/backend/public/uploads/teams/'
+
+function textOn(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#1c1917' : '#fff'
+}
+const ICON = {
+  back: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  pencil: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  export: '<path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/>',
+}
+const icon = (name, style = '') => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${style}">${ICON[name]}</svg>`
+
+const DIV = {
+  silver: { name: 'SILVER', color: '#c4c4c4', logo: '1779090996790-543694531.jpg' },
+  invite: { name: 'INVITÉ', color: '#424242' },
+  gold: { name: 'GOLD', color: '#f5d13c' },
+}
+const CAT = {
+  gt3: { name: 'GT3', color: '#e11d48' },
+  classique: { name: 'Classique', color: '#ea580c' },
+}
+const div = (k, lg) => `<span class="pill${lg ? ' lg' : ''}" style="background:${DIV[k].color};color:${textOn(DIV[k].color)}">${DIV[k].name}</span>`
+const cat = (k, lg) => `<span class="pill cat${lg ? ' lg' : ''}" style="border-color:${CAT[k].color};color:${CAT[k].color}">${CAT[k].name}</span>`
+const avatar = (d, size = 30) => `<span class="avatar" style="width:${size}px;height:${size}px;background:${d.color}"><img src="${PORTRAITS}${d.file}" alt=""></span>`
+const carImg = (file, w, h) => `<img class="car" src="${CARS}${file}.png" alt="" style="width:${w}px;height:${h}px">`
+
+const SILVER = [
+  { name: 'Anselme SDR', num: 42, color: '#3b3a38', file: 'anselme-sdr.png', also: ['invite'], races: 39, wins: 4, since: '12/11/2026' },
+  { name: 'Romain DAN', num: 71, color: '#2fabf1', file: 'romain-dan.png', races: 28, wins: 6, since: '12/11/2026' },
+  { name: 'Henry WAL', num: 77, color: '#4d4d4d', file: 'henry-wal.png', races: 16, wins: 1, since: '12/11/2026' },
+  { name: 'Lukas BRE', num: 999, color: '#e61116', file: 'lukas-bre.png', races: 14, wins: 0, since: '12/11/2026' },
+  { name: 'Léa BOU', num: 782, color: '#dd0b17', file: 'lea-bou.png', races: 12, wins: 2, since: '14/11/2026' },
+]
+// Brand, model, picture, year, other categories, races, record, in the category since
+const GT3 = [
+  ['AMG', 'GT3 #8', 'amg-gt3-8', 2022, [], 34, '8.794', '12/11/2026'],
+  ['Audi', 'R8 LMS GT3 #16', 'audi-r8-lms-gt3-16', 2019, [], 41, '8.659', '12/11/2026'],
+  ['BMW', 'M4 GT3 #11', 'bmw-m4-gt3-11', 2022, ['classique'], 22, '8.912', '12/11/2026'],
+  ['Ferrari', '488 GT3 #23', 'ferrari-488-gt3-23', 2017, [], 18, '9.041', '12/11/2026'],
+  ['Porsche', '911 GT3 R #75', 'porsche-911-gt3-r-75', 2019, [], 27, '8.833', '12/11/2026'],
+  ['McLaren', '720S GT3 #02', 'mclaren-720s-gt3-02', 2019, [], 9, '9.204', '15/11/2026'],
+]
+
+const head = ({ logo, name, badge, chip, sub, narrow }) => `<div class="head">
+  <span class="back">${icon('back')}</span>${logo}
+  <div style="min-width:0"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="nm">${name}</span>${badge}<span class="chip">${chip}</span></div>
+  <div class="sub">${sub}</div></div>
+  <div class="acts"${narrow ? ' style="margin-left:0"' : ''}><span class="ibtn">${icon('pencil')}</span><span class="ibtn">${icon('export')}</span><span class="ibtn" style="color:#dc2626">${icon('trash')}</span></div>
+</div>`
+
+const members = (rows, narrow) => `<div class="card">
+  <div class="t">${icon('users', 'color:#2563eb')} Pilotes <span class="n">${rows.length}</span></div>
+  ${narrow ? '' : `<div class="mrow headr"><span class="who">Pilote</span><span class="fig">Courses</span><span class="fig">Victoires</span><span class="since">Membre depuis</span><span style="width:16px"></span></div>`}
+  ${rows.map((d) => `<div class="mrow"><span class="who">${avatar(d)}<b>${d.name}</b><span class="num" style="background:${d.color}">${d.num}</span>${(d.also ?? []).map((k) => div(k)).join('')}</span>
+    ${narrow ? '' : `<span class="fig"><b>${d.races}</b></span><span class="fig"><b>${d.wins}</b></span><span class="since">${d.since}</span>`}<span class="x">${icon('x')}</span></div>`).join('')}
+  <div class="add">${icon('plus')}<span class="sel">Ajouter un pilote… ${icon('chev')}</span></div>
+</div>`
+
+const championships = (rows) => `<div class="card">
+  <div class="t">${icon('trophy', 'color:#eab308')} Championnats <span class="n">${rows.length}</span></div>
+  ${rows.length
+    ? rows.map(([n, track, st, label, pills]) => `<div class="crow"><span class="c"><b>${n}</b><span>${track}</span></span>${pills}<span class="status ${st}">${label}</span></div>`).join('')
+    : '<p class="empty">Aucun championnat ne retient cette division.</p>'}
+</div>`
+
+const silverChamps = [
+  ["Coupe d'hiver", 'Creutzwald Ring · 2026', 'run', 'En cours', div('gold') + div('silver') + cat('gt3')],
+  ['Ring Rush', 'Creutzwald Ring · 2026', 'plan', 'Prévu', div('silver')],
+]
+
+const divisionPage = (narrow) => `<div class="app" style="width:${narrow ? 390 : 1180}px">
+  ${head({
+    logo: `<img class="logo" src="${LOGOS}${DIV.silver.logo}" alt="">`,
+    name: 'SILVER',
+    badge: div('silver', true),
+    chip: 'Échelon 3',
+    sub: '<span style="color:#2563eb;font-weight:500">5 pilotes</span><span style="color:#ca8a04;font-weight:500">2 championnats</span>',
+    narrow,
+  })}
+  <div class="body${narrow ? ' narrow' : ''}">
+    ${members(SILVER, narrow)}
+    <div style="display:flex;flex-direction:column;gap:16px">${championships(silverChamps)}
+      <div class="note">Plus tard : l'historique des montées et descentes de la division s'affichera ici.</div></div>
+  </div>
+</div>`
+
+const categoryPage = `<div class="app" style="width:1180px">
+  ${head({
+    logo: `<span class="logo txt" style="background:${CAT.gt3.color};color:${textOn(CAT.gt3.color)}">GT3</span>`,
+    name: 'GT3',
+    badge: cat('gt3', true),
+    chip: 'Ordre 1',
+    sub: '<span style="color:#16a34a;font-weight:500">6 voitures</span><span style="color:#ca8a04;font-weight:500">1 championnat</span>',
+  })}
+  <div class="body">
+    <div class="card">
+      <div class="t">${icon('car', 'color:#16a34a')} Voitures <span class="n">6</span></div>
+      <div class="mrow headr"><span class="who">Voiture</span><span class="fig">Courses</span><span class="fig">Record</span><span class="since">Membre depuis</span><span style="width:16px"></span></div>
+      ${GT3.map(([b, m, f, y, also, races, record, since]) => `<div class="mrow"><span class="who">${carImg(f, 64, 36)}<b style="text-transform:uppercase">${b}</b><span style="color:var(--muted)">${m}</span><span class="chip">${y}</span>${also.map((k) => cat(k)).join('')}</span>
+        <span class="fig"><b>${races}</b></span><span class="fig" style="font-family:ui-monospace,monospace"><b>${record}</b></span><span class="since">${since}</span><span class="x">${icon('x')}</span></div>`).join('')}
+      <div class="add">${icon('plus')}<span class="sel">Ajouter une voiture… ${icon('chev')}</span></div>
+    </div>
+    ${championships([["Coupe d'hiver", 'Creutzwald Ring · 2026', 'run', 'En cours', div('gold') + div('silver') + cat('gt3')]])}
+  </div>
+</div>`
+
+const screen = (title, why, stage) => `<section class="screen"><h2>${title}</h2><p class="why">${why}</p><div class="stage">${stage}</div></section>`
+
+document.getElementById('app').innerHTML = `
+<div class="page-title">
+  <h1>Maquettes : page d'une division</h1>
+  <p>Comme un pilote, une voiture ou un circuit, une division a sa page (<b>/divisions/:id</b>). Un clic sur la carte ou sur la ligne l'ouvre ; le crayon de la carte ouvre toujours le formulaire. Même mise en page que les fiches : en-tête avec retour, identité et actions, puis le contenu.</p>
+  <p>Logos lus dans les fichiers envoyés de ce poste ; chiffres d'exemple.</p>
+</div>
+${screen('1. Division de pilotes', 'En-tête : logo (ou nom court sur la couleur), nom, pastille, échelon, nombre de pilotes et de championnats ; modifier, exporter, supprimer. Les pilotes de la division avec leurs autres divisions, courses, victoires et la date d\'entrée dans la division (gardée en base, servira à la montée/descente). On ajoute ou retire un pilote d\'ici, sans ouvrir sa fiche. À droite, les championnats qui retiennent cette division (filtres de l\'assistant), avec leur statut ; un clic ouvre le championnat.', divisionPage(false))}
+${screen('2. Catégorie de voitures', 'Même page pour une catégorie, ses voitures en lignes comme les pilotes : photo détourée, marque, modèle, année, autres catégories, courses, record et date d\'entrée dans la catégorie ; ajout et retrait d\'ici, puis ses championnats. La page montre toutes les voitures.', categoryPage)}
+${screen('3. Écran étroit', 'Sous la largeur d\'une tablette, les championnats passent sous les pilotes et la ligne d\'un pilote ne garde que son nom, son numéro et ses autres divisions.', divisionPage(true))}
+<div class="questions">
+  <h2>À trancher</h2>
+  <ol>
+    <li><b>Ajouter / retirer</b> un pilote ou une voiture depuis la page de la division : oui (proposé), ou seulement depuis les fiches ?</li>
+    <li><b>Exporter</b> (Excel des membres et de leurs résultats, comme pilote et voiture) : on le garde, ou on retire le bouton pour l'instant ?</li>
+    <li>Colonnes : pilotes = courses, victoires, membre depuis ; voitures = courses, record, membre depuis. Ajouter <b>podiums</b> ou <b>meilleur tour</b> aux pilotes ?</li>
+  </ol>
+</div>
+`
+</script>
+</body>
+</html>

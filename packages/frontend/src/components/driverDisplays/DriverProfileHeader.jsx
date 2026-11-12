@@ -2,6 +2,7 @@ import { BarChart3, Flag, Trophy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { getImgUrl } from '@/utils/image'
 import StatBox from './StatBox'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
  * DriverProfileHeader - En-tête de profil détaillé
@@ -69,15 +70,7 @@ export default function DriverProfileHeader({ driver }) {
 
           {/* Info */}
           <div className="flex-1 min-w-0 w-full">
-            {/* Team badge */}
-            {driver.team && (
-              <div
-                className="inline-block max-w-full break-words px-4 py-1 rounded-full text-sm font-bold text-white shadow-md mb-3"
-                style={{ backgroundColor: driver.team.color || driver.color }}
-              >
-                {driver.team.name}
-              </div>
-            )}
+            <DivisionBadges divisions={driver.divisions} large className="flex flex-wrap gap-1.5 mb-3" />
 
             {/* Name */}
             <h1

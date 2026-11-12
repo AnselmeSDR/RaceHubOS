@@ -7,6 +7,7 @@ import { hasDriverFinished, isDNF, nextStep } from '../lib/sessions/finish.js';
 import { cuSettingsOf } from '../lib/sessions/carSettings.js';
 import { lapHistoryOf, liveDriverOf, pausesOf } from '../lib/sessions/liveState.js';
 import { createSessionFromControllers, resetStoredSession } from '../lib/sessions/storage.js';
+import { PEOPLE_INCLUDE } from '../lib/divisions.js';
 import { softDeleteSession } from '../lib/softDelete.js';
 
 const DEFAULT_GRACE_PERIOD_MS = 30000;
@@ -172,7 +173,7 @@ export class SessionService extends EventEmitter {
       where: { id: sessionId },
       include: {
         drivers: {
-          include: { driver: true, car: true },
+          include: PEOPLE_INCLUDE,
           orderBy: { controller: 'asc' },
         },
         track: true,

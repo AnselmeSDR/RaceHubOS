@@ -12,7 +12,7 @@ export const EXTRA_TYPES = {
   car: { model: 'carExtra', modelName: 'CarExtra', key: 'carId', label: 'Car' },
   driver: { model: 'driverExtra', modelName: 'DriverExtra', key: 'driverId', label: 'Driver' },
   track: { model: 'trackExtra', modelName: 'TrackExtra', key: 'trackId', label: 'Track' },
-  team: { model: 'teamExtra', modelName: 'TeamExtra', key: 'teamId', label: 'Team' },
+  division: { model: 'divisionExtra', modelName: 'DivisionExtra', key: 'divisionId', label: 'Division' },
   session: { model: 'sessionExtra', modelName: 'SessionExtra', key: 'sessionId', label: 'Session' },
   championship: {
     model: 'championshipExtra',

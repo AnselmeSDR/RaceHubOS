@@ -72,11 +72,22 @@ describe('RowPosition', () => {
 })
 
 describe('RowIdentity', () => {
-  test('photo, number, car picture, last name and car', () => {
+  test('photo, number, car picture, last name and car, each with its divisions', () => {
     render(
       <RowIdentity
-        driver={{ name: 'Ana Lopes', number: 123, img: '/uploads/ana.png' }}
-        car={{ brand: 'Ferrari', model: '499P', img: '/uploads/car.png', color: '#e10600' }}
+        driver={{
+          name: 'Ana Lopes',
+          number: 123,
+          img: '/uploads/ana.png',
+          divisions: [{ id: 'gold', name: 'GOLD', scope: 'driver' }],
+        }}
+        car={{
+          brand: 'Ferrari',
+          model: '499P',
+          img: '/uploads/car.png',
+          color: '#e10600',
+          divisions: [{ id: 'gt3', name: 'GT3', scope: 'car' }],
+        }}
         color="#000"
         expanded
       />
@@ -89,6 +100,7 @@ describe('RowIdentity', () => {
     expect(screen.getByText('123')).toHaveClass('text-5xl')
     expect(screen.getByText('Lopes')).toBeInTheDocument()
     expect(screen.getByText('Ferrari 499P')).toBeInTheDocument()
+    expect(screen.getAllByTestId('division-badge').map((b) => b.textContent)).toEqual(['GOLD', 'GT3'])
   })
 
   test('an unknown driver gets an initial; a black number is outlined in the dark', () => {

@@ -1,21 +1,42 @@
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import CarSelect from '../../car/CarSelect'
+import { DivisionBadges } from '../../division/DivisionBadge'
+import DivisionFilters from '../../division/DivisionFilters'
+import { useDivisionFilter } from '@/hooks/useDivisionFilter'
 import { DriverAvatar } from './DriverToken'
 import { withEmptyRow } from './wizardPlan'
 
+const OUTSIDE =
+  'text-[11px] font-medium rounded-full px-2 py-0.5 bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-100'
+
 /**
- * The line-up of the championship and the car each one runs: their preferred car unless changed,
- * or none (then picked in each session). Each driver can be picked once; a car can be shared.
+ * The divisions and categories the championship is run for, then its line-up and the car each one
+ * runs: their preferred car unless changed, or none (then picked in each session). The selectors
+ * only offer the drivers and cars of the divisions and categories chosen, the preferred car too; a
+ * participant already chosen stays, flagged outside them. Each driver can be picked once; a car can
+ * be shared.
  */
-export default function WizardParticipantsStep({ participants, drivers, cars, onChange }) {
+export default function WizardParticipantsStep({
+  participants,
+  drivers,
+  cars,
+  divisionIds,
+  onDivisionsChange,
+  onChange,
+}) {
   const { t } = useTranslation('championships')
   const complete = participants.filter((p) => p.driverId).length
+  const filter = useDivisionFilter(divisionIds)
 
   function availableDrivers(index) {
     const usedIds = new Set(participants.filter((_, i) => i !== index).map((p) => p.driverId))
-    return drivers.filter((d) => !usedIds.has(d.id))
+    const current = participants[index]?.driverId
+    return drivers.filter((d) => d.id === current || (!usedIds.has(d.id) && filter.driverFits(d)))
   }
+
+  // The cars of the categories chosen, and the one the participant already runs
+  const carsFor = (carId) => cars.filter((car) => car.id === carId || filter.carFits(car))
 
   const withCar = (entry, carId) => ({ ...entry, carId: carId || null, car: cars.find((c) => c.id === carId) || null })
 
@@ -27,7 +48,11 @@ export default function WizardParticipantsStep({ participants, drivers, cars, on
 
   function pickDriver(index, driverId) {
     const driver = drivers.find((d) => d.id === driverId) || null
-    update(index, withCar({ driverId: driverId || null, driver }, driver?.preferredCarId))
+    const preferred = cars.find((car) => car.id === driver?.preferredCarId)
+    update(
+      index,
+      withCar({ driverId: driverId || null, driver }, preferred && filter.carFits(preferred) ? preferred.id : null)
+    )
   }
 
   // The other participants running `carId`
@@ -39,6 +64,7 @@ export default function WizardParticipantsStep({ participants, drivers, cars, on
 
   return (
     <div data-testid="championship-wizard-participants" className="space-y-3">
+      <DivisionFilters filter={filter} onChange={onDivisionsChange} hint={t('divisions:filters.hint')} />
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
         <p>{t('wizard.participantsCount', { count: complete })}</p>
         <p className="text-xs">{t('wizard.carHint')}</p>
@@ -55,6 +81,8 @@ export default function WizardParticipantsStep({ participants, drivers, cars, on
         {withEmptyRow(participants).map((p, i) => {
           const preferred = p.driver?.preferredCarId
           const shared = p.carId && sharing(p.carId, i)
+          const driverOutside = p.driver && !filter.driverFits(p.driver)
+          const carOutside = p.car && !filter.carFits(p.car)
           return (
             <div
               key={i}
@@ -77,13 +105,15 @@ export default function WizardParticipantsStep({ participants, drivers, cars, on
                     </option>
                   ))}
                 </select>
+                <DivisionBadges divisions={p.driver?.divisions} faded={driverOutside} className="flex shrink-0 gap-1" />
+                {driverOutside && <span className={OUTSIDE}>{t('divisions:filters.outOfDivision')}</span>}
               </div>
               {p.driverId ? (
                 <>
                   <div className="flex flex-[1.4] min-w-56 flex-wrap items-center gap-2">
                     <CarSelect
                       className="flex-1"
-                      cars={cars}
+                      cars={carsFor(p.carId)}
                       value={p.carId}
                       onChange={(carId) => update(i, withCar(p, carId))}
                       label={t('wizard.carOf', { name: p.driver.name })}
@@ -93,6 +123,8 @@ export default function WizardParticipantsStep({ participants, drivers, cars, on
                         return others && t('wizard.alsoRuns', { names: others })
                       }}
                     />
+                    <DivisionBadges divisions={p.car?.divisions} faded={carOutside} className="flex shrink-0 gap-1" />
+                    {carOutside && <span className={OUTSIDE}>{t('divisions:filters.outOfCategory')}</span>}
                     {preferred && p.carId === preferred && (
                       <span className="text-[11px] font-medium rounded-full px-2 py-0.5 bg-yellow-100 text-yellow-900 dark:bg-yellow-900/40 dark:text-yellow-100">
                         {t('wizard.fromProfile')}

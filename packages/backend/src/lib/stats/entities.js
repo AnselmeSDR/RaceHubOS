@@ -1,4 +1,5 @@
 import { withImageUrl } from '../../utils/imageUrl.js';
+import { withDivisions } from '../divisions.js';
 import { bySuccess, lapFigures, raceCounts, raceEntries } from './figures.js';
 
 const MINUTE_MS = 60000;
@@ -18,7 +19,7 @@ export function driverStats(drivers) {
         number: driver.number,
         color: driver.color,
         ...withImageUrl({ img: driver.img }),
-        team: withImageUrl(driver.team),
+        divisions: withDivisions(driver).divisions ?? [],
         statistics: {
           totalRaces: races.length,
           totalLaps: laps.length,

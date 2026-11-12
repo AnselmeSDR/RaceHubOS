@@ -1,4 +1,5 @@
 import { getImgUrl } from '@/utils/image'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
  * DriverSelectCard - Carte pour sélection multi-pilotes
@@ -61,14 +62,7 @@ export default function DriverSelectCard({ driver, selected, onToggle }) {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="font-black text-lg text-gray-900 dark:text-white uppercase truncate">{driver.name}</div>
-          {driver.team && (
-            <div
-              className="inline-block max-w-full whitespace-normal break-words mt-1 px-2 py-0.5 rounded text-xs font-bold text-white"
-              style={{ backgroundColor: driver.team.color || driver.color }}
-            >
-              {driver.team.name}
-            </div>
-          )}
+          <DivisionBadges divisions={driver.divisions} className="flex flex-wrap gap-1 mt-1" />
         </div>
       </div>
     </button>

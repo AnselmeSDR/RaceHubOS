@@ -21,13 +21,22 @@ export async function reopenChampionship(id) {
   return response.ok ? (await response.json()).data : null
 }
 
-// The server reschedules the sessions of an automatic championship from its participants
-export async function setChampionshipParticipants(id, driverIds, fallbackError) {
+// The server reschedules the sessions of an automatic championship from its participants; `cars`
+// gives a driver's car (null: none), else a newcomer runs their preferred one and the others keep theirs
+export async function setChampionshipParticipants(id, driverIds, fallbackError, cars = {}) {
   const response = await sendJson(`/api/championships/${id}/participants`, 'PUT', {
-    participants: driverIds.map((driverId) => ({ driverId })),
+    participants: driverIds.map((driverId) =>
+      Object.hasOwn(cars, driverId) ? { driverId, carId: cars[driverId] } : { driverId }
+    ),
     sessionNames: sessionNames(),
   })
   return checked(response, fallbackError)
+}
+
+/** The driver divisions and car categories the championship is run for. */
+export async function saveChampionshipDivisions(id, divisionIds, fallbackError) {
+  const response = await sendJson(`/api/championships/${id}`, 'PUT', { divisionIds })
+  return (await checked(response, fallbackError)).data
 }
 
 // Unnamed, the session is named by the server in the interface language

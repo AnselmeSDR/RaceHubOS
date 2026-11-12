@@ -91,7 +91,7 @@ export default function CRUDDisplays({ drivers, loading }) {
               key={driver.id}
               image={driver.img}
               title={driver.name}
-              subtitle={driver.team?.name || t('crud.noTeam')}
+              subtitle={driver.divisions?.map((d) => d.name).join(', ') || t('crud.noDivision')}
               color={driver.color}
               onClick={() => {}}
               onEdit={() => {}}

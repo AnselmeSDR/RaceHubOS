@@ -1,6 +1,6 @@
 import { SessionType } from '@racehubos/shared';
 import { withImageUrl } from '../../utils/imageUrl.js';
-import { bySuccess, isPodium, isWin, pointsFor, raceCounts } from './figures.js';
+import { bySuccess, raceCounts } from './figures.js';
 
 const renumbered = (entries) => entries.map((entry, index) => ({ ...entry, position: index + 1 }));
 
@@ -50,29 +50,4 @@ export function overallLeaderboard(drivers) {
       podiums,
       races,
     }));
-}
-
-/** Team points, wins, podiums and races from their drivers' race places, with the gap to the leader. */
-export function teamLeaderboard(teams) {
-  const stats = teams
-    .map((team) => {
-      const races = team.drivers.flatMap((driver) => driver.sessions);
-      return {
-        team,
-        points: races.reduce((sum, sd) => sum + pointsFor(sd.finalPos), 0),
-        wins: races.filter(isWin).length,
-        podiums: races.filter(isPodium).length,
-        races: races.length,
-      };
-    })
-    .sort((a, b) => b.points - a.points || b.wins - a.wins || b.podiums - a.podiums);
-  return stats.map((stat, index) => ({
-    position: index + 1,
-    team: withImageUrl(stat.team),
-    points: stat.points,
-    wins: stat.wins,
-    podiums: stat.podiums,
-    races: stat.races,
-    gap: index > 0 ? stats[0].points - stat.points : null,
-  }));
 }

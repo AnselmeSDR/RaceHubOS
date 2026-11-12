@@ -4,9 +4,10 @@ import { SessionType } from '@racehubos/shared';
 import { carStats, driverStats, trackStats } from '../lib/stats/entities.js';
 import { sessionFilterOf } from '../lib/stats/figures.js';
 import { bestLapsOf, LAP_INCLUDE, lapOrderBy, lapRow, lapTimesWhere } from '../lib/stats/lapTimes.js';
-import { overallLeaderboard, sessionLeaderboard, teamLeaderboard } from '../lib/stats/leaderboards.js';
+import { overallLeaderboard, sessionLeaderboard } from '../lib/stats/leaderboards.js';
 import { lapRecord, mostEntries } from '../lib/stats/records.js';
 import { route } from '../lib/http.js';
+import { DIVISIONS_INCLUDE } from '../lib/divisions.js';
 
 const router = express.Router();
 const prisma = createPrismaClient();
@@ -22,7 +23,7 @@ router.get(
       include: {
         laps: filter ? { where: { session: filter } } : true,
         sessions: { where: filter ? { session: filter } : undefined, ...withSession },
-        team: true,
+        divisions: DIVISIONS_INCLUDE,
       },
     });
     const { championshipId, trackId } = req.query;
@@ -89,19 +90,6 @@ router.get(
     }
 
     res.json({ success: true, data: leaderboard, filters: { sessionId, championshipId, limit } });
-  })
-);
-
-// GET /api/stats/leaderboard/teams?championshipId=
-router.get(
-  '/leaderboard/teams',
-  route('Failed to fetch team leaderboard', async (req, res) => {
-    const { championshipId } = req.query;
-    const races = { type: SessionType.RACE, ...(championshipId && { championshipId }) };
-    const teams = await prisma.team.findMany({
-      include: { drivers: { include: { sessions: { where: { session: races } } } } },
-    });
-    res.json({ success: true, data: teamLeaderboard(teams), filters: { championshipId } });
   })
 );
 

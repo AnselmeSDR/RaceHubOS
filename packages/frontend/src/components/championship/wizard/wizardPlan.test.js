@@ -269,8 +269,15 @@ describe('the body sent', () => {
       { driverId: 'd2', carId: null },
     ],
     sessionNames: expect.objectContaining({ [RACE]: 'Race' }),
+    divisionIds: ['gold', 'gt3'],
   }
-  const base = { name: '  Cup ', trackId: 't1', participants: [entry('d1'), entry('d2')], config }
+  const base = {
+    name: '  Cup ',
+    trackId: 't1',
+    participants: [entry('d1'), entry('d2')],
+    divisionIds: ['gold', 'gt3'],
+    config,
+  }
 
   test('automatic: minutes in ms, unused or empty limits left out, the groups as moved', () => {
     const qualifGroups = [['d2'], ['d1']]

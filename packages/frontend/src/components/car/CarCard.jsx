@@ -4,6 +4,7 @@ import { formatLevel, levelPercent } from '@racehubos/shared'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import CardActions from '@/components/crud/CardActions'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
 
@@ -38,11 +39,14 @@ export default function CarCard({ car, onClick, onEdit, onDelete }) {
               </div>
             </div>
           )}
-          {car.year && (
-            <Badge variant="secondary" className="shadow-md">
-              {car.year}
-            </Badge>
-          )}
+          <div className="flex flex-col items-end gap-2">
+            {car.year && (
+              <Badge variant="secondary" className="shadow-md">
+                {car.year}
+              </Badge>
+            )}
+            <DivisionBadges divisions={car.divisions} className="flex flex-wrap justify-end gap-1" />
+          </div>
         </div>
         <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{car.brand}</h3>
         <p className="font-bold text-lg" style={{ color: color }}>

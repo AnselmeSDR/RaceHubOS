@@ -14,6 +14,7 @@ import {
 } from './excel/format.js';
 import { CAR_SPECS, CAR_SPEC_LABELS, SESSION_TYPE_LABELS, TAB_COLORS, carLabel } from './excel/labels.js';
 import { averagePosition, emptyRecord, tallyEntry } from './excel/record.js';
+import { divisionNames } from './divisions.js';
 
 /**
  * Excel export centred on one driver or one car.
@@ -181,7 +182,7 @@ const driverSheet = (driver) => ({
   name: driver.name,
   fields: [
     ['Numéro', driver.number ?? null],
-    ['Équipe', driver.team?.name ?? null],
+    ['Divisions', divisionNames(driver)],
   ],
   breakdowns: [BY_CHAMPIONSHIP, BY_TRACK, BY_CAR],
 });
@@ -190,6 +191,7 @@ const carSheet = (car) => ({
   name: carLabel(car),
   fields: [
     ['Année', car.year ?? null],
+    ['Catégories', divisionNames(car)],
     ['Vitesse', `${toLevel(car.maxSpeed)}/10`],
     ['Freinage', `${toLevel(car.brakeForce)}/10`],
     ['Réservoir', `${toLevel(car.fuelCapacity)}/10`],

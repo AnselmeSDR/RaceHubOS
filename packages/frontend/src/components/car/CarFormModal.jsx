@@ -1,14 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { Car } from 'lucide-react'
-import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS } from '@racehubos/shared'
-import { FormModal, TextField, PhotoUploadField, ColorPickerField } from '@/components/crud'
+import { CAR_NUMBER_SPECS, CAR_SPECS, CAR_TEXT_SPECS, DivisionScope } from '@racehubos/shared'
+import { FormField, FormModal, TextField, PhotoUploadField, ColorPickerField } from '@/components/crud'
 import { FormSection } from '@/components/crud/FormModal'
+import DivisionPicker from '@/components/division/DivisionPicker'
+import { useDivisions } from '@/hooks/useDivisions'
 import { useEntityForm } from '@/hooks/useEntityForm'
 import CarLevelField from './CarLevelField'
 
-/** Create a car, or edit `car`: identity, picture, colour, Control Unit settings and specs. */
+/** Create a car, or edit `car`: identity, categories, picture, colour, Control Unit settings and specs. */
 export default function CarFormModal({ car, onClose }) {
   const { t } = useTranslation('cars')
+  const categories = useDivisions(DivisionScope.CAR)
   const { formData, setFormData, setField, setError, formProps } = useEntityForm({
     endpoint: '/api/cars',
     record: car,
@@ -22,6 +25,7 @@ export default function CarFormModal({ car, onClose }) {
       brakeForce: car?.brakeForce || 50,
       fuelCapacity: car?.fuelCapacity || 100,
       img: car?.img || '',
+      divisionIds: car?.divisions?.map((division) => division.id) ?? [],
       ...Object.fromEntries(CAR_SPECS.map((field) => [field, car?.[field] ?? ''])),
     },
     savedMessage: t('form.saved'),
@@ -50,6 +54,16 @@ export default function CarFormModal({ car, onClose }) {
           required
         />
       </div>
+      <FormField label={t('glossary:category', { count: 2 })}>
+        <DivisionPicker
+          testId="car-divisions"
+          divisions={categories}
+          value={formData.divisionIds}
+          onChange={setField('divisionIds')}
+          label={t('divisions:addCategory')}
+        />
+        <p className="text-xs text-muted-foreground mt-1">{t('divisions:pickerHint')}</p>
+      </FormField>
       <TextField
         label={t('fields.year')}
         type="number"

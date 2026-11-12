@@ -3,6 +3,7 @@ import { DURATION_FORMAT, addTable, duration, title } from './format.js';
 import { carSpecColumns } from './labels.js';
 import { averagePosition } from './record.js';
 import { averageLap, statOf } from './scope.js';
+import { divisionNames } from '../divisions.js';
 
 const byBestLap = (stat) => (a, b) => (stat(a).bestLap ?? Infinity) - (stat(b).bestLap ?? Infinity);
 
@@ -21,7 +22,7 @@ export function addDriverStandings(sheet, drivers, driverStats, heading = 'Pilot
     [
       { header: 'Nom', value: (d) => d.name, width: 24 },
       { header: 'Numéro', value: (d) => d.number ?? null, width: 9 },
-      { header: 'Équipe', value: (d) => d.team?.name ?? null, width: 18 },
+      { header: 'Divisions', value: divisionNames, width: 18 },
       { header: 'Couleur', value: () => null, swatch: (d) => d.color, width: 9 },
       { header: 'Sessions', value: (d) => stat(d).sessions, width: 9 },
       { header: 'Courses', value: (d) => stat(d).races, width: 9 },
@@ -53,6 +54,7 @@ export function addCarStandings(sheet, cars, carStats, heading = 'Voitures') {
       { header: 'Marque', value: (c) => c.brand, width: 16 },
       { header: 'Modèle', value: (c) => c.model, width: 24 },
       { header: 'Année', value: (c) => c.year ?? null, width: 8 },
+      { header: 'Catégories', value: divisionNames, width: 14 },
       { header: 'Couleur', value: () => null, swatch: (c) => c.color, width: 9 },
       { header: 'Vitesse', value: (c) => toLevel(c.maxSpeed), width: 9 },
       { header: 'Freinage', value: (c) => toLevel(c.brakeForce), width: 9 },

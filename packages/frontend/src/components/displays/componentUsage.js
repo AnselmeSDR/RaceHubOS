@@ -26,14 +26,14 @@ export const COMPONENT_USAGE = {
   TrackRecordsPanel: ['RacePage.jsx'],
 
   // CRUD components
-  PageHeader: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx', 'Championships.jsx'],
-  ViewToggleButtons: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx', 'Championships.jsx'],
-  EmptyState: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx', 'Championships.jsx'],
+  PageHeader: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx', 'Championships.jsx'],
+  ViewToggleButtons: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx', 'Championships.jsx'],
+  EmptyState: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx', 'Championships.jsx'],
   EntityCard: [],
   StatBadge: [],
-  PhotoUploadField: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx'],
-  ColorPickerField: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx'],
-  FormModal: ['Drivers.jsx', 'Tracks.jsx', 'Teams.jsx', 'Cars.jsx', 'Championships.jsx'],
+  PhotoUploadField: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx'],
+  ColorPickerField: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx'],
+  FormModal: ['Drivers.jsx', 'Tracks.jsx', 'Divisions.jsx', 'Cars.jsx', 'Championships.jsx'],
   RangeField: ['Cars.jsx'],
 
   // Config components
@@ -45,7 +45,7 @@ export const COMPONENT_USAGE = {
   ErrorMessage: [
     'Tracks.jsx',
     'Drivers.jsx',
-    'Teams.jsx',
+    'Divisions.jsx',
     'SessionDetail.jsx',
     'SessionsList.jsx',
     'Sessions.jsx',

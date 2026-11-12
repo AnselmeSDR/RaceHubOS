@@ -2,31 +2,44 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UserPlus, Users, X } from 'lucide-react'
 import { ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { setChampionshipParticipants } from './championshipConfigApi'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-// The drivers of an automatic championship; none can leave once a qualifying session has started
-export default function ChampionshipParticipantsPanel({ championship, sessions, drivers, onChanged, onError }) {
+/**
+ * The drivers of an automatic championship; none can leave once a qualifying session has started.
+ * Only the drivers of its divisions can be added (`filter` from `useDivisionFilter`), each with their
+ * preferred car when it is in its categories; one outside them is flagged.
+ */
+export default function ChampionshipParticipantsPanel({
+  championship,
+  sessions,
+  drivers,
+  cars,
+  filter,
+  onChanged,
+  onError,
+}) {
   const { t } = useTranslation('championships')
   const participants = useMemo(() => championship.participants || [], [championship.participants])
   const finished = championship.status === ChampionshipStatus.FINISHED
   const qualifStarted = sessions.some((s) => s.type === SessionType.QUALIF && s.status !== SessionStatus.DRAFT)
-  const available = useMemo(() => {
-    const ids = new Set(participants.map((p) => p.driverId))
-    return drivers.filter((d) => !ids.has(d.id))
-  }, [drivers, participants])
+  const ids = new Set(participants.map((p) => p.driverId))
+  const available = drivers.filter((d) => !ids.has(d.id) && filter.driverFits(d))
 
-  async function save(driverIds) {
+  async function save(driverIds, added) {
+    const preferred = cars.find((car) => car.id === added?.preferredCarId)
+    const newcomer = added ? { [added.id]: preferred && filter.carFits(preferred) ? preferred.id : null } : {}
     try {
-      await setChampionshipParticipants(championship.id, driverIds, t('configModal.genericError'))
+      await setChampionshipParticipants(championship.id, driverIds, t('configModal.genericError'), newcomer)
       onChanged?.()
     } catch (err) {
       onError(err.message)
     }
   }
 
-  const ids = participants.map((p) => p.driverId)
+  const driverIds = participants.map((p) => p.driverId)
 
   return (
     <div data-testid="championship-config-participants">
@@ -44,10 +57,20 @@ export default function ChampionshipParticipantsPanel({ championship, sessions, 
               <img src={`${API_URL}${p.driver.img}`} className="w-5 h-5 rounded-full object-cover" alt="" />
             )}
             <span className="font-medium flex-1 truncate">{p.driver?.name}</span>
+            <DivisionBadges
+              divisions={p.driver?.divisions}
+              faded={!filter.driverFits(p.driver)}
+              className="flex gap-1"
+            />
+            {!filter.driverFits(p.driver) && (
+              <span className="rounded-full px-1.5 text-[10px] bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-100">
+                {t('divisions:filters.outOfDivision')}
+              </span>
+            )}
             {!qualifStarted && !finished && (
               <button
                 aria-label={t('common:delete')}
-                onClick={() => save(ids.filter((id) => id !== p.driverId))}
+                onClick={() => save(driverIds.filter((id) => id !== p.driverId))}
                 className="p-0.5 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10"
               >
                 <X className="size-3" />
@@ -61,7 +84,13 @@ export default function ChampionshipParticipantsPanel({ championship, sessions, 
             <select
               value=""
               aria-label={t('configModal.addDriver')}
-              onChange={(e) => e.target.value && save([...ids, e.target.value])}
+              onChange={(e) =>
+                e.target.value &&
+                save(
+                  [...driverIds, e.target.value],
+                  drivers.find((d) => d.id === e.target.value)
+                )
+              }
               className="flex-1 h-6 text-xs bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-ring rounded"
             >
               <option value="">{t('configModal.addDriver')}</option>

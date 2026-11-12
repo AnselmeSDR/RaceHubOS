@@ -42,6 +42,7 @@ async function wipe() {
   await prisma.driver.deleteMany();
   await prisma.car.deleteMany();
   await prisma.track.deleteMany();
+  await prisma.division.deleteMany();
 }
 
 let ring, oval, cup, ana, ben, gt;
@@ -399,8 +400,12 @@ describe('GET /api/sessions/:id/leaderboard', () => {
     });
   });
 
-  test('otherwise from the stored laps: totals, best and last lap, in race order', async () => {
+  test('otherwise from the stored laps: totals, best and last lap, in race order, divisions shown', async () => {
     const s = await newSession();
+    const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
+    const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
+    await prisma.driverDivision.create({ data: { driverId: ana.id, divisionId: gold.id } });
+    await prisma.carDivision.create({ data: { carId: gt.id, divisionId: gt3.id } });
     await prisma.sessionDriver.create({
       data: { sessionId: s.id, driverId: ana.id, carId: gt.id, controller: 0, gridPos: 2 },
     });
@@ -417,7 +422,12 @@ describe('GET /api/sessions/:id/leaderboard', () => {
       [0, 2, 16200, 8000.4, 8200],
       [1, 1, 7900, 7900, 7900],
     ]);
-    expect(res.body.data[0]).toMatchObject({ driverId: ana.id, gridPos: 2, driver: { name: 'Ana' } });
+    expect(res.body.data[0]).toMatchObject({
+      driverId: ana.id,
+      gridPos: 2,
+      driver: { name: 'Ana', divisions: [{ name: 'GOLD' }] },
+      car: { divisions: [{ name: 'GT3' }] },
+    });
     expect(res.body.data[0]).not.toHaveProperty('laps');
   });
 

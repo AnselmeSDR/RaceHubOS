@@ -272,12 +272,10 @@ Tous les composants attendent un objet `driver` avec cette structure minimale :
   color: "#00D2BE",               // Couleur hex
   photo: "url/to/photo.jpg",      // URL photo (optionnel)
 
-  // Team (optionnel)
-  team: {
-    id: "team123",
-    name: "Mercedes",
-    color: "#00D2BE"
-  },
+  // Divisions (optionnelles), de la plus haute à la plus basse
+  divisions: [
+    { id: "div123", name: "GOLD", shortName: null, color: "#F5D13C", scope: "driver" }
+  ],
 
   // Stats (optionnelles)
   wins: 103,

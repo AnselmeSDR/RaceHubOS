@@ -8,6 +8,8 @@ import CarFormModal from './CarFormModal'
 import CarLevelField from './CarLevelField'
 import { carColumns } from './carColumns'
 
+const GT3 = { id: 'gt3', name: 'GT3', color: '#E11D48', scope: 'car', order: 1 }
+const GTE = { id: 'gte', name: 'GTE', color: '#7C3AED', scope: 'car', order: 2 }
 const car = {
   id: 'c1',
   brand: 'porsche',
@@ -20,22 +22,29 @@ const car = {
   fuelCapacity: 100,
   bestLap: 4321,
   _count: { sessions: 2 },
+  divisions: [GT3],
 }
 const t = i18n.getFixedT('en', 'cars')
 let fetchMock
 
 beforeAll(() => i18n.changeLanguage('en'))
 beforeEach(() => {
-  fetchMock = vi.fn(async () => jsonReply({ success: true }))
+  fetchMock = vi.fn(async (url) =>
+    jsonReply(url.includes('/api/divisions') ? { success: true, data: [GT3, GTE] } : { success: true })
+  )
   vi.stubGlobal('fetch', fetchMock)
 })
+/** The form's save: the only call with a method. */
+const saved = () => fetchMock.mock.calls.find(([, options]) => options?.method)
+const savedBody = () => JSON.parse(saved()[1].body)
+
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
 describe('CarCard', () => {
-  test('brand, model, year, gauges and races, in the car colour', async () => {
+  test('brand, model, year, categories, gauges and races, in the car colour', async () => {
     const onClick = vi.fn()
     render(<CarCard car={car} onClick={onClick} onEdit={vi.fn()} onDelete={vi.fn()} />)
     const card = screen.getByTestId('entity-card')
@@ -43,6 +52,10 @@ describe('CarCard', () => {
     expect(within(card).getByRole('heading', { name: 'porsche' })).toBeInTheDocument()
     expect(within(card).getByText('911')).toHaveStyle({ color: '#FF0000' })
     expect(card).toHaveTextContent('1973')
+    // A category is outlined in its colour on a transparent background
+    const category = within(card).getByTitle('GT3')
+    expect(category).toHaveStyle({ borderColor: '#E11D48' })
+    expect(category.style.backgroundColor).toBe('')
     for (const value of [80, 50, 100]) expect(card).toHaveTextContent(formatLevel(value))
     expect(card).toHaveTextContent('Races2')
     expect(within(card).getByText('p')).toBeInTheDocument()
@@ -72,9 +85,10 @@ describe('carColumns', () => {
   const columns = carColumns(t, { onEdit })
 
   test('headers, then the edit pencil', () => {
-    expect(columns.map((c) => c.header)).toEqual([
+    expect(columns.map((c) => c.meta?.label ?? c.header)).toEqual([
       'Brand',
       'Model',
+      'Category',
       'Year',
       'Speed',
       'Braking',
@@ -83,6 +97,7 @@ describe('carColumns', () => {
       'Sessions',
       '',
     ])
+    expect(columns.find((c) => c.id === 'divisions').meta.filter).toBe('divisionId')
   })
 
   test('cells', () => {
@@ -91,6 +106,7 @@ describe('carColumns', () => {
     expect(model).toHaveTextContent('p911')
     expect(model.firstChild.firstChild).toHaveStyle({ backgroundColor: '#FF0000' })
     expect(renderCell(columns, 'year', car).container).toHaveTextContent('1973')
+    expect(renderCell(columns, 'divisions', car).container).toHaveTextContent('GT3')
     const speed = renderCell(columns, 'maxSpeed', car).container
     expect(speed).toHaveTextContent(formatLevel(80))
     expect(speed.querySelector('.bg-green-500')).toHaveStyle({ width: `${levelPercent(80)}%` })
@@ -101,9 +117,17 @@ describe('carColumns', () => {
   })
 
   test('cells of a bare car', () => {
-    const bare = { ...car, img: 'https://img.test/911.png', year: null, bestLap: null, _count: undefined }
+    const bare = {
+      ...car,
+      img: 'https://img.test/911.png',
+      year: null,
+      bestLap: null,
+      _count: undefined,
+      divisions: [],
+    }
     expect(renderCell(columns, 'model', bare).container.querySelector('img')).toBeInTheDocument()
     expect(renderCell(columns, 'year', bare).container).toHaveTextContent('-')
+    expect(renderCell(columns, 'divisions', bare).container).toHaveTextContent('-')
     expect(renderCell(columns, 'bestLap', bare).container).toHaveTextContent('-')
     expect(renderCell(columns, 'sessions', bare).container).toHaveTextContent('0')
   })
@@ -146,7 +170,7 @@ describe('CarFormModal', () => {
     await user.type(field('Notes'), 'Fast')
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
-    const [url, options] = fetchMock.mock.calls[0]
+    const [url, options] = saved()
     expect(url).toMatch(/\/api\/cars$/)
     expect(options.method).toBe('POST')
     expect(JSON.parse(options.body)).toMatchObject({
@@ -160,6 +184,7 @@ describe('CarFormModal', () => {
       motor: 'S-Can',
       weightGrams: '85',
       notes: 'Fast',
+      divisionIds: [],
     })
     expect(await screen.findByText('Car saved')).toBeInTheDocument()
     await act(() => vi.advanceTimersByTimeAsync(1500))
@@ -172,14 +197,14 @@ describe('CarFormModal', () => {
     await userEvent.clear(field('Year'))
     expect(field('Year')).toHaveValue(null)
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).year).toBeNull()
+    expect(savedBody().year).toBeNull()
   })
 
   test('a car without a year is not given this one', async () => {
     render(<CarFormModal car={{ ...car, year: null }} onClose={vi.fn()} />)
     expect(field('Year')).toHaveValue(null)
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).year).toBeNull()
+    expect(savedBody().year).toBeNull()
   })
 
   test('editing a car keeps its values and saves its settings', async () => {
@@ -192,7 +217,7 @@ describe('CarFormModal', () => {
     fireEvent.change(field('Fuel capacity'), { target: { value: '40' } })
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    const [url, options] = fetchMock.mock.calls[0]
+    const [url, options] = saved()
     expect(url).toMatch(/\/api\/cars\/c1$/)
     expect(options.method).toBe('PUT')
     expect(JSON.parse(options.body)).toMatchObject({ maxSpeed: 60, brakeForce: 90, fuelCapacity: 40, motor: 'Mabuchi' })
@@ -202,6 +227,17 @@ describe('CarFormModal', () => {
     render(<CarFormModal car={car} onClose={vi.fn()} />)
     fireEvent.change(screen.getByPlaceholderText('#000000'), { target: { value: '#3B82F6' } })
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).color).toBe('#3B82F6')
+    expect(savedBody().color).toBe('#3B82F6')
+  })
+  test('a car keeps its categories; one is added, another removed', async () => {
+    const user = userEvent.setup()
+    render(<CarFormModal car={car} onClose={vi.fn()} />)
+    const picker = screen.getByTestId('car-divisions')
+    await user.click(within(picker).getByRole('button', { name: 'New category' }))
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /GTE/ }))
+    await user.keyboard('{Escape}')
+    await user.click(within(picker).getByRole('button', { name: 'Remove GT3' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(savedBody().divisionIds).toEqual(['gte'])
   })
 })

@@ -1,13 +1,14 @@
 import path from 'path';
 
-export const IMAGE_TYPES = ['drivers', 'cars', 'tracks', 'teams'];
+// `teams`: logos of the former teams, now divisions, still served
+export const IMAGE_TYPES = ['drivers', 'cars', 'tracks', 'divisions', 'teams'];
 
 /** The endpoints every API listing points to. */
 const ENDPOINTS = {
   drivers: '/api/drivers',
   cars: '/api/cars',
   tracks: '/api/tracks',
-  teams: '/api/teams',
+  divisions: '/api/divisions',
   championships: '/api/championships',
   sessions: '/api/sessions',
   config: '/api/config',

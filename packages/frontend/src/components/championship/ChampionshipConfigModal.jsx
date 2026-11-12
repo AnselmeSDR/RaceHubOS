@@ -7,13 +7,16 @@ import ChampionshipConfigFooter from './config/ChampionshipConfigFooter'
 import ChampionshipInfoFields from './config/ChampionshipInfoFields'
 import ChampionshipParticipantsPanel from './config/ChampionshipParticipantsPanel'
 import ChampionshipSessionsPanel from './config/ChampionshipSessionsPanel'
-import { reopenChampionship, saveChampionshipInfo } from './config/championshipConfigApi'
+import { reopenChampionship, saveChampionshipDivisions, saveChampionshipInfo } from './config/championshipConfigApi'
+import DivisionFilters from '../division/DivisionFilters'
+import { useDivisionFilter } from '@/hooks/useDivisionFilter'
 
 export default function ChampionshipConfigModal({
   championship,
   sessions = [],
   tracks = [],
   drivers = [],
+  cars = [],
   open,
   onClose,
   onSave,
@@ -25,6 +28,16 @@ export default function ChampionshipConfigModal({
   const [trackId, setTrackId] = useState(championship?.trackId || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const filter = useDivisionFilter(championship?.divisions?.map((division) => division.id) ?? [])
+
+  async function saveDivisions(divisionIds) {
+    try {
+      await saveChampionshipDivisions(championship.id, divisionIds, t('configModal.genericError'))
+      onSessionsChange?.()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   // The fields follow the championship each time it is reloaded while the sheet is open
   const source = open ? championship : null
@@ -104,11 +117,15 @@ export default function ChampionshipConfigModal({
             onTrackChange={setTrackId}
           />
 
+          <DivisionFilters filter={filter} onChange={saveDivisions} hint={t('divisions:filters.configHint')} />
+
           {championship?.mode === ChampionshipMode.AUTO && (
             <ChampionshipParticipantsPanel
               championship={championship}
               sessions={sessions}
               drivers={drivers}
+              cars={cars}
+              filter={filter}
               onChanged={onSessionsChange}
               onError={setError}
             />

@@ -239,11 +239,22 @@ export const maxDuration = (limits) => (limits.useTime && limits.duration > 0 ? 
 export const maxLaps = (limits) => (limits.useLaps && limits.laps > 0 ? limits.laps : null)
 
 /** What the server needs to create the championship, in automatic mode or planned by hand. */
-export function championshipBody({ name, trackId, participants, config, mode, practiceGroups, qualifGroups, plan }) {
+export function championshipBody({
+  name,
+  trackId,
+  divisionIds = [],
+  participants,
+  config,
+  mode,
+  practiceGroups,
+  qualifGroups,
+  plan,
+}) {
   const common = {
     name: name.trim(),
     season: new Date().getFullYear().toString(),
     trackId,
+    divisionIds,
     mode,
     practiceMaxDuration: maxDuration(config.practice),
     practiceMaxLaps: maxLaps(config.practice),

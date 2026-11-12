@@ -21,16 +21,9 @@ export default function DriverProfile() {
   const [resetting, setResetting] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [teams, setTeams] = useState([])
 
   useEffect(() => {
     loadDriver()
-    fetch(`${API_URL}/api/teams`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) setTeams(d.data || [])
-      })
-      .catch(() => {})
   }, [id])
 
   async function loadDriver() {
@@ -112,7 +105,6 @@ export default function DriverProfile() {
       {showEdit && (
         <DriverFormModal
           driver={driver}
-          teams={teams}
           onClose={() => {
             setShowEdit(false)
             loadDriver()

@@ -12,7 +12,7 @@ export function apiFor(path, router) {
 
 /** Empties every table the entity routes touch, children first. */
 export async function wipe(prisma) {
-  for (const model of ['carExtra', 'driverExtra', 'trackExtra', 'teamExtra', 'sessionExtra', 'championshipExtra']) {
+  for (const model of ['carExtra', 'driverExtra', 'trackExtra', 'divisionExtra', 'sessionExtra', 'championshipExtra']) {
     await prisma[model].deleteMany();
   }
   for (const model of [
@@ -26,7 +26,7 @@ export async function wipe(prisma) {
     'driver',
     'car',
     'track',
-    'team',
+    'division',
   ]) {
     await prisma[model].deleteMany();
   }

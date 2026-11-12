@@ -13,7 +13,6 @@ model Driver {
   email             String?            @unique
   img               String?
   color             String             @default("#3B82F6")
-  teamId            String?
   totalRaces        Int                @default(0)
   wins              Int                @default(0)
   podiums           Int                @default(0)
@@ -23,8 +22,8 @@ model Driver {
   updatedAt         DateTime           @updatedAt
   number            Int?               @unique
   preferredCarId    String?            // Offered when the driver joins a championship
-  team              Team?              @relation(fields: [teamId], references: [id])
   preferredCar      Car?               @relation("DriverPreferredCar", fields: [preferredCarId], references: [id], onDelete: SetNull)
+  divisions         DriverDivision[]
   laps              Lap[]
   sessions          SessionDriver[]
   controllerConfigs      ControllerConfig[]
@@ -74,6 +73,7 @@ model Car {
   extras                   CarExtra[]
   preferredBy              Driver[]                  @relation("DriverPreferredCar")
   championshipParticipants ChampionshipParticipant[]
+  divisions                CarDivision[]
 }
 
 model Track {
@@ -97,16 +97,56 @@ model Track {
   extras            TrackExtra[]
 }
 
-model Team {
-  id        String   @id @default(cuid())
-  name      String
-  color     String?
-  img       String?
-  deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  drivers   Driver[]
-  extras    TeamExtra[]
+// A driver division (GOLD, SILVER…) or a car category (GT3, DTM…), by `scope`
+model Division {
+  id            String                 @id @default(cuid())
+  name          String
+  shortName     String?                // On the badge; the name without one
+  color         String                 @default("#6B7280")
+  img           String?
+  scope         String                 // driver | car — @racehubos/shared
+  order         Int                    @default(0) // Rank: 1 is the highest
+  deletedAt     DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  drivers       DriverDivision[]
+  cars          CarDivision[]
+  championships ChampionshipDivision[]
+  extras        DivisionExtra[]
+}
+
+model DriverDivision {
+  driverId   String
+  divisionId String
+  createdAt  DateTime @default(now()) // Since when
+  driver     Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@id([driverId, divisionId])
+  @@index([divisionId])
+}
+
+model CarDivision {
+  carId      String
+  divisionId String
+  createdAt  DateTime @default(now())
+  car        Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@id([carId, divisionId])
+  @@index([divisionId])
+}
+
+// The divisions and categories a championship is run for: they narrow its drivers and cars
+model ChampionshipDivision {
+  championshipId String
+  divisionId     String
+  createdAt      DateTime     @default(now())
+  championship   Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  division       Division     @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@id([championshipId, divisionId])
+  @@index([divisionId])
 }
 
 model Championship {
@@ -129,6 +169,7 @@ model Championship {
   participants      ChampionshipParticipant[]
   track             Track?                   @relation(fields: [trackId], references: [id])
   extras            ChampionshipExtra[]
+  divisions         ChampionshipDivision[]
 }
 
 model Session {
@@ -320,14 +361,14 @@ model TrackExtra {
   @@index([addon])
 }
 
-model TeamExtra {
-  teamId    String
-  addon     String   // add-on id
-  data      String   @default("{}") // JSON object: this add-on's fields only
-  updatedAt DateTime @default(now()) @updatedAt
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+model DivisionExtra {
+  divisionId String
+  addon      String   // add-on id
+  data       String   @default("{}") // JSON object: this add-on's fields only
+  updatedAt  DateTime @default(now()) @updatedAt
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
 
-  @@id([teamId, addon])
+  @@id([divisionId, addon])
   @@index([addon])
 }
 

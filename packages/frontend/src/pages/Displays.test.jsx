@@ -9,7 +9,13 @@ import { COMPONENT_USAGE } from '@/components/displays/componentUsage'
 vi.mock('@/context/AppContext', () => ({ useApp: () => ({ isDark: false }) }))
 
 const drivers = [
-  { id: 'd1', name: 'Ayrton', color: '#FFCC00', number: 12, team: { name: 'McLaren', color: '#FF8000' } },
+  {
+    id: 'd1',
+    name: 'Ayrton',
+    color: '#FFCC00',
+    number: 12,
+    divisions: [{ id: 'gold', name: 'GOLD', color: '#F5D13C', scope: 'driver' }],
+  },
   { id: 'd2', name: 'Alain', color: '#3B82F6', number: 2 },
   { id: 'd3', name: 'Nigel', color: '#EF4444', number: 5 },
   { id: 'd4', name: 'Nelson', color: '#22C55E', number: 6 },

@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Trophy, Flag, BarChart3 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import CardActions from '@/components/crud/CardActions'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { getImgUrl } from '@/utils/image'
 
-/** A driver in the grid of the drivers page: picture, number, team, results and best lap. */
+/** A driver in the grid of the drivers page: picture, number, divisions, results and best lap. */
 export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
   const { t } = useTranslation('drivers')
   const wins = driver.wins || 0
@@ -63,11 +63,7 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
                 <span className="text-4xl font-black text-white drop-shadow-lg">{driver.number}</span>
               </div>
             )}
-            {driver.team && (
-              <Badge className="text-white shadow-md" style={{ backgroundColor: driver.team.color || driver.color }}>
-                {driver.team.name}
-              </Badge>
-            )}
+            <DivisionBadges divisions={driver.divisions} className="flex flex-wrap justify-end gap-1" />
           </div>
         </div>
         <h3 className="font-black text-2xl tracking-tight mb-1" style={{ color: driver.color }}>

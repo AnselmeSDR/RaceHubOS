@@ -1,0 +1,60 @@
+{
+  "searchDivision": "Rechercher une division...",
+  "searchCategory": "Rechercher une catégorie...",
+  "addDivision": "Nouvelle division",
+  "addCategory": "Nouvelle catégorie",
+  "emptyDivisions": "Aucune division",
+  "emptyDivisionsHint": "Classez vos pilotes : GOLD, SILVER, BRONZE…",
+  "emptyCategories": "Aucune catégorie",
+  "emptyCategoriesHint": "Classez vos voitures : GT3, DTM, Formule…",
+  "add": "Ajouter",
+  "remove": "Retirer {{name}}",
+  "noneYet": "Aucune pour l'instant : créez-en dans Divisions.",
+  "pickerHint": "Aucune, une ou plusieurs.",
+  "noDivision": "Sans division",
+  "noCategory": "Sans catégorie",
+  "columns": {
+    "rank": "Échelon",
+    "order": "Ordre"
+  },
+  "card": {
+    "rank": "Échelon {{n}}",
+    "order": "Ordre {{n}}",
+    "noDrivers": "Aucun pilote",
+    "noCars": "Aucune voiture",
+    "more_one": "+{{count}} de plus",
+    "more_other": "+{{count}} de plus"
+  },
+  "form": {
+    "createDivision": "Nouvelle division",
+    "editDivision": "Modifier la division",
+    "createCategory": "Nouvelle catégorie",
+    "editCategory": "Modifier la catégorie",
+    "name": "Nom",
+    "shortName": "Nom court",
+    "shortNameHint": "Sur la pastille ; le nom sinon.",
+    "logo": "Logo",
+    "rank": "Échelon",
+    "rankHint": "La plus petite valeur = la plus haute (0 accepté). Ordre des listes et des filtres ; servira à la montée et à la descente.",
+    "order": "Ordre",
+    "orderHint": "Ordre des listes et des filtres.",
+    "orderInvalid": "Un nombre entier, 0 ou plus.",
+    "preview": "Aperçu",
+    "saved": "Enregistrée"
+  },
+  "filters": {
+    "divisions": "Divisions",
+    "categories": "Catégories",
+    "hint": "Les pilotes et les voitures proposés se limitent à ces divisions et catégories ; aucun choix = tous. Gardés sur le championnat.",
+    "configHint": "Mêmes filtres que l'assistant : ils restreignent le choix des pilotes à ajouter et des voitures.",
+    "outOfDivision": "hors division",
+    "outOfCategory": "hors catégorie"
+  },
+  "profile": {
+    "notFound": "Division introuvable",
+    "since": "Membre depuis",
+    "addDriver": "Ajouter un pilote…",
+    "addCar": "Ajouter une voiture…",
+    "noChampionships": "Aucun championnat ne retient cette division."
+  }
+}

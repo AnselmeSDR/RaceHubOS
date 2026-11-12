@@ -72,7 +72,7 @@ describe('useStandingsTab', () => {
   })
 })
 
-test('the header lists the sessions in running order, free practices numbered like the others', async () => {
+test('the header shows its divisions and lists the sessions in running order, free practices numbered like the others', async () => {
   const session = (id, type, order, createdAt) => ({ id, type, order, createdAt, status: SessionStatus.DRAFT })
   const sessions = [
     session('r1', SessionType.RACE, 3, '2026-01-04'),
@@ -81,7 +81,18 @@ test('the header lists the sessions in running order, free practices numbered li
     session('fp1', SessionType.PRACTICE, 0, '2026-01-01'),
   ]
   const onSelectSession = vi.fn()
-  render(<ChampionshipHeader championship={{ name: 'Cup' }} sessions={sessions} onSelectSession={onSelectSession} />)
+  const divisions = [
+    { id: 'gold', name: 'GOLD', scope: 'driver' },
+    { id: 'gt3', name: 'GT3', scope: 'car' },
+  ]
+  render(
+    <ChampionshipHeader
+      championship={{ name: 'Cup', divisions }}
+      sessions={sessions}
+      onSelectSession={onSelectSession}
+    />
+  )
+  expect(screen.getAllByTestId('division-badge').map((b) => b.textContent)).toEqual(['GOLD', 'GT3'])
   const labels = ['FP1', 'Q1', 'FP2', 'R1']
   expect(
     screen.getAllByRole('button', { name: new RegExp(`^(${labels.join('|')})$`) }).map((b) => b.textContent)

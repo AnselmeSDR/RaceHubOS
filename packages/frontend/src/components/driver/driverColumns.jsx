@@ -1,6 +1,8 @@
 import { Trophy, Flag, BarChart3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { editColumn } from '@/components/crud/editColumn'
+import { filteredColumn } from '@/components/crud/filteredColumn'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { driverColor } from '@/lib/colors'
 import { getImgUrl } from '@/utils/image'
 
@@ -43,22 +45,18 @@ export function driverColumns(t, { onEdit }) {
           <span className="text-muted-foreground">-</span>
         ),
     },
-    {
-      id: 'team',
-      accessorFn: (row) => row.team?.name || '',
-      header: t('glossary:team', { count: 1 }),
-      cell: ({ row }) =>
-        row.original.team ? (
-          <Badge
-            className="text-white shadow-sm"
-            style={{ backgroundColor: row.original.team.color || row.original.color }}
-          >
-            {row.original.team.name}
-          </Badge>
+    filteredColumn(
+      'divisions',
+      'divisionId',
+      t('glossary:division', { count: 1 }),
+      (row) => row.divisions?.map((d) => d.name).join(', ') ?? '',
+      ({ row }) =>
+        row.original.divisions?.length ? (
+          <DivisionBadges divisions={row.original.divisions} />
         ) : (
           <span className="text-muted-foreground">-</span>
-        ),
-    },
+        )
+    ),
     {
       id: 'sessions',
       accessorFn: (row) => row._count?.sessions || 0,

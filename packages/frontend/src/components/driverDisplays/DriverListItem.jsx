@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { getImgUrl } from '@/utils/image'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
  * DriverListItem - Format horizontal compact pour listes et sélections
@@ -54,7 +55,7 @@ export default function DriverListItem({ driver, position, selected, onClick, sh
       {/* Driver info */}
       <div className="flex-1 min-w-0">
         <div className="font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">{driver.name}</div>
-        {driver.team && <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{driver.team.name}</div>}
+        <DivisionBadges divisions={driver.divisions} className="flex flex-wrap gap-1 mt-0.5" />
       </div>
 
       {/* Stats if enabled */}

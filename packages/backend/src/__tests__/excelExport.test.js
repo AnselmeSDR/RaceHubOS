@@ -10,14 +10,15 @@ import {
 
 const MS_PER_DAY = 86_400_000;
 
-const team = { id: 'team-1', name: 'Écurie Bleue', color: '#00f' };
+// As Prisma reads them: links to their division
+const silver = { division: { id: 'division-1', name: 'SILVER', color: '#c4c4c4' } };
+const gt3 = { division: { id: 'category-1', name: 'GT3', color: '#e11d48' } };
 const driver = (id, name) => ({
   id,
   name,
   color: '#f00',
   number: 8,
-  teamId: team.id,
-  team,
+  divisions: [silver],
   totalRaces: 12,
   wins: 3,
   podiums: 7,
@@ -35,6 +36,7 @@ const car = (id, model) => ({
   fuelCapacity: 100,
   totalRaces: 12,
   bestLap: 9_800,
+  divisions: [gt3],
 });
 const track = {
   id: 'track-1',
@@ -185,6 +187,14 @@ describe('export Excel', () => {
       const second = rowValues(sheet, findRow(sheet, 'Pilotes') + 4);
 
       expect(second[8]).toBe(1);
+    });
+
+    it('liste les divisions des pilotes et les catégories des voitures, avec leurs membres', () => {
+      const sheet = workbook.getWorksheet('Référence');
+      expect(rowValues(sheet, findRow(sheet, 'Divisions') + 3)).toEqual(
+        expect.arrayContaining(['SILVER', 2, 'Anselme SDR, Sandrine FRE'])
+      );
+      expect(rowValues(sheet, findRow(sheet, 'Catégories') + 3)[0]).toBe('GT3');
     });
 
     it('retient le meilleur tour du circuit et son auteur', () => {

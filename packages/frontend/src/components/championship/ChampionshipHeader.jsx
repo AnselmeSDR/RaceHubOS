@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 import ExportButton from '../ui/ExportButton'
+import { DivisionBadges } from '../division/DivisionBadge'
 
 const TYPE_STYLE = {
   [SessionType.PRACTICE]: {
@@ -71,6 +72,7 @@ export default function ChampionshipHeader({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold">{championship?.name || t('detail.defaultName')}</h1>
+            <DivisionBadges divisions={championship?.divisions} />
             {championship?.mode === ChampionshipMode.AUTO && (
               <Badge className="bg-primary/10 text-primary text-[10px] py-0 px-1.5">
                 <Zap className="size-2.5 mr-0.5" />

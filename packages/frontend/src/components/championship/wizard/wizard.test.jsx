@@ -15,17 +15,26 @@ import { dealtPracticeGroups, dealtQualifGroups, DEFAULT_WIZARD_CONFIG, practice
 
 const { PRACTICE, QUALIF, RACE } = SessionType
 const tracks = [{ id: 't1', name: 'Monza' }]
+const GOLD = { id: 'gold', name: 'GOLD', color: '#F5D13C', scope: 'driver' }
+const GT3 = { id: 'gt3', name: 'GT3', color: '#E11D48', scope: 'car' }
+const GTE = { id: 'gte', name: 'GTE', color: '#7C3AED', scope: 'car' }
+// The Ferrari is a GT3, the BMW in no category
 const cars = [
-  { id: 'ferrari', brand: 'Ferrari', model: '296', img: 'cars/ferrari.png' },
+  { id: 'ferrari', brand: 'Ferrari', model: '296', img: 'cars/ferrari.png', divisions: [GT3] },
   { id: 'bmw', brand: 'BMW', model: 'M4', img: null },
 ]
-// Ana prefers the Ferrari; a picture keeps a driver's initial out of the texts read
+// Ana, in GOLD, prefers the Ferrari; a picture keeps a driver's initial out of the texts read
 const drivers = ['Ana', 'Ben', 'Cid', 'Dan', 'Eva', 'Fay', 'Gus', 'Hal', 'Ivy'].map((name, i) => ({
   id: `d${i + 1}`,
   name,
   img: `drivers/${name}.png`,
   preferredCarId: i === 0 ? 'ferrari' : null,
+  divisions: i === 0 ? [GOLD] : [],
 }))
+const divisionRoutes = {
+  '/api/divisions?scope=driver': { success: true, data: [GOLD] },
+  '/api/divisions?scope=car': { success: true, data: [GT3, GTE] },
+}
 const entry = (driver, carId = null) => ({
   driverId: driver.id,
   driver,
@@ -86,11 +95,28 @@ test('WizardInfoStep: name and track', async () => {
 })
 
 describe('WizardParticipantsStep', () => {
-  const lineUp = (participants) => {
+  const lineUp = (participants, divisionIds = []) => {
+    routeFetch(divisionRoutes)
     const onChange = vi.fn()
-    render(<WizardParticipantsStep participants={participants} drivers={drivers} cars={cars} onChange={onChange} />)
-    return { onChange, selects: screen.getAllByRole('combobox', { name: 'Driver' }) }
+    const onDivisionsChange = vi.fn()
+    render(
+      <WizardParticipantsStep
+        participants={participants}
+        drivers={drivers}
+        cars={cars}
+        divisionIds={divisionIds}
+        onDivisionsChange={onDivisionsChange}
+        onChange={onChange}
+      />
+    )
+    return { onChange, onDivisionsChange, selects: screen.getAllByRole('combobox', { name: 'Driver' }) }
   }
+  const options = (select) =>
+    within(select)
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+  // The filters show their badges once the divisions are read
+  const filtersRead = () => within(screen.getByTestId('division-filters')).findAllByTestId('division-badge')
 
   test('a driver not yet picked joins with the car preferred on their profile', async () => {
     const { onChange, selects } = lineUp([entry(drivers[1])])
@@ -136,6 +162,34 @@ describe('WizardParticipantsStep', () => {
     cleanup()
     expect(lineUp([EMPTY]).selects).toHaveLength(1)
     expect(screen.getByText('0 participants')).toBeInTheDocument()
+  })
+
+  test('the filters narrow the selectors; a participant outside them stays, flagged', async () => {
+    const { selects } = lineUp([entry(drivers[1], 'bmw')], ['gold', 'gt3'])
+    await filtersRead()
+    expect(options(selects[1])).toEqual(['Driver...', 'Ana'])
+    expect(screen.getByText('outside divisions')).toBeInTheDocument()
+    expect(screen.getByText('outside categories')).toBeInTheDocument()
+    // The car already run stays offered beside the GT3s
+    expect(options(screen.getByRole('combobox', { name: "Ben's car" }))).toEqual(
+      expect.arrayContaining(['Ferrari 296', 'BMW M4'])
+    )
+  })
+
+  test('a preferred car outside the categories chosen is not given', async () => {
+    const { onChange, selects } = lineUp([], ['gte'])
+    await filtersRead()
+    await userEvent.selectOptions(selects[0], 'd1')
+    expect(onChange).toHaveBeenCalledWith([entry(drivers[0])])
+  })
+
+  test('choosing a division keeps the categories already chosen', async () => {
+    const user = userEvent.setup()
+    const { onDivisionsChange } = lineUp([], ['gt3'])
+    await filtersRead()
+    await user.click(screen.getByRole('button', { name: 'New division' }))
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: /GOLD/ }))
+    expect(onDivisionsChange).toHaveBeenCalledWith(['gold', 'gt3'])
   })
 })
 

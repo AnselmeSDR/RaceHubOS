@@ -1,11 +1,12 @@
 import { useApp } from '@/context/AppContext'
 import { getImgUrl } from '@/utils/image'
+import { DivisionBadges } from '@/components/division/DivisionBadge'
 
 /**
  * DriverGridPosition - Format grille de départ NASCAR
- * Affichage ROW 1, ROW 2, etc.
+ * Affichage ROW 1, ROW 2, etc. `subtitle` sous le nom (la voiture), puis les divisions.
  */
-export default function DriverGridPosition({ driver, side = 'left' }) {
+export default function DriverGridPosition({ driver, subtitle, side = 'left' }) {
   const { isDark } = useApp()
   const driverColor = driver.color || '#3B82F6'
 
@@ -55,7 +56,8 @@ export default function DriverGridPosition({ driver, side = 'left' }) {
           <div className="font-black text-xl text-gray-900 dark:text-white uppercase italic truncate">
             {driver.name.split(' ').pop()}
           </div>
-          {driver.team && <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{driver.team.name}</div>}
+          {subtitle && <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{subtitle}</div>}
+          <DivisionBadges divisions={driver.divisions} className="flex flex-wrap gap-1 mt-0.5" />
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { HttpError, route } from '../lib/http.js';
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024;
 
-/** Image uploads of drivers, cars, tracks and teams, served back by `/api/img/<type>/<file>`. */
+/** Image uploads of drivers, cars, tracks and divisions, served back by `/api/img/<type>/<file>`. */
 export function createUploadRouter(uploadsDir) {
   const router = express.Router();
 
