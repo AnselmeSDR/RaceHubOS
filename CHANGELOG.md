@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.0] - 2026-11-12
+
+### Changed
+- Pictures: drivers, cars, tracks and divisions all sit in the same rounded square, without ring or shadow; a new editor frames the picture (zoom out to keep it whole), keeps it transparent or puts a plain colour behind it, removes a plain background, and saves a square PNG of at most 512 px; a current picture can be reframed.
+
 ## [1.29.0] - 2026-11-12
 
 ### Added
