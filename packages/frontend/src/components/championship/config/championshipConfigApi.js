@@ -30,12 +30,14 @@ export async function setChampionshipParticipants(id, driverIds, fallbackError) 
   return checked(response, fallbackError)
 }
 
+// Unnamed, the session is named by the server in the interface language
 export async function addChampionshipSession(id, { type, form, order }, fallbackError) {
   const response = await sendJson(`/api/championships/${id}/sessions`, 'POST', {
     type,
     name: form.name || undefined,
     ...limitsBody(form),
     order,
+    sessionNames: sessionNames(),
   })
   return checked(response, fallbackError)
 }

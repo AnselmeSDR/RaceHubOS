@@ -639,10 +639,11 @@ describe('creating a session', () => {
     ]);
   });
 
-  test("a championship's session runs on its track", async () => {
+  test("a championship's session runs on its track; unnamed, it takes the interface's name for its type", async () => {
     const cup = await prisma.championship.create({ data: { name: 'Cup', season: '2026', trackId: track.id } });
-    const session = await service.createSession({ type: SessionType.PRACTICE, championshipId: cup.id });
-    expect(session).toMatchObject({ trackId: track.id, championshipId: cup.id });
+    const sessionNames = { [SessionType.PRACTICE]: 'Essais Libres' };
+    const session = await service.createSession({ type: SessionType.PRACTICE, championshipId: cup.id, sessionNames });
+    expect(session).toMatchObject({ name: 'Essais Libres', trackId: track.id, championshipId: cup.id });
   });
 
   test('refused for an unknown type, or without a track', async () => {

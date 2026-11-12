@@ -26,7 +26,7 @@ async function qualifyingOrder(prisma, trackId) {
  * missing from it at the back. Returns the session with its track, championship and entries.
  */
 export async function createSessionFromControllers(prisma, params) {
-  const { type, name, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status } = params;
+  const { type, name, championshipId, maxDuration, maxLaps, order, gridFromQualifying, status, sessionNames } = params;
   if (!isSessionType(type)) {
     throw new Error(`Invalid session type. Must be one of: ${SESSION_TYPES.join(', ')}`);
   }
@@ -35,7 +35,7 @@ export async function createSessionFromControllers(prisma, params) {
 
   const session = await prisma.session.create({
     data: {
-      name: name || sessionName(type),
+      name: name || sessionName(type, sessionNames),
       type,
       status: status || SessionStatus.DRAFT,
       trackId,

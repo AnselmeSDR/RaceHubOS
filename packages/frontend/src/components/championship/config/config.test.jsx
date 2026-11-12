@@ -153,10 +153,16 @@ describe('championship config API', () => {
     await expect(setChampionshipParticipants('c1', [], 'fallback')).rejects.toThrow('fallback')
   })
 
-  test('a new session, unnamed, at the end of the running order', async () => {
+  test('a new session, unnamed (named by the server in the interface language), at the end of the order', async () => {
     const mock = routeFetch({ 'POST /api/championships/c1/sessions': { success: true } })
     await addChampionshipSession('c1', { type: SessionType.RACE, form: NEW_SESSION_FORM, order: 3 }, 'x')
-    expect(bodyOf(mock, 'POST')).toEqual({ type: SessionType.RACE, maxDuration: 300000, maxLaps: null, order: 3 })
+    expect(bodyOf(mock, 'POST')).toEqual({
+      type: SessionType.RACE,
+      maxDuration: 300000,
+      maxLaps: null,
+      order: 3,
+      sessionNames: expect.objectContaining({ [SessionType.RACE]: 'Race', [SessionType.PRACTICE]: 'Free Practice' }),
+    })
     routeFetch({ 'POST /api/championships/c1/sessions': withStatus(400, { error: 'No track' }) })
     await expect(
       addChampionshipSession('c1', { type: SessionType.RACE, form: NEW_SESSION_FORM, order: 0 }, 'x')
@@ -299,6 +305,7 @@ describe('ChampionshipSessionsPanel', () => {
       maxDuration: 300000,
       maxLaps: null,
       order: 0,
+      sessionNames: expect.any(Object),
     })
     expect(screen.queryByTestId('config-session-editor')).not.toBeInTheDocument()
   })
