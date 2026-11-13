@@ -116,7 +116,7 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Credits',
     'open.credit1': 'Anselme Schneider: creator and developer',
     'open.credit2': 'Romain Danna: co-author, racing expertise',
-    'news.title': "What's new in version {version}",
+    'news.title': "What's new",
     'news.english': 'These notes are written in English.',
     'news.added': 'New',
     'news.changed': 'Changed',
@@ -126,6 +126,23 @@ window.RACEHUBOS_TEXTS = {
     'news.security': 'Security',
     'news.all': 'Every version and its changes',
     'faq.title': 'Questions before you start',
+    'faq.hardware': 'Hardware',
+    'faq.install': 'Installing',
+    'faq.daily': 'Race after race',
+    'faq.systems': 'Which computers does it run on?',
+    'faq.systemsAnswer':
+      'Windows, macOS and Linux. Windows and macOS have a one-click installer; on Linux, the macOS one does the same.',
+    'faq.update': 'How do I update it?',
+    'faq.updateAnswer':
+      'From the app: Settings, Update, then Check. The database is backed up first, then the app restarts on its own.',
+    'faq.languages': 'Which languages?',
+    'faq.languagesAnswer': 'English, French and German, for the screens and the voice announcements.',
+    'faq.data': 'Where are my races kept?',
+    'faq.dataAnswer':
+      'In a database on your computer, backed up before each update. Statistics and records export to Excel.',
+    'faq.help': 'A bug, an idea?',
+    'faq.helpAnswerHtml':
+      'Open an issue on <a href="https://github.com/AnselmeSDR/RaceHubOS/issues">GitHub</a>: questions and suggestions are welcome too.',
     'faq.bluetooth': 'Does my computer need Bluetooth?',
     'faq.bluetoothAnswer':
       'Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops have it built in.',
@@ -263,7 +280,7 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Crédits',
     'open.credit1': 'Anselme Schneider : création et développement',
     'open.credit2': 'Romain Danna : co-auteur, expertise course',
-    'news.title': 'Nouveautés de la version {version}',
+    'news.title': 'Nouveautés',
     'news.english': 'Ces notes sont écrites en anglais.',
     'news.added': 'Nouveau',
     'news.changed': 'Modifié',
@@ -273,6 +290,23 @@ window.RACEHUBOS_TEXTS = {
     'news.security': 'Sécurité',
     'news.all': 'Toutes les versions et leurs changements',
     'faq.title': 'Avant de vous lancer',
+    'faq.hardware': 'Matériel',
+    'faq.install': 'Installation',
+    'faq.daily': 'Au fil des courses',
+    'faq.systems': 'Sur quels ordinateurs ?',
+    'faq.systemsAnswer':
+      'Windows, macOS et Linux. Windows et macOS ont un installeur en un clic ; sous Linux, celui de macOS fait de même.',
+    'faq.update': 'Comment la mettre à jour ?',
+    'faq.updateAnswer':
+      'Depuis l’application : Paramètres, Mise à jour, puis Vérifier. La base est d’abord sauvegardée, puis l’application redémarre toute seule.',
+    'faq.languages': 'En quelles langues ?',
+    'faq.languagesAnswer': 'Français, anglais et allemand, pour les écrans comme pour les annonces vocales.',
+    'faq.data': 'Où sont gardées mes courses ?',
+    'faq.dataAnswer':
+      'Dans une base sur votre ordinateur, sauvegardée avant chaque mise à jour. Statistiques et records s’exportent en Excel.',
+    'faq.help': 'Un bug, une idée ?',
+    'faq.helpAnswerHtml':
+      'Ouvrez une issue sur <a href="https://github.com/AnselmeSDR/RaceHubOS/issues">GitHub</a> : questions et suggestions sont aussi les bienvenues.',
     'faq.bluetooth': 'Mon ordinateur a-t-il besoin du Bluetooth ?',
     'faq.bluetoothAnswer':
       'Oui : RaceHubOS dialogue avec l’AppConnect 30369 en Bluetooth Low Energy, depuis l’ordinateur. La plupart des portables l’ont d’origine.',
@@ -413,7 +447,7 @@ window.RACEHUBOS_TEXTS = {
     'open.credits': 'Mitwirkende',
     'open.credit1': 'Anselme Schneider: Gründer und Entwickler',
     'open.credit2': 'Romain Danna: Mitautor, Rennerfahrung',
-    'news.title': 'Neu in Version {version}',
+    'news.title': 'Neuigkeiten',
     'news.english': 'Diese Hinweise sind auf Englisch verfasst.',
     'news.added': 'Neu',
     'news.changed': 'Geändert',
@@ -423,6 +457,23 @@ window.RACEHUBOS_TEXTS = {
     'news.security': 'Sicherheit',
     'news.all': 'Alle Versionen und ihre Änderungen',
     'faq.title': 'Fragen vor dem Start',
+    'faq.hardware': 'Hardware',
+    'faq.install': 'Installation',
+    'faq.daily': 'Von Rennen zu Rennen',
+    'faq.systems': 'Auf welchen Computern läuft es?',
+    'faq.systemsAnswer':
+      'Windows, macOS und Linux. Windows und macOS haben einen Ein-Klick-Installer; unter Linux erledigt das der von macOS.',
+    'faq.update': 'Wie aktualisiere ich es?',
+    'faq.updateAnswer':
+      'In der App: Einstellungen, Aktualisierung, dann Prüfen. Die Datenbank wird vorher gesichert, dann startet die App von selbst neu.',
+    'faq.languages': 'In welchen Sprachen?',
+    'faq.languagesAnswer': 'Deutsch, Englisch und Französisch, für die Ansichten wie für die Sprachansagen.',
+    'faq.data': 'Wo werden meine Rennen gespeichert?',
+    'faq.dataAnswer':
+      'In einer Datenbank auf deinem Computer, vor jeder Aktualisierung gesichert. Statistiken und Rekorde lassen sich nach Excel exportieren.',
+    'faq.help': 'Ein Fehler, eine Idee?',
+    'faq.helpAnswerHtml':
+      'Eröffne ein Issue auf <a href="https://github.com/AnselmeSDR/RaceHubOS/issues">GitHub</a>: Fragen und Vorschläge sind ebenfalls willkommen.',
     'faq.bluetooth': 'Braucht mein Computer Bluetooth?',
     'faq.bluetoothAnswer':
       'Ja: RaceHubOS spricht über Bluetooth Low Energy mit dem AppConnect 30369, direkt vom Computer aus. Die meisten Laptops haben es eingebaut.',

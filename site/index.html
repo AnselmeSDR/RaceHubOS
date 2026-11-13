@@ -422,31 +422,6 @@
               />
             </div>
           </div>
-
-          <ul class="more">
-            <li>
-              <svg class="i" aria-hidden="true"><use href="#i-bluetooth" /></svg>
-              <h3 data-i18n="cu.title">Bluetooth Control Unit</h3>
-              <p data-i18n="cu.text">
-                Connects to the Control Unit 30352 through the AppConnect 30369. No track at hand? The simulator runs
-                virtual cars.
-              </p>
-            </li>
-            <li class="voice">
-              <svg class="i" aria-hidden="true"><use href="#i-volume-2" /></svg>
-              <h3 data-i18n="voice.title">Voice announcements</h3>
-              <p data-i18n="voice.text">A voice calls out best laps and the podium, in your language.</p>
-              <button class="button small" type="button" data-voice-button>
-                <span class="wave" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span data-i18n="voice.play">Listen</span>
-              </button>
-            </li>
-            <li>
-              <svg class="i" aria-hidden="true"><use href="#i-wifi-off" /></svg>
-              <h3 data-i18n="local.title">Your data stays home</h3>
-              <p data-i18n="local.text">Everything runs on your computer: no account, no cloud, no subscription.</p>
-            </li>
-          </ul>
         </div>
       </section>
 
@@ -541,6 +516,33 @@
         </div>
       </section>
 
+      <div class="wrap">
+        <ul class="more">
+          <li>
+            <svg class="i" aria-hidden="true"><use href="#i-bluetooth" /></svg>
+            <h3 data-i18n="cu.title">Bluetooth Control Unit</h3>
+            <p data-i18n="cu.text">
+              Connects to the Control Unit 30352 through the AppConnect 30369. No track at hand? The simulator runs
+              virtual cars.
+            </p>
+          </li>
+          <li class="voice">
+            <svg class="i" aria-hidden="true"><use href="#i-volume-2" /></svg>
+            <h3 data-i18n="voice.title">Voice announcements</h3>
+            <p data-i18n="voice.text">A voice calls out best laps and the podium, in your language.</p>
+            <button class="button small" type="button" data-voice-button>
+              <span class="wave" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span data-i18n="voice.play">Listen</span>
+            </button>
+          </li>
+          <li>
+            <svg class="i" aria-hidden="true"><use href="#i-wifi-off" /></svg>
+            <h3 data-i18n="local.title">Your data stays home</h3>
+            <p data-i18n="local.text">Everything runs on your computer: no account, no cloud, no subscription.</p>
+          </li>
+        </ul>
+      </div>
+
       <section class="install" id="install" aria-labelledby="install-title">
         <div class="wrap">
           <h2 id="install-title" data-i18n="install.title">Racing in three steps</h2>
@@ -588,10 +590,8 @@
 
       <section class="news" id="news" aria-labelledby="news-title">
         <div class="wrap">
-          <h2 id="news-title" data-i18n="news.title" data-vars='{"version":"%VERSION%"}'>
-            What's new in version %VERSION%
-          </h2>
-          <!-- Filled at build from the section of this version in CHANGELOG.md -->
+          <h2 id="news-title" data-i18n="news.title">What's new</h2>
+          <!-- Filled at build from the last versions of CHANGELOG.md, the one offered first -->
           <div class="news-body"></div>
           <p class="all">
             <a href="https://github.com/AnselmeSDR/RaceHubOS/blob/main/CHANGELOG.md" data-i18n="news.all"
@@ -605,48 +605,77 @@
         <div class="wrap">
           <h2 id="faq-title" data-i18n="faq.title">Questions before you start</h2>
           <div class="questions">
-            <details>
-              <summary data-i18n="faq.bluetooth">Does my computer need Bluetooth?</summary>
-              <p data-i18n="faq.bluetoothAnswer">
-                Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops
-                have it built in.
-              </p>
-            </details>
-            <details>
-              <summary data-i18n="faq.digital124">Does it work with the Digital 124?</summary>
-              <p data-i18n="faq.digital124Answer">
-                Yes. The Digital 124 uses the same Control Unit 30352 and the same AppConnect 30369 as the 132.
-              </p>
-            </details>
-            <details>
-              <summary data-i18n="faq.cars">How many cars can race?</summary>
-              <p data-i18n="faq.carsAnswer">
-                Up to six at once, one per controller: as many as the Control Unit handles.
-              </p>
-            </details>
-            <details>
-              <summary data-i18n="faq.simulator">Can I try it without a track?</summary>
-              <p data-i18n="faq.simulatorAnswer">Yes: the built-in simulator runs virtual cars, with no Control Unit.</p>
-            </details>
-            <details>
-              <summary data-i18n="faq.browser">Which browser do I need?</summary>
-              <p data-i18n="faq.browserAnswer">
-                Any recent browser. The Bluetooth link goes through the computer, not the browser.
-              </p>
-            </details>
-            <details>
-              <summary data-i18n="faq.internet">Do I need internet?</summary>
-              <p data-i18n="faq.internetAnswer">
-                Only to install it, update it or add add-ons. Races run without internet: everything stays on your
-                computer.
-              </p>
-            </details>
-            <details>
-              <summary data-i18n="faq.free">Is it really free?</summary>
-              <p data-i18n="faq.freeAnswer">
-                Yes: no account, no subscription, no ads. RaceHubOS is open source, under AGPL-3.0.
-              </p>
-            </details>
+            <div class="question-group">
+              <h3 data-i18n="faq.hardware">Hardware</h3>
+              <details>
+                <summary data-i18n="faq.bluetooth">Does my computer need Bluetooth?</summary>
+                <p data-i18n="faq.bluetoothAnswer">
+                  Yes: RaceHubOS talks to the AppConnect 30369 over Bluetooth Low Energy, from the computer. Most laptops
+                  have it built in.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.digital124">Does it work with the Digital 124?</summary>
+                <p data-i18n="faq.digital124Answer">
+                  Yes. The Digital 124 uses the same Control Unit 30352 and the same AppConnect 30369 as the 132.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.cars">How many cars can race?</summary>
+                <p data-i18n="faq.carsAnswer">
+                  Up to six at once, one per controller: as many as the Control Unit handles.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.simulator">Can I try it without a track?</summary>
+                <p data-i18n="faq.simulatorAnswer">Yes: the built-in simulator runs virtual cars, with no Control Unit.</p>
+              </details>
+            </div>
+            <div class="question-group">
+              <h3 data-i18n="faq.install">Installing</h3>
+              <details>
+                <summary data-i18n="faq.systems">Which computers does it run on?</summary>
+                <p data-i18n="faq.systemsAnswer">Windows, macOS and Linux. Windows and macOS have a one-click installer; on Linux, the macOS one does the same.</p>
+              </details>
+              <details>
+                <summary data-i18n="faq.browser">Which browser do I need?</summary>
+                <p data-i18n="faq.browserAnswer">
+                  Any recent browser. The Bluetooth link goes through the computer, not the browser.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.internet">Do I need internet?</summary>
+                <p data-i18n="faq.internetAnswer">
+                  Only to install it, update it or add add-ons. Races run without internet: everything stays on your
+                  computer.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.update">How do I update it?</summary>
+                <p data-i18n="faq.updateAnswer">From the app: Settings, Update, then Check. The database is backed up first, then the app restarts on its own.</p>
+              </details>
+            </div>
+            <div class="question-group">
+              <h3 data-i18n="faq.daily">Race after race</h3>
+              <details>
+                <summary data-i18n="faq.languages">Which languages?</summary>
+                <p data-i18n="faq.languagesAnswer">English, French and German, for the screens and the voice announcements.</p>
+              </details>
+              <details>
+                <summary data-i18n="faq.data">Where are my races kept?</summary>
+                <p data-i18n="faq.dataAnswer">In a database on your computer, backed up before each update. Statistics and records export to Excel.</p>
+              </details>
+              <details>
+                <summary data-i18n="faq.free">Is it really free?</summary>
+                <p data-i18n="faq.freeAnswer">
+                  Yes: no account, no subscription, no ads. RaceHubOS is open source, under AGPL-3.0.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.help">A bug, an idea?</summary>
+                <p data-i18n="faq.helpAnswerHtml">Open an issue on <a href="https://github.com/AnselmeSDR/RaceHubOS/issues">GitHub</a>: questions and suggestions are welcome too.</p>
+              </details>
+            </div>
           </div>
         </div>
       </section>

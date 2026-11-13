@@ -10,6 +10,7 @@ import { after, before, test } from 'node:test';
 import { LANGS, loadTexts } from '../scripts/texts.mjs';
 import {
   CHANGE_KINDS,
+  NEWS_VERSIONS,
   MAC_DOWNLOAD,
   MAC_INSTALLER,
   PAGES,
@@ -19,6 +20,7 @@ import {
   buildSite,
   readCatalog,
   readChangelog,
+  recentVersions,
   rootDir,
 } from '../scripts/build.mjs';
 
@@ -46,9 +48,6 @@ const plain = (html) =>
     .replaceAll('&amp;', '&')
     .replace(/\s+/g, ' ')
     .trim();
-
-/** A text with its values filled in. */
-const fill = (template, vars) => template.replace(/\{(\w+)\}/g, (_, name) => vars[name]);
 
 after(() => fs.rmSync(outDir, { recursive: true, force: true }));
 
@@ -164,20 +163,27 @@ test('each page lists the add-ons of the catalog the app installs from, in its l
   }
 });
 
-test('each page shows the changes of the version it offers, from the changelog, with their date', () => {
-  const { date, sections } = readChangelog(appVersion());
-  assert.match(date, /^\d{4}-\d{2}-\d{2}$/);
-  assert.ok(sections.some((section) => section.entries.length));
+test('each page shows the changes of the last versions, the one it offers first, with their date', () => {
+  const versions = recentVersions(appVersion(), NEWS_VERSIONS);
+  assert.equal(versions[0], appVersion());
+  assert.equal(versions.length, NEWS_VERSIONS);
   for (const lang of LANGS) {
     const news = built[lang].match(/<section class="news"[\s\S]*?<\/section>/)[0];
-    assert.ok(news.includes(`<time datetime="${date}">`), lang);
-    assert.ok(plain(news).includes(fill(texts[lang]['news.title'], { version: appVersion() })), lang);
-    for (const section of sections.filter((s) => s.entries.length)) {
-      assert.ok(plain(news).includes(texts[lang][CHANGE_KINDS[section.kind]]), `${lang}: ${section.kind}`);
-      for (const entry of section.entries) {
-        assert.ok(plain(news).includes(plain(entry.replaceAll('`', ''))), `${lang}: ${entry}`);
+    const releases = [...news.matchAll(/<article class="release">[\s\S]*?<\/article>/g)].map((m) => m[0]);
+    assert.equal(releases.length, NEWS_VERSIONS, lang);
+    versions.forEach((version, n) => {
+      const { date, sections } = readChangelog(version);
+      assert.match(date, /^\d{4}-\d{2}-\d{2}$/);
+      assert.ok(plain(releases[n]).startsWith(`Version ${version}`), `${lang}: ${version}`);
+      assert.ok(releases[n].includes(`<time datetime="${date}">`), `${lang}: ${version}`);
+      for (const section of sections.filter((s) => s.entries.length)) {
+        assert.ok(plain(releases[n]).includes(texts[lang][CHANGE_KINDS[section.kind]]), `${lang}: ${section.kind}`);
+        for (const entry of section.entries) {
+          assert.ok(plain(releases[n]).includes(plain(entry.replaceAll('`', ''))), `${lang}: ${entry}`);
+        }
       }
-    }
+    });
+    assert.ok(plain(news).includes(texts[lang]['news.title']), lang);
     // The notes are in English: the other pages say so
     assert.equal(news.includes(texts[lang]['news.english']), lang !== 'en', lang);
   }

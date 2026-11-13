@@ -71,6 +71,9 @@ export const PAGES = { en: '', fr: 'fr/', de: 'de/' };
 const LOCALES = { en: 'en_GB', fr: 'fr_FR', de: 'de_DE' };
 export const CHANGELOG_URL = 'https://github.com/AnselmeSDR/RaceHubOS/blob/main/CHANGELOG.md';
 /** The sections of a version in the changelog (Keep a Changelog), and the text that names each one. */
+/** How many versions "What's new" shows, the one offered first. */
+export const NEWS_VERSIONS = 5;
+
 export const CHANGE_KINDS = {
   Added: 'news.added',
   Changed: 'news.changed',
@@ -160,6 +163,15 @@ export function readChangelog(version) {
   return { date, sections };
 }
 
+/** `count` versions of the changelog from `version` down, in the order they are written. */
+export function recentVersions(version, count) {
+  const text = fs.readFileSync(path.join(rootDir, 'CHANGELOG.md'), 'utf-8');
+  const versions = [...text.matchAll(/^## \[(\d+\.\d+\.\d+)\]/gm)].map((m) => m[1]);
+  const start = versions.indexOf(version);
+  if (start < 0) throw new Error(`CHANGELOG.md has no section for ${version}`);
+  return versions.slice(start, start + count);
+}
+
 /** An entry of the changelog: its Markdown code, bold and links, the rest as plain text. */
 const markdown = (entry) =>
   escapeHtml(entry)
@@ -167,7 +179,8 @@ const markdown = (entry) =>
     .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
     .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2">$1</a>');
 
-function newsHtml(lang, version) {
+/** One version: its number, its date and its changes by section. */
+function releaseHtml(lang, version) {
   const { date, sections } = readChangelog(version);
   const day = new Intl.DateTimeFormat(lang, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(date));
   const changes = sections
@@ -177,11 +190,21 @@ function newsHtml(lang, version) {
       if (!name) throw new Error(`CHANGELOG.md: unknown section ${section.kind}`);
       const entries = section.entries.map((entry) => `<li>${markdown(entry)}</li>`).join('');
       // The changelog is written in English
-      return `<div class="change"><h3 data-i18n="${name}"></h3><ul lang="en">${entries}</ul></div>`;
+      return `<div class="change"><h4 data-i18n="${name}"></h4><ul lang="en">${entries}</ul></div>`;
     })
     .join('');
+  return `<article class="release"><h3>Version ${version} <time datetime="${date}">${day}</time></h3><div class="changes">${changes}</div></article>`;
+}
+
+/** The last versions, the one offered first; a note on the other pages: the changelog is written in English. */
+function newsHtml(lang, version) {
   const note = lang === 'en' ? '' : '<p class="muted" data-i18n="news.english"></p>';
-  return `<p class="when"><time datetime="${date}">${day}</time></p>${note}<div class="changes">${changes}</div>`;
+  return (
+    note +
+    recentVersions(version, NEWS_VERSIONS)
+      .map((each) => releaseHtml(lang, each))
+      .join('')
+  );
 }
 
 /** The links of a page to itself and to its versions in the other languages, for search engines and shares. */
