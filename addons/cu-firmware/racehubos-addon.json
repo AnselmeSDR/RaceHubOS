@@ -1,0 +1,12 @@
+{
+  "id": "cu-firmware",
+  "name": {
+    "de": "CU Firmware Werkstatt",
+    "en": "CU Firmware Workshop",
+    "fr": "Atelier firmware CU"
+  },
+  "version": "0.6.1",
+  "description": "CU HMF editor, BLE flash verification and recovery for hardware 5.",
+  "license": "AGPL-3.0-only",
+  "order": 200
+}
