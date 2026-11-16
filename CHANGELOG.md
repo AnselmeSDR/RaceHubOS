@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-11-14
+
+### Changed
+- Editing a championship opens the creation wizard: sessions that have run are shown as they ran and never change, only those to come are planned; a driver who raced and leaves keeps their results and is DNF in the sessions to come they were in, and can be brought back; resetting a session asks first, and in automatic mode resetting a qualifying also resets the races run from its ranking; the Drivers step is wider and its columns line up; in automatic mode each setting reads as a sentence with what it gives (“At most 4 drivers per qualif → 2 qualifs of 3 drivers”), free practices are as many as wanted and a driver who fits in none runs none; the manual columns are wider.
+
 ## [1.32.0] - 2026-11-12
 
 ### Changed
