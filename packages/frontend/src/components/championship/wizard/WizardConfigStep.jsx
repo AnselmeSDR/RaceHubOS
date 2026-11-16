@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChampionshipMode, SessionType } from '@racehubos/shared'
+import { ChampionshipMode, SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 import { ConfirmModal } from '../../ui/Modal'
 import WizardAutoConfig from './WizardAutoConfig'
 import WizardManualConfig from './WizardManualConfig'
@@ -14,14 +14,21 @@ const MODES = [
 /**
  * Settings and preview of the sessions together. Automatic by default; the manual mode starts from
  * what the automatic one dealt, and going back to automatic deals everything again once confirmed.
+ * When editing, the sessions that have started (`frozen`) stay as they ran: only those to come
+ * (`upcoming`) are planned, and going back to automatic deals only them again.
  */
 export default function WizardConfigStep({
   mode,
   config,
   participants,
+  qualifiers,
   practiceGroups,
   qualifGroups,
   plan,
+  frozen = [],
+  upcoming = [],
+  retired = [],
+  editing = false,
   onModeChange,
   onConfigChange,
   onPracticeGroupsChange,
@@ -31,9 +38,22 @@ export default function WizardConfigStep({
   const { t } = useTranslation('championships')
   const [confirming, setConfirming] = useState(false)
   const manual = mode === ChampionshipMode.MANUAL
+  const ranRaces = frozen.filter((s) => s.type === SessionType.RACE).length
   const counts = manual
     ? [SessionType.PRACTICE, SessionType.QUALIF, SessionType.RACE].map((type) => sessionsOfType(plan, type).length)
-    : [practiceGroups.length, qualifGroups.length, raceGroups(participants, config.driversPerRace).length]
+    : [
+        practiceGroups.length,
+        qualifGroups.length,
+        Math.max(0, raceGroups(participants, config.driversPerRace).length - ranRaces),
+      ]
+  // The sessions that have started, by their label: EL1, Q1…
+  const ranLabels = frozen
+    .map(
+      (session, i) =>
+        `${t(sessionTypeAbbrKey(session.type))}${frozen.slice(0, i + 1).filter((s) => s.type === session.type).length}`
+    )
+    .join(', ')
+  const shared = { frozen, upcoming, retired }
 
   function pick(next) {
     if (next === mode) return
@@ -64,11 +84,14 @@ export default function WizardConfigStep({
             </button>
           ))}
         </div>
-        <p className="flex-1 min-w-60 text-xs text-muted-foreground">{t(MODES.find((m) => m.mode === mode).hintKey)}</p>
+        <p className="flex-1 min-w-60 text-xs text-muted-foreground">
+          {editing ? t('wizard.modeEditHint') : t(MODES.find((m) => m.mode === mode).hintKey)}
+        </p>
       </div>
 
       {manual ? (
         <WizardManualConfig
+          {...shared}
           config={config}
           participants={participants}
           plan={plan}
@@ -77,8 +100,10 @@ export default function WizardConfigStep({
         />
       ) : (
         <WizardAutoConfig
+          {...shared}
           config={config}
           participants={participants}
+          qualifiers={qualifiers}
           practiceGroups={practiceGroups}
           qualifGroups={qualifGroups}
           onConfigChange={onConfigChange}
@@ -88,7 +113,7 @@ export default function WizardConfigStep({
       )}
 
       <p data-testid="championship-wizard-total" className="text-sm text-muted-foreground">
-        {t('wizard.totalSummary', {
+        {t(editing ? 'wizard.upcomingSummary' : 'wizard.totalSummary', {
           total: counts[0] + counts[1] + counts[2],
           groups: [
             counts[0] > 0 && t('wizard.groupPractices', { count: counts[0] }),
@@ -108,7 +133,11 @@ export default function WizardConfigStep({
           onModeChange(ChampionshipMode.AUTO)
         }}
         title={t('wizard.backToAutoTitle')}
-        message={t('wizard.backToAuto')}
+        message={
+          ranLabels
+            ? t('wizard.backToAutoEditing', { sessions: ranLabels, count: frozen.length })
+            : t('wizard.backToAuto')
+        }
         confirmLabel={t('wizard.backToAutoAction')}
         variant="warning"
       />

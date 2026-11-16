@@ -457,18 +457,17 @@ describe('the progress of a running session', () => {
 })
 
 describe('a finished session', () => {
-  test('its podium, with its drivers, cars and figures', () => {
-    show(
-      newSession({
-        status: SessionStatus.FINISHED,
-        startedAt: '2026-01-01T10:00:00Z',
-        finishedAt: '2026-01-01T10:05:30Z',
-        finishingAt: '2026-01-01T10:05:00Z',
-        maxDuration: 300000,
-        maxLaps: null,
-        gracePeriod: 30000,
-      })
-    )
+  test('its podium, with its drivers, cars and figures; a reset only once confirmed', () => {
+    const finished = newSession({
+      status: SessionStatus.FINISHED,
+      startedAt: '2026-01-01T10:00:00Z',
+      finishedAt: '2026-01-01T10:05:30Z',
+      finishingAt: '2026-01-01T10:05:00Z',
+      maxDuration: 300000,
+      maxLaps: null,
+      gracePeriod: 30000,
+    })
+    show(finished, { sessions: [finished] })
     expect(received.Podium.sessionType).toBe(SessionType.RACE)
     expect(received.Podium.drivers.map((d) => [d.driver.name, d.car.model])).toEqual([
       ['Ana', 'GT'],
@@ -481,9 +480,36 @@ describe('a finished session', () => {
       gracePeriod: 30000,
       gracePeriodUsed: true,
     })
-    expect(button('Reset')).toBeInTheDocument()
     fireEvent.click(button('Reset'))
+    expect(props.onReset).not.toHaveBeenCalled()
+    expect(screen.getByText('Reset R1?')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'R1 is to come again, with the same grid. Its laps and ranking are erased; the other sessions do not change.'
+      )
+    ).toBeInTheDocument()
+    fireEvent.click(button('Cancel'))
+    expect(screen.queryByText('Reset R1?')).not.toBeInTheDocument()
+    fireEvent.click(button('Reset'))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reset' }).at(-1))
     expect(props.onReset).toHaveBeenCalledWith('s1')
+  })
+
+  test('in an automatic championship, resetting a qualif takes along the races that ran from it', () => {
+    const qualif = newSession({ type: SessionType.QUALIF, status: SessionStatus.FINISHED, order: 0 })
+    const ran = newSession({ id: 'r1', status: SessionStatus.FINISHED, order: 1 })
+    const toCome = newSession({ id: 'r2', status: SessionStatus.DRAFT, order: 2 })
+    show(qualif, { sessions: [qualif, ran, toCome], autoMode: true })
+
+    fireEvent.click(button('Reset'))
+    expect(screen.getByText(/R1, already run with this ranking, is reset too/)).toBeInTheDocument()
+    fireEvent.click(button('Reset Q1, R1'))
+    expect(props.onReset).toHaveBeenCalledWith('s1')
+  })
+
+  test('a driver who left the championship after racing shows as DNF', () => {
+    show(newSession({ withdrawals: [{ driverId: 'd3', driver: { name: 'Cid' } }] }))
+    expect(screen.getByTestId('session-withdrawn')).toHaveTextContent('Withdrawn from the championship, DNF: Cid')
   })
 
   test('no podium for balancing, nor without drivers; no reset without the action', () => {

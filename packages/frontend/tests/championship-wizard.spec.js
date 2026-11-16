@@ -40,28 +40,34 @@ test('manual championship: cars from the profiles, drivers and sessions dragged'
   await expect(modal.getByText('★ Profil')).toHaveCount(2)
   await modal.getByRole('button', { name: 'Suivant', exact: true }).click()
 
-  // Three drivers fit one session of each, but Ana and Cid share the BMW: two of each
+  // Three drivers fit one session of each, but Ana and Cid share the BMW: two of each, but one practice
+  // as wanted, Cid without one until a second
   const practices = modal.getByTestId('championship-wizard-practice')
   const groups = modal.getByTestId('championship-wizard-qualif-group')
+  const noPractice = modal.getByTestId('championship-wizard-no-practice')
+  await expect(practices).toHaveCount(1)
+  await expect(noPractice).toContainText(`Cid ${run}`)
+  await modal.getByRole('spinbutton', { name: /en tout/ }).fill('2')
   await expect(practices).toHaveCount(2)
+  await expect(noPractice).toHaveCount(0)
   await expect(groups).toHaveCount(2)
   for (const group of [...(await practices.all()), ...(await groups.all())]) {
     await expect(group.getByText(/^(Ana|Cid) /)).toHaveCount(1)
   }
   await expect(modal.getByTestId('championship-wizard-race-group')).toHaveCount(2)
 
-  // Ben dragged from EL1 to EL2: EL2 shows where he lands while hovered
-  await practices.nth(0).getByText(`Ben ${run}`).hover()
+  // Ben dragged from EL2 to EL1: EL1 shows where he lands while hovered
+  await practices.nth(1).getByText(`Ben ${run}`).hover()
   await page.mouse.down()
-  const fp2 = practices.nth(1)
-  const box = await fp2.boundingBox()
+  const fp1 = practices.nth(0)
+  const box = await fp1.boundingBox()
   // Moved by steps: a single jump fires no dragover
   await page.mouse.move(box.x + 20, box.y + 12, { steps: 5 })
   await page.mouse.move(box.x + 40, box.y + 14, { steps: 5 })
-  await expect(fp2.getByTestId('wizard-drop-ghost')).toHaveText(`+Ben ${run}`)
+  await expect(fp1.getByTestId('wizard-drop-ghost')).toHaveText(`+Ben ${run}`)
   await page.mouse.up()
-  await expect(fp2.getByTestId('wizard-driver')).toHaveCount(2)
-  await expect(fp2.getByTestId('wizard-drop-ghost')).toHaveCount(0)
+  await expect(fp1.getByTestId('wizard-driver')).toHaveCount(2)
+  await expect(fp1.getByTestId('wizard-drop-ghost')).toHaveCount(0)
 
   await modal.getByRole('radio', { name: 'Manuel' }).click()
   const lanes = modal.getByTestId('championship-wizard-session')
@@ -84,7 +90,7 @@ test('manual championship: cars from the profiles, drivers and sessions dragged'
   expect(detail.mode).toBe('manual')
   const sessions = detail.sessions.toSorted((a, b) => a.order - b.order)
   expect(sessions.map((s) => s.type)).toEqual(['practice', 'practice', 'race', 'qualif', 'qualif', 'race'])
-  expect(sessions.map((s) => s.drivers.length)).toEqual([1, 2, 2, 1, 1, 1])
+  expect(sessions.map((s) => s.drivers.length)).toEqual([2, 1, 2, 1, 1, 1])
   // Each driver runs the car of their profile, Ben none
   const carOf = Object.fromEntries(detail.participants.map((p) => [p.driverId, p.carId]))
   expect(carOf).toEqual({ [ana.id]: 'e2e-c1', [ben.id]: null, [cid.id]: 'e2e-c1' })

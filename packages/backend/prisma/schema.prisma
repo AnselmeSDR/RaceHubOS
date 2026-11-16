@@ -22,6 +22,7 @@ model Driver {
   divisions         DriverDivision[]
   laps              Lap[]
   sessions          SessionDriver[]
+  withdrawals       SessionWithdrawal[]
   controllerConfigs      ControllerConfig[]
   trackRecords           TrackRecord[]
   championshipParticipants ChampionshipParticipant[]
@@ -62,6 +63,7 @@ model Car {
   updatedAt         DateTime           @updatedAt
   laps                     Lap[]
   sessions                 SessionDriver[]
+  withdrawals              SessionWithdrawal[]
   controllerConfigs        ControllerConfig[]
   trackRecords             TrackRecord[]
   extras                   CarExtra[]
@@ -197,6 +199,7 @@ model Session {
   championship   Championship?   @relation(fields: [championshipId], references: [id])
   track          Track           @relation(fields: [trackId], references: [id])
   drivers        SessionDriver[]
+  withdrawals    SessionWithdrawal[]
   trackRecords   TrackRecord[]
   extras         SessionExtra[]
 }
@@ -222,6 +225,20 @@ model SessionDriver {
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, controller])
+}
+
+// A championship participant who left after racing: DNF in this session they were entered in
+model SessionWithdrawal {
+  id        String   @id @default(cuid())
+  sessionId String
+  driverId  String
+  carId     String?
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  car       Car?     @relation(fields: [carId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, driverId])
 }
 
 model Lap {

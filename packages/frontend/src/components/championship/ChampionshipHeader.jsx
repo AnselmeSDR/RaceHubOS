@@ -18,6 +18,7 @@ import { SESSION_COLORS, STATUS_DOTS } from '../../lib/colors'
 import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 import ExportButton from '../ui/ExportButton'
 import { DivisionBadges } from '../division/DivisionBadge'
+import { byRunningOrder } from './session/progress'
 
 const TYPE_STYLE = {
   [SessionType.PRACTICE]: {
@@ -46,9 +47,7 @@ export default function ChampionshipHeader({
 }) {
   const { t } = useTranslation('championships')
   const getSessionLabel = (session) => {
-    const sameType = sessions
-      .filter((s) => s.type === session.type)
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    const sameType = sessions.filter((s) => s.type === session.type).sort(byRunningOrder)
     const index = sameType.findIndex((s) => s.id === session.id) + 1
     return `${t(sessionTypeAbbrKey(session.type))}${index}`
   }
@@ -61,10 +60,7 @@ export default function ChampionshipHeader({
   const canFinish = allSessionsFinished && !isFinished
 
   // The running order, as set in the configuration; the oldest first on a tie
-  const sortedSessions = [...sessions].sort((a, b) => {
-    if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0)
-    return new Date(a.createdAt) - new Date(b.createdAt)
-  })
+  const sortedSessions = [...sessions].sort(byRunningOrder)
 
   return (
     <div className="border-b px-4 py-2.5 flex items-center justify-between gap-4">

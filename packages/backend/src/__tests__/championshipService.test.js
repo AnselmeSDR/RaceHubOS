@@ -237,6 +237,24 @@ describe('assigning the races from the qualifying results', () => {
     ]);
   });
 
+  test('a race that has started keeps its grid; its drivers, and those who left, race no other', async () => {
+    const championship = await autoChampionship(5, { driversPerQualif: 5, driversPerRace: 2 });
+    await service.generateAutoSessions(championship.id, NAMES);
+    const [q1, race1, race2, race3] = await sessionsOf(championship.id);
+    await finishQualif(q1, { 0: 7000, 1: 7100, 2: 7200, 3: 7300, 4: 7400 });
+    await service.assignDriversToRaces(championship.id);
+    await prisma.session.update({ where: { id: race1.id }, data: { status: SessionStatus.FINISHED } });
+    await prisma.championshipParticipant.updateMany({
+      where: { driverId: drivers[3].id },
+      data: { deletedAt: new Date() },
+    });
+
+    await service.assignDriversToRaces(championship.id);
+    const races = (await sessionsOf(championship.id)).filter((s) => s.type === SessionType.RACE);
+    expect(races.map((r) => r.id)).toEqual([race1.id, race2.id, race3.id]);
+    expect(races.map((r) => namesOf(r.drivers))).toEqual([['D0', 'D1'], ['D2', 'D4'], []]);
+  });
+
   test('two drivers of the same car are split: the slower one swaps with the nearest race', async () => {
     const championship = await autoChampionship(4, { driversPerQualif: 4, driversPerRace: 2 });
     const cars = await giveCars(championship, { 0: 'Audi', 1: 'Audi', 2: 'BMW' });
@@ -373,5 +391,32 @@ describe('reacting to the sessions', () => {
     expect(emitted('championship:races_assigned')).toEqual([
       { championshipId: championship.id, cleared: true, timestamp: expect.any(String) },
     ]);
+  });
+  test('resetting a qualifying resets the races that ran from its ranking: back to draft, laps hidden', async () => {
+    const { championship, q1, q2, race } = await playedQualifs();
+    await finishQualif(q1, { 0: 9000 });
+    await finishQualif(q2, { 1: 8000 });
+    await service.assignDriversToRaces(championship.id);
+    await prisma.session.update({ where: { id: race.id }, data: { status: SessionStatus.FINISHED } });
+    const car = await prisma.car.create({ data: { brand: 'Ford', model: 'GT' } });
+    await prisma.lap.create({
+      data: {
+        sessionId: race.id,
+        trackId: track.id,
+        driverId: drivers[0].id,
+        carId: car.id,
+        controller: 0,
+        phase: SessionType.RACE,
+        lapNumber: 1,
+        lapTime: 9000,
+      },
+    });
+
+    await service.onStandingsChanged(championship.id, q1.id, 'session_reset');
+
+    const after = await prisma.session.findUnique({ where: { id: race.id } });
+    expect(after.status).toBe(SessionStatus.DRAFT);
+    expect(await prisma.lap.count({ where: { sessionId: race.id, deletedAt: null } })).toBe(0);
+    expect(await prisma.sessionDriver.count({ where: { sessionId: race.id } })).toBe(0);
   });
 });

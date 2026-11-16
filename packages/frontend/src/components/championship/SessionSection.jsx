@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle, Flag } from 'lucide-react'
-import { SessionStatus, SessionType } from '@racehubos/shared'
+import { AlertTriangle, Flag, UserMinus } from 'lucide-react'
+import { isSessionUnderway, SessionStatus, SessionType } from '@racehubos/shared'
 import Podium from '@/components/race/Podium'
 import { StartLights } from '@/components/ui'
+import { ConfirmModal } from '../ui/Modal'
 import { useDevice } from '@/context/DeviceContext'
 import { useSession } from '@/context/SessionContext'
 import SessionHeader from './session/SessionHeader'
@@ -18,6 +20,32 @@ import { lapsProgressOf, sessionLabelOf, timeProgressOf, timelineSegments } from
 function practiceOf(session, sessions) {
   if (session.type === SessionType.PRACTICE || !session.championshipId) return null
   return sessions.find((s) => s.type === SessionType.PRACTICE && s.drivers?.length > 0) ?? null
+}
+
+/**
+ * What resetting `session` erases, said before it is done. In an automatic championship the races
+ * come from the qualifying ranking: a qualif takes along the races that ran from it.
+ */
+function resetWarning(session, sessions, autoMode, t) {
+  const label = sessionLabelOf(session, sessions, t)
+  const races =
+    autoMode && session.type === SessionType.QUALIF
+      ? sessions.filter((s) => s.type === SessionType.RACE && isSessionUnderway(s.status))
+      : []
+  if (races.length) {
+    const names = races.map((race) => sessionLabelOf(race, sessions, t)).join(', ')
+    return {
+      title: t('sessionSection.resetTitle', { session: label }),
+      message: t('sessionSection.resetCascade', { session: label, races: names, count: races.length }),
+      action: t('sessionSection.resetWith', { sessions: `${label}, ${names}` }),
+    }
+  }
+  const key = session.type === SessionType.PRACTICE ? 'sessionSection.resetPractice' : 'sessionSection.resetOne'
+  return {
+    title: t('sessionSection.resetTitle', { session: label }),
+    message: t(key, { session: label }),
+    action: t('common:reset'),
+  }
 }
 
 /** What the CU and the session allow now, from the session's status and the CU's start lights. */
@@ -62,6 +90,7 @@ export default function SessionSection({
   const { t } = useTranslation('championships')
   const { cuStatus, socketConnected, connected: deviceConnected } = useDevice()
   const live = useSession()
+  const [confirmingReset, setConfirmingReset] = useState(false)
 
   if (!session) {
     return (
@@ -106,6 +135,8 @@ export default function SessionSection({
   const copyPractice = () =>
     saveEntries(entriesPayload(controllerConfigsOf(practice.drivers)), 'Failed to copy from practice:')
   const reset = onReset ? () => onReset(session.id) : undefined
+  const warning = confirmingReset ? resetWarning(session, sessions, autoMode, t) : null
+  const withdrawn = (session.withdrawals ?? []).map((w) => w.driver?.name).filter(Boolean)
 
   return (
     <div data-testid="session-section" className="bg-card rounded-xl border border-border overflow-hidden">
@@ -176,6 +207,16 @@ export default function SessionSection({
         </div>
       )}
 
+      {withdrawn.length > 0 && (
+        <div
+          data-testid="session-withdrawn"
+          className="px-4 py-2 border-b border-border flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <UserMinus className="size-4 text-destructive" />
+          {t('sessionSection.withdrawn', { names: withdrawn.join(', ') })}
+        </div>
+      )}
+
       {!socketConnected && state.isActive && (
         <div className="px-4 py-3 bg-red-500/10 border-t border-red-500/30 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -195,10 +236,22 @@ export default function SessionSection({
         onPause={onPause}
         onResume={onResume}
         onStop={onStop}
-        onReset={reset}
+        onReset={reset && (() => setConfirmingReset(true))}
       />
 
       {state.isActive && <StartLights onCancel={reset} />}
+
+      <ConfirmModal
+        open={!!warning}
+        onClose={() => setConfirmingReset(false)}
+        onConfirm={() => {
+          setConfirmingReset(false)
+          reset()
+        }}
+        title={warning?.title}
+        message={warning?.message}
+        confirmLabel={warning?.action}
+      />
     </div>
   )
 }

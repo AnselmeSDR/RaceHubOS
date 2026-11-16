@@ -1,7 +1,7 @@
 import express from 'express';
 import { attachExtras } from '../addons/extras.js';
 import { getReferenceDriver } from '../lib/referenceDriver.js';
-import { SessionType } from '@racehubos/shared';
+import { isSessionUnderway, SessionType } from '@racehubos/shared';
 import { idsFromQuery, sendWorkbook, sessionWorkbook, sessionsWorkbook } from '../lib/exportQueries.js';
 import { purgeSession, restoreSession } from '../lib/softDelete.js';
 import { ACTIONS, applyTransition, statusError, transitionError } from '../lib/sessions/lifecycle.js';
@@ -119,6 +119,13 @@ const EDITABLE = {
   championshipId: (id) => (id === '' ? null : id),
 };
 
+/** A championship session that has started never changes again: only its reset reopens it. */
+function refuseUnderway(session) {
+  if (session.championshipId && isSessionUnderway(session.status)) {
+    throw new HttpError(409, 'A championship session that has started no longer changes');
+  }
+}
+
 /** A track or championship that doesn't exist is a 400, not a server failure. */
 function refuseBadLink(error) {
   if (error.code === 'P2003') throw new HttpError(400, 'Invalid trackId or championshipId');
@@ -128,6 +135,9 @@ function refuseBadLink(error) {
 router.put(
   '/:id',
   route(null, async (req, res) => {
+    const current = await findSession(req.params.id);
+    if (!current) return notFound(res);
+    refuseUnderway(current);
     const session = await prisma()
       .session.update({ where: { id: req.params.id }, data: changesFrom(req.body, EDITABLE), include: SESSION_INCLUDE })
       .catch(refuseBadLink);
@@ -183,6 +193,7 @@ router.put(
     if (!Array.isArray(drivers)) return res.status(400).json({ success: false, error: 'drivers must be an array' });
     const session = await findSession(id);
     if (!session) return notFound(res);
+    refuseUnderway(session);
 
     const reference = session.type === SessionType.BALANCING ? await getReferenceDriver(prisma()) : null;
     await prisma().sessionDriver.deleteMany({ where: { sessionId: id } });
@@ -231,7 +242,8 @@ for (const [action, { from, run, refusal, message }] of Object.entries(ACTIONS))
   );
 }
 
-// POST /api/sessions/:id/reset - back to ready: practice laps hidden (kept for stats), others erased
+// POST /api/sessions/:id/reset - back to draft, its laps hidden (practice ones still count in the stats);
+// in an automatic championship a qualif takes along the races that ran from its ranking
 router.post(
   '/:id/reset',
   route(null, async (req, res) => {

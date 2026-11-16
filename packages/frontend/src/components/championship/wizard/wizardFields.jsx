@@ -24,6 +24,39 @@ export function CountField({ label, hint, value, min, max, onChange }) {
   )
 }
 
+// Where the number goes in a sentence: a character no translation holds
+const SLOT = '\u2063'
+
+/**
+ * A number set inside the sentence that says what it counts: `text` translated with `{{n}}` where
+ * the number goes (its plural follows the number), `result` under it.
+ */
+export function SentenceCount({ text, value, min, max, onChange, result }) {
+  const { t } = useTranslation('championships')
+  const [before, after = ''] = t(text, { count: value, n: SLOT }).split(SLOT)
+  return (
+    <div className="space-y-1">
+      <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-medium">
+        {before.trim() && <span>{before.trim()}</span>}
+        <Input
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => onChange(clampCount(e.target.value, min, max))}
+          className="w-14 h-7 text-center"
+        />
+        {after.trim() && <span>{after.trim()}</span>}
+      </label>
+      {result && (
+        <p className="text-xs text-muted-foreground">
+          → <span className="font-semibold text-foreground">{result}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** Why a drop was refused, read out as it appears. */
 export function Refusal({ message }) {
   const { t } = useTranslation('championships')

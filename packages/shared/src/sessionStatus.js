@@ -20,3 +20,9 @@ export const RUNNING_SESSION_STATUSES = Object.freeze([
 export function isSessionStatus(value) {
   return SESSION_STATUSES.includes(value);
 }
+
+/** Les sessions pas encore lancées : leur grille, leurs limites et leur place se changent encore. */
+export const UPCOMING_SESSION_STATUSES = Object.freeze([SessionStatus.DRAFT, SessionStatus.READY]);
+
+/** Une session lancée, en cours ou terminée : elle ne change plus, sauf par sa réinitialisation. */
+export const isSessionUnderway = (status) => !UPCOMING_SESSION_STATUSES.includes(status);

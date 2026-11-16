@@ -6,14 +6,8 @@ import { championshipWorkbook, championshipsWorkbook, idsFromQuery, sendWorkbook
 import { purgeChampionship, restoreChampionship, softDeleteChampionship } from '../lib/softDelete.js';
 import { DETAIL_INCLUDE, LIST_INCLUDE, SAVED_INCLUDE } from '../lib/championships/includes.js';
 import { isComputedSort, listWhere, sortComputed } from '../lib/championships/list.js';
-import {
-  hasStartedQualif,
-  lockedDriverIds,
-  newChampionshipError,
-  participantCars,
-  participantsError,
-  setParticipants,
-} from '../lib/championships/participants.js';
+import { applyEdit, editError } from '../lib/championships/edit.js';
+import { newChampionshipError, participantCars, setParticipants } from '../lib/championships/participants.js';
 import { createPlannedSessions, createPractices } from '../lib/championships/plan.js';
 import { championshipResults } from '../lib/championships/results.js';
 import { championshipStandings, standingsInclude, STANDINGS_TYPES } from '../lib/championships/standings.js';
@@ -227,37 +221,30 @@ router.get(
   })
 );
 
-// PUT /api/championships/:id/participants - an automatic championship's drivers, in order
+// PUT /api/championships/:id/plan - the championship edited at once: name, track while no session
+// ran, divisions, line-up, mode, limits and the sessions to come; a session that has started never changes
 router.put(
-  '/:id/participants',
-  route('Failed to update participants', async (req, res) => {
+  '/:id/plan',
+  route('Failed to update championship', async (req, res) => {
     const { id } = req.params;
-    const { participants, sessionNames } = req.body;
-    const bad = (error) => res.status(400).json({ success: false, error });
-
+    const active = { where: { deletedAt: null } };
     const championship = await prisma.championship.findUnique({
       where: { id, deletedAt: null },
-      include: { sessions: { where: { deletedAt: null } } },
+      include: { participants: active, sessions: { ...active, include: { drivers: active } } },
     });
     if (!championship) return notFound(res);
-    if (championship.mode !== ChampionshipMode.AUTO) return bad('Only auto championships support participants');
-    const error = await participantsError(prisma, participants);
-    if (error) return bad(error);
-
-    const driverIds = participants.map((p) => p.driverId);
-    const started = hasStartedQualif(championship.sessions);
-    if (started) {
-      const locked = await lockedDriverIds(prisma, championship.sessions);
-      if ([...locked].some((driverId) => !driverIds.includes(driverId))) {
-        return bad('Cannot remove driver who already participated in a qualif');
-      }
+    if (championship.status === ChampionshipStatus.FINISHED) {
+      return res.status(409).json({ success: false, error: 'A finished championship no longer changes' });
     }
+    const error = await editError(prisma, championship, req.body);
+    if (error) return res.status(400).json({ success: false, error });
+    const divisionIds = await checkDivisions(prisma, 'championship', req.body.divisionIds);
 
-    await setParticipants(prisma, id, participants);
-    // Before any qualif the sessions are regenerated; afterwards a newcomer needs a qualif added by hand
-    if (!started) await championshipService.generateAutoSessions(id, sessionNames);
+    await setDivisions(prisma, 'championship', id, divisionIds);
+    if (await applyEdit(prisma, championship, req.body)) await championshipService.assignDriversToRaces(id);
+    championshipService.emitStandingsChanged(id, null, 'championship_edited');
 
-    const saved = await prisma.championship.findUnique({ where: { id }, include: SAVED_INCLUDE });
+    const saved = await prisma.championship.findUnique({ where: { id }, include: { track: true, ...SAVED_INCLUDE } });
     res.json({ success: true, data: plainDivisions(saved) });
   })
 );

@@ -21,10 +21,10 @@ export async function participantsError(prisma, participants) {
   return null;
 }
 
-const groupSizeOk = (size) => size >= MIN_DRIVERS && size <= MAX_DRIVERS;
+export const groupSizeOk = (size) => size >= MIN_DRIVERS && size <= MAX_DRIVERS;
 
 /** Why the participants' cars can't be used, or null: each one set must exist. */
-async function carsError(prisma, participants) {
+export async function carsError(prisma, participants) {
   const carIds = [...new Set(participants.map((p) => p.carId).filter(Boolean))];
   const found = await prisma.car.count({ where: { id: { in: carIds }, deletedAt: null } });
   return found === carIds.length ? null : 'One or more cars not found';
@@ -44,9 +44,10 @@ export async function participantCars(prisma, championshipId) {
 
 /**
  * Why groups arranged by hand (`field` of the body) don't fit, or null: `count` groups of at most
- * `perGroup` drivers, none empty unless `emptyOk`, every participant once, no car twice in one.
+ * `perGroup` drivers, none empty unless `emptyOk`, every participant once (at most once unless
+ * `everyone`), no car twice in one.
  */
-function groupsError(field, groups, { participants, count, perGroup, emptyOk = false }) {
+export function groupsError(field, groups, { participants, count, perGroup, emptyOk = false, everyone = true }) {
   const carOf = (driverId) => carsByDriver(participants).get(driverId);
   const min = emptyOk ? 0 : 1;
   const valid =
@@ -56,9 +57,10 @@ function groupsError(field, groups, { participants, count, perGroup, emptyOk = f
   if (!valid) return `${field} must be ${count} groups of ${min} to ${perGroup} drivers`;
   const placed = groups.flat();
   const ids = new Set(participants.map((p) => p.driverId));
-  if (placed.length !== ids.size || !placed.every((id) => ids.has(id)) || new Set(placed).size !== ids.size) {
-    return `${field} must hold every participant once`;
+  if (!placed.every((id) => ids.has(id)) || new Set(placed).size !== placed.length) {
+    return `${field} must hold participants at most once`;
   }
+  if (everyone && placed.length !== ids.size) return `${field} must hold every participant once`;
   if (groups.some((group) => group.some((id) => carTaken(group, id, carOf)))) return 'Same car twice in a session';
   return null;
 }
@@ -66,12 +68,18 @@ function groupsError(field, groups, { participants, count, perGroup, emptyOk = f
 /**
  * Why the groups of an automatic championship arranged by hand don't fit, or null: the qualifying
  * groups as many as the size and the shared cars give, none empty; the free practices one group
- * each, of up to six drivers, maybe empty.
+ * each, of up to six drivers, maybe empty: who doesn't fit runs no practice.
  */
 function autoGroupsError({ participants, driversPerQualif, qualifGroups, practiceGroups, practiceCount = 1 }) {
   const qualifs = { participants, perGroup: driversPerQualif };
   qualifs.count = groupCount(participants, driversPerQualif, (p) => p.carId || null);
-  const practices = { participants, count: practiceCount, perGroup: MAX_SESSION_DRIVERS, emptyOk: true };
+  const practices = {
+    participants,
+    count: practiceCount,
+    perGroup: MAX_SESSION_DRIVERS,
+    emptyOk: true,
+    everyone: false,
+  };
   return (
     (qualifGroups !== undefined && groupsError('qualifGroups', qualifGroups, qualifs)) ||
     (practiceGroups !== undefined && groupsError('practiceGroups', practiceGroups, practices)) ||
@@ -86,7 +94,7 @@ const controllerOk = (controller) =>
  * Why the sessions of a championship planned by hand can't be created, or null: known types, at
  * most one driver per controller, participants only, once each, never the same car twice.
  */
-function sessionsPlanError({ sessions, participants = [] }) {
+export function sessionsPlanError({ sessions, participants = [] }) {
   if (!Array.isArray(sessions)) return 'sessions must be a list';
   const cars = carsByDriver(participants);
   for (const session of sessions) {
@@ -104,7 +112,7 @@ function sessionsPlanError({ sessions, participants = [] }) {
   return null;
 }
 
-const MAX_PRACTICES = 20;
+export const MAX_PRACTICES = 20;
 // Unset means the one free practice every championship on a track gets
 const practiceCountOk = (count) =>
   count === undefined || (Number.isInteger(count) && count >= 0 && count <= MAX_PRACTICES);
@@ -130,20 +138,6 @@ export async function newChampionshipError(prisma, body) {
   if (!groupSizeOk(driversPerQualif)) return 'driversPerQualif must be between 2 and 6';
   if (!groupSizeOk(driversPerRace)) return 'driversPerRace must be between 2 and 6';
   return autoGroupsError(body);
-}
-
-const startedQualif = (session) => session.type === SessionType.QUALIF && session.status !== SessionStatus.DRAFT;
-
-/** Whether one of the championship's qualifs has left the draft state. */
-export const hasStartedQualif = (sessions) => sessions.some(startedQualif);
-
-/** The drivers entered in a qualif that has started: they can no longer leave the championship. */
-export async function lockedDriverIds(prisma, sessions) {
-  const entries = await prisma.sessionDriver.findMany({
-    where: { sessionId: { in: sessions.filter(startedQualif).map((s) => s.id) }, deletedAt: null },
-    select: { driverId: true },
-  });
-  return new Set(entries.map((e) => e.driverId).filter(Boolean));
 }
 
 /**

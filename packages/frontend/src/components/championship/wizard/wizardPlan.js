@@ -2,10 +2,10 @@ import { Settings, Trophy, Users } from 'lucide-react'
 import {
   carTaken,
   ChampionshipMode,
-  dealGroups,
   distributeEvenly,
   distributeSequential,
   groupCount,
+  isSessionUnderway,
   MAX_SESSION_DRIVERS,
   SessionType,
 } from '@racehubos/shared'
@@ -49,15 +49,23 @@ export const carLookup = (participants) => {
 const carOfEntry = (p) => p.carId || null
 
 /**
- * How many free practices run: as many as `wanted`, or more when needed for every participant to
- * get a controller, cars apart; none when none is wanted.
+ * The participants dealt like cards into `count` free practices, each to the emptiest that has a
+ * controller and not their car: driver ids. Who fits nowhere runs no practice.
  */
-export const practiceCountFor = (participants, wanted) =>
-  wanted ? Math.max(wanted, groupCount(participants, MAX_SESSION_DRIVERS, carOfEntry)) : 0
+export function dealtPracticeGroups(participants, count) {
+  const groups = Array.from({ length: count }, () => [])
+  for (const p of participants) {
+    const open = groups.filter((group) => group.length < MAX_SESSION_DRIVERS && !carTaken(group, p, carOfEntry))
+    open.reduce((emptiest, group) => (group.length < emptiest.length ? group : emptiest), open[0])?.push(p)
+  }
+  return groups.map((group) => group.map((p) => p.driverId))
+}
 
-/** The participants dealt like cards into `count` free practices, cars apart: driver ids. */
-export const dealtPracticeGroups = (participants, count) =>
-  dealGroups(participants, count, carOfEntry).map((group) => group.map((p) => p.driverId))
+/** The participants in none of `groups`. */
+export const leftOut = (groups, participants) => {
+  const placed = new Set(groups.flat())
+  return participants.filter((p) => !placed.has(p.driverId))
+}
 
 /** Qualifying groups dealt like cards, two drivers of the same car never together: driver ids. */
 export const dealtQualifGroups = (participants, perGroup) =>
@@ -82,15 +90,16 @@ export function raceGroups(participants, perGroup) {
 }
 
 /**
- * Moves a driver to group `to`: `{ groups }`, or `{ refused }` when the group is full (`full`),
- * already runs the driver's car (`car`, with the driver it clashes with in `with`), or, with
- * `keepOne` (qualifying), the driver is the last of their own group (`last`).
+ * Moves a driver to group `to`, or out of every group (`to` null): `{ groups }`, or `{ refused }`
+ * when the group is full (`full`), already runs the driver's car (`car`, with the driver it clashes
+ * with in `with`), or, with `keepOne` (qualifying), the driver is the last of their own group (`last`).
  */
 export function moveInGroups(groups, driverId, to, perGroup, carOf, { keepOne = true } = {}) {
   const from = groups.findIndex((group) => group.includes(driverId))
-  if (from === to) return { groups }
+  if (from === (to ?? -1)) return { groups }
+  if (to === null) return { groups: groups.map((group) => group.filter((id) => id !== driverId)) }
   if (groups[to].length >= perGroup) return { refused: 'full' }
-  if (keepOne && groups[from].length === 1) return { refused: 'last' }
+  if (keepOne && groups[from]?.length === 1) return { refused: 'last' }
   const clash = clashIn(groups[to], driverId, carOf)
   if (clash) return { refused: 'car', with: clash }
   return {
@@ -130,8 +139,8 @@ const newSession = (type, ids = []) => ({
  * groups, and the races sliced from the participants in their order, cars kept apart (a clash
  * nobody can take goes aside).
  */
-export function planFromAuto({ participants, config, practiceGroups, qualifGroups }) {
-  const races = distributeSequential(participants, config.driversPerRace, carOfEntry)
+export function planFromAuto({ participants, config, practiceGroups, qualifGroups, racers = participants }) {
+  const races = distributeSequential(racers, config.driversPerRace, carOfEntry)
   const raceIds = races.map((group) => group.map((p) => p.driverId))
   const plan = [
     ...practiceGroups.map((ids) => newSession(SessionType.PRACTICE, ids)),
@@ -266,7 +275,8 @@ export function championshipBody({
     sessionNames: sessionNames(),
   }
   if (mode === ChampionshipMode.MANUAL) {
-    const sessions = plan.map(({ type, slots }) => ({
+    const sessions = plan.map(({ id, type, slots }) => ({
+      ...(id && { id }),
       type,
       drivers: slots.flatMap((driverId, controller) => (driverId ? [{ driverId, controller }] : [])),
     }))
@@ -286,6 +296,202 @@ export function championshipBody({
 export async function createChampionship(body) {
   const res = await fetch(`${API_URL}/api/championships`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  return res.json()
+}
+
+// ==================== Editing ====================
+// A session that has started never changes: the wizard shows it frozen and plans only those to come.
+
+const byOrder = (a, b) => a.order - b.order
+const byController = (a, b) => a.controller - b.controller
+
+/** The sessions that have started and those still to come, each in running order. */
+export function splitSessions(sessions) {
+  const sorted = [...sessions].sort(byOrder)
+  return {
+    frozen: sorted.filter((s) => isSessionUnderway(s.status)),
+    upcoming: sorted.filter((s) => !isSessionUnderway(s.status)),
+  }
+}
+
+/** The drivers entered in a session that has started: they raced in the championship. */
+export const racedDriverIds = (frozen) =>
+  new Set(
+    frozen
+      .flatMap((s) => s.drivers ?? [])
+      .map((d) => d.driverId)
+      .filter(Boolean)
+  )
+
+/** The participants still to run a qualif: in none that has started. */
+export function stillToQualify(participants, frozen) {
+  const qualified = racedDriverIds(frozen.filter((s) => s.type === SessionType.QUALIF))
+  return participants.filter((p) => !qualified.has(p.driverId))
+}
+
+/** The participants yet to run a race: the races to come take only them. */
+export function stillToRace(participants, frozen) {
+  const raced = racedDriverIds(frozen.filter((s) => s.type === SessionType.RACE))
+  return participants.filter((p) => !raced.has(p.driverId))
+}
+
+/** A session's entries as its result: by final place when it has one, else by controller. */
+export function resultOf(session) {
+  const place = (d) => d.finalPos ?? d.position ?? null
+  return (session.drivers ?? [])
+    .filter((d) => d.driverId)
+    .map((d) => ({ ...d, place: place(d) }))
+    .sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity) || a.controller - b.controller)
+}
+
+/**
+ * Who raced and is no longer a participant: retired, DNF in the sessions to come they were in.
+ * Each with the car they last ran.
+ */
+export function retiredOf(frozen, participants) {
+  const kept = new Set(participants.map((p) => p.driverId))
+  const retired = new Map()
+  for (const entry of frozen.flatMap((s) => s.drivers ?? [])) {
+    if (!entry.driverId || kept.has(entry.driverId)) continue
+    retired.set(entry.driverId, {
+      driverId: entry.driverId,
+      driver: entry.driver,
+      carId: entry.carId ?? null,
+      car: entry.car ?? null,
+    })
+  }
+  return [...retired.values()]
+}
+
+/**
+ * The retired drivers DNF in `session`: those it recorded, and in a session to come (`held`) those
+ * it still holds. A session that has started keeps who ran it: only its records count.
+ */
+export function withdrawnIn(session, retired, held = true) {
+  if (!session) return []
+  const out = new Map(retired.map((r) => [r.driverId, r]))
+  const ids = new Set([
+    ...(session.withdrawals ?? []).map((w) => w.driverId),
+    ...(held ? (session.drivers ?? []).map((d) => d.driverId) : []),
+  ])
+  return [...ids].filter((id) => out.has(id)).map((id) => out.get(id))
+}
+
+/** A session's drivers by controller, as the wizard's groups hold them. */
+const idsOf = (session) =>
+  [...(session.drivers ?? [])]
+    .sort(byController)
+    .map((d) => d.driverId)
+    .filter(Boolean)
+
+/** A session to come as the manual plan holds it: its id kept, a driver id or null per controller. */
+function planned(session) {
+  const slots = Array.from({ length: MAX_SESSION_DRIVERS }, () => null)
+  for (const d of session.drivers ?? [])
+    if (d.driverId && d.controller < MAX_SESSION_DRIVERS) slots[d.controller] = d.driverId
+  return { key: `${session.type}-${session.id}`, id: session.id, type: session.type, slots }
+}
+
+/**
+ * The championship's participants with their car; a championship created before participants
+ * existed takes the drivers of its sessions, with the car they last ran.
+ */
+export function participantsOf(championship, sessions, cars = []) {
+  const carOf = (carId) => cars.find((c) => c.id === carId) ?? null
+  if (championship.participants?.length) {
+    return championship.participants.map((p) => ({
+      driverId: p.driverId,
+      driver: p.driver,
+      carId: p.carId ?? null,
+      car: carOf(p.carId),
+    }))
+  }
+  const found = new Map()
+  for (const entry of [...sessions].sort(byOrder).flatMap((s) => s.drivers ?? [])) {
+    if (!entry.driverId) continue
+    found.set(entry.driverId, { driverId: entry.driverId, driver: entry.driver, carId: entry.carId ?? null })
+  }
+  return [...found.values()].map((p) => ({ ...p, car: carOf(p.carId) }))
+}
+
+const minutes = (ms) => Math.max(1, Math.round(ms / 60000))
+
+/** Limits as the wizard edits them, from a duration (ms) and a lap count; `fallback` when unset. */
+export function limitsFrom(maxDuration, maxLaps, fallback) {
+  return {
+    useTime: !!maxDuration,
+    duration: maxDuration ? minutes(maxDuration) : fallback.duration,
+    useLaps: !!maxLaps,
+    laps: maxLaps || fallback.laps,
+  }
+}
+
+/**
+ * The championship as the wizard edits it: its settings, line-up and sessions to come (groups in
+ * automatic mode, a plan by hand), beside the sessions that have started.
+ */
+export function editState(championship, sessions, cars = []) {
+  const { frozen, upcoming } = splitSessions(sessions)
+  const ofType = (list, type) => list.filter((s) => s.type === type)
+  const practice = ofType(upcoming, SessionType.PRACTICE)[0] ?? ofType(frozen, SessionType.PRACTICE).at(-1) ?? null
+  const defaults = DEFAULT_WIZARD_CONFIG
+  const manual = championship.mode === ChampionshipMode.MANUAL
+  return {
+    name: championship.name ?? '',
+    trackId: championship.trackId ?? '',
+    divisionIds: (championship.divisions ?? []).map((d) => d.id),
+    participants: participantsOf(championship, sessions, cars),
+    mode: championship.mode,
+    frozen,
+    upcoming,
+    config: {
+      practiceCount: ofType(upcoming, SessionType.PRACTICE).length,
+      driversPerQualif: championship.driversPerQualif ?? defaults.driversPerQualif,
+      driversPerRace: championship.driversPerRace ?? defaults.driversPerRace,
+      practice: practice ? limitsFrom(practice.maxDuration, practice.maxLaps, defaults.practice) : defaults.practice,
+      qualif: limitsFrom(championship.qualifMaxDuration, championship.qualifMaxLaps, defaults.qualif),
+      race: limitsFrom(championship.raceMaxDuration, championship.raceMaxLaps, defaults.race),
+    },
+    practiceGroups: ofType(upcoming, SessionType.PRACTICE).map(idsOf),
+    qualifGroups: ofType(upcoming, SessionType.QUALIF).map(idsOf),
+    plan: manual ? upcoming.filter((s) => s.type !== SessionType.BALANCING).map(planned) : null,
+  }
+}
+
+/**
+ * Whether `groups` hold each of `participants` once (at most once unless `everyone`), as many
+ * groups as `count`.
+ */
+export function holdsEachOnce(groups, participants, count, { everyone = true } = {}) {
+  const placed = groups.flat()
+  const ids = new Set(participants.map((p) => p.driverId))
+  return (
+    groups.length === count &&
+    (!everyone || placed.length === ids.size) &&
+    new Set(placed).size === placed.length &&
+    placed.every((id) => ids.has(id))
+  )
+}
+
+/** The races of an automatic championship: those that ran, then as many to come as the line-up needs. */
+export function upcomingRaceGroups(participants, perGroup, ranCount) {
+  return raceGroups(participants, perGroup).slice(ranCount)
+}
+
+/** What the server needs to apply the edit: as for a creation, the sessions to come only. */
+export const editBody = (args) => {
+  const body = championshipBody(args)
+  if (body.mode === ChampionshipMode.AUTO) delete body.practiceCount
+  return body
+}
+
+/** The edit applied: `{ success, data | error }`; throws when the server cannot be reached. */
+export async function saveChampionshipEdit(id, body) {
+  const res = await fetch(`${API_URL}/api/championships/${id}/plan`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })

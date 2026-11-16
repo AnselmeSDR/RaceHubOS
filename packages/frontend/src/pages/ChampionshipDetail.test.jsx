@@ -18,7 +18,7 @@ const { received, spy, app, session, device } = vi.hoisted(() => {
 vi.mock('@/components/championship/ChampionshipHeader', () => spy('ChampionshipHeader'))
 vi.mock('@/components/championship/ChampionshipBracket', () => spy('ChampionshipBracket'))
 vi.mock('@/components/championship/ChampionshipResults', () => spy('ChampionshipResults'))
-vi.mock('@/components/championship/ChampionshipConfigModal', () => spy('ChampionshipConfigModal'))
+vi.mock('@/components/championship/ChampionshipWizard', () => spy('ChampionshipWizard'))
 vi.mock('@/components/championship/SessionSection', () => spy('SessionSection'))
 vi.mock('@/components/championship/StandingsTabs', () => spy('StandingsTabs'))
 vi.mock('@/components/race/SessionLeaderboard', () => spy('SessionLeaderboard'))
@@ -162,29 +162,26 @@ describe('the bracket', () => {
   })
 })
 
-test('the configuration modal saves and reloads the championship', async () => {
+test('the configuration opens the wizard on the championship, which reloads it once saved', async () => {
   const mock = fetch
   await loaded()
-  expect(screen.queryByTestId('ChampionshipConfigModal')).not.toBeInTheDocument()
+  expect(screen.queryByTestId('ChampionshipWizard')).not.toBeInTheDocument()
   act(() => received.ChampionshipHeader.onConfig())
-  expect(received.ChampionshipConfigModal).toMatchObject({
+  expect(received.ChampionshipWizard).toMatchObject({
     championship,
     sessions: [practice, race],
     tracks: ['track'],
     drivers,
-    open: true,
   })
   expect(received.ChampionshipHeader.showConfig).toBe(true)
-  act(() => received.ChampionshipConfigModal.onSave({ id: 'c1', name: 'Renamed' }))
-  expect(received.ChampionshipHeader.championship).toEqual({ id: 'c1', name: 'Renamed' })
   mock.mockClear()
-  await act(() => received.ChampionshipConfigModal.onSessionsChange())
+  await act(() => received.ChampionshipWizard.onSaved())
   const urls = mock.mock.calls.map(([url]) => url)
   expect(urls).toContain('/api/championships/c1')
   expect(urls).toContain('/api/sessions?championshipId=c1')
   expect(urls).toContain('/api/championships/c1/standings?type=race')
-  act(() => received.ChampionshipConfigModal.onClose())
-  expect(screen.queryByTestId('ChampionshipConfigModal')).not.toBeInTheDocument()
+  act(() => received.ChampionshipWizard.onClose())
+  expect(screen.queryByTestId('ChampionshipWizard')).not.toBeInTheDocument()
 })
 
 test('the session panel acts on the selected session', async () => {

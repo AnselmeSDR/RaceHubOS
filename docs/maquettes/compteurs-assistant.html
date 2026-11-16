@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : réglages du mode automatique</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --el: #7e22ce;
+  --el-bg: #faf5ff;
+  --el-bd: #e9d5ff;
+  --q: #1d4ed8;
+  --q-bg: #eff6ff;
+  --q-bd: #bfdbfe;
+  --r: #15803d;
+  --r-bg: #f0fdf4;
+  --r-bd: #bbf7d0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 48px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+.intro { margin: 0; color: var(--muted); line-height: 1.5; max-width: 860px; font-size: 14px; }
+section > h2 { margin: 0 0 4px; font-size: 19px; }
+section > .why { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 860px; }
+.reco { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 600; color: #fff; background: #16a34a; border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+.stage { background: var(--soft); border-radius: 16px; padding: 24px; overflow-x: auto; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; min-width: 900px; }
+.card { border: 1px solid; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.el { background: var(--el-bg); border-color: var(--el-bd); }
+.card.q { background: var(--q-bg); border-color: var(--q-bd); }
+.card.r { background: var(--r-bg); border-color: var(--r-bd); }
+.card h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.el h3 { color: var(--el); }
+.q h3 { color: var(--q); }
+.r h3 { color: var(--r); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: #44403c; }
+.row .hint { color: var(--faint); }
+.num { width: 52px; height: 30px; border: 1px solid var(--border); border-radius: 8px; background: #fff; text-align: center; font: 13px Inter, system-ui, sans-serif; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.check input { margin: 0; }
+.check .num { width: 56px; }
+.unit { font-size: 12px; color: var(--faint); }
+.note { margin: 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+
+/* A: the number sits in a sentence that says what it counts */
+.sentence { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.result { font-size: 12px; color: var(--muted); }
+.result b { color: var(--fg); font-weight: 600; }
+
+/* B: a stepper for the practices, a choice among the possible splits for qualifs and races */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > span { font-size: 12px; color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; height: 32px; width: fit-content; }
+.stepper button { border: none; background: transparent; width: 30px; height: 30px; font-size: 16px; color: var(--muted); cursor: pointer; }
+.stepper button:disabled { color: #d6d3d1; }
+.stepper output { min-width: 92px; text-align: center; font-size: 13px; font-weight: 600; }
+.select { display: flex; align-items: center; justify-content: space-between; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 0 10px; font-size: 13px; font-weight: 600; }
+.select small { font-weight: 400; color: var(--muted); }
+.menu { border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: 0 8px 20px rgba(28, 25, 23, 0.12); padding: 4px; font-size: 13px; }
+.menu div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 8px; border-radius: 6px; }
+.menu div.on { background: var(--q-bg); font-weight: 600; }
+.menu small { color: var(--muted); font-weight: 400; }
+.menu .off { color: #a8a29e; }
+
+ul.points { margin: 12px 0 0; padding-left: 20px; color: #44403c; font-size: 13.5px; line-height: 1.6; max-width: 860px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Réglages du mode automatique</h1>
+    <p class="intro">Les trois cartes de l'étape Configuration en mode automatique. Exemple : 6 pilotes, Amelia GRE et Antoine GIR partagent l'Audi R8 #16 (jamais dans la même session), 1 essai déjà couru. Le nombre d'essais est libre et ne décide de rien d'autre : ce sont les qualifs qui structurent le championnat. L'indication « au moins 3 pour tous les pilotes » disparaît.</p>
+  </header>
+
+  <section>
+    <h2>Aujourd'hui</h2>
+    <p class="why">On ne sait pas ce que le champ compte : « Pilotes par qualif » est une taille de groupe, mais l'indication à côté donne un nombre de sessions ; côté essais, le nombre et « au moins 3 » se mélangent.</p>
+    <div class="stage">
+      <div class="cards">
+        <div class="card el">
+          <h3>Essais libres</h3>
+          <div class="row"><span>Essais libres <span class="hint">· au moins 3 pour tous les pilotes</span></span><input class="num" value="3"></div>
+          <label class="check"><input type="checkbox"> Durée</label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card q">
+          <h3>Qualifications</h3>
+          <div class="row"><span>Pilotes par qualif <span class="hint">· 2 groupes de qualif</span></span><input class="num" value="4"></div>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="5"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card r">
+          <h3>Courses</h3>
+          <div class="row"><span>Pilotes par course <span class="hint">· 2 courses</span></span><input class="num" value="6"></div>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="10"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>A · Le nombre dans une phrase <span class="reco">Retenue</span></h2>
+    <p class="why">Même modèle qu'aujourd'hui, mais chaque champ est pris dans une phrase qui dit ce qu'il compte, et le résultat s'écrit dessous. On règle toujours une taille maximale de groupe pour les qualifs et les courses.</p>
+    <div class="stage">
+      <div class="cards">
+        <div class="card el">
+          <h3>Essais libres</h3>
+          <div class="sentence"><input class="num" value="2"> essais libres en tout</div>
+          <label class="check"><input type="checkbox"> Durée</label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card q">
+          <h3>Qualifications</h3>
+          <div class="sentence">Au plus <input class="num" value="4"> pilotes par qualif</div>
+          <div class="result">→ <b>2 qualifs de 3 pilotes</b></div>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="5"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card r">
+          <h3>Courses</h3>
+          <div class="sentence">Au plus <input class="num" value="6"> pilotes par course</div>
+          <div class="result">→ <b>2 courses de 3 pilotes</b></div>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="10"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+      </div>
+    </div>
+    <ul class="points">
+      <li>Changement léger, mais on règle encore une valeur dont on ne voit l'effet qu'après : 4 ou 5 par qualif donnent ici la même chose (2 × 3).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>B · On choisit le nombre de sessions</h2>
+    <p class="why">Comme en mode manuel, on règle partout un <strong>nombre de sessions</strong>. Pour les qualifs et les courses, un menu propose seulement les répartitions possibles, chacune avec sa taille de groupe : impossible de choisir une valeur sans effet ou refusée. Les essais gardent un compteur à boutons, libre de 0 à 20, sans autre plancher que les essais déjà courus.</p>
+    <div class="stage">
+      <div class="cards">
+        <div class="card el">
+          <h3>Essais libres</h3>
+          <div class="field">
+            <span>Nombre d'essais</span>
+            <div class="stepper"><button>−</button><output>2 essais</output><button>+</button></div>
+          </div>
+          <p class="note">EL2 : 5 pilotes · Antoine GIR sans essai (même voiture qu'Amelia GRE)</p>
+          <label class="check"><input type="checkbox"> Durée</label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card q">
+          <h3>Qualifications</h3>
+          <div class="field">
+            <span>Répartition</span>
+            <div class="select">2 qualifs <small>3 pilotes chacune ▾</small></div>
+            <div class="menu">
+              <div class="off">1 qualif <small>impossible : voiture partagée</small></div>
+              <div class="on">2 qualifs <small>3 pilotes chacune</small></div>
+              <div>3 qualifs <small>2 pilotes chacune</small></div>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="5"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+        <div class="card r">
+          <h3>Courses</h3>
+          <div class="field">
+            <span>Répartition</span>
+            <div class="select">2 courses <small>3 pilotes chacune ▾</small></div>
+          </div>
+          <p class="note">Remplies après les qualifs, d'après le classement.</p>
+          <label class="check"><input type="checkbox" checked> Durée <input class="num" value="10"> <span class="unit">min</span></label>
+          <label class="check"><input type="checkbox"> Tours</label>
+        </div>
+      </div>
+    </div>
+    <ul class="points">
+      <li>Même langage qu'en manuel (« Essais libres 2, Qualifications 2, Courses 2 ») : on passe d'un mode à l'autre sans changer de façon de penser.</li>
+      <li>Avec 7 pilotes, le menu affiche les tailles réelles : « 2 qualifs · 4 et 3 pilotes ».</li>
+      <li>Essais : 6 pilotes au plus par essai, jamais deux sur la même voiture ; avec trop peu d'essais, ceux qui n'y tiennent pas restent sans essai (glissés à la main dans un essai, ou changés au moment de rouler).</li>
+      <li>En édition, le compteur d'essais compte aussi ceux qui ont roulé (minimum = déjà courus), et le menu des qualifs ne répartit que les pilotes encore à qualifier ; les sessions courues restent affichées au-dessus des groupes.</li>
+      <li>Rien ne change côté serveur : le choix se traduit en « pilotes par qualif / course », comme aujourd'hui.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

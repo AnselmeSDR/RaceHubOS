@@ -51,5 +51,7 @@ export const LIST_INCLUDE = {
   track: true,
   championship: true,
   drivers: { where: { deletedAt: null }, include: { driver: true, car: true } },
+  // Championship participants who left after racing: DNF in the session
+  withdrawals: { include: { driver: true, car: true } },
   _count: { select: { laps: { where: { deletedAt: null } } } },
 };

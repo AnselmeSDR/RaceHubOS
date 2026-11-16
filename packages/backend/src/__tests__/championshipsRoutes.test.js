@@ -238,7 +238,8 @@ describe('POST /api/championships', () => {
     ],
     [() => ({ name: 'X', season: '2026', participants: [{ driverId: ana.id }] }), 'At least 2 participants required'],
     [() => auto({ qualifGroups: [[ana.id], [ben.id]] }), 'qualifGroups must be 1 groups of 1 to 2 drivers'],
-    [() => auto({ qualifGroups: [[ana.id, ana.id]] }), 'qualifGroups must hold every participant once'],
+    [() => auto({ qualifGroups: [[ana.id, ana.id]] }), 'qualifGroups must hold participants at most once'],
+    [() => auto({ qualifGroups: [[ana.id]] }), 'qualifGroups must hold every participant once'],
     // Ana and Ben share a car: one group each, whatever the size
     [
       () =>
@@ -267,7 +268,8 @@ describe('POST /api/championships', () => {
       () => auto({ practiceCount: 2, practiceGroups: [[ana.id, ben.id]] }),
       'practiceGroups must be 2 groups of 0 to 6 drivers',
     ],
-    [() => auto({ practiceGroups: [[ana.id]] }), 'practiceGroups must hold every participant once'],
+    [() => auto({ practiceGroups: [[ana.id, ana.id]] }), 'practiceGroups must hold participants at most once'],
+    [() => auto({ practiceGroups: [['ghost']] }), 'practiceGroups must hold participants at most once'],
     [
       () =>
         auto({
@@ -395,12 +397,12 @@ describe('POST /api/championships', () => {
     expect(service.generateAutoSessions).toHaveBeenCalledWith(res.body.data.id, undefined, groups);
   });
 
-  test('the free practices of an automatic championship take the groups given, each driver with their car', async () => {
+  test('the free practices of an automatic championship take the groups given, each driver with their car; one left out runs none', async () => {
     const res = await create(
       auto({
         participants: [{ driverId: ana.id, carId: car1.id }, { driverId: ben.id }, { driverId: cid.id }],
         practiceCount: 3,
-        practiceGroups: [[cid.id, ana.id], [ben.id], []],
+        practiceGroups: [[cid.id, ana.id], [], []],
       })
     );
     expect(res.status).toBe(201);
@@ -414,7 +416,7 @@ describe('POST /api/championships', () => {
         [cid.id, 0, null],
         [ana.id, 1, car1.id],
       ],
-      [[ben.id, 0, null]],
+      [],
       [],
     ]);
   });
@@ -686,66 +688,5 @@ describe('GET /api/championships/:id/standings', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid type. Must be one of: qualif, race, practice');
     expect((await api.get(`/api/championships/nope/standings?type=${SessionType.RACE}`)).status).toBe(404);
-  });
-});
-
-describe('PUT /api/championships/:id/participants (validation)', () => {
-  const put = (id, driverIds) =>
-    api
-      .put(`/api/championships/${id}/participants`)
-      .send({ participants: driverIds.map((driverId) => ({ driverId })) });
-
-  test('refused for a manual championship, fewer than two, duplicates or unknown drivers', async () => {
-    const manual = await newChampionship();
-    const auto = await newChampionship({ mode: ChampionshipMode.AUTO });
-    expect((await put(manual.id, [ana.id, ben.id])).body.error).toBe('Only auto championships support participants');
-    expect((await put(auto.id, [ana.id])).body.error).toBe('At least 2 participants required');
-    expect((await put(auto.id, [ana.id, ana.id])).body.error).toBe('Duplicate drivers in participants');
-    expect((await put(auto.id, [ana.id, 'ghost'])).body.error).toBe('One or more drivers not found');
-    expect((await put('nope', [ana.id, ben.id])).status).toBe(404);
-  });
-
-  test('once a qualif has started, its drivers stay and the sessions are not regenerated', async () => {
-    const auto = await newChampionship({ mode: ChampionshipMode.AUTO });
-    const qualif = await newSession(auto.id, SessionType.QUALIF, SessionStatus.ACTIVE);
-    await newSession(auto.id, SessionType.QUALIF, SessionStatus.DRAFT);
-    await entry(qualif, ana, car1, 0);
-    await entry(qualif, null, null, 1);
-
-    let res = await put(auto.id, [ben.id, cid.id]);
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Cannot remove driver who already participated in a qualif');
-
-    res = await put(auto.id, [ana.id, cid.id]);
-    expect(res.status).toBe(200);
-    expect(res.body.data.participants.map((p) => p.driver.name)).toEqual(['Ana', 'Cid']);
-    expect(service.generateAutoSessions).not.toHaveBeenCalled();
-  });
-
-  test('a participant kept keeps their car; a newcomer takes their preferred one', async () => {
-    const auto = await newChampionship({ mode: ChampionshipMode.AUTO });
-    await prisma.championshipParticipant.create({
-      data: { championshipId: auto.id, driverId: ana.id, carId: car1.id },
-    });
-    await prisma.driver.update({ where: { id: ana.id }, data: { preferredCarId: car2.id } });
-    await prisma.driver.update({ where: { id: ben.id }, data: { preferredCarId: car2.id } });
-
-    expect((await put(auto.id, [ana.id, ben.id, cid.id])).status).toBe(200);
-    const participants = await prisma.championshipParticipant.findMany({ orderBy: { order: 'asc' } });
-    expect(participants.map((p) => [p.driverId, p.carId])).toEqual([
-      [ana.id, car1.id],
-      [ben.id, car2.id],
-      [cid.id, null],
-    ]);
-  });
-
-  test('before any qualif, the sessions are regenerated with the names given', async () => {
-    const auto = await newChampionship({ mode: ChampionshipMode.AUTO });
-    const names = { race: 'Course' };
-    const res = await api
-      .put(`/api/championships/${auto.id}/participants`)
-      .send({ participants: [{ driverId: ana.id }, { driverId: ben.id }], sessionNames: names });
-    expect(res.status).toBe(200);
-    expect(service.generateAutoSessions).toHaveBeenCalledWith(auto.id, names);
   });
 });

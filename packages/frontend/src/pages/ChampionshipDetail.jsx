@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChampionshipMode } from '@racehubos/shared'
 import ChampionshipBracketPanel from '../components/championship/ChampionshipBracketPanel'
-import ChampionshipConfigModal from '../components/championship/ChampionshipConfigModal'
 import ChampionshipHeader from '../components/championship/ChampionshipHeader'
 import ChampionshipResults from '../components/championship/ChampionshipResults'
 import ChampionshipStandingsPanel from '../components/championship/ChampionshipStandingsPanel'
+import ChampionshipWizard from '../components/championship/ChampionshipWizard'
 import SessionSection from '../components/championship/SessionSection'
 import SessionBoard from '../components/race/SessionBoard'
 import { useStandingsTab } from '../components/championship/useStandingsTab'
@@ -14,7 +14,7 @@ import { useDevice } from '../context/DeviceContext'
 import { useChampionshipDetail } from '../hooks/useChampionshipDetail'
 import { useDisplayedEntries } from '../hooks/useDisplayedEntries'
 import { useSessionActions } from '../hooks/useSessionActions'
-import { deleteChampionship } from '../lib/championshipApi'
+import { deleteChampionship, reopenChampionship } from '../lib/championshipApi'
 
 export default function ChampionshipDetail() {
   const { id } = useParams()
@@ -130,21 +130,28 @@ export default function ChampionshipDetail() {
         )}
       </div>
 
+      {/* Editing reuses the creation wizard: the sessions that have started stay as they ran */}
       {showChampionshipConfig && (
-        <ChampionshipConfigModal
+        <ChampionshipWizard
           championship={championship}
           sessions={sessions}
           tracks={detail.tracks}
           drivers={drivers}
           cars={detail.cars}
-          open={showChampionshipConfig}
           onClose={() => setShowChampionshipConfig(false)}
-          onSave={(updated) => detail.setChampionship(updated)}
-          onFinish={detail.finish}
-          onSessionsChange={() => {
+          onSaved={() => {
             detail.reloadChampionship()
             detail.reloadSessions()
             detail.reloadStandings()
+          }}
+          onFinish={() => {
+            detail.finish()
+            setShowChampionshipConfig(false)
+          }}
+          onReopen={async () => {
+            const reopened = await reopenChampionship(id)
+            if (reopened) detail.reloadChampionship()
+            setShowChampionshipConfig(false)
           }}
         />
       )}

@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : modifier un championnat en cours</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --softer: #fafaf9;
+  --primary: #4338ca;
+  --yellow: #eab308;
+  --el: #7e22ce;
+  --el-bg: #faf5ff;
+  --el-bd: #e9d5ff;
+  --q: #1d4ed8;
+  --q-bg: #eff6ff;
+  --q-bd: #bfdbfe;
+  --r: #15803d;
+  --r-bg: #f0fdf4;
+  --r-bd: #bbf7d0;
+  --bad: #b91c1c;
+  --shared: #0284c7;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+code { font-size: 0.9em; background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.page-title h1 { margin: 0 0 6px; font-size: 28px; }
+.page-title p { margin: 0 0 10px; color: var(--muted); max-width: 920px; line-height: 1.5; }
+.rules { margin: 0; padding-left: 20px; color: #44403c; line-height: 1.6; font-size: 14px; max-width: 920px; }
+.screen > h2 { margin: 0 0 4px; font-size: 20px; }
+.screen > .why { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 920px; }
+.stage { background: var(--soft); border-radius: 16px; padding: 28px; overflow-x: auto; }
+.modal { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(28, 25, 23, 0.1); padding: 24px; display: flex; flex-direction: column; gap: 16px; margin: 0 auto; }
+.w-sm { width: 480px; }
+.w-md { width: 880px; }
+.w-lg { width: 1000px; }
+.w-xl { width: 1224px; }
+.mh { display: flex; align-items: center; gap: 10px; }
+.mh h3 { margin: 0; font-size: 18px; font-weight: 600; flex: 1; }
+.mh .sub { font-size: 13px; color: var(--muted); font-weight: 400; }
+.icon-btn { border: none; background: transparent; padding: 4px; border-radius: 6px; color: #a8a29e; display: inline-flex; cursor: pointer; }
+
+/* Steps: in editing, every step is open at once */
+.tabs { display: flex; gap: 6px; }
+.tabs span { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 500; background: #fef9c3; color: #854d0e; }
+.tabs span.on { background: var(--yellow); color: #fff; }
+
+.seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; flex-shrink: 0; }
+.seg button { border: none; background: transparent; border-radius: 7px; padding: 0 14px; height: 30px; font: 500 13px Inter, system-ui, sans-serif; color: var(--muted); }
+.seg button[aria-pressed='true'] { background: var(--yellow); color: #fff; font-weight: 600; }
+.mode { display: flex; align-items: center; gap: 16px; }
+.hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.45; }
+.footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+.footer .grow { flex: 1; }
+.btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 0 14px; height: 36px; font: 500 14px Inter, system-ui, sans-serif; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; }
+.btn.go { border: none; background: var(--yellow); color: #fff; font-weight: 600; }
+.btn.danger { border: none; background: #dc2626; color: #fff; font-weight: 600; }
+.btn.ghost { border: none; color: var(--muted); }
+.num { width: 44px; height: 28px; border: 1px solid var(--border); border-radius: 6px; text-align: center; font: 13px Inter, system-ui, sans-serif; color: var(--fg); }
+
+/* Pictures: the app's common layer, a square with 20 % corners */
+.face { border-radius: 20%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; color: #fff; font-weight: 700; }
+.face img { width: 100%; height: 100%; object-fit: cover; }
+.car { object-fit: contain; flex-shrink: 0; }
+.tag { font-size: 11px; font-weight: 500; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.tag.pref { color: #854d0e; background: #fef9c3; }
+.tag.changed { color: #44403c; background: var(--soft); }
+.tag.new { color: #3730a3; background: #eef2ff; }
+.tag.done { color: #44403c; background: var(--soft); border: 1px solid var(--border); }
+.tag.live { color: #fff; background: #16a34a; }
+.tag.retired, .tag.dnf { color: var(--bad); background: #fef2f2; }
+.out { opacity: 0.55; }
+.out .n { text-decoration: line-through; }
+.out .face, .out .car { filter: grayscale(1); }
+.link { border: none; background: none; padding: 0; font: 500 12px Inter, system-ui, sans-serif; color: var(--primary); cursor: pointer; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.dialog .kind { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); }
+.note { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.lock { color: #a8a29e; display: inline-flex; }
+.grip { color: #a8a29e; display: inline-flex; cursor: grab; }
+.shared { color: var(--shared); display: inline-flex; }
+
+/* Fields */
+.f { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; }
+.f .ctl { border: 1px solid var(--border); border-radius: 8px; height: 36px; padding: 0 10px; display: flex; align-items: center; gap: 10px; font: 400 14px Inter, system-ui, sans-serif; color: var(--fg); background: #fff; }
+.f .ctl.frozen { background: var(--softer); color: var(--muted); }
+.f .ctl .grow { flex: 1; }
+.f small { font-weight: 400; color: var(--muted); font-size: 12px; }
+
+/* Filters */
+.filters { border: 1px solid var(--border); background: var(--softer); border-radius: 10px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; font-weight: 500; align-items: center; }
+.filters .row { display: flex; align-items: center; gap: 6px; }
+.pick { font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 9px; text-transform: uppercase; }
+.pick.silver { background: #c0c0c0; color: #1c1917; }
+.pick.bronze { background: #8a4b2a; color: #fff; }
+.pick.gt3 { border: 1.5px solid #e11d48; color: #e11d48; }
+.add { border: 1px dashed #a8a29e; border-radius: 999px; padding: 1px 9px; font-size: 12px; color: var(--muted); }
+
+/* Participants */
+.table { border: 1px solid var(--border); border-radius: 10px; }
+.trow { display: grid; grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1.5fr) 36px; align-items: center; border-bottom: 1px solid #f0efee; }
+.trow.head { background: var(--softer); border-bottom-color: var(--border); border-radius: 10px 10px 0 0; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.trow.head > div { padding: 9px 8px; }
+.trow.head > div:first-child { padding-left: 14px; }
+.trow.empty { background: var(--softer); border-bottom: none; border-radius: 0 0 10px 10px; }
+.trow .idx { padding: 6px 14px; font-size: 12px; color: var(--faint); }
+.trow .who { padding: 6px 8px; display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
+.trow .who .n { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trow .carcell { padding: 5px 8px; display: flex; align-items: center; gap: 8px; }
+.carsel { flex: 1; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; background: #fff; font-size: 13px; min-width: 0; }
+.carsel .cn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carsel.none { border-style: dashed; border-color: #d6d3d1; background: var(--softer); padding: 8px 10px; color: var(--muted); }
+.trow .end { display: flex; justify-content: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Automatic: type columns and their sessions */
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 10px; }
+.tcard { border: 1px solid; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.tcard h4 { margin: 0; font-size: 13px; font-weight: 600; }
+.tcard .line { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #44403c; gap: 8px; }
+.tcard .scope { font-size: 11px; color: var(--muted); }
+.el { border-color: var(--el-bd); }
+.q { border-color: var(--q-bd); }
+.r { border-color: var(--r-bd); }
+.tcard.el { background: var(--el-bg); }
+.tcard.q { background: var(--q-bg); }
+.tcard.r { background: var(--r-bg); }
+.el h4, .el .lbl { color: var(--el); }
+.q h4, .q .lbl { color: var(--q); }
+.r h4, .r .lbl { color: var(--r); }
+.group { border-width: 1px; border-style: solid; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff; }
+.group .gh { display: flex; align-items: center; gap: 6px; padding: 0 4px 2px; font-size: 12px; }
+.group .lbl { font-weight: 600; }
+.group .cnt { margin-left: auto; font-size: 11px; color: var(--muted); }
+.drow { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 7px; background: #fff; border: 1px solid var(--border); font-size: 13px; }
+.drow .n { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow .p { font-size: 11px; font-weight: 700; color: var(--muted); width: 22px; }
+.slot { border: 1px dashed #d6d3d1; border-radius: 7px; padding: 5px 8px; font-size: 11px; color: var(--faint); }
+.pos { display: flex; gap: 4px; flex-wrap: wrap; }
+.pos span { font-size: 11px; color: var(--r); background: var(--r-bg); border: 1px solid var(--r-bd); border-radius: 6px; padding: 3px 7px; }
+
+/* A finished session: grey, locked, its line-up and results only */
+.frozen { background: var(--softer) !important; border-color: var(--border) !important; border-style: solid; }
+.frozen .drow, .frozen .mslot { background: transparent; color: var(--muted); }
+.frozen .face, .frozen .car { filter: saturate(0.35); opacity: 0.8; }
+.frozen .lbl { color: var(--faint) !important; }
+
+/* Manual timeline */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-size: 13px; }
+.toolbar label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.toolbar small { font-weight: 400; color: var(--muted); }
+.benchstrip { display: flex; align-items: center; gap: 10px; border: 1px dashed #a8a29e; border-radius: 10px; padding: 8px 12px; background: var(--softer); font-size: 12px; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px 2px 2px; background: #fff; font-size: 12px; white-space: nowrap; color: var(--fg); }
+.lanes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.lane { border: 1px solid var(--border); border-radius: 10px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+.lane.refused { border-color: #fca5a5; box-shadow: 0 0 0 3px #fee2e2; }
+.lane .lh { display: flex; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.lane .lh .cnt { margin-left: auto; font-size: 11px; color: var(--muted); }
+.lane .ls { display: flex; flex-direction: column; gap: 4px; padding: 6px; }
+.mslot { display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 7px; padding: 3px 5px; font-size: 12px; min-height: 30px; }
+.mslot .k { font-size: 10px; color: var(--faint); width: 12px; text-align: center; }
+.mslot .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mslot .p { font-size: 10px; font-weight: 700; color: var(--muted); }
+.mslot.free { border-style: dashed; border-color: #d6d3d1; color: var(--faint); font-size: 11px; }
+.mslot.ghost { border-style: dashed; border-color: #dc2626; background: #fef2f2; color: var(--bad); }
+.badge { color: #fff; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 7px; }
+.badge.el { background: var(--el); }
+.badge.q { background: var(--q); }
+.badge.r { background: var(--r); }
+.frozen .badge { background: #a8a29e; }
+.refusal { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--bad); }
+
+/* Dialogs */
+.dialog { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 16px 40px rgba(28, 25, 23, 0.18); padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.dialog h3 { margin: 0; font-size: 17px; }
+.dialog p { margin: 0; font-size: 14px; color: #44403c; line-height: 1.5; }
+.dialog ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.dialog .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+.open-points { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; }
+.open-points h2 { margin: 0 0 10px; font-size: 18px; }
+.open-points ul { margin: 0; padding-left: 20px; line-height: 1.6; color: #44403c; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="page-title">
+    <h1>Modifier un championnat en cours : maquettes</h1>
+    <p>Le bouton « Configurer » du championnat ouvre le même assistant que la création, sur le championnat tel qu'il est. Ses trois étapes s'ouvrent directement (onglets), « Enregistrer » applique tout d'un coup. Le panneau latéral actuel disparaît.</p>
+    <ul class="rules">
+      <li><strong>Une session terminée ne change plus</strong>, quoi qu'on fasse dans l'assistant : ni sa grille, ni ses voitures, ni ses limites, ni sa place dans l'ordre. Elle reste visible, grisée, avec un cadenas. Une session en cours est figée de la même façon.</li>
+      <li>Le serveur le garantit aussi : toute modification d'une session terminée est refusée (nom, limites, ordre, grille), sauf sa réinitialisation, toujours confirmée.</li>
+      <li>Passer d'automatique à manuel, ou l'inverse, reste possible en cours de saison : seules les sessions à venir sont réparties à nouveau.</li>
+      <li>Réinitialiser une session reste libre, toujours confirmé. En automatique les sessions sont couplées : réinitialiser une qualif réinitialise aussi les courses déjà courues avec son classement. En manuel, seule la session choisie est effacée.</li>
+      <li>Un pilote qui n'a pas roulé se retire simplement. Un pilote qui a roulé garde ses résultats et devient DNF sur les sessions à venir où il était prévu.</li>
+    </ul>
+  </div>
+
+  <section class="screen">
+    <h2>1. Infos</h2>
+    <p class="why">Le nom se change toujours. Le circuit se fige dès qu'une session est terminée : ses tours et records y sont liés.</p>
+    <div class="stage">
+      <div class="modal w-sm">
+        <div class="mh"><span data-icon="trophy"></span><h3>Modifier le championnat <span class="sub">· Coupe d'hiver</span></h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="tabs" data-tabs="0"></div>
+        <div class="f">Nom<div class="ctl">Coupe d'hiver</div></div>
+        <div class="f">Circuit
+          <div class="ctl frozen"><span class="grow">CREUTZWALD RING open</span><span class="lock" data-icon="lock"></span></div>
+          <small>Figé : 3 sessions sont terminées sur ce circuit.</small>
+        </div>
+        <div class="footer"><button class="btn ghost">Terminer le championnat</button><span class="grow"></span><button class="btn">Annuler</button><button class="btn go">Enregistrer</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>2. Pilotes</h2>
+    <p class="why">Tout pilote se retire par la croix. Sans tour roulé, il disparaît de la liste. Jakob NEU, qui a roulé EL2, reste affiché barré : ses résultats comptent toujours, il est DNF sur Q2 et R2 où il était prévu, et sa manette se libère. « Annuler » le remet tant que rien n'est enregistré. On peut toujours ajouter un pilote (Nouveau) : il entre dans les sessions à venir. Changer de voiture ne vaut que pour les sessions à venir.</p>
+    <div class="stage">
+      <div class="modal w-md">
+        <div class="mh"><span data-icon="trophy"></span><h3>Modifier le championnat <span class="sub">· Coupe d'hiver</span></h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="tabs" data-tabs="1"></div>
+        <div class="filters">
+          <div class="row"><span style="color: #9333ea" data-icon="medal"></span>Divisions <span class="pick bronze">Bronze ×</span><span class="pick silver">Silver ×</span><span class="add">+</span></div>
+          <div class="row"><span style="color: #16a34a" data-icon="carIcon"></span>Catégories <span class="pick gt3">GT3 ×</span><span class="add">+</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--muted)"><span>7 participants</span><span>La voiture préférée du profil est proposée.</span></div>
+        <div class="table" id="lineup">
+          <div class="trow head"><div>#</div><div>Pilote</div><div>Voiture</div><div></div></div>
+        </div>
+        <div class="legend">
+          <span><span class="tag retired">Retiré</span>A roulé : résultats gardés, DNF sur les sessions à venir où il était prévu.</span>
+          <span><span class="shared" data-icon="users"></span>Voiture partagée avec un autre pilote : permis, ils ne roulent jamais dans la même session.</span>
+        </div>
+        <div class="footer"><button class="btn ghost">Terminer le championnat</button><span class="grow"></span><button class="btn">Annuler</button><button class="btn go">Enregistrer</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>3. Configuration automatique</h2>
+    <p class="why">Les sessions terminées restent dans leur colonne, grisées, avec le classement de chacun : rien ne s'y glisse. Les réglages ne valent que pour les sessions à venir (« à venir » sous le titre). Lena FIS, ajoutée, entre dans Q2 ; Jakob NEU, retiré, y reste en DNF et sa place se libère. Les courses se rempliront d'après le classement des qualifs, comme à la création.</p>
+    <div class="stage">
+      <div class="modal w-lg">
+        <div class="mh"><span data-icon="trophy"></span><h3>Modifier le championnat <span class="sub">· Coupe d'hiver</span></h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="tabs" data-tabs="2"></div>
+        <div class="mode">
+          <div class="seg"><button aria-pressed="true">Automatique</button><button aria-pressed="false">Manuel</button></div>
+          <p class="hint">Les sessions terminées ne changent pas. Les sessions à venir sont réparties d'après ces réglages.</p>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <div class="tcard el"><h4>Essais libres</h4><div class="scope">2 terminés · aucun à venir</div><div class="line">Essais à venir <input class="num" value="0" readonly></div></div>
+            <div class="group el frozen" data-group="EL1|done|sdr:1 dan:2 pel:3 bou:4"></div>
+            <div class="group el frozen" data-group="EL2|done|mil:1 hau:2 neu:3"></div>
+          </div>
+          <div class="col">
+            <div class="tcard q"><h4>Qualifications</h4><div class="scope">1 terminée · 1 à venir</div><div class="line">Pilotes par qualif <input class="num" value="4" readonly></div><div class="line">Durée <span><input class="num" value="5" readonly> min</span></div></div>
+            <div class="group q frozen" data-group="Q1|done|dan:1 sdr:2 mil:3 pel:4"></div>
+            <div class="group q" data-group="Q2|next|bou hau fis:new neu:dnf"></div>
+          </div>
+          <div class="col">
+            <div class="tcard r"><h4>Courses</h4><div class="scope">2 à venir</div><div class="line">Pilotes par course <input class="num" value="4" readonly></div><div class="line">Durée <span><input class="num" value="10" readonly> min</span></div></div>
+            <div class="group r"><div class="gh"><span class="lbl">R1</span><span class="cnt">Positions 1 à 4</span></div><div class="pos"><span>P1</span><span>P2</span><span>P3</span><span>P4</span></div></div>
+            <div class="group r"><div class="gh"><span class="lbl">R2</span><span class="cnt">Positions 5 à 8</span></div><div class="pos"><span>P5</span><span>P6</span><span>P7</span><span>P8</span></div></div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn ghost">Terminer le championnat</button><span class="grow"></span><button class="btn">Annuler</button><button class="btn go">Enregistrer</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>4. Configuration manuelle</h2>
+    <p class="why">Les sessions terminées ouvrent la frise, grisées, cadenassées, sans manette libre ni croix ; leur en-tête ne se déplace pas. Une session à venir ne peut aller qu'après elles. Glisser un pilote sur une session terminée est refusé, en rouge, avec la raison.</p>
+    <div class="stage">
+      <div class="modal w-xl">
+        <div class="mh"><span data-icon="trophy"></span><h3>Modifier le championnat <span class="sub">· Coupe d'hiver</span></h3><button class="icon-btn" aria-label="Fermer" data-icon="x"></button></div>
+        <div class="tabs" data-tabs="2"></div>
+        <div class="mode">
+          <div class="seg"><button aria-pressed="false">Automatique</button><button aria-pressed="true">Manuel</button></div>
+          <div class="toolbar">
+            <label style="color: var(--el)">Essais libres<input class="num" value="2" readonly><small>2 terminés</small></label>
+            <label style="color: var(--q)">Qualifications<input class="num" value="2" readonly><small>1 terminée</small></label>
+            <label style="color: var(--r)">Courses<input class="num" value="2" readonly></label>
+          </div>
+        </div>
+        <div class="benchstrip"><strong style="color: var(--fg)">De côté</strong><span class="chip" data-chip="fis"></span><span>Glissez un pilote sur une manette libre d'une session à venir.</span></div>
+        <div class="lanes" id="lanes"></div>
+        <div class="refusal"><span data-icon="warn"></span>Q1 est terminée : sa grille ne change plus. Lena FIS va dans une session à venir.</div>
+        <div class="footer"><button class="btn ghost">Terminer le championnat</button><span class="grow"></span><button class="btn">Annuler</button><button class="btn go">Enregistrer</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>5. Confirmations</h2>
+    <p class="why">À gauche, repasser en automatique en cours de saison : la confirmation nomme les sessions qui ne bougent pas. Au centre et à droite, « Réinitialiser » sur une qualif terminée, depuis la page du championnat : libre, toujours confirmé. En automatique, les courses déjà courues avec le classement des qualifs sont réinitialisées avec elle ; en manuel, rien d'autre ne bouge.</p>
+    <div class="stage">
+      <div class="trio">
+        <div class="dialog">
+          <span class="kind">Bascule en cours de saison</span>
+          <h3>Repasser en automatique ?</h3>
+          <p>Les sessions à venir (Q2, R1, R2) seront réparties à nouveau d'après les réglages ; ce que vous y avez placé à la main est perdu.</p>
+          <p><strong>EL1, EL2 et Q1 sont terminées : elles ne changent pas.</strong></p>
+          <div class="acts"><button class="btn">Annuler</button><button class="btn go">Tout répartir</button></div>
+        </div>
+        <div class="dialog">
+          <span class="kind">Championnat automatique</span>
+          <h3>Réinitialiser Q1 ?</h3>
+          <p>Les grilles des courses viennent du classement des qualifs. <strong>R1, déjà courue avec ce classement, est réinitialisée aussi.</strong></p>
+          <ul>
+            <li>Effacés : les tours et classements de Q1 et R1.</li>
+            <li>Q1 redevient à venir, avec la même grille. R1 et R2 se rempliront à nouveau quand toutes les qualifs seront terminées.</li>
+            <li>Les essais libres ne changent pas.</li>
+          </ul>
+          <div class="acts"><button class="btn">Annuler</button><button class="btn danger">Réinitialiser Q1 et R1</button></div>
+        </div>
+        <div class="dialog">
+          <span class="kind">Championnat manuel</span>
+          <h3>Réinitialiser Q1 ?</h3>
+          <p>Q1 redevient à venir, avec la même grille. Ses tours et son classement sont effacés.</p>
+          <ul>
+            <li>Les autres sessions ne changent pas : les courses gardent leur grille et leurs résultats.</li>
+            <li>Un essai libre réinitialisé garde ses tours pour les statistiques, cachés.</li>
+          </ul>
+          <div class="acts"><button class="btn">Annuler</button><button class="btn danger">Réinitialiser</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="open-points">
+    <h2>Décidé</h2>
+    <ul>
+      <li>Réinitialiser : libre, confirmé. En automatique, une qualif emporte les courses déjà courues avec son classement ; en manuel, seule la session choisie.</li>
+      <li>Retirer un pilote : sans tour roulé, il disparaît ; après avoir roulé, il garde ses résultats et devient DNF sur les sessions à venir où il était prévu.</li>
+      <li>Supprimer le championnat : seulement depuis la liste des championnats.</li>
+    </ul>
+    <h2 style="margin-top: 16px">À trancher</h2>
+    <ul>
+      <li>Un pilote retiré peut-il revenir plus tard dans la saison ? Proposé : oui, en le rajoutant ; il retrouve ses résultats et entre dans les sessions à venir.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+  const IMG = '../../site/img/'
+  const DRIVERS = {
+    sdr: { name: 'Anselme SDR', num: 42, color: '#3b3a38', img: 'drivers/sdr.png', car: 'porsche' },
+    dan: { name: 'Romain DAN', num: 71, color: '#2fabf1', img: 'drivers/dan.png', car: 'mclaren' },
+    pel: { name: 'Damien PEL', num: 13, color: '#a73044', img: 'drivers/pel.png', car: 'lambo' },
+    bou: { name: 'Léa BOU', num: 782, color: '#dd0b17', img: 'drivers/bou.png', car: 'audi' },
+    mil: { name: 'Sarah MIL', num: 7, color: '#9900ff', img: 'drivers/mil.png', car: 'bmw' },
+    hau: { name: 'Leonie HAU', num: 11, color: '#e7d037', img: 'drivers/hau.png', car: 'amg' },
+    neu: { name: 'Jakob NEU', num: 2, color: '#f12835', car: 'mclaren' },
+    fis: { name: 'Lena FIS', num: 8, color: '#db2777', car: 'bmw' },
+  }
+  const CARS = {
+    porsche: { name: 'Porsche 911 GT3 R #75', img: 'cars/porsche.png' },
+    mclaren: { name: 'McLaren 720S GT3 #02', img: 'cars/mclaren.png' },
+    lambo: { name: 'Lamborghini Huracán GT3 evo II #92', img: 'cars/lamborghini.png' },
+    audi: { name: 'Audi R8 LMS GT3 #8', img: 'cars/audi.png' },
+    bmw: { name: 'BMW M4 GT3 #11', img: 'cars/bmw.png' },
+    amg: { name: 'AMG GT3 #8', img: 'cars/amg.png' },
+  }
+  const svg = (body, size = 16, extra = '') =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${body}</svg>`
+  const ICONS = {
+    x: svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 16),
+    chev: svg('<path d="m6 9 6 6 6-6"/>', 14, 'style="color:#a8a29e"'),
+    lock: svg('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', 14),
+    users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', 16),
+    medal: svg('<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/>', 16),
+    carIcon: svg('<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>', 16),
+    warn: svg('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>', 14),
+    trophy: svg('<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>', 20, 'style="color:#eab308"'),
+    grip: '<svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>',
+  }
+  const face = (id, size = 22) => {
+    const d = DRIVERS[id]
+    const inner = d.img ? `<img src="${IMG}${d.img}" alt="">` : d.num
+    return `<span class="face" style="width:${size}px;height:${size}px;background:${d.color};font-size:${Math.round(size * 0.4)}px">${inner}</span>`
+  }
+  const carPic = (key, w = 30, h = 19) =>
+    key ? `<img class="car" src="${IMG}${CARS[key].img}" alt="${CARS[key].name}" style="width:${w}px;height:${h}px">` : ''
+  const grip = (label) => `<button class="icon-btn grip" aria-label="Déplacer ${label}">${ICONS.grip}</button>`
+
+  document.querySelectorAll('[data-icon]').forEach((el) => (el.innerHTML = ICONS[el.dataset.icon]))
+  document.querySelectorAll('[data-chip]').forEach((el) => {
+    const id = el.dataset.chip
+    el.innerHTML = `${face(id)}${DRIVERS[id].name}${carPic(DRIVERS[id].car, 26, 16)}<span class="tag new">Nouveau</span>`
+  })
+
+  // Steps as tabs: all open while editing
+  const STEPS = ['Infos', 'Pilotes', 'Configuration']
+  document.querySelectorAll('[data-tabs]').forEach((el) => {
+    el.innerHTML = STEPS.map((label, i) => `<span class="${i === +el.dataset.tabs ? 'on' : ''}">${label}</span>`).join('')
+  })
+
+  // Participants: [driver, car, how the car was chosen, sharing, state]
+  const LINEUP = [
+    ['sdr', 'porsche', 'pref'],
+    ['dan', 'mclaren', 'pref'],
+    ['pel', 'lambo', 'pref'],
+    ['mil', 'bmw', 'pref', 'Lena FIS'],
+    ['bou', 'audi', 'changed'],
+    ['hau', 'amg', 'pref'],
+    ['fis', 'bmw', 'pref', 'Sarah MIL', 'new'],
+    ['neu', 'mclaren', '', '', 'retired'],
+  ]
+  document.getElementById('lineup').insertAdjacentHTML(
+    'beforeend',
+    LINEUP.map(([id, car, how, shared, state], i) => {
+      const d = DRIVERS[id]
+      const retired = state === 'retired'
+      const tag = how === 'pref' ? '<span class="tag pref">★ Profil</span>' : how === 'changed' ? '<span class="tag changed">Modifiée · sessions à venir</span>' : ''
+      const share = shared ? `<span class="shared" title="Voiture partagée avec ${shared}">${ICONS.users}</span>` : ''
+      const end = retired ? '<button class="link">Annuler</button>' : `<button class="icon-btn" aria-label="Retirer ${d.name}">${ICONS.x}</button>`
+      const badge = state === 'new' ? '<span class="tag new">Nouveau</span>' : retired ? '<span class="tag retired">Retiré · DNF sur Q2, R2</span>' : ''
+      const carCell = retired
+        ? `<div class="carcell out">${carPic(car, 40, 25)}<span class="note">${CARS[car].name}</span></div>`
+        : `<div class="carcell"><div class="carsel">${carPic(car, 40, 25)}<span class="cn">${CARS[car].name}</span>${tag}${ICONS.chev}</div>${share}</div>`
+      return `<div class="trow"><div class="idx">${retired ? '' : i + 1}</div><div class="who"><span class="${retired ? 'out' : ''}" style="display:contents">${face(id, 26)}<span class="n" ${retired ? 'style="text-decoration:line-through;opacity:.55"' : ''}>${d.name}</span></span>${badge}${retired ? '' : ICONS.chev}</div>${carCell}<div class="end">${end}</div></div>`
+    }).join('') + '<div class="trow empty"><div></div><div class="who" style="color:var(--faint)">Pilote…</div><div></div><div></div></div>',
+  )
+
+  // Auto groups: "label|done or next|driver:position …"
+  document.querySelectorAll('[data-group]').forEach((el) => {
+    const [label, state, list] = el.dataset.group.split('|')
+    const done = state === 'done'
+    const ids = list.split(' ')
+    const rows = ids.map((spec) => {
+      const [id, extra] = spec.split(':')
+      const d = DRIVERS[id]
+      if (extra === 'dnf')
+        return `<div class="drow out"><span class="p"></span>${face(id)}<span class="n">${d.name}</span><span class="tag dnf">DNF · retiré</span></div>`
+      const lead = done ? `<span class="p">P${extra}</span>` : grip(d.name)
+      const tag = extra === 'new' ? '<span class="tag new">Nouveau</span>' : ''
+      return `<div class="drow">${lead}${face(id)}<span class="n">${d.name}</span>${tag}${carPic(d.car)}</div>`
+    })
+    const seated = ids.filter((spec) => !spec.endsWith(':dnf')).length
+    const head = done
+      ? `<span class="lbl">${label}</span><span class="lock">${ICONS.lock}</span><span class="cnt"><span class="tag done">Terminée</span></span>`
+      : `<span class="lbl">${label}</span><span class="cnt">${seated} / 4</span>`
+    el.innerHTML = `<div class="gh">${head}</div>${rows.join('')}${done ? '' : '<div class="slot">Place libre</div>'.repeat(4 - seated)}`
+  })
+
+  // Manual lanes: [label, type, done, drivers (id:position for a finished one)]
+  const LANES = [
+    ['EL1', 'el', true, ['sdr:1', 'dan:2', 'pel:3', 'bou:4']],
+    ['EL2', 'el', true, ['mil:1', 'hau:2', 'neu:3']],
+    ['Q1', 'q', true, ['dan:1', 'sdr:2', 'mil:3', 'pel:4'], 'refused'],
+    ['Q2', 'q', false, ['bou', 'hau', 'neu:dnf']],
+    ['R1', 'r', false, ['dan', 'sdr', 'mil', 'pel']],
+    ['R2', 'r', false, ['bou', 'hau', 'neu:dnf']],
+  ]
+  const lane = ([label, type, done, drivers, refused]) => {
+    const dnf = drivers.filter((spec) => spec.endsWith(':dnf'))
+    drivers = drivers.filter((spec) => !spec.endsWith(':dnf'))
+    const out = dnf.map((spec) => {
+      const id = spec.split(':')[0]
+      return `<div class="mslot out"><span class="k">–</span>${face(id, 20)}<span class="n">${DRIVERS[id].name}</span><span class="tag dnf">DNF</span></div>`
+    })
+    const slots = drivers.map((spec, i) => {
+      const [id, place] = spec.split(':')
+      const d = DRIVERS[id]
+      const end = done ? `<span class="p">P${place}</span>` : ""
+      return `<div class="mslot"><span class="k">${i + 1}</span>${done ? '' : grip(d.name)}${face(id, 20)}<span class="n">${d.name}</span>${carPic(d.car, 24, 15)}${end}</div>`
+    })
+    const free = done ? [] : Array.from({ length: 6 - drivers.length }, (_, i) => `<div class="mslot free"><span class="k">${drivers.length + i + 1}</span>Libre</div>`)
+    const ghost = refused ? `<div class="mslot ghost">${face('fis', 20)}<span class="n">Lena FIS</span>✕</div>` : ''
+    const head = done
+      ? `<span class="badge">${label}</span><span class="lock">${ICONS.lock}</span><span class="cnt"><span class="tag done">Terminée</span></span>`
+      : `${grip(label)}<span class="badge ${type}">${label}</span><span class="cnt">${drivers.length} / 6</span>`
+    return `<div class="lane ${done ? 'frozen' : ''} ${refused ? 'refused' : ''}"><div class="lh">${head}</div><div class="ls">${slots.join('')}${ghost}${free.join('')}${out.join('')}</div></div>`
+  }
+  document.getElementById('lanes').innerHTML = LANES.map(lane).join('')
+</script>
+</body>
+</html>

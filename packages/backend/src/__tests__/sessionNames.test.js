@@ -67,14 +67,31 @@ describe('names of the sessions created by the server', () => {
     expect(await namesOf(res.body.data.id)).toEqual(['Free Practice', 'Qualifying 1', 'Qualifying 2', 'Race 1']);
   });
 
-  it('keeps the interface names when participants change', async () => {
+  it('names the sessions an edit adds in the interface language, numbered among their type', async () => {
     const { body } = await createAuto({ sessionNames: german });
+    const ids = drivers.map((d) => d.id);
 
-    await request(app)
-      .put(`/api/championships/${body.data.id}/participants`)
-      .send({ participants: drivers.slice(0, 2).map((d) => ({ driverId: d.id })), sessionNames: german });
+    const res = await request(app)
+      .put(`/api/championships/${body.data.id}/plan`)
+      .send({
+        name: 'Rush',
+        mode: 'auto',
+        driversPerQualif: 2,
+        driversPerRace: 4,
+        participants: ids.map((driverId) => ({ driverId })),
+        practiceGroups: [ids.slice(0, 2), ids.slice(2)],
+        qualifGroups: [ids.slice(0, 2), ids.slice(2)],
+        sessionNames: german,
+      });
 
-    expect(await namesOf(body.data.id)).toEqual(['Freies Training', 'Qualifikation 1', 'Rennen 1']);
+    expect(res.status).toBe(200);
+    expect(await namesOf(body.data.id)).toEqual([
+      'Freies Training',
+      'Freies Training 2',
+      'Qualifikation 1',
+      'Qualifikation 2',
+      'Rennen 1',
+    ]);
   });
 
   it('names a session of an unknown type like a practice', () => {

@@ -69,15 +69,16 @@ export function lapsProgressOf(session, current) {
 }
 
 /**
- * A session's short label: its type and rank among the championship's sessions of that type
+ * A session's short label: its type and rank in running order among the championship's sessions of that type
  * (`Q2`, `FP3`), the type alone for a free practice outside a championship, none for balancing.
  */
 export function sessionLabelOf(session, sessions, t) {
   if (session.type === SessionType.BALANCING) return ''
   const abbr = t(sessionTypeAbbrKey(session.type))
   if (session.type === SessionType.PRACTICE && !session.championshipId) return abbr
-  const sameType = sessions
-    .filter((s) => s.type === session.type)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  const sameType = sessions.filter((s) => s.type === session.type).sort(byRunningOrder)
   return `${abbr}${sameType.findIndex((s) => s.id === session.id) + 1 || ''}`
 }
+
+/** Sessions in their running order, the oldest first on a tie. */
+export const byRunningOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || new Date(a.createdAt) - new Date(b.createdAt)

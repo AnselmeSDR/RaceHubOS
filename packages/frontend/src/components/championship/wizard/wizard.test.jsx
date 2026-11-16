@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ChampionshipMode, SessionType } from '@racehubos/shared'
+import { ChampionshipMode, ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
 import { field, routeFetch } from '@/test/helpers'
 import ChampionshipWizard from '../ChampionshipWizard'
@@ -11,9 +11,10 @@ import WizardInfoStep from './WizardInfoStep'
 import WizardManualConfig from './WizardManualConfig'
 import WizardParticipantsStep from './WizardParticipantsStep'
 import WizardSteps from './WizardSteps'
-import { dealtPracticeGroups, dealtQualifGroups, DEFAULT_WIZARD_CONFIG, practiceCountFor } from './wizardPlan'
+import { dealtPracticeGroups, dealtQualifGroups, DEFAULT_WIZARD_CONFIG } from './wizardPlan'
 
 const { PRACTICE, QUALIF, RACE } = SessionType
+const { DRAFT, FINISHED } = SessionStatus
 const tracks = [{ id: 't1', name: 'Monza' }]
 const GOLD = { id: 'gold', name: 'GOLD', color: '#F5D13C', scope: 'driver' }
 const GT3 = { id: 'gt3', name: 'GT3', color: '#E11D48', scope: 'car' }
@@ -204,8 +205,7 @@ describe('WizardAutoConfig', () => {
   function configure({ config = DEFAULT_WIZARD_CONFIG, participants = nine, groups, practices } = {}) {
     const props = { onConfigChange: vi.fn(), onPracticeGroupsChange: vi.fn(), onQualifGroupsChange: vi.fn() }
     const qualifGroups = groups ?? dealtQualifGroups(participants, config.driversPerQualif)
-    const practiceGroups =
-      practices ?? dealtPracticeGroups(participants, practiceCountFor(participants, config.practiceCount))
+    const practiceGroups = practices ?? dealtPracticeGroups(participants, config.practiceCount)
     render(
       <WizardAutoConfig
         config={config}
@@ -222,11 +222,14 @@ describe('WizardAutoConfig', () => {
 
   test('the practices and qualifying groups by name, the races by ranking slice', () => {
     configure()
-    // One practice wanted, two needed for nine drivers on six controllers
-    expect(practiceTexts()).toEqual(['FP15 / 6AnaCidEvaGusIvyFree place', 'FP24 / 6BenDanFayHalFree place'])
-    expect(screen.getByRole('spinbutton', { name: /Free practices.*at least 2 for every driver/ })).toHaveValue(2)
-    expect(screen.getByText(/3 qualif groups/)).toBeInTheDocument()
-    expect(screen.getByText(/2 races/)).toBeInTheDocument()
+    // One practice wanted: six controllers for nine drivers, three run none
+    expect(practiceTexts()).toEqual(['FP16 / 6AnaBenCidDanEvaFay'])
+    expect(screen.getByTestId('championship-wizard-no-practice')).toHaveTextContent(
+      'No practice3GusHalIvyDrag them into a practice, or add them when it runs.'
+    )
+    expect(screen.getByRole('spinbutton', { name: /free practice in all/ })).toHaveValue(1)
+    expect(screen.getByText('3 qualifs of 3 drivers')).toBeInTheDocument()
+    expect(screen.getByText('2 races of 5 and 4 drivers')).toBeInTheDocument()
     expect(groupTexts()).toEqual([
       'Q13 / 4AnaDanGusFree place',
       'Q23 / 4BenEvaHalFree place',
@@ -240,14 +243,24 @@ describe('WizardAutoConfig', () => {
     const { onConfigChange } = configure({ config: { ...DEFAULT_WIZARD_CONFIG, practiceCount: 3 } })
     expect(screen.getAllByTestId('championship-wizard-practice')).toHaveLength(3)
     const three = { ...DEFAULT_WIZARD_CONFIG, practiceCount: 3 }
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Free practices/ }), { target: { value: '30' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /free practices in all/ }), { target: { value: '30' } })
     expect(onConfigChange).toHaveBeenLastCalledWith({ ...three, practiceCount: 20 })
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Free practices/ }), { target: { value: '' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /free practices in all/ }), { target: { value: '' } })
     expect(onConfigChange).toHaveBeenLastCalledWith({ ...three, practiceCount: 0 })
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Drivers per qualif/ }), { target: { value: '9' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /drivers per qualif/ }), { target: { value: '9' } })
     expect(onConfigChange).toHaveBeenLastCalledWith({ ...three, driversPerQualif: 6 })
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Drivers per race/ }), { target: { value: '1' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /drivers per race/ }), { target: { value: '1' } })
     expect(onConfigChange).toHaveBeenLastCalledWith({ ...three, driversPerRace: 2 })
+  })
+
+  test('a driver dragged out of the practices runs none; one who runs none is dragged into a practice', () => {
+    const { onPracticeGroupsChange } = configure({ practices: [['d1', 'd2']] })
+    const out = screen.getByTestId('championship-wizard-no-practice')
+    const [fp1] = screen.getAllByTestId('championship-wizard-practice')
+    drag(within(out).getByText('Cid'), fp1)
+    expect(onPracticeGroupsChange).toHaveBeenLastCalledWith([['d1', 'd2', 'd3']])
+    drag(within(fp1).getByText('Ana'), out)
+    expect(onPracticeGroupsChange).toHaveBeenLastCalledWith([['d2']])
   })
 
   test('each card changes its own limits; practices may have none', async () => {
@@ -590,10 +603,10 @@ describe('ChampionshipWizard', () => {
   test('automatic: creates the championship with the cars and the groups as moved, then closes', async () => {
     const mock = api()
     const { onCreated, onClose } = await toConfig()
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Drivers per qualif/ }), { target: { value: '2' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /drivers per qualif/ }), { target: { value: '2' } })
     const [q1, q2] = screen.getAllByTestId('championship-wizard-qualif-group')
     drag(within(q1).getByText('Cid'), q2)
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Free practices/ }), { target: { value: '2' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /free practice in all/ }), { target: { value: '2' } })
     const [fp1, fp2] = screen.getAllByTestId('championship-wizard-practice')
     drag(within(fp1).getByText('Cid'), fp2)
     await create()
@@ -714,5 +727,153 @@ describe('ChampionshipWizard', () => {
     expect(within(screen.getByRole('combobox', { name: 'Driver' })).getAllByRole('option')).toHaveLength(1)
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('ChampionshipWizard editing a championship under way', () => {
+  const [ana, ben, cid, dan] = drivers
+  const seat = (driver, controller, finalPos = null) => ({
+    id: `${driver.id}-${controller}`,
+    driverId: driver.id,
+    driver,
+    carId: null,
+    car: null,
+    controller,
+    finalPos,
+  })
+  const session = (id, type, status, order, seats = [], extra = {}) => ({
+    id,
+    type,
+    status,
+    order,
+    drivers: seats,
+    withdrawals: [],
+    ...extra,
+  })
+  const championshipOf = (mode, lineUp, extra = {}) => ({
+    id: 'c1',
+    name: 'Cup',
+    trackId: 't1',
+    mode,
+    status: ChampionshipStatus.ACTIVE,
+    driversPerQualif: 2,
+    driversPerRace: 4,
+    qualifMaxDuration: 300000,
+    raceMaxDuration: 600000,
+    divisions: [],
+    participants: lineUp.map((driver) => ({ driverId: driver.id, driver, carId: null })),
+    ...extra,
+  })
+
+  function edit(championship, sessions) {
+    const mock = routeFetch({ ...divisionRoutes, 'PUT /api/championships/c1/plan': { success: true, data: {} } })
+    const handlers = { onClose: vi.fn(), onSaved: vi.fn(), onFinish: vi.fn(), onReopen: vi.fn() }
+    render(
+      <ChampionshipWizard
+        tracks={tracks}
+        championship={championship}
+        sessions={sessions}
+        drivers={drivers}
+        cars={cars}
+        {...handlers}
+      />
+    )
+    return { mock, handlers }
+  }
+  const tab = (name) => userEvent.click(screen.getByRole('button', { name }))
+  const save = () => userEvent.click(screen.getByRole('button', { name: 'Save' }))
+  const saved = (mock) => JSON.parse(mock.mock.calls.find(([, init]) => init?.method === 'PUT')[1].body)
+  const frozen = () => screen.getAllByTestId('championship-wizard-frozen').map((s) => s.textContent)
+
+  test('automatic: the sessions that ran stay as they ran, those to come are dealt and saved', async () => {
+    const sessions = [
+      session('q1', QUALIF, FINISHED, 0, [seat(ana, 0, 2), seat(ben, 1, 1)]),
+      session('q2', QUALIF, DRAFT, 1, [seat(cid, 0), seat(dan, 1)]),
+      session('r1', RACE, DRAFT, 2),
+    ]
+    const { mock, handlers } = edit(championshipOf(ChampionshipMode.AUTO, [ana, ben, cid, dan]), sessions)
+
+    expect(field('Track')).toBeDisabled()
+    expect(screen.getByText('Locked: 1 session has run on this track.')).toBeInTheDocument()
+    await tab('Configuration')
+    expect(frozen()).toEqual(['Q1FinishedP1BenP2Ana'])
+    const groups = screen.getAllByTestId('championship-wizard-qualif-group')
+    expect(groups.map((g) => g.textContent)).toEqual([expect.stringMatching(/^Q22 \/ 2CidDan/)])
+    expect(screen.getByTestId('championship-wizard-total')).toHaveTextContent('To come: 2 sessions')
+
+    await save()
+    expect(saved(mock)).toMatchObject({
+      mode: ChampionshipMode.AUTO,
+      participants: [ana, ben, cid, dan].map((d) => ({ driverId: d.id, carId: null })),
+      practiceGroups: [],
+      qualifGroups: [[cid.id, dan.id]],
+    })
+    await waitFor(() => expect(handlers.onSaved).toHaveBeenCalled())
+    expect(handlers.onClose).toHaveBeenCalled()
+  })
+
+  test('manual: a driver who raced and is taken out is DNF where they were to run, until restored', async () => {
+    const sessions = [
+      session('q1', QUALIF, FINISHED, 0, [seat(ana, 0, 1), seat(ben, 1, 2)]),
+      session('r1', RACE, DRAFT, 1, [seat(ana, 0), seat(ben, 1), seat(cid, 2)]),
+    ]
+    const { mock } = edit(championshipOf(ChampionshipMode.MANUAL, [ana, ben, cid]), sessions)
+
+    await tab('Drivers')
+    const benRow = screen.getAllByTestId('wizard-participant')[1]
+    await userEvent.click(within(benRow).getByRole('button', { name: 'Delete' }))
+    expect(screen.getByTestId('wizard-retired')).toHaveTextContent('BenWithdrawn · DNF in R1')
+
+    await tab('Configuration')
+    expect(lanes()).toEqual([{ title: 'R12 / 6', drivers: ['Ana', 'Cid'] }])
+    // The counts are all the sessions: never fewer than those that ran
+    expect(field('Qualifications')).toHaveValue(1)
+    fireEvent.change(field('Qualifications'), { target: { value: '0' } })
+    expect(field('Qualifications')).toHaveValue(1)
+    expect(field('Races')).toHaveValue(1)
+    expect(screen.getByTestId('wizard-withdrawn')).toHaveTextContent('BenDNF · withdrawn')
+    drag(
+      within(screen.getAllByTestId('championship-wizard-session')[0]).getAllByTestId('wizard-driver')[1],
+      screen.getByTestId('championship-wizard-frozen')
+    )
+    expect(screen.getByText('Refused: Q1 has already run, its grid no longer changes.')).toBeInTheDocument()
+
+    await save()
+    expect(saved(mock)).toMatchObject({
+      mode: ChampionshipMode.MANUAL,
+      participants: [{ driverId: ana.id }, { driverId: cid.id }],
+      sessions: [
+        {
+          id: 'r1',
+          type: RACE,
+          drivers: [
+            { driverId: ana.id, controller: 0 },
+            { driverId: cid.id, controller: 2 },
+          ],
+        },
+      ],
+    })
+  })
+
+  test('a driver restored is back in the line-up and DNF nowhere', async () => {
+    const sessions = [session('q1', QUALIF, FINISHED, 0, [seat(ana, 0, 1), seat(ben, 1, 2)])]
+    edit(championshipOf(ChampionshipMode.MANUAL, [ana, cid]), sessions)
+
+    await tab('Drivers')
+    expect(screen.getByTestId('wizard-retired')).toHaveTextContent('BenWithdrawn')
+    await userEvent.click(screen.getByRole('button', { name: 'Restore' }))
+    expect(screen.queryByTestId('wizard-retired')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId('wizard-participant')).toHaveLength(4)
+  })
+
+  test('a finished championship is locked: it can only be reopened', async () => {
+    const { handlers } = edit(
+      championshipOf(ChampionshipMode.AUTO, [ana, ben], { status: ChampionshipStatus.FINISHED }),
+      []
+    )
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Reopen championship' }))
+    expect(handlers.onReopen).toHaveBeenCalled()
   })
 })

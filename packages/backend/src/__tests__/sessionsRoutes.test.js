@@ -224,7 +224,21 @@ describe('PUT /api/sessions/:id', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid trackId or championshipId');
     res = await api.put('/api/sessions/nope').send({ name: 'X' });
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(404);
+  });
+
+  test('a championship session that has started no longer changes, its line-up neither; a free one does', async () => {
+    const started = await newSession({ championshipId: cup.id, status: SessionStatus.FINISHED, name: 'Q1' });
+    const refused = 'A championship session that has started no longer changes';
+    let res = await api.put(`/api/sessions/${started.id}`).send({ name: 'Renamed', maxLaps: 3 });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe(refused);
+    res = await api.put(`/api/sessions/${started.id}/drivers`).send({ drivers: [] });
+    expect(res.status).toBe(409);
+    expect(await prisma.session.findUnique({ where: { id: started.id } })).toMatchObject({ name: 'Q1', maxLaps: null });
+
+    const free = await newSession({ status: SessionStatus.FINISHED });
+    expect((await api.put(`/api/sessions/${free.id}`).send({ name: 'Renamed' })).status).toBe(200);
   });
 });
 

@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import DriverToken, { DropGhost } from './DriverToken'
+import { WithdrawnToken } from './FrozenSession'
 import { useDragAndDrop } from './useDragAndDrop'
-import { carLookup, moveInGroups, refusalMessage } from './wizardPlan'
+import { carLookup, leftOut, moveInGroups, refusalMessage } from './wizardPlan'
 
 const TONES = {
   purple: { border: 'border-purple-200 dark:border-purple-800', label: 'text-session-practice' },
@@ -9,18 +10,24 @@ const TONES = {
 }
 
 /**
- * Sessions of one kind as groups of drivers, named `label` and their number. A driver dragged onto
- * another group joins it unless the move is refused (`onRefuse` gets why); the group hovered shows
- * where the driver would land, in red when they can't. With `keepOne`, no group is ever emptied.
+ * Sessions of one kind as groups of drivers, named `label` and their number, from `first`. A driver
+ * dragged onto another group joins it unless the move is refused (`onRefuse` gets why); the group
+ * hovered shows where the driver would land, in red when they can't. With `keepOne`, no group is ever
+ * emptied. `withdrawn[g]`: the retired drivers DNF in group `g`, shown after its drivers. With `out`
+ * (`{ label, hint(count), testId }`), a driver may be in no group: those are listed after the groups,
+ * where a driver dragged leaves them.
  */
 export default function WizardGroups({
   groups,
   label,
+  first = 1,
+  withdrawn = [],
   tone,
   perGroup,
   keepOne,
   participants,
   testId,
+  out,
   onChange,
   onRefuse,
 }) {
@@ -40,7 +47,10 @@ export default function WizardGroups({
     onChange(result.groups)
   }
 
-  return groups.map((group, g) => {
+  const outside = out ? leftOut(groups, participants) : []
+  const outHovered = dragged !== null && over === 'out' && groups.some((group) => group.includes(dragged))
+
+  const lanes = groups.map((group, g) => {
     const hovered = dragged !== null && over === g && !group.includes(dragged)
     const refused = hovered && move(dragged, g).refused
     const outline = hovered
@@ -64,7 +74,7 @@ export default function WizardGroups({
         <div className="flex justify-between px-1 text-xs">
           <span className={`font-semibold ${TONES[tone].label}`}>
             {label}
-            {g + 1}
+            {first + g}
           </span>
           <span className="text-muted-foreground">
             {group.length} / {perGroup}
@@ -78,6 +88,9 @@ export default function WizardGroups({
             dragging={dragged === driverId}
           />
         ))}
+        {(withdrawn[g] ?? []).map((r) => (
+          <WithdrawnToken key={r.driverId} driver={r.driver} />
+        ))}
         {hovered ? (
           <DropGhost name={nameOf(dragged)} refused={refused} />
         ) : (
@@ -90,4 +103,35 @@ export default function WizardGroups({
       </div>
     )
   })
+
+  // Shown once a driver is in no group, or while one could be dragged there; the groups stay mounted
+  const showOut = out && groups.length > 0 && (outside.length > 0 || dragged !== null)
+  return (
+    <>
+      {lanes}
+      {showOut && (
+        <div
+          data-testid={out.testId}
+          {...target(
+            'out',
+            () => true,
+            (driverId) => drop(driverId, null)
+          )}
+          className={`rounded-lg border border-dashed p-2 space-y-1 transition-colors ${
+            outHovered ? 'border-primary ring-2 ring-primary/40 bg-primary/5' : 'border-muted-foreground/40 bg-muted/30'
+          }`}
+        >
+          <div className="flex justify-between px-1 text-xs">
+            <span className="font-semibold">{out.label}</span>
+            <span className="text-muted-foreground">{outside.length}</span>
+          </div>
+          {outside.map((p) => (
+            <DriverToken key={p.driverId} participant={p} drag={source(p.driverId)} dragging={dragged === p.driverId} />
+          ))}
+          {outHovered && <DropGhost name={nameOf(dragged)} />}
+          {outside.length > 0 && <p className="px-1 text-[11px] text-muted-foreground">{out.hint(outside.length)}</p>}
+        </div>
+      )}
+    </>
+  )
 }

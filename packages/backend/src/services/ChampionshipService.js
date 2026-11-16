@@ -1,5 +1,6 @@
 import { createPrismaClient } from '../lib/prisma.js';
-import { ChampionshipMode, groupCount, SessionStatus, SessionType } from '@racehubos/shared';
+import { ChampionshipMode, groupCount, isSessionUnderway, SessionStatus, SessionType } from '@racehubos/shared';
+import { resetStoredSession } from '../lib/sessions/storage.js';
 import { sessionName } from '../lib/sessionNames.js';
 import {
   bracketGroup,
@@ -103,26 +104,31 @@ export class ChampionshipService {
   }
 
   /**
-   * Fills the races from the qualifying results: balanced groups, fastest first, grid in that order;
-   * two drivers of the same car are split, the slower one swapped with the nearest race.
+   * Fills the races still to run from the qualifying results: balanced groups, fastest first, grid in
+   * that order; two drivers of the same car are split, the slower one swapped with the nearest race.
+   * A race that has started keeps its grid, and its drivers race no other; a driver who left the
+   * championship is not placed.
    */
   async assignDriversToRaces(championshipId) {
-    const championship = await this.autoChampionship(championshipId, { participants: { where: { deletedAt: null } } });
+    const championship = await this.autoChampionship(championshipId, {
+      participants: { where: { deletedAt: null } },
+      sessions: { where: { deletedAt: null }, include: { drivers: liveDrivers } },
+    });
     if (!championship) return;
 
-    const qualifSessions = await this.prisma.session.findMany({
-      where: { championshipId, type: SessionType.QUALIF, status: SessionStatus.FINISHED, deletedAt: null },
-      include: { drivers: liveDrivers },
-    });
-    const ranking = qualifRanking(qualifSessions, championship.participants);
-    const raceSessions = await this.prisma.session.findMany({
-      where: { championshipId, type: SessionType.RACE, deletedAt: null },
-      orderBy: { autoGroup: 'asc' },
-    });
-    const cars = new Map(championship.participants.map((p) => [p.driverId, p.carId]));
+    const { participants, sessions } = championship;
+    const races = sessions.filter(isRace).sort((a, b) => (a.autoGroup ?? 0) - (b.autoGroup ?? 0) || a.order - b.order);
+    const ran = races.filter((race) => isSessionUnderway(race.status));
+    const raced = new Set(ran.flatMap((race) => race.drivers.map((d) => d.driverId)));
+    const staying = new Set(participants.map((p) => p.driverId));
+    const qualifSessions = sessions.filter((s) => isQualif(s) && isFinished(s));
+    const ranking = qualifRanking(qualifSessions, participants).filter(
+      (entry) => staying.has(entry.driverId) && !raced.has(entry.driverId)
+    );
+    const cars = new Map(participants.map((p) => [p.driverId, p.carId]));
     const raceGroups = distributeSequential(ranking, championship.driversPerRace, (entry) => cars.get(entry.driverId));
 
-    for (const [r, race] of raceSessions.entries()) {
+    for (const [r, race] of races.filter((race) => !isSessionUnderway(race.status)).entries()) {
       await this.prisma.sessionDriver.deleteMany({ where: { sessionId: race.id } });
       for (const [i, { driverId }] of (raceGroups[r] ?? []).entries()) {
         await this.prisma.sessionDriver.create({
@@ -192,7 +198,10 @@ export class ChampionshipService {
     if (sessions?.filter(isQualif).every(isFinished)) await this.assignDriversToRaces(championshipId);
   }
 
-  /** Refreshes the standings; in auto mode, resetting a qualifying empties the races. */
+  /**
+   * Refreshes the standings. In auto mode the races come from the qualifying ranking: resetting a
+   * qualifying resets the races that ran from it too, and empties them all until every qualif is over.
+   */
   async onStandingsChanged(championshipId, sessionId, reason) {
     if (!championshipId) return;
     this.emitStandingsChanged(championshipId, sessionId, reason);
@@ -200,9 +209,16 @@ export class ChampionshipService {
 
     const sessions = await this.autoSessionsAroundQualif(championshipId, sessionId);
     if (!sessions) return;
-    const raceIds = sessions.filter(isRace).map((s) => s.id);
-    await this.prisma.sessionDriver.deleteMany({ where: { sessionId: { in: raceIds } } });
+    const races = sessions.filter(isRace);
+    for (const race of races.filter((s) => isSessionUnderway(s.status))) await this.resetRace(race.id);
+    await this.prisma.sessionDriver.deleteMany({ where: { sessionId: { in: races.map((s) => s.id) } } });
     this.io?.emit('championship:races_assigned', { championshipId, cleared: true, timestamp: now() });
+  }
+
+  /** A race back to draft, its laps hidden; the one running is first stopped on the track. */
+  async resetRace(raceId) {
+    if (this.sessionService?.activeSessionId === raceId) await this.sessionService.resetSession(raceId);
+    else await resetStoredSession(this.prisma, raceId);
   }
 
   async close() {

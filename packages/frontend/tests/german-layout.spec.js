@@ -121,11 +121,12 @@ test('long German names and dark demo headings remain readable', async ({ page, 
   }
 })
 
-test('German championship configuration actions fit inside their sheet', async ({ page }) => {
+test('German championship edit actions fit inside their sheet', async ({ page }) => {
   await page.goto('/championships/e2e-champ')
   await page.getByRole('button', { name: 'Konfiguration', exact: true }).click()
-  const dialog = page.getByRole('dialog', { name: 'Meisterschaft konfigurieren', exact: true })
-  await expect(dialog).toBeVisible()
+  // The edit wizard: its panel, not the backdrop
+  const dialog = page.getByTestId('modal').locator('> div')
+  await expect(dialog.getByRole('heading', { name: 'Meisterschaft bearbeiten · Championnat E2E' })).toBeVisible()
   await expectWithin(dialog, dialog.getByRole('button'))
 })
 

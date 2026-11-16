@@ -1,4 +1,4 @@
-import { SessionStatus, SessionType } from '@racehubos/shared'
+import { ChampionshipStatus, SessionStatus, SessionType } from '@racehubos/shared'
 import { getData, sendJson } from './sessionApi'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -39,3 +39,14 @@ export async function finishChampionship(id) {
 
 /** Deletes a championship, which hides its sessions and laps too (cascade). */
 export const deleteChampionship = (id) => fetch(`${API_URL}/api/championships/${id}`, { method: 'DELETE' })
+
+/** The championship reopened, null when the server refuses or cannot be reached. */
+export async function reopenChampionship(id) {
+  try {
+    const res = await sendJson(`/api/championships/${id}`, 'PUT', { status: ChampionshipStatus.PLANNED })
+    return res.ok ? (await res.json()).data : null
+  } catch (err) {
+    console.error('Error reopening championship:', err)
+    return null
+  }
+}

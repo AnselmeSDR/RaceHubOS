@@ -1,4 +1,4 @@
-import { ChampionshipMode, SessionType } from '@racehubos/shared'
+import { ChampionshipMode, SessionStatus, SessionType } from '@racehubos/shared'
 import i18n from '@/i18n'
 import { routeFetch } from '@/test/helpers'
 import {
@@ -8,19 +8,24 @@ import {
   dealtPracticeGroups,
   dealtQualifGroups,
   DEFAULT_WIZARD_CONFIG,
+  editState,
+  holdsEachOnce,
+  leftOut,
   isConfigValid,
   moveInGroups,
   moveSession,
   placeDriver,
   planFromAuto,
-  practiceCountFor,
   prunePlan,
   raceGroups,
+  resultOf,
   setSessionCount,
+  stillToRace,
   withEmptyRow,
 } from './wizardPlan'
 
 const { PRACTICE, QUALIF, RACE } = SessionType
+const { DRAFT, FINISHED } = SessionStatus
 // Ana and Cid share a Ferrari
 const CARS = { d1: 'ferrari', d3: 'ferrari' }
 const carOf = (id) => CARS[id] ?? null
@@ -77,19 +82,18 @@ test('one race more when the drivers sharing a car outnumber the slices: they ru
   expect(dealtQualifGroups(lineUp('d1', 'd2', 'd3'), 4)).toEqual([['d1', 'd2'], ['d3']])
 })
 
-test('free practices: as many as wanted, or enough for everyone to get a controller, cars apart', () => {
-  const thirteen = Array.from({ length: 13 }, (_, i) => entry(`x${i}`))
-  expect(practiceCountFor(thirteen, 1)).toBe(3)
-  expect(practiceCountFor(thirteen, 5)).toBe(5)
-  expect(practiceCountFor(thirteen, 0)).toBe(0)
+test('as many free practices as wanted: who finds no controller, or only one with their car, runs none', () => {
+  const eight = Array.from({ length: 8 }, (_, i) => entry(`x${i}`))
+  expect(dealtPracticeGroups(eight, 1)).toEqual([['x0', 'x1', 'x2', 'x3', 'x4', 'x5']])
+  expect(leftOut(dealtPracticeGroups(eight, 1), eight).map((p) => p.driverId)).toEqual(['x6', 'x7'])
   // Ana and Cid share the Ferrari
-  expect(practiceCountFor(lineUp('d1', 'd2', 'd3'), 1)).toBe(2)
+  expect(dealtPracticeGroups(lineUp('d1', 'd2', 'd3'), 1)).toEqual([['d1', 'd2']])
 })
 
 test('the participants dealt like cards into the free practices, cars apart, some maybe empty', () => {
   expect(dealtPracticeGroups(lineUp('d1', 'd2', 'd3', 'd4'), 2)).toEqual([
-    ['d1', 'd2'],
-    ['d3', 'd4'],
+    ['d1', 'd4'],
+    ['d2', 'd3'],
   ])
   expect(dealtPracticeGroups(lineUp('d2', 'd4'), 3)).toEqual([['d2'], ['d4'], []])
   expect(dealtPracticeGroups(lineUp('d2'), 0)).toEqual([])
@@ -108,6 +112,16 @@ describe('moving a driver between qualifying groups', () => {
     ['is refused where its car already runs', 'd1', 1, 3, { refused: 'car', with: 'd3' }],
   ])('a driver %s', (_, driverId, to, perGroup, expected) => {
     expect(moveInGroups(groups, driverId, to, perGroup, carOf)).toEqual(expected)
+  })
+
+  test('a driver leaves every group, or joins one from none (practices)', () => {
+    expect(moveInGroups(groups, 'd2', null, 6, carOf, { keepOne: false })).toEqual({ groups: [['d1'], ['d3', 'd4']] })
+    expect(moveInGroups([['d1'], ['d4']], 'd2', 1, 6, carOf, { keepOne: false })).toEqual({
+      groups: [['d1'], ['d4', 'd2']],
+    })
+    expect(moveInGroups([['d2'], ['d4']], 'd3', 0, 6, carOf, { keepOne: false })).toEqual({
+      groups: [['d2', 'd3'], ['d4']],
+    })
   })
 
   test('the last driver of a group stays: a group is never emptied, unless it may be (practices)', () => {
@@ -311,4 +325,79 @@ test("creating posts the body and returns the server's answer", async () => {
   const mock = routeFetch({ 'POST /api/championships': { success: true, data: { id: 'c1' } } })
   expect(await createChampionship({ name: 'Cup' })).toEqual({ success: true, data: { id: 'c1' } })
   expect(mock).toHaveBeenCalledWith('/api/championships', expect.objectContaining({ body: '{"name":"Cup"}' }))
+})
+
+describe('editing a championship under way', () => {
+  const seat = (driverId, controller, data = {}) => ({ driverId, driver: { id: driverId }, controller, ...data })
+  const session = (id, type, status, order, drivers = [], data = {}) => ({ id, type, status, order, drivers, ...data })
+
+  test('the settings it runs with; the sessions that ran apart from those to come, planned by id', () => {
+    const championship = {
+      name: 'Cup',
+      trackId: 't1',
+      mode: ChampionshipMode.MANUAL,
+      qualifMaxDuration: 240000,
+      raceMaxLaps: 20,
+      participants: [{ driverId: 'd1', driver: { id: 'd1' }, carId: 'ferrari' }],
+    }
+    const sessions = [
+      session('r1', RACE, DRAFT, 2, [seat('d1', 3)]),
+      session('fp2', PRACTICE, DRAFT, 1, [], { maxLaps: 8 }),
+      session('fp1', PRACTICE, FINISHED, 0),
+    ]
+    const state = editState(championship, sessions, [{ id: 'ferrari', brand: 'Ferrari' }])
+
+    expect(state.frozen.map((s) => s.id)).toEqual(['fp1'])
+    expect(state.participants).toEqual([
+      { driverId: 'd1', driver: { id: 'd1' }, carId: 'ferrari', car: { id: 'ferrari', brand: 'Ferrari' } },
+    ])
+    expect(state.config).toMatchObject({
+      practiceCount: 1,
+      practice: { useTime: false, useLaps: true, laps: 8 },
+      qualif: { useTime: true, duration: 4, useLaps: false },
+      race: { useTime: false, useLaps: true, laps: 20 },
+    })
+    expect(state.plan.map((s) => [s.id, s.type, s.slots])).toEqual([
+      ['fp2', PRACTICE, [null, null, null, null, null, null]],
+      ['r1', RACE, [null, null, null, 'd1', null, null]],
+    ])
+  })
+
+  test('a championship without participants takes the drivers of its sessions, with the car they last ran', () => {
+    const sessions = [
+      session('q1', QUALIF, FINISHED, 0, [seat('d1', 0, { carId: 'bmw' }), seat('d2', 1)]),
+      session('q2', QUALIF, DRAFT, 1, [seat('d1', 0, { carId: 'ferrari' })]),
+    ]
+    const state = editState({ mode: ChampionshipMode.MANUAL, participants: [] }, sessions)
+    expect(state.participants.map((p) => [p.driverId, p.carId])).toEqual([
+      ['d1', 'ferrari'],
+      ['d2', null],
+    ])
+  })
+
+  test('a result by place, those without one by controller; the races to come take who has not raced', () => {
+    const race = session('r1', RACE, FINISHED, 0, [
+      seat('d3', 0),
+      seat('d1', 1, { finalPos: 2 }),
+      seat('d2', 2, { finalPos: 1 }),
+      seat(null, 3),
+    ])
+    expect(resultOf(race).map((e) => [e.driverId, e.place])).toEqual([
+      ['d2', 1],
+      ['d1', 2],
+      ['d3', null],
+    ])
+    expect(stillToRace(lineUp('d1', 'd4'), [race]).map((p) => p.driverId)).toEqual(['d4'])
+  })
+
+  test('groups are kept only while they hold each participant once, as many as dealt', () => {
+    const drivers = lineUp('d1', 'd2', 'd3')
+    expect(holdsEachOnce([['d1', 'd2'], ['d3']], drivers, 2)).toBe(true)
+    expect(holdsEachOnce([['d1', 'd2', 'd3']], drivers, 2)).toBe(false)
+    expect(holdsEachOnce([['d1', 'd1'], ['d3']], drivers, 2)).toBe(false)
+    expect(holdsEachOnce([['d1'], ['d3']], drivers, 2)).toBe(false)
+    // Free practices: a driver may run none, never two
+    expect(holdsEachOnce([['d1'], ['d3']], drivers, 2, { everyone: false })).toBe(true)
+    expect(holdsEachOnce([['d1', 'd1'], ['d3']], drivers, 2, { everyone: false })).toBe(false)
+  })
 })

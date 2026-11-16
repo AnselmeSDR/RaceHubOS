@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, GripVertical } from 'lucide-react'
 import { SessionType, sessionTypeAbbrKey } from '@racehubos/shared'
 import DriverToken, { DropGhost } from './DriverToken'
+import FrozenSession, { WithdrawnToken } from './FrozenSession'
 import { useDragAndDrop } from './useDragAndDrop'
 import WizardLimitsCard from './WizardLimitsCard'
 import { CountField, Refusal } from './wizardFields'
@@ -18,6 +19,7 @@ import {
   refusalMessage,
   sessionsOfType,
   setSessionCount,
+  withdrawnIn,
 } from './wizardPlan'
 
 const TYPES = [
@@ -41,8 +43,20 @@ const BADGES = {
  * side by side in running order, each with its six controllers. Drivers are dragged between
  * controllers, sessions and the drivers set aside; a session is dragged by its header. The place
  * hovered shows where the driver would land (in red when refused), a bar where a session would go.
+ * When editing, the sessions that have started (`frozen`) open the timeline, greyed and locked: a
+ * driver dropped on one is refused. `plan` holds the sessions to come; the `retired` drivers a session
+ * to come (`upcoming`, by id) held show in it as DNF.
  */
-export default function WizardManualConfig({ config, participants, plan, onConfigChange, onPlanChange }) {
+export default function WizardManualConfig({
+  config,
+  participants,
+  plan,
+  frozen = [],
+  upcoming = [],
+  retired = [],
+  onConfigChange,
+  onPlanChange,
+}) {
   const { t } = useTranslation('championships')
   const { dragged, over, source, target } = useDragAndDrop() // { driverId, from } | { session }
   const [refusal, setRefusal] = useState(null)
@@ -54,6 +68,9 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
   const abbr = (type) => t(sessionTypeAbbrKey(type))
   const isDriver = (item) => item.driverId !== undefined
   const isSession = (item) => item.session !== undefined
+  const ran = (type) => frozen.filter((s) => s.type === type).length
+  const frozenLabel = (session, i) =>
+    `${abbr(session.type)}${frozen.slice(0, i + 1).filter((s) => s.type === session.type).length}`
 
   function limitsText(limits) {
     const parts = [
@@ -101,12 +118,13 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         {TYPES.map(({ type, labelKey, max }) => (
           <div key={type} className={`w-44 font-semibold ${COLORS[type]}`}>
+            {/* All the sessions of the type, never fewer than those that have run */}
             <CountField
               label={t(labelKey)}
-              value={sessionsOfType(plan, type).length}
-              min={0}
-              max={max}
-              onChange={(count) => onPlanChange(setSessionCount(plan, type, count))}
+              value={ran(type) + sessionsOfType(plan, type).length}
+              min={ran(type)}
+              max={ran(type) + max}
+              onChange={(count) => onPlanChange(setSessionCount(plan, type, count - ran(type)))}
             />
           </div>
         ))}
@@ -145,12 +163,12 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
       >
         <span className="font-semibold">{t('wizard.aside')}</span>
         {bench.map((p) => (
-          <div key={p.driverId} className="w-40">
+          <div key={p.driverId} className="w-56">
             {token(p.driverId, null)}
           </div>
         ))}
         {benchHovered && (
-          <div className="w-40">
+          <div className="w-56">
             <DropGhost name={nameOf(dragged.driverId)} />
           </div>
         )}
@@ -158,8 +176,21 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
       </div>
 
       <div className="flex gap-2 overflow-x-auto px-1 pb-2">
+        {frozen.map((session, i) => (
+          <FrozenSession
+            key={session.id}
+            session={session}
+            label={frozenLabel(session, i)}
+            withdrawn={withdrawnIn(session, retired, false)}
+            className="w-56 shrink-0 self-start"
+            refused={dragged && isDriver(dragged) && over === `frozen:${i}`}
+            target={target(`frozen:${i}`, isDriver, () =>
+              setRefusal({ key: 'wizard.refusedFrozen', vars: { session: frozenLabel(session, i) } })
+            )}
+          />
+        ))}
         {plan.map((session, s) => {
-          const rank = sessionsOfType(plan.slice(0, s + 1), session.type).length
+          const rank = ran(session.type) + sessionsOfType(plan.slice(0, s + 1), session.type).length
           const placed = session.slots.filter(Boolean).length
           // A session dropped here takes this place: after this one when it comes from before it
           const insertion =
@@ -173,7 +204,7 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
               key={session.key}
               data-testid="championship-wizard-session"
               {...target(`lane:${s}`, isSession, (item) => onPlanChange(moveSession(plan, item.session, s)))}
-              className={`relative w-40 shrink-0 rounded-lg border bg-card transition-opacity ${
+              className={`relative w-56 shrink-0 rounded-lg border bg-card transition-opacity ${
                 dragged?.session === s ? 'border-primary border-dashed opacity-40' : 'border-border'
               }`}
             >
@@ -225,6 +256,12 @@ export default function WizardManualConfig({ config, participants, plan, onConfi
                     </div>
                   )
                 })}
+                {withdrawnIn(
+                  upcoming.find((u) => u.id === session.id),
+                  retired
+                ).map((w) => (
+                  <WithdrawnToken key={w.driverId} driver={w.driver} />
+                ))}
               </div>
             </div>
           )
