@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : assistant fluide</title>
+<style>
+:root {
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+  --border: #e7e5e4;
+  --soft: #f5f5f4;
+  --card: #fff;
+  --primary: #eab308;
+  --primary-dark: #ca8a04;
+  --ring: #3b82f6;
+  --danger: #dc2626;
+  --el: #7e22ce;
+  --el-bd: #e9d5ff;
+  --q: #1d4ed8;
+  --q-bd: #bfdbfe;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e7e5e4; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 48px; }
+h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+.intro { margin: 0; color: var(--muted); line-height: 1.5; max-width: 860px; font-size: 14px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; font-weight: 500; background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; cursor: pointer; user-select: none; }
+section > h2 { margin: 0 0 4px; font-size: 19px; letter-spacing: -0.01em; }
+section > .why { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 860px; }
+.tag { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+.tag.big { color: #fff; background: #ea580c; }
+.tag.small { color: #fff; background: #16a34a; }
+.stage { background: var(--soft); border-radius: 16px; padding: 24px; overflow: hidden; }
+ul.points { margin: 12px 0 0; padding-left: 20px; color: #44403c; font-size: 13.5px; line-height: 1.6; max-width: 860px; }
+.hint { font-size: 12px; color: var(--faint); margin: 0 0 12px; }
+button { font: inherit; }
+.btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; transition: transform 100ms ease-out; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Drivers */
+.token { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 7px; background: #fff; font-size: 12px; cursor: grab; touch-action: none; user-select: none; position: relative; will-change: transform; }
+.token .face { width: 20px; height: 20px; border-radius: 20%; color: #fff; font-size: 9px; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; }
+.token .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.token .car { font-size: 10px; color: var(--faint); white-space: nowrap; }
+.token.lifted { cursor: grabbing; z-index: 50; box-shadow: 0 10px 24px rgba(28, 25, 23, 0.18); border-color: #d6d3d1; }
+.group { border: 1px solid var(--el-bd); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff; transition: border-color 120ms, box-shadow 120ms, background-color 120ms; }
+.group.q { border-color: var(--q-bd); }
+.group header { display: flex; justify-content: space-between; font-size: 12px; padding: 0 4px 2px; }
+.group header b { color: var(--el); }
+.group.q header b { color: var(--q); }
+.group header span { color: var(--faint); }
+.group.over { border-color: var(--ring); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); background: #eff6ff; }
+.group.over.refused { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2); background: #fef2f2; }
+.free { height: 30px; border: 1px dashed var(--border); border-radius: 7px; font-size: 11px; color: var(--faint); display: flex; align-items: center; padding: 0 8px; }
+.free.ghost { border: 2px dashed var(--ring); color: var(--ring); background: rgba(59, 130, 246, 0.08); font-weight: 600; }
+.free.ghost.refused { border-color: var(--danger); color: var(--danger); background: rgba(220, 38, 38, 0.06); }
+.refusal { min-height: 16px; font-size: 12px; color: var(--danger); padding: 0 4px; }
+
+/* 1 */
+.lanes { display: grid; grid-template-columns: repeat(2, 240px); gap: 16px; align-items: start; }
+
+/* 2: steps */
+.trigger-row { display: flex; align-items: center; gap: 12px; height: 34px; }
+.window { margin-top: 16px; background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 20px 50px rgba(28, 25, 23, 0.15); overflow: hidden; will-change: transform, width; }
+.window .head { padding: 14px 18px 8px; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+.pills { display: flex; gap: 6px; padding: 0 18px 10px; }
+.pill { font-size: 11px; font-weight: 500; border-radius: 999px; padding: 3px 10px; background: rgba(234, 179, 8, 0.18); color: var(--primary-dark); border: none; cursor: pointer; transition: transform 100ms ease-out; }
+.pill:active { transform: scale(0.95); }
+.pill.on { background: var(--primary); color: #fff; }
+.viewport { position: relative; height: 150px; overflow: hidden; }
+.pane { position: absolute; inset: 0; padding: 4px 18px; will-change: transform, opacity; }
+.pane .line { height: 26px; border-radius: 6px; background: var(--soft); margin-bottom: 8px; }
+.pane .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pane .cards div { height: 110px; border-radius: 8px; border: 1px solid var(--el-bd); background: #faf5ff; }
+.pane .cards div:nth-child(2) { border-color: var(--q-bd); background: #eff6ff; }
+.pane .cards div:nth-child(3) { border-color: #bbf7d0; background: #f0fdf4; }
+.window .foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 18px 14px; border-top: 1px solid var(--border); }
+
+/* 3: redeal */
+.sentence { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; height: 30px; }
+.stepper button { width: 28px; height: 28px; border: none; background: transparent; font-size: 15px; color: var(--muted); cursor: pointer; transition: transform 100ms ease-out; }
+.stepper button:active { transform: scale(0.9); }
+.stepper output { min-width: 22px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.result { font-size: 12px; color: var(--muted); margin: 6px 0 14px; }
+.result b { color: var(--fg); }
+.qgroups { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; min-height: 150px; }
+.qgroups .group { width: 200px; }
+
+/* 4: next */
+.mini { width: 520px; max-width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.mini label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.mini input, .mini select { height: 32px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font: 13px Inter, system-ui, sans-serif; color: var(--fg); background: #fff; }
+.mini .foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.mini :user-invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
+table.phrases { border-collapse: collapse; width: 100%; max-width: 860px; background: #fff; border-radius: 12px; overflow: hidden; font-size: 13px; }
+table.phrases th, table.phrases td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.phrases th { background: var(--soft); font-weight: 600; color: var(--muted); font-size: 12px; }
+table.phrases td:first-child { color: var(--faint); text-decoration: line-through; text-decoration-color: rgba(120, 113, 108, 0.5); }
+
+/* 5: footer */
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pair h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.scrollwin { height: 230px; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow-y: auto; position: relative; }
+.scrollwin .content { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.scrollwin .content div { height: 34px; border-radius: 8px; background: var(--soft); flex-shrink: 0; }
+.scrollwin .bottom { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: #fff; }
+.scrollwin.sticky .bottom { position: sticky; bottom: 0; border-top: none; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(12px) saturate(180%); -webkit-backdrop-filter: blur(12px) saturate(180%); }
+.scrollwin.sticky .bottom::before { content: ''; position: absolute; left: 0; right: 0; top: -24px; height: 24px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85)); pointer-events: none; }
+
+.order { counter-reset: n; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; max-width: 860px; }
+.order li { counter-increment: n; background: #fff; border-radius: 10px; padding: 10px 14px 10px 44px; position: relative; font-size: 13.5px; line-height: 1.5; color: #44403c; }
+.order li::before { content: counter(n); position: absolute; left: 14px; top: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Assistant de championnat, version fluide</h1>
+    <p class="intro">Le guide « Apple design » appliqué à l'assistant de création et d'édition. Chaque proposition se manipule ci-dessous : glissez, cliquez, revenez en arrière en plein mouvement. Les mouvements sont des ressorts sans rebond (amortissement 1, réponse 0,35 s), avec un léger rebond seulement quand un pilote lâché arrive avec de l'élan. Avec « Mouvement réduit » du système, tout devient un court fondu.</p>
+    <label class="toggle"><input type="checkbox" id="reduce"> Essayer avec « Mouvement réduit »</label>
+  </header>
+
+  <section>
+    <h2>1 · Un pilote qu'on prend en main <span class="tag big">Gros chantier</span></h2>
+    <p class="why">Aujourd'hui, le navigateur montre une image fantôme pendant que le pilote reste grisé à sa place ; lâché, il apparaît d'un coup dans l'autre session ; refusé, rien ne bouge et la raison s'affiche en bas de la fenêtre.</p>
+    <div class="stage">
+      <p class="hint">Glissez Felix WAG dans EL2 (complet), Amelia GRE dans EL2 (même voiture qu'Antoine GIR), puis un pilote de EL2 dans EL1. Lancez-en un vite.</p>
+      <div class="lanes" id="lanes"></div>
+    </div>
+    <ul class="points">
+      <li>Le pilote se soulève dès l'appui (ombre, légère hausse) et colle au pointeur à l'endroit où on l'a pris.</li>
+      <li>Lâché, il glisse jusqu'à sa place avec la vitesse du geste ; ceux qui restent referment le trou au lieu de sauter.</li>
+      <li>Refusé, il revient à sa place, la session visée tremble une fois, et la raison s'écrit sous elle, là où on regarde.</li>
+      <li>On peut le rattraper en plein vol. Même geste à la souris, au doigt ou au stylet.</li>
+      <li>Vaut pour les essais, les groupes de qualif, « Sans essai », les manettes du mode manuel et « De côté ». Technique : Pointer Events et framer-motion (déjà dans le projet) à la place du glisser-déposer du navigateur ; les règles de dépôt ne changent pas.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2 · Changer d'étape sans saut <span class="tag small">Petit</span></h2>
+    <p class="why">Aujourd'hui, la fenêtre apparaît d'un coup, et sa largeur saute à chaque étape (Infos, Pilotes, Configuration n'ont pas la même).</p>
+    <div class="stage">
+      <p class="hint">Ouvrez, avancez, revenez ; cliquez vite pour interrompre un mouvement.</p>
+      <div class="trigger-row"><button class="btn" id="open">⚙ Configuration</button></div>
+      <div class="window" id="window" hidden>
+        <div class="head">Modifier le championnat · test</div>
+        <div class="pills" id="pills"></div>
+        <div class="viewport" id="viewport"></div>
+        <div class="foot"><button class="btn" id="close">Annuler</button><button class="btn" id="back">Retour</button><button class="btn primary" id="next">Suivant</button></div>
+      </div>
+    </div>
+    <ul class="points">
+      <li>La fenêtre naît du bouton qui l'ouvre et y retourne en se fermant.</li>
+      <li>Suivant : le contenu arrive de la droite ; Retour : de la gauche. La largeur suit en douceur.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3 · Les pilotes changent de groupe sous vos yeux <span class="tag small">Petit</span></h2>
+    <p class="why">Aujourd'hui, changer « Au plus N pilotes par qualif » (ou le nombre d'essais) redessine les groupes d'un coup : impossible de suivre qui est parti où.</p>
+    <div class="stage">
+      <div class="sentence">Au plus <span class="stepper"><button id="minus">−</button><output id="per">4</output><button id="plus">+</button></span> pilotes par qualif</div>
+      <p class="result" id="result"></p>
+      <div class="qgroups" id="qgroups"></div>
+    </div>
+    <ul class="points">
+      <li>Chaque pilote glisse de son ancien groupe vers le nouveau ; un groupe qui apparaît se déplie. Pareil pour le nombre d'essais et le passage d'un mode à l'autre.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4 · Champs obligatoires <span class="tag small">Petit</span></h2>
+    <p class="why">Aujourd'hui, « Suivant » et « Créer » sont grisés sans dire pourquoi.</p>
+    <div class="stage">
+      <p class="hint">Cliquez « Suivant » sans rien remplir, puis remplissez le nom et recliquez.</p>
+      <form class="mini" id="form4">
+        <label>Nom du championnat<input id="name" required data-message="Donnez un nom au championnat."></label>
+        <label>Circuit<select id="track" required data-message="Choisissez un circuit."><option value="">Choisir un circuit…</option><option>CREUTZWALD RING</option></select></label>
+        <div class="foot"><button type="button" class="btn">Annuler</button><button class="btn primary" id="next4">Suivant</button></div>
+      </form>
+    </div>
+    <ul class="points">
+      <li>Le bouton n'est plus grisé : il valide l'étape. Le premier champ vide prend le focus et son message s'affiche sur lui ; rien ailleurs.</li>
+      <li>Pilotes : avec moins de 2 pilotes, la ligne vide est obligatoire (« Ajoutez au moins 2 pilotes »).</li>
+      <li>Configuration : une qualif ou une course sans limite marque sa case « Durée » (« Une durée ou des tours pour les qualifs »).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5 · Les boutons restent à portée <span class="tag small">Petit</span></h2>
+    <p class="why">Aujourd'hui, le pied de la fenêtre défile avec le contenu : en manuel avec beaucoup de sessions, il faut descendre pour trouver « Enregistrer ».</p>
+    <div class="stage">
+      <div class="pair">
+        <div><h3>Aujourd'hui</h3><div class="scrollwin" id="sw1"></div></div>
+        <div><h3>Proposé</h3><div class="scrollwin sticky" id="sw2"></div></div>
+      </div>
+    </div>
+    <ul class="points">
+      <li>Le pied reste collé en bas, translucide ; le contenu s'efface dessous au lieu d'être coupé par un trait.</li>
+      <li>Avec « Transparence réduite » du système, le pied redevient opaque.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6 · Les phrases qui flottent disparaissent <span class="tag small">Petit</span></h2>
+    <p class="why">Onze phrases d'aide sont posées dans l'assistant. Chacune redit ce que l'interface montre déjà, ou peut le montrer sur l'élément concerné.</p>
+    <table class="phrases">
+      <tr><th>Phrase retirée</th><th>Ce qui la remplace</th></tr>
+      <tr><td>« La voiture préférée du profil est proposée. »</td><td>L'étiquette « ★ Profil » sur la voiture</td></tr>
+      <tr><td>Filtres : « Les pilotes et les voitures proposés se limitent à ces divisions… »</td><td>Rien : les listes se filtrent sous les yeux</td></tr>
+      <tr><td>Légende « Voiture partagée avec un autre pilote… »</td><td>L'infobulle de l'icône, déjà là</td></tr>
+      <tr><td>Légende « Barré : retiré après avoir roulé… »</td><td>L'étiquette « Retiré · DNF sur Q1 » sous le nom</td></tr>
+      <tr><td>« Facultatif : sans limite, l'essai se termine à la main. »</td><td>Les cases décochées ; les qualifs et courses exigent une limite sur la case (point 4)</td></tr>
+      <tr><td>« Remplies après les qualifs, d'après le classement. »</td><td>« Positions 1 à 3 » sur chaque course</td></tr>
+      <tr><td>« Glissez un pilote d'un essai ou d'un groupe de qualif à l'autre… »</td><td>La poignée ⠿ et le pilote qui se soulève (point 1)</td></tr>
+      <tr><td>« Glissez un pilote sur une manette libre. » / « Tous les pilotes sont placés… »</td><td>« De côté » et son nombre</td></tr>
+      <tr><td>« Glissez-les dans un essai, ou ajoutez-les au moment de rouler. »</td><td>« Sans essai » et son nombre</td></tr>
+      <tr><td>« Les sessions qui ont roulé ne changent pas… »</td><td>Le cadenas des sessions courues</td></tr>
+    </table>
+    <ul class="points">
+      <li>Restent seulement les messages qui suivent une action : un dépôt refusé, une erreur d'enregistrement, les confirmations de réinitialisation.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Ordre proposé</h2>
+    <ol class="order">
+      <li><b>4, 5 et 6</b> : petits, utiles tout de suite.</li>
+      <li><b>2 et 3</b> : animations de framer-motion sur la fenêtre et les groupes, sans toucher aux règles.</li>
+      <li><b>1</b> : remplace le glisser-déposer ; les tests qui simulent le glisser du navigateur sont réécrits avec le pointeur.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+// ---------- Springs: damping ratio + response (seconds), from the current value and velocity ----------
+const reduceBox = document.getElementById('reduce')
+reduceBox.checked = matchMedia('(prefers-reduced-motion: reduce)').matches
+const reduced = () => reduceBox.checked
+
+// One value driven by a spring, re-targeted from where it is and how fast it goes
+class Spring {
+  constructor(value, onUpdate) {
+    this.value = value
+    this.velocity = 0
+    this.target = value
+    this.onUpdate = onUpdate
+    this.frame = null
+  }
+  set(value) {
+    this.stop()
+    this.value = this.target = value
+    this.velocity = 0
+    this.onUpdate(value)
+  }
+  to(target, { damping = 1, response = 0.35, velocity, onDone } = {}) {
+    this.target = target
+    if (velocity !== undefined) this.velocity = velocity
+    this.onDone = onDone
+    this.k = (2 * Math.PI / response) ** 2
+    this.c = (4 * Math.PI * damping) / response
+    if (!this.frame) {
+      this.last = performance.now()
+      this.frame = requestAnimationFrame((t) => this.step(t))
+    }
+  }
+  step(now) {
+    const dt = Math.min(0.032, (now - this.last) / 1000)
+    this.last = now
+    for (let i = 0; i < 8; i++) {
+      const a = -this.k * (this.value - this.target) - this.c * this.velocity
+      this.velocity += (a * dt) / 8
+      this.value += (this.velocity * dt) / 8
+    }
+    if (Math.abs(this.value - this.target) < 0.01 && Math.abs(this.velocity) < 0.5) {
+      this.value = this.target
+      this.velocity = 0
+      this.frame = null
+      this.onUpdate(this.value)
+      this.onDone?.()
+      return
+    }
+    this.onUpdate(this.value)
+    this.frame = requestAnimationFrame((t) => this.step(t))
+  }
+  stop() {
+    if (this.frame) cancelAnimationFrame(this.frame)
+    this.frame = null
+  }
+}
+
+// A short fade where the motion would have been
+function fadeIn(el) {
+  el.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' })
+}
+
+// ---------- Drivers ----------
+const DRIVERS = {
+  gre: { name: 'Amelia GRE', code: 'GRE', color: '#0f766e', car: 'Audi R8 #16' },
+  gir: { name: 'Antoine GIR', code: 'GIR', color: '#db2777', car: 'Audi R8 #16' },
+  sdr: { name: 'Anselme SDR', code: 'SDR', color: '#7c3aed', car: 'BMW M4' },
+  wag: { name: 'Felix WAG', code: 'WAG', color: '#65a30d', car: '' },
+  pel: { name: 'Damien PEL', code: 'PEL', color: '#b91c1c', car: 'Porsche 911' },
+  mol: { name: 'Grace MOL', code: 'MOL', color: '#2563eb', car: 'Ferrari 296' },
+  dan: { name: 'Romain DAN', code: 'DAN', color: '#ea580c', car: 'Mercedes AMG' },
+  bou: { name: 'Lucas BOU', code: 'BOU', color: '#0891b2', car: 'McLaren 720' },
+  hau: { name: 'Emma HAU', code: 'HAU', color: '#9333ea', car: 'Lamborghini' },
+}
+
+// Each token keeps two springs (x and y apart) for its offset from where the layout puts it
+const motions = new WeakMap()
+function motionOf(el) {
+  if (!motions.has(el)) {
+    const m = { x: 0, y: 0, scale: 1 }
+    const paint = () => (el.style.transform = `translate(${m.x}px, ${m.y}px) scale(${m.scale})`)
+    m.sx = new Spring(0, (v) => ((m.x = v), paint()))
+    m.sy = new Spring(0, (v) => ((m.y = v), paint()))
+    m.ss = new Spring(1, (v) => ((m.scale = v), paint()))
+    motions.set(el, m)
+  }
+  return motions.get(el)
+}
+
+function tokenOf(id) {
+  const d = DRIVERS[id]
+  const el = document.createElement('div')
+  el.className = 'token'
+  el.dataset.id = id
+  el.innerHTML = `<span class="face" style="background:${d.color}">${d.code}</span><span class="name">${d.name}</span><span class="car">${d.car}</span>`
+  return el
+}
+
+// Moves elements in the DOM, then glides each from where it was to where it lands
+function flip(elements, mutate, options = {}) {
+  const before = new Map(elements().map((el) => [el, el.getBoundingClientRect()]))
+  mutate()
+  for (const el of elements()) {
+    const old = before.get(el)
+    const m = motionOf(el)
+    if (!old) continue
+    const now = el.getBoundingClientRect()
+    // Where the layout puts it: what is drawn, less its current offset
+    const dx = old.left - (now.left - m.x)
+    const dy = old.top - (now.top - m.y)
+    if (reduced()) {
+      m.sx.set(0)
+      m.sy.set(0)
+      if (Math.abs(dx) + Math.abs(dy) > 1) fadeIn(el)
+      continue
+    }
+    m.sx.set(dx)
+    m.sy.set(dy)
+    const v = options.velocity?.get(el) ?? { x: 0, y: 0 }
+    const damping = options.velocity?.has(el) ? 0.85 : 1
+    m.sx.to(0, { velocity: v.x, damping })
+    m.sy.to(0, { velocity: v.y, damping })
+  }
+}
+
+// A refused target shakes once, like a wrong password
+function shake(el) {
+  if (reduced()) return
+  // Back to no transform at rest: a transform would put the group above a dragged driver
+  if (!el._shake) el._shake = new Spring(0, (v) => (el.style.transform = v ? `translateX(${v}px)` : ''))
+  el._shake.to(0, { velocity: 700, damping: 0.25, response: 0.18 })
+}
+
+// ---------- 1 · Drag ----------
+const lanesEl = document.getElementById('lanes')
+const practices = [
+  ['gre', 'sdr', 'wag'],
+  ['gir', 'pel', 'mol', 'dan', 'bou', 'hau'],
+]
+const PER = 6
+const groupEls = practices.map((ids, g) => {
+  const group = document.createElement('div')
+  group.className = 'group'
+  group.dataset.g = g
+  group.innerHTML = `<header><b>EL${g + 1}</b><span class="count"></span></header><div class="slots" style="display:flex;flex-direction:column;gap:4px"></div><div class="refusal"></div>`
+  lanesEl.append(group)
+  return group
+})
+const allTokens = () => [...lanesEl.querySelectorAll('.token')]
+
+function renderLanes(ghost) {
+  practices.forEach((ids, g) => {
+    const group = groupEls[g]
+    const slots = group.querySelector('.slots')
+    const tokens = ids.map((id) => slots.querySelector(`[data-id="${id}"]`) ?? lanesEl.querySelector(`[data-id="${id}"]`) ?? tokenOf(id))
+    slots.replaceChildren(...tokens)
+    for (let k = ids.length; k < PER; k++) {
+      const free = document.createElement('div')
+      free.className = 'free'
+      free.textContent = 'Place libre'
+      if (ghost?.g === g && k === ids.length) {
+        free.className = `free ghost${ghost.refused ? ' refused' : ''}`
+        free.textContent = `${ghost.refused ? '✕' : '+'} ${DRIVERS[ghost.id].name}`
+      }
+      slots.append(free)
+    }
+    group.querySelector('.count').textContent = `${ids.length} / ${PER}`
+    group.classList.toggle('over', ghost?.g === g)
+    group.classList.toggle('refused', ghost?.g === g && !!ghost.refused)
+  })
+}
+
+const carOf = (id) => DRIVERS[id].car
+function refusalFor(id, g) {
+  const ids = practices[g]
+  if (ids.includes(id)) return null
+  if (ids.length >= PER) return 'Refusé : ce groupe est complet.'
+  const clash = carOf(id) && ids.find((other) => carOf(other) === carOf(id))
+  if (clash) return `Refusé : la voiture de ${DRIVERS[id].name} roule déjà dans cette session avec ${DRIVERS[clash].name}.`
+  return null
+}
+
+renderLanes()
+
+let drag = null
+lanesEl.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('.token')
+  if (!el || e.button !== 0) return
+  e.preventDefault()
+  el.setPointerCapture(e.pointerId)
+  const m = motionOf(el)
+  m.sx.stop()
+  m.sy.stop()
+  // Grabbed where it is drawn, even mid-flight
+  drag = { el, id: el.dataset.id, startX: e.clientX - m.x, startY: e.clientY - m.y, history: [], over: null }
+  el.classList.add('lifted')
+  groupEls.forEach((g) => (g.querySelector('.refusal').textContent = ''))
+  if (reduced()) m.ss.set(1.03)
+  else m.ss.to(1.03, { response: 0.2 })
+})
+
+// On the window: re-rendering a session drops the pointer capture
+window.addEventListener('pointermove', (e) => {
+  if (!drag) return
+  const m = motionOf(drag.el)
+  m.sx.set(e.clientX - drag.startX)
+  m.sy.set(e.clientY - drag.startY)
+  drag.history.push({ x: e.clientX, y: e.clientY, t: performance.now() })
+  if (drag.history.length > 6) drag.history.shift()
+  drag.el.style.pointerEvents = 'none'
+  const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.group')
+  drag.el.style.pointerEvents = ''
+  const g = under ? Number(under.dataset.g) : null
+  const over = g !== null && !practices[g].includes(drag.id) ? g : null
+  if (over !== drag.over) {
+    drag.over = over
+    const ghost = over === null ? null : { g: over, id: drag.id, refused: refusalFor(drag.id, over) }
+    flip(() => allTokens().filter((t) => t !== drag.el), () => renderLanes(ghost))
+  }
+})
+
+function release(e) {
+  if (!drag) return
+  const { el, id, over, history } = drag
+  drag = null
+  el.classList.remove('lifted')
+  const m = motionOf(el)
+  if (reduced()) m.ss.set(1)
+  else m.ss.to(1, { response: 0.25 })
+  // Release velocity from the last moves, in px/s
+  const first = history[0]
+  const last = history[history.length - 1]
+  const span = first && last && last.t > first.t ? (last.t - first.t) / 1000 : 0
+  const velocity = span ? { x: (last.x - first.x) / span, y: (last.y - first.y) / span } : { x: 0, y: 0 }
+  const refusal = over === null ? null : refusalFor(id, over)
+  if (over === null || refusal) {
+    renderLanes()
+    if (refusal) {
+      groupEls[over].querySelector('.refusal').textContent = refusal
+      shake(groupEls[over])
+    }
+    // Back home, carrying the throw
+    if (reduced()) {
+      m.sx.set(0)
+      m.sy.set(0)
+      fadeIn(el)
+    } else {
+      m.sx.to(0, { velocity: velocity.x })
+      m.sy.to(0, { velocity: velocity.y })
+    }
+    return
+  }
+  const from = practices.findIndex((ids) => ids.includes(id))
+  flip(allTokens, () => {
+    practices[from] = practices[from].filter((x) => x !== id)
+    practices[over].push(id)
+    renderLanes()
+  }, { velocity: new Map([[el, velocity]]) })
+}
+window.addEventListener('pointerup', release)
+window.addEventListener('pointercancel', release)
+
+// ---------- 2 · Steps ----------
+const STEPS = ['Infos', 'Pilotes', 'Configuration']
+const WIDTHS = [460, 560, 720]
+const win = document.getElementById('window')
+const viewport = document.getElementById('viewport')
+const pills = document.getElementById('pills')
+const openBtn = document.getElementById('open')
+let step = 0
+let pane = null
+
+const winScale = new Spring(0.9, (v) => paintWindow())
+const winOpacity = new Spring(0, (v) => paintWindow())
+const winWidth = new Spring(WIDTHS[0], (v) => (win.style.width = `${v}px`))
+function paintWindow() {
+  win.style.transform = `scale(${winScale.value})`
+  win.style.opacity = winOpacity.value
+}
+
+function paneFor(s) {
+  const el = document.createElement('div')
+  el.className = 'pane'
+  el.innerHTML =
+    s === 0
+      ? '<div class="line" style="width:70%"></div><div class="line" style="width:50%"></div>'
+      : s === 1
+        ? '<div class="line"></div><div class="line"></div><div class="line"></div><div class="line" style="width:60%"></div>'
+        : '<div class="cards"><div></div><div></div><div></div></div>'
+  return el
+}
+
+function renderPills() {
+  pills.replaceChildren(
+    ...STEPS.map((label, s) => {
+      const b = document.createElement('button')
+      b.className = `pill${s === step ? ' on' : ''}`
+      b.textContent = label
+      b.onclick = () => go(s)
+      return b
+    })
+  )
+}
+
+function go(s) {
+  if (s < 0 || s > 2 || s === step) return
+  const direction = s > step ? 1 : -1
+  step = s
+  renderPills()
+  const old = pane
+  const next = paneFor(s)
+  pane = next
+  viewport.append(next)
+  if (reduced()) {
+    old?.remove()
+    fadeIn(next)
+    winWidth.set(WIDTHS[s])
+    return
+  }
+  winWidth.to(WIDTHS[s])
+  // In from the side it goes to, out the other: the same path both ways
+  const enter = { x: new Spring(40 * direction, () => paintPane(next, enter)), o: new Spring(0, () => paintPane(next, enter)) }
+  enter.x.to(0)
+  enter.o.to(1, { response: 0.25 })
+  if (old) {
+    const leave = { x: new Spring(0, () => paintPane(old, leave)), o: new Spring(1, () => paintPane(old, leave)) }
+    leave.x.to(-40 * direction)
+    leave.o.to(0, { response: 0.2, onDone: () => old.remove() })
+  }
+}
+function paintPane(el, s) {
+  el.style.transform = `translateX(${s.x.value}px)`
+  el.style.opacity = s.o.value
+}
+
+function openWindow() {
+  win.hidden = false
+  // Born from the button: its origin is the trigger
+  const b = openBtn.getBoundingClientRect()
+  const w = win.getBoundingClientRect()
+  win.style.transformOrigin = `${b.left + b.width / 2 - w.left}px ${b.top + b.height / 2 - w.top}px`
+  if (reduced()) {
+    winScale.set(1)
+    winOpacity.set(1)
+    fadeIn(win)
+    return
+  }
+  winScale.to(1)
+  winOpacity.to(1, { response: 0.2 })
+}
+function closeWindow() {
+  if (reduced()) {
+    win.hidden = true
+    winScale.set(0.9)
+    winOpacity.set(0)
+    return
+  }
+  winScale.to(0.9)
+  winOpacity.to(0, { response: 0.2, onDone: () => (win.hidden = true) })
+}
+openBtn.onclick = () => (win.hidden || winOpacity.target === 0 ? openWindow() : closeWindow())
+document.getElementById('close').onclick = closeWindow
+document.getElementById('next').onclick = () => go(step + 1)
+document.getElementById('back').onclick = () => go(step - 1)
+pane = paneFor(0)
+viewport.append(pane)
+win.style.width = `${WIDTHS[0]}px`
+renderPills()
+paintWindow()
+
+// ---------- 3 · Redeal ----------
+const qgroupsEl = document.getElementById('qgroups')
+const RACERS = ['gre', 'gir', 'sdr', 'wag', 'pel', 'mol', 'dan']
+let per = 4
+// Dealt like cards, two drivers of the same car apart (as the app does)
+function deal(n) {
+  const count = Math.max(Math.ceil(RACERS.length / n), 2)
+  const groups = Array.from({ length: count }, () => [])
+  RACERS.forEach((id, i) => {
+    let g = i % count
+    if (groups[g].some((o) => carOf(o) && carOf(o) === carOf(id))) g = (g + 1) % count
+    groups[g].push(id)
+  })
+  return groups
+}
+const qTokens = new Map(RACERS.map((id) => [id, tokenOf(id)]))
+let qGroupEls = []
+
+function renderQualifs() {
+  const groups = deal(per)
+  const sizes = [...new Set(groups.map((g) => g.length))].sort((a, b) => b - a)
+  document.getElementById('per').textContent = per
+  document.getElementById('result').innerHTML = `→ <b>${groups.length} qualifs de ${sizes.join(' et ')} pilotes</b>`
+  const shown = qGroupEls.length
+  flip(() => [...qTokens.values()].filter((t) => t.isConnected), () => {
+    // Keep the groups that stay, add or drop the others
+    while (qGroupEls.length < groups.length) {
+      const el = document.createElement('div')
+      el.className = 'group q'
+      el.innerHTML = '<header><b></b><span></span></header><div class="slots" style="display:flex;flex-direction:column;gap:4px"></div>'
+      qgroupsEl.append(el)
+      qGroupEls.push(el)
+    }
+    const leaving = qGroupEls.splice(groups.length)
+    groups.forEach((ids, g) => {
+      const el = qGroupEls[g]
+      el.querySelector('b').textContent = `Q${g + 1}`
+      el.querySelector('header span').textContent = `${ids.length} / ${per}`
+      el.querySelector('.slots').replaceChildren(...ids.map((id) => qTokens.get(id)))
+    })
+    leaving.forEach((el) => el.remove())
+  })
+  // A new group unfolds
+  qGroupEls.slice(shown).forEach((el) => {
+    if (reduced()) return fadeIn(el)
+    const s = new Spring(0.85, (v) => ((el.style.transform = `scale(${v})`), (el.style.opacity = Math.min(1, (v - 0.85) / 0.15))))
+    s.to(1)
+  })
+}
+document.getElementById('minus').onclick = () => per > 2 && (per--, renderQualifs())
+document.getElementById('plus').onclick = () => per < 6 && (per++, renderQualifs())
+renderQualifs()
+
+// ---------- 4 · Required fields: the message on the field, when moving on ----------
+const form4 = document.getElementById('form4')
+for (const field of form4.querySelectorAll('[required]')) {
+  field.addEventListener('invalid', () => field.setCustomValidity(field.value ? '' : field.dataset.message))
+  field.addEventListener('input', () => field.setCustomValidity(''))
+  field.addEventListener('change', () => field.setCustomValidity(''))
+}
+form4.addEventListener('submit', (e) => {
+  e.preventDefault()
+  document.getElementById('next4').textContent = 'Suivant ✓'
+})
+
+// ---------- 5 · Footer ----------
+for (const id of ['sw1', 'sw2']) {
+  const el = document.getElementById(id)
+  el.innerHTML = `<div class="content">${'<div></div>'.repeat(9)}</div><div class="bottom"><button class="btn">Annuler</button><button class="btn primary">Enregistrer</button></div>`
+}
+</script>
+</body>
+</html>

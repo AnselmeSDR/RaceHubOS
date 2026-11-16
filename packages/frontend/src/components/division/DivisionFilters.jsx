@@ -6,7 +6,7 @@ import DivisionPicker from './DivisionPicker'
  * The divisions and categories a championship is run for (`filter` from `useDivisionFilter`), one row
  * each; `onChange` gets every id chosen, both scopes together.
  */
-export default function DivisionFilters({ filter, onChange, hint }) {
+export default function DivisionFilters({ filter, onChange }) {
   const { t } = useTranslation('divisions')
   const rows = [
     {
@@ -47,7 +47,6 @@ export default function DivisionFilters({ filter, onChange, hint }) {
           </div>
         ))}
       </div>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
 }

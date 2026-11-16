@@ -1,8 +1,19 @@
 import { useTranslation } from 'react-i18next'
+import { AnimatePresence, motion } from 'framer-motion'
 import DriverToken, { DropGhost } from './DriverToken'
 import { WithdrawnToken } from './FrozenSession'
 import { useDragAndDrop } from './useDragAndDrop'
+import { Refusal } from './wizardFields'
 import { carLookup, leftOut, moveInGroups, refusalMessage } from './wizardPlan'
+
+// A group added unfolds where it goes, removed folds away; the others slide to close the gap
+const UNFOLD = {
+  layout: 'position',
+  initial: { opacity: 0, scale: 0.96, y: -6 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.96 },
+  transition: { type: 'spring', bounce: 0, duration: 0.35 },
+}
 
 const TONES = {
   purple: { border: 'border-purple-200 dark:border-purple-800', label: 'text-session-practice' },
@@ -11,11 +22,13 @@ const TONES = {
 
 /**
  * Sessions of one kind as groups of drivers, named `label` and their number, from `first`. A driver
- * dragged onto another group joins it unless the move is refused (`onRefuse` gets why); the group
- * hovered shows where the driver would land, in red when they can't. With `keepOne`, no group is ever
+ * dragged onto another group joins it unless the move is refused: `onRefuse` gets why and where
+ * (`{ at, key, vars }`, null once a move is made), and `refusal` shows under the group it names. The
+ * group hovered shows where the driver would land, in red when they can't. Dealt again, each driver
+ * glides to their new group. With `keepOne`, no group is ever
  * emptied. `withdrawn[g]`: the retired drivers DNF in group `g`, shown after its drivers. With `out`
- * (`{ label, hint(count), testId }`), a driver may be in no group: those are listed after the groups,
- * where a driver dragged leaves them.
+ * (`{ label, testId }`), a driver may be in no group: those are listed after the groups, where a driver
+ * dragged leaves them.
  */
 export default function WizardGroups({
   groups,
@@ -28,23 +41,42 @@ export default function WizardGroups({
   participants,
   testId,
   out,
+  refusal,
   onChange,
   onRefuse,
 }) {
   const { t } = useTranslation('championships')
-  const { dragged, over, source, target } = useDragAndDrop()
+  const { dragged, over, lifted, overlay, source, target } = useDragAndDrop()
   const byId = new Map(participants.map((p) => [p.driverId, p]))
   const move = (driverId, to) => moveInGroups(groups, driverId, to, perGroup, carLookup(participants), { keepOne })
   const nameOf = (driverId) => byId.get(driverId)?.driver.name
 
+  const keyOf = (driverId) => `${testId}:${driverId}`
+  const token = (driverId) => {
+    const key = keyOf(driverId)
+    const participant = byId.get(driverId)
+    return (
+      <DriverToken
+        key={driverId}
+        participant={participant}
+        // The one let go lands from where it was dropped: it does not glide too
+        layoutId={lifted === key ? undefined : key}
+        drag={source(driverId, key, <DriverToken participant={participant} />)}
+        dragging={lifted === key}
+      />
+    )
+  }
+
+  // Where the driver now lies, or false when the move is refused
   function drop(driverId, to) {
     const result = move(driverId, to)
     if (result.refused) {
-      onRefuse(refusalMessage(result.refused, nameOf(driverId), nameOf(result.with)))
-      return
+      onRefuse({ at: `${testId}:${to}`, ...refusalMessage(result.refused, nameOf(driverId), nameOf(result.with)) })
+      return false
     }
     onRefuse(null)
     onChange(result.groups)
+    return keyOf(driverId)
   }
 
   const outside = out ? leftOut(groups, participants) : []
@@ -61,9 +93,10 @@ export default function WizardGroups({
         ? 'border-dashed border-primary/50'
         : TONES[tone].border
     return (
-      <div
+      <motion.div
         key={g}
         data-testid={testId}
+        {...UNFOLD}
         {...target(
           g,
           () => true,
@@ -80,14 +113,7 @@ export default function WizardGroups({
             {group.length} / {perGroup}
           </span>
         </div>
-        {group.map((driverId) => (
-          <DriverToken
-            key={driverId}
-            participant={byId.get(driverId)}
-            drag={source(driverId)}
-            dragging={dragged === driverId}
-          />
-        ))}
+        {group.map(token)}
         {(withdrawn[g] ?? []).map((r) => (
           <WithdrawnToken key={r.driverId} driver={r.driver} />
         ))}
@@ -100,7 +126,8 @@ export default function WizardGroups({
             </div>
           )
         )}
-      </div>
+        {refusal?.at === `${testId}:${g}` && <Refusal message={refusal} />}
+      </motion.div>
     )
   })
 
@@ -108,30 +135,34 @@ export default function WizardGroups({
   const showOut = out && groups.length > 0 && (outside.length > 0 || dragged !== null)
   return (
     <>
-      {lanes}
-      {showOut && (
-        <div
-          data-testid={out.testId}
-          {...target(
-            'out',
-            () => true,
-            (driverId) => drop(driverId, null)
-          )}
-          className={`rounded-lg border border-dashed p-2 space-y-1 transition-colors ${
-            outHovered ? 'border-primary ring-2 ring-primary/40 bg-primary/5' : 'border-muted-foreground/40 bg-muted/30'
-          }`}
-        >
-          <div className="flex justify-between px-1 text-xs">
-            <span className="font-semibold">{out.label}</span>
-            <span className="text-muted-foreground">{outside.length}</span>
-          </div>
-          {outside.map((p) => (
-            <DriverToken key={p.driverId} participant={p} drag={source(p.driverId)} dragging={dragged === p.driverId} />
-          ))}
-          {outHovered && <DropGhost name={nameOf(dragged)} />}
-          {outside.length > 0 && <p className="px-1 text-[11px] text-muted-foreground">{out.hint(outside.length)}</p>}
-        </div>
-      )}
+      {overlay}
+      <AnimatePresence initial={false}>
+        {lanes}
+        {showOut && (
+          <motion.div
+            key="out"
+            data-testid={out.testId}
+            {...UNFOLD}
+            {...target(
+              'out',
+              () => true,
+              (driverId) => drop(driverId, null)
+            )}
+            className={`rounded-lg border border-dashed p-2 space-y-1 transition-colors ${
+              outHovered
+                ? 'border-primary ring-2 ring-primary/40 bg-primary/5'
+                : 'border-muted-foreground/40 bg-muted/30'
+            }`}
+          >
+            <div className="flex justify-between px-1 text-xs">
+              <span className="font-semibold">{out.label}</span>
+              <span className="text-muted-foreground">{outside.length}</span>
+            </div>
+            {outside.map((p) => token(p.driverId))}
+            {outHovered && <DropGhost name={nameOf(dragged)} />}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

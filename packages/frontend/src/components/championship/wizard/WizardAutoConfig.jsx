@@ -5,7 +5,7 @@ import { MAX_SESSION_DRIVERS, SessionType, sessionTypeAbbrKey, sessionTypeFullKe
 import FrozenSession, { WithdrawnToken } from './FrozenSession'
 import WizardGroups from './WizardGroups'
 import WizardLimitsCard from './WizardLimitsCard'
-import { Refusal, SentenceCount } from './wizardFields'
+import { SentenceCount } from './wizardFields'
 import { MAX_PRACTICES, raceGroups, withdrawnIn } from './wizardPlan'
 
 // On a wide screen the columns share two rows: the settings cards side by side, the same height
@@ -69,7 +69,6 @@ export default function WizardAutoConfig({
             tone="purple"
             limits={config.practice}
             onChange={(limits) => set('practice', limits)}
-            hint={t('wizard.practiceLimitsHint')}
           >
             {/* All the practices, never fewer than those that have run; those to come are dealt */}
             <SentenceCount
@@ -92,11 +91,8 @@ export default function WizardAutoConfig({
               perGroup={MAX_SESSION_DRIVERS}
               keepOne={false}
               participants={participants}
-              out={{
-                label: t('wizard.noPractice'),
-                hint: (count) => t('wizard.noPracticeHint', { count }),
-                testId: 'championship-wizard-no-practice',
-              }}
+              out={{ label: t('wizard.noPractice'), testId: 'championship-wizard-no-practice' }}
+              refusal={refusal}
               onChange={onPracticeGroupsChange}
               onRefuse={setRefusal}
             />
@@ -110,6 +106,7 @@ export default function WizardAutoConfig({
             tone="blue"
             limits={config.qualif}
             onChange={(limits) => set('qualif', limits)}
+            required={t('wizard.qualifLimitRequired')}
           >
             <SentenceCount
               text="wizard.qualifSentence"
@@ -135,6 +132,7 @@ export default function WizardAutoConfig({
               perGroup={config.driversPerQualif}
               keepOne
               participants={qualifiers}
+              refusal={refusal}
               onChange={onQualifGroupsChange}
               onRefuse={setRefusal}
             />
@@ -153,6 +151,7 @@ export default function WizardAutoConfig({
             tone="green"
             limits={config.race}
             onChange={(limits) => set('race', limits)}
+            required={t('wizard.raceLimitRequired')}
           >
             <SentenceCount
               text="wizard.raceSentence"
@@ -168,7 +167,6 @@ export default function WizardAutoConfig({
           </WizardLimitsCard>
           <div className="space-y-2">
             {frozenOf(SessionType.RACE)}
-            <p className="px-1 text-[11px] text-muted-foreground">{t('wizard.racesFromRanking')}</p>
             {races.map((race, r) => (
               <div
                 key={r}
@@ -199,8 +197,6 @@ export default function WizardAutoConfig({
           </div>
         </div>
       </div>
-      <Refusal message={refusal} />
-      <p className="text-xs text-muted-foreground">{t('wizard.autoDragHint')}</p>
     </div>
   )
 }

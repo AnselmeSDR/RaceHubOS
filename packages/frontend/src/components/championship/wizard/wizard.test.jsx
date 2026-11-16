@@ -58,11 +58,14 @@ const benchNames = () =>
 const ghost = (place) => within(place).queryByTestId('wizard-drop-ghost')?.textContent
 
 // Drags `item` onto `target` as a browser would
-function drag(item, target) {
-  fireEvent.dragStart(item)
-  fireEvent.dragOver(target)
-  fireEvent.drop(target)
-  fireEvent.dragEnd(item)
+// A pointer pressed on an item, moved over a place, let go there
+const press = (item) => fireEvent.pointerDown(item, { button: 0, clientX: 0, clientY: 0 })
+const hover = (place) => fireEvent.pointerMove(place, { clientX: 20, clientY: 20 })
+const letGo = (place) => fireEvent.pointerUp(place, { clientX: 20, clientY: 20 })
+function drag(item, place) {
+  press(item)
+  hover(place)
+  letGo(place)
 }
 
 beforeAll(() => i18n.changeLanguage('en'))
@@ -144,13 +147,12 @@ describe('WizardParticipantsStep', () => {
     expect(screen.queryByText('★ Profile')).not.toBeInTheDocument()
   })
 
-  test('a car shared by several drivers: an icon naming the others, explained below', () => {
+  test('a car shared by several drivers: an icon naming the others', () => {
     lineUp([entry(drivers[0], 'ferrari'), entry(drivers[1], 'ferrari'), entry(drivers[2])])
     expect(screen.getAllByRole('img', { name: /^Car shared with/ }).map((icon) => icon.title)).toEqual([
       'Car shared with Ben',
       'Car shared with Ana',
     ])
-    expect(screen.getByText(/^Car shared with another driver: allowed/)).toBeInTheDocument()
     // The car run shows the icon, not the names; the others name who runs them
     expect(screen.getByRole('combobox', { name: "Ana's car" })).toHaveDisplayValue('Ferrari 296')
     const cidCars = screen.getByRole('combobox', { name: "Cid's car" })
@@ -224,9 +226,7 @@ describe('WizardAutoConfig', () => {
     configure()
     // One practice wanted: six controllers for nine drivers, three run none
     expect(practiceTexts()).toEqual(['FP16 / 6AnaBenCidDanEvaFay'])
-    expect(screen.getByTestId('championship-wizard-no-practice')).toHaveTextContent(
-      'No practice3GusHalIvyDrag them into a practice, or add them when it runs.'
-    )
+    expect(screen.getByTestId('championship-wizard-no-practice')).toHaveTextContent('No practice3GusHalIvy')
     expect(screen.getByRole('spinbutton', { name: /free practice in all/ })).toHaveValue(1)
     expect(screen.getByText('3 qualifs of 3 drivers')).toBeInTheDocument()
     expect(screen.getByText('2 races of 5 and 4 drivers')).toBeInTheDocument()
@@ -266,7 +266,6 @@ describe('WizardAutoConfig', () => {
   test('each card changes its own limits; practices may have none', async () => {
     const { onConfigChange } = configure()
     const practice = within(screen.getByTestId('championship-wizard-practice-limits'))
-    expect(practice.getByText('Optional: without a limit, the practice is ended by hand.')).toBeInTheDocument()
     await userEvent.click(practice.getByRole('checkbox', { name: 'Laps' }))
     expect(onConfigChange).toHaveBeenLastCalledWith({
       ...DEFAULT_WIZARD_CONFIG,
@@ -303,11 +302,14 @@ describe('WizardAutoConfig', () => {
     const [q1, q2] = screen.getAllByTestId('championship-wizard-qualif-group')
     drag(within(q1).getByText('Ben'), q2)
     expect(onQualifGroupsChange).toHaveBeenCalledWith([['d1'], ['d3', 'd2']])
-    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
 
     drag(within(q1).getByText('Ana'), q2)
     expect(onQualifGroupsChange).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('status')).toHaveTextContent("Refused: Ana's car already runs in this session with Cid.")
+    // Why, under the group refused
+    expect(within(q2).getByRole('status')).toHaveTextContent(
+      "Refused: Ana's car already runs in this session with Cid."
+    )
   })
 
   test('a driver dragged between free practices, which may be left empty', () => {
@@ -320,18 +322,18 @@ describe('WizardAutoConfig', () => {
   test('the group hovered shows where the driver would land, refused in red, until the drag leaves', () => {
     configure({ participants: threeDrivers, groups: [['d1', 'd2'], ['d3']] })
     const [q1, q2] = screen.getAllByTestId('championship-wizard-qualif-group')
-    fireEvent.dragStart(within(q1).getByText('Ben'))
-    fireEvent.dragOver(q2)
+    press(within(q1).getByText('Ben'))
+    hover(q2)
     expect(ghost(q2)).toBe('+Ben')
     expect(ghost(q1)).toBeUndefined()
-    fireEvent.dragLeave(q2, { relatedTarget: document.body })
+    hover(document.body)
     expect(ghost(q2)).toBeUndefined()
-    fireEvent.dragEnd(within(q1).getByText('Ben'))
+    letGo(document.body)
 
-    fireEvent.dragStart(within(q1).getByText('Ana'))
-    fireEvent.dragOver(q2)
+    press(within(q1).getByText('Ana'))
+    hover(q2)
     expect(ghost(q2)).toBe('✕Ana')
-    fireEvent.dragEnd(within(q1).getByText('Ana'))
+    letGo(document.body)
     expect(ghost(q2)).toBeUndefined()
   })
 })
@@ -389,7 +391,7 @@ describe('WizardManualConfig', () => {
     drag(within(screen.getByTestId('championship-wizard-bench')).getByText('Dan'), slot(3, 2))
     expect(lanes()[3]).toEqual({ title: 'R11 / 6', drivers: ['Dan'] })
     expect(benchNames()).toEqual([])
-    expect(screen.getByTestId('championship-wizard-bench')).toHaveTextContent('Every driver is placed')
+    expect(screen.getByTestId('championship-wizard-bench')).toHaveTextContent(/0$/)
 
     await userEvent.click(within(lane(1)).getByRole('button', { name: 'Set Ben aside' }))
     expect(lanes()[1].drivers).toEqual(['Ana'])
@@ -414,33 +416,34 @@ describe('WizardManualConfig', () => {
   test('the controller hovered shows who would land there, swapping or refused', () => {
     show()
     const bench = screen.getByTestId('championship-wizard-bench')
-    fireEvent.dragStart(within(lane(1)).getByText('Ana'))
-    fireEvent.dragOver(slot(3, 0))
+    press(within(lane(1)).getByText('Ana'))
+    hover(slot(3, 0))
     expect(ghost(slot(3, 0))).toBe('+Ana')
     // Cid would take Ana's place in Q1
-    fireEvent.dragOver(slot(2, 0))
+    hover(slot(2, 0))
     expect(ghost(slot(2, 0))).toBe('+Ana ⇄ Cid')
     expect(ghost(slot(3, 0))).toBeUndefined()
     // Cid runs the Ferrari in FP1
-    fireEvent.dragOver(slot(0, 1))
+    hover(slot(0, 1))
     expect(ghost(slot(0, 1))).toBe('✕Ana')
-    fireEvent.dragEnd(within(lane(1)).getByText('Ana'))
+    letGo(document.body)
     expect(screen.queryByTestId('wizard-drop-ghost')).not.toBeInTheDocument()
 
     // Cid can't take Ben's place next to Ana: he would go aside, not swap
-    fireEvent.dragStart(within(lane(1)).getByText('Ben'))
-    fireEvent.dragOver(slot(0, 0))
+    press(within(lane(1)).getByText('Ben'))
+    hover(slot(0, 0))
     expect(ghost(slot(0, 0))).toBe('+Ben')
-    fireEvent.dragOver(bench)
+    hover(bench)
     expect(ghost(bench)).toBe('+Ben')
+    letGo(document.body)
   })
 
   test('a session dragged by its header takes the place of another, a bar showing where', () => {
     show()
-    fireEvent.dragStart(lane(3).firstChild)
-    fireEvent.dragOver(lane(0).firstChild)
+    press(lane(3).firstChild)
+    hover(lane(0).firstChild)
     expect(within(lane(0)).getByTestId('championship-wizard-insertion')).toBeInTheDocument()
-    fireEvent.drop(lane(0).firstChild)
+    letGo(lane(0).firstChild)
     expect(lanes().map((l) => l.title)).toEqual(['R10 / 6', 'FP11 / 6', 'Q12 / 6', 'Q21 / 6'])
     expect(screen.queryByTestId('championship-wizard-insertion')).not.toBeInTheDocument()
     // A driver dragged onto a header is not a session move
@@ -448,13 +451,16 @@ describe('WizardManualConfig', () => {
     expect(lanes().map((l) => l.title)).toEqual(['R10 / 6', 'FP11 / 6', 'Q12 / 6', 'Q21 / 6'])
   })
 
-  test('sessions added or removed by kind', () => {
+  test('sessions added or removed by kind', async () => {
     show()
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Qualifications' }), { target: { value: '3' } })
     expect(lanes().map((l) => l.title)).toEqual(['FP11 / 6', 'Q12 / 6', 'Q21 / 6', 'Q30 / 6', 'R10 / 6'])
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Races' }), { target: { value: '0' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Free practices' }), { target: { value: '2' } })
-    expect(lanes().map((l) => l.title)).toEqual(['FP11 / 6', 'FP20 / 6', 'Q12 / 6', 'Q21 / 6', 'Q30 / 6'])
+    // A session removed folds away first
+    await waitFor(() =>
+      expect(lanes().map((l) => l.title)).toEqual(['FP11 / 6', 'FP20 / 6', 'Q12 / 6', 'Q21 / 6', 'Q30 / 6'])
+    )
   })
 
   test('the limits of a kind open from its pill', async () => {
@@ -568,26 +574,37 @@ describe('ChampionshipWizard', () => {
     return handlers
   }
 
-  test('each step must be complete to go on', async () => {
-    api()
-    open()
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  // The field that is wrong takes the focus and says why, on itself
+  const speaks = (element, message) => {
+    expect(element).toHaveFocus()
+    expect(element.validationMessage).toBe(message)
+  }
+
+  test('each step must be complete to go on: its wrong field says why', async () => {
+    const mock = api()
+    const { onCreated } = open()
+    await next()
+    speaks(field('Championship name'), 'Give the championship a name.')
     await userEvent.type(field('Championship name'), 'C')
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+    await next()
+    speaks(field('Track'), 'Choose a track.')
     await userEvent.selectOptions(field('Track'), 't1')
     await next()
 
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
     await pickDrivers(0, 1)
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+    await next()
+    speaks(screen.getAllByRole('combobox', { name: 'Driver' }).at(-1), 'Add at least 2 drivers.')
     await pickDrivers(1, 3)
     await next()
 
     const qualif = within(screen.getByTestId('championship-wizard-qualif-limits'))
     await userEvent.click(qualif.getByRole('checkbox', { name: 'Duration' }))
-    expect(screen.getByRole('button', { name: 'Create championship' })).toBeDisabled()
+    await create()
+    speaks(qualif.getByRole('checkbox', { name: 'Duration' }), 'A duration or laps for the qualifying sessions.')
+    expect(mock).not.toHaveBeenCalledWith(expect.stringContaining('/api/championships'), expect.anything())
     await userEvent.click(qualif.getByRole('checkbox', { name: 'Laps' }))
-    expect(screen.getByRole('button', { name: 'Create championship' })).toBeEnabled()
+    await create()
+    await waitFor(() => expect(onCreated).toHaveBeenCalled())
   })
 
   test('back, or a step done, returns to it with its values', async () => {
@@ -784,6 +801,17 @@ describe('ChampionshipWizard editing a championship under way', () => {
   const save = () => userEvent.click(screen.getByRole('button', { name: 'Save' }))
   const saved = (mock) => JSON.parse(mock.mock.calls.find(([, init]) => init?.method === 'PUT')[1].body)
   const frozen = () => screen.getAllByTestId('championship-wizard-frozen').map((s) => s.textContent)
+
+  test('saving checks every step: the first one wrong opens, its field saying why', async () => {
+    const { mock, handlers } = edit(championshipOf(ChampionshipMode.AUTO, [ana, ben, cid, dan]), [])
+    await userEvent.clear(field('Championship name'))
+    await tab('Configuration')
+    await save()
+    expect(field('Championship name')).toHaveFocus()
+    expect(field('Championship name').validationMessage).toBe('Give the championship a name.')
+    expect(mock).not.toHaveBeenCalledWith(expect.stringContaining('/plan'), expect.anything())
+    expect(handlers.onSaved).not.toHaveBeenCalled()
+  })
 
   test('automatic: the sessions that ran stay as they ran, those to come are dealt and saved', async () => {
     const sessions = [

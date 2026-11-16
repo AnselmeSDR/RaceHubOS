@@ -24,9 +24,10 @@ export function WithdrawnToken({ driver }) {
 
 /**
  * A session that has started, as it ran: greyed, locked, its drivers by place. Never a place to drop
- * a driver: `target` (drag-and-drop handlers) only shows the refusal, `refused` while hovered.
+ * a driver: `target` (drag-and-drop handlers) only shows the refusal, `refused` while hovered, why
+ * in `children`.
  */
-export default function FrozenSession({ session, label, withdrawn = [], target, refused, className = '' }) {
+export default function FrozenSession({ session, label, withdrawn = [], target, refused, className = '', children }) {
   const { t } = useTranslation('championships')
   const finished = session.status === SessionStatus.FINISHED
   return (
@@ -60,6 +61,7 @@ export default function FrozenSession({ session, label, withdrawn = [], target, 
       {withdrawn.map((r) => (
         <WithdrawnToken key={r.driverId} driver={r.driver} />
       ))}
+      {children}
     </div>
   )
 }

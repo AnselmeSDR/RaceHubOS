@@ -45,7 +45,6 @@
   "filters": {
     "divisions": "Divisions",
     "categories": "Categories",
-    "hint": "Only drivers and cars of these divisions and categories are offered; none chosen = all. Kept with the championship.",
     "configHint": "Same filters as the wizard: they narrow the drivers you can add and the cars.",
     "outOfDivision": "outside divisions",
     "outOfCategory": "outside categories"

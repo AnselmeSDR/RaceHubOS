@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { FormField } from '../../crud/FormModal'
+import { validity } from './validity'
 
 /** Name and track; the track is frozen once `ran` sessions (any) have run on it. */
 export default function WizardInfoStep({ name, trackId, tracks, ran = 0, onNameChange, onTrackChange }) {
@@ -9,11 +10,19 @@ export default function WizardInfoStep({ name, trackId, tracks, ran = 0, onNameC
   return (
     <div data-testid="championship-wizard-info" className="space-y-4">
       <FormField label={t('wizard.name')} required>
-        <Input value={name} onChange={(e) => onNameChange(e.target.value)} placeholder={t('wizard.namePlaceholder')} />
+        <Input
+          value={name}
+          required
+          ref={validity(!name.trim() && t('wizard.nameRequired'))}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder={t('wizard.namePlaceholder')}
+        />
       </FormField>
       <FormField label={t('wizard.track')} required>
         <select
           value={trackId}
+          required
+          ref={validity(!trackId && t('wizard.trackRequired'))}
           disabled={ran > 0}
           aria-label={t('wizard.track')}
           onChange={(e) => onTrackChange(e.target.value)}

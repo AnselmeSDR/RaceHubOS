@@ -7,6 +7,7 @@
 /* The add-on folders are added by vite/addonsPlugin.js */
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant reduced-transparency (@media (prefers-reduced-transparency: reduce));
 
 @theme {
   --color-background: var(--background);

@@ -1,22 +1,28 @@
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { GripVertical, X } from 'lucide-react'
 import CarPicture from '@/components/car/CarPicture'
 import DriverAvatar from '@/components/driver/DriverAvatar'
 
+const GLIDE = { type: 'spring', bounce: 0, duration: 0.35 }
+
 /**
  * A participant to drag between sessions: picture, name and car. `drag` holds the drag handlers,
- * `onRemove` adds a button that sets them aside; `dragging` fades it while it moves.
+ * `onRemove` adds a button that sets them aside; `dragging` leaves a gap where it was while it moves.
+ * With `layoutId`, it glides to where it goes next, from one group to another.
  */
-export default function DriverToken({ participant, drag, onRemove, dragging, className = '' }) {
+export default function DriverToken({ participant, drag, onRemove, dragging, layoutId, className = '' }) {
   const { t } = useTranslation('championships')
   const { driver, car } = participant
   return (
-    <div
+    <motion.div
       data-testid="wizard-driver"
+      layoutId={layoutId}
+      transition={GLIDE}
       {...drag}
-      className={`flex items-center gap-1.5 min-w-0 rounded-md border bg-background px-1.5 py-1 text-xs cursor-grab ${
-        dragging ? 'border-primary border-dashed opacity-40' : 'border-border'
-      } ${className}`}
+      className={`flex items-center gap-1.5 min-w-0 rounded-md border bg-background px-1.5 py-1 text-xs touch-none select-none ${
+        drag ? 'cursor-grab' : ''
+      } ${dragging ? 'border-primary border-dashed opacity-40' : 'border-border'} ${className}`}
     >
       <GripVertical aria-hidden="true" className="size-3 shrink-0 text-muted-foreground" />
       <DriverAvatar driver={driver} label={driver.number} className="size-5" />
@@ -32,7 +38,7 @@ export default function DriverToken({ participant, drag, onRemove, dragging, cla
           <X className="size-3" />
         </button>
       )}
-    </div>
+    </motion.div>
   )
 }
 

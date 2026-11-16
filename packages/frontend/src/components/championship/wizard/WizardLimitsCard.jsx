@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
+import { validity } from './validity'
+import { hasLimit } from './wizardPlan'
 
 const TONES = {
   purple: {
@@ -17,8 +19,8 @@ const TONES = {
 }
 
 // The limits of one kind of session: a duration in minutes, a number of laps, or both; `children` above
-// them (how many sessions), `hint` below
-export default function WizardLimitsCard({ title, tone, limits, onChange, testId, hint, children }) {
+// them (how many sessions). With `required` (its message), one of them is needed: the duration box says so.
+export default function WizardLimitsCard({ title, tone, limits, onChange, testId, required, children }) {
   const { t } = useTranslation('championships')
   const set = (field, value) => onChange({ ...limits, [field]: value })
   return (
@@ -30,6 +32,7 @@ export default function WizardLimitsCard({ title, tone, limits, onChange, testId
           <input
             type="checkbox"
             checked={limits.useTime}
+            ref={validity(required && !hasLimit(limits) && required)}
             onChange={(e) => set('useTime', e.target.checked)}
             className="rounded"
           />
@@ -70,7 +73,6 @@ export default function WizardLimitsCard({ title, tone, limits, onChange, testId
           />
         )}
       </div>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
 }

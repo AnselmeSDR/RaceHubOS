@@ -1,9 +1,35 @@
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { X, AlertTriangle } from 'lucide-react'
 import { Button } from './button'
 
-export default function Modal({ open, onClose, title, icon, children, size = 'md' }) {
-  if (!open) return null
+// Where the last press landed: a window grows out of the button that opened it, and goes back into it
+let lastPress = null
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', (e) => (lastPress = { x: e.clientX, y: e.clientY }), true)
+}
+const PANEL_SPRING = { type: 'spring', bounce: 0, duration: 0.35 }
+
+// Closed (`open` false), it goes back where it came from, then `onExitComplete` runs
+export default function Modal({ open, onExitComplete, ...props }) {
+  return (
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence onExitComplete={onExitComplete}>
+        {open && <ModalWindow key="modal" {...props} />}
+      </AnimatePresence>
+    </MotionConfig>
+  )
+}
+
+function ModalWindow({ onClose, title, icon, children, size = 'md' }) {
+  const panel = useRef(null)
+  useLayoutEffect(() => {
+    const rect = panel.current.getBoundingClientRect()
+    if (lastPress && rect.width) {
+      panel.current.style.transformOrigin = `${lastPress.x - rect.left}px ${lastPress.y - rect.top}px`
+    }
+  }, [])
 
   const sizeClasses = {
     sm: 'max-w-sm',
@@ -18,11 +44,23 @@ export default function Modal({ open, onClose, title, icon, children, size = 'md
   }
 
   return (
-    <div data-testid="modal" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <motion.div
+      data-testid="modal"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Le titre reste visible, seul le corps défile : un formulaire long
-          dépassait de l'écran sans jamais pouvoir être fait défiler */}
-      <div
-        className={`bg-card border border-border rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}
+          dépassait de l'écran sans jamais pouvoir être fait défiler. La largeur change en douceur. */}
+      <motion.div
+        ref={panel}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.92 }}
+        transition={PANEL_SPRING}
+        className={`bg-card border border-border rounded-xl shadow-xl overflow-hidden w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col transition-[max-width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none`}
       >
         <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -33,9 +71,12 @@ export default function Modal({ open, onClose, title, icon, children, size = 'md
             <X className="size-6 text-muted-foreground" />
           </button>
         </div>
-        <div className="px-6 pb-6 overflow-y-auto">{children}</div>
-      </div>
-    </div>
+        {/* Scrolled, the drivers that glide inside still start from where they were */}
+        <motion.div layoutScroll className="px-6 pb-6 overflow-y-auto">
+          {children}
+        </motion.div>
+      </motion.div>
+    </motion.div>
   )
 }
 

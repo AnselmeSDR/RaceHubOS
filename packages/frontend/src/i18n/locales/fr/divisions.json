@@ -45,7 +45,6 @@
   "filters": {
     "divisions": "Divisions",
     "categories": "Catégories",
-    "hint": "Les pilotes et les voitures proposés se limitent à ces divisions et catégories ; aucun choix = tous. Gardés sur le championnat.",
     "configHint": "Mêmes filtres que l'assistant : ils restreignent le choix des pilotes à ajouter et des voitures.",
     "outOfDivision": "hors division",
     "outOfCategory": "hors catégorie"

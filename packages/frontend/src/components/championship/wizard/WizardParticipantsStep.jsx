@@ -6,6 +6,7 @@ import { DivisionBadges } from '../../division/DivisionBadge'
 import DivisionFilters from '../../division/DivisionFilters'
 import { useDivisionFilter } from '@/hooks/useDivisionFilter'
 import DriverAvatar from '@/components/driver/DriverAvatar'
+import { validity } from './validity'
 import { withEmptyRow } from './wizardPlan'
 
 const OUTSIDE =
@@ -82,11 +83,8 @@ export default function WizardParticipantsStep({
 
   return (
     <div data-testid="championship-wizard-participants" className="space-y-3">
-      <DivisionFilters filter={filter} onChange={onDivisionsChange} hint={t('divisions:filters.hint')} />
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-        <p>{t('wizard.participantsCount', { count: complete })}</p>
-        <p className="text-xs">{t('wizard.carHint')}</p>
-      </div>
+      <DivisionFilters filter={filter} onChange={onDivisionsChange} />
+      <p className="text-sm text-muted-foreground">{t('wizard.participantsCount', { count: complete })}</p>
 
       {/* One grid, each row on it: every column as wide on every row; on a narrow screen the rows
           wrap, the car under the driver */}
@@ -114,6 +112,9 @@ export default function WizardParticipantsStep({
                   <select
                     aria-label={t('glossary:driver_one')}
                     value={p.driverId || ''}
+                    // Fewer than two drivers: the empty row is the one to fill
+                    required={!p.driverId && complete < 2}
+                    ref={validity(!p.driverId && complete < 2 && t('wizard.driversRequired'))}
                     onChange={(e) => pickDriver(i, e.target.value)}
                     className="w-full min-w-0 px-2 py-1 border-none bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-ring rounded"
                   >
@@ -226,13 +227,6 @@ export default function WizardParticipantsStep({
             )
           })}
         </div>
-      </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-        <p className="flex items-center gap-1.5">
-          <SharedCarIcon />
-          {t('wizard.sharedCarLegend')}
-        </p>
-        {retired.length > 0 && <p>{t('wizard.retiredLegend')}</p>}
       </div>
     </div>
   )

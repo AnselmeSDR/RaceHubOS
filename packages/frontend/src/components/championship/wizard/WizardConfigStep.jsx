@@ -7,8 +7,8 @@ import WizardManualConfig from './WizardManualConfig'
 import { raceGroups, sessionsOfType } from './wizardPlan'
 
 const MODES = [
-  { mode: ChampionshipMode.AUTO, labelKey: 'wizard.modeAuto', hintKey: 'wizard.modeAutoHint' },
-  { mode: ChampionshipMode.MANUAL, labelKey: 'wizard.modeManual', hintKey: 'wizard.modeManualHint' },
+  { mode: ChampionshipMode.AUTO, labelKey: 'wizard.modeAuto' },
+  { mode: ChampionshipMode.MANUAL, labelKey: 'wizard.modeManual' },
 ]
 
 /**
@@ -84,9 +84,6 @@ export default function WizardConfigStep({
             </button>
           ))}
         </div>
-        <p className="flex-1 min-w-60 text-xs text-muted-foreground">
-          {editing ? t('wizard.modeEditHint') : t(MODES.find((m) => m.mode === mode).hintKey)}
-        </p>
       </div>
 
       {manual ? (

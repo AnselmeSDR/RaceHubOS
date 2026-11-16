@@ -61,7 +61,7 @@ test('manual championship: cars from the profiles, drivers and sessions dragged'
   await page.mouse.down()
   const fp1 = practices.nth(0)
   const box = await fp1.boundingBox()
-  // Moved by steps: a single jump fires no dragover
+  // Moved by steps: the place hovered is found as the pointer moves
   await page.mouse.move(box.x + 20, box.y + 12, { steps: 5 })
   await page.mouse.move(box.x + 40, box.y + 14, { steps: 5 })
   await expect(fp1.getByTestId('wizard-drop-ghost')).toHaveText(`+Ben ${run}`)
@@ -78,7 +78,8 @@ test('manual championship: cars from the profiles, drivers and sessions dragged'
   await expect(qualif.getByTestId('wizard-driver')).toHaveCount(1)
   await expect(modal.getByTestId('championship-wizard-bench').getByTestId('wizard-driver')).toHaveCount(0)
   // The race goes before the qualifying sessions
-  await lanes.nth(4).locator('[draggable]').first().dragTo(lanes.nth(2).locator('[draggable]').first())
+  const header = (lane) => lane.locator('[data-drag-key^="lane:"]')
+  await header(lanes.nth(4)).dragTo(header(lanes.nth(2)))
   await expect(lanes.nth(2)).toContainText('R1')
 
   await modal.getByRole('button', { name: 'Créer le championnat' }).click()

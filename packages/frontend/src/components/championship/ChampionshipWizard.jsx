@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Flag, RefreshCw, Trophy } from 'lucide-react'
 import { ChampionshipMode, ChampionshipStatus, sessionTypeAbbrKey } from '@racehubos/shared'
 import { Button } from '@/components/ui/button'
@@ -35,6 +37,19 @@ const lineUpKey = (participants) => participants.map((p) => `${p.driverId}:${p.c
 
 // Groups as dealt, or as moved by hand while what dealt them stays the same
 const groupsFor = (moved, key, deal) => (moved?.key === key ? moved.groups : deal())
+
+// A step comes in from the side it lies on and leaves by the other: the same path both ways
+const STEP_MOTION = {
+  enter: (direction) => ({ x: 40 * direction, opacity: 0 }),
+  shown: { x: 0, opacity: 1 },
+  leave: (direction) => ({ x: -40 * direction, opacity: 0 }),
+}
+const STEP_SPRING = { type: 'spring', bounce: 0, duration: 0.35 }
+
+// The buttons stay at hand at the bottom of the window, the steps scrolling under them. A sticky
+// element stops at the scroll padding: `-bottom-6` takes it down to the edge.
+const FOOTER =
+  'sticky -bottom-6 z-10 -mx-6 -mb-6 mt-6 px-6 pb-6 bg-card/85 backdrop-blur-md backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-linear-to-b before:from-transparent before:to-card/85 reduced-transparency:bg-card reduced-transparency:backdrop-blur-none reduced-transparency:before:to-card'
 
 /**
  * The groups of the sessions to come of an automatic championship being edited, kept as they are
@@ -81,6 +96,10 @@ export default function ChampionshipWizard({
   const editing = !!championship
   const [initial] = useState(() => (editing ? editState(championship, sessions, knownCars) : null))
   const [step, setStep] = useState(0)
+  const [open, setOpen] = useState(true) // closed, the window goes back where it came from, then `onClose`
+  const close = () => setOpen(false)
+  const [direction, setDirection] = useState(1)
+  const stepsRef = useRef(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [drivers, setDrivers] = useState(knownDrivers ?? [])
@@ -144,8 +163,33 @@ export default function ChampionshipWizard({
   }
 
   const stepValid = [() => name.trim() && trackId, () => complete.length >= 2, () => isConfigValid(config, plan)]
-  const canNext = () => stepValid[step]()
-  const canSave = () => !finished && stepValid.every((valid) => valid())
+
+  function goTo(next) {
+    setDirection(next > step ? 1 : -1)
+    setStep(next)
+  }
+
+  // The first wrong field of a step shown takes the focus and says why, on itself
+  function reportInvalid(shown = step) {
+    const field = stepsRef.current
+      ?.querySelector(`[data-step="${shown}"]`)
+      ?.querySelector('input:invalid, select:invalid, textarea:invalid')
+    field?.focus()
+    field?.reportValidity()
+  }
+
+  function next() {
+    if (stepValid[step]()) goTo(step + 1)
+    else reportInvalid()
+  }
+
+  // Creating or saving checks every step: the first one wrong opens, its field saying why
+  function finish(save) {
+    const wrong = stepValid.findIndex((valid) => !valid())
+    if (wrong === -1) return save()
+    if (wrong !== step) flushSync(() => goTo(wrong))
+    reportInvalid(wrong)
+  }
 
   const shape = () => ({
     name,
@@ -169,7 +213,7 @@ export default function ChampionshipWizard({
         return
       }
       done(data.data)
-      onClose()
+      close()
     } catch {
       setError(t('wizard.connectionError'))
     } finally {
@@ -194,8 +238,15 @@ export default function ChampionshipWizard({
   const title = editing ? `${t('wizard.editTitle')} · ${championship.name}` : t('wizard.title')
 
   return (
-    <Modal open onClose={onClose} title={title} icon={<Trophy className="w-5 h-5 text-primary" />} size={size}>
-      <WizardSteps step={step} onStep={setStep} open={editing} />
+    <Modal
+      open={open}
+      onClose={close}
+      onExitComplete={onClose}
+      title={title}
+      icon={<Trophy className="w-5 h-5 text-primary" />}
+      size={size}
+    >
+      <WizardSteps step={step} onStep={goTo} open={editing} />
 
       {error && <ErrorMessage message={error} type="error" />}
       {finished && (
@@ -204,52 +255,67 @@ export default function ChampionshipWizard({
         </div>
       )}
 
-      {step === 0 && (
-        <WizardInfoStep
-          name={name}
-          trackId={trackId}
-          tracks={tracks}
-          ran={frozen.length}
-          onNameChange={setName}
-          onTrackChange={setTrackId}
-        />
-      )}
-      {step === 1 && (
-        <WizardParticipantsStep
-          participants={participants}
-          drivers={drivers}
-          cars={cars}
-          divisionIds={divisionIds}
-          retired={retired}
-          retiredWhere={retiredWhere}
-          onDivisionsChange={setDivisionIds}
-          onChange={changeParticipants}
-          onRestore={(entry) => changeParticipants([...complete, entry])}
-        />
-      )}
-      {step === 2 && (
-        <WizardConfigStep
-          mode={mode}
-          config={config}
-          participants={complete}
-          qualifiers={qualifiers}
-          practiceGroups={practiceGroups}
-          qualifGroups={qualifGroups}
-          plan={plan}
-          frozen={frozen}
-          upcoming={upcoming}
-          retired={retired}
-          editing={editing}
-          onModeChange={changeMode}
-          onConfigChange={setConfig}
-          onPracticeGroupsChange={(groups) => setMovedPractices({ key: practiceKey, groups })}
-          onQualifGroupsChange={(groups) => setMovedGroups({ key: qualifKey, groups })}
-          onPlanChange={setPlan}
-        />
-      )}
+      <div ref={stepsRef} className="relative">
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.div
+            key={step}
+            data-step={step}
+            custom={direction}
+            variants={STEP_MOTION}
+            initial="enter"
+            animate="shown"
+            exit="leave"
+            transition={STEP_SPRING}
+          >
+            {step === 0 && (
+              <WizardInfoStep
+                name={name}
+                trackId={trackId}
+                tracks={tracks}
+                ran={frozen.length}
+                onNameChange={setName}
+                onTrackChange={setTrackId}
+              />
+            )}
+            {step === 1 && (
+              <WizardParticipantsStep
+                participants={participants}
+                drivers={drivers}
+                cars={cars}
+                divisionIds={divisionIds}
+                retired={retired}
+                retiredWhere={retiredWhere}
+                onDivisionsChange={setDivisionIds}
+                onChange={changeParticipants}
+                onRestore={(entry) => changeParticipants([...complete, entry])}
+              />
+            )}
+            {step === 2 && (
+              <WizardConfigStep
+                mode={mode}
+                config={config}
+                participants={complete}
+                qualifiers={qualifiers}
+                practiceGroups={practiceGroups}
+                qualifGroups={qualifGroups}
+                plan={plan}
+                frozen={frozen}
+                upcoming={upcoming}
+                retired={retired}
+                editing={editing}
+                onModeChange={changeMode}
+                onConfigChange={setConfig}
+                onPracticeGroupsChange={(groups) => setMovedPractices({ key: practiceKey, groups })}
+                onQualifGroupsChange={(groups) => setMovedGroups({ key: qualifKey, groups })}
+                onPlanChange={setPlan}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {editing ? (
-        <ModalFooter className="border-t mt-6 pt-4">
+        <ModalFooter className={FOOTER}>
           {finished ? (
             <Button type="button" variant="outline" onClick={onReopen} className="mr-auto">
               <RefreshCw className="size-3.5" />
@@ -263,44 +329,39 @@ export default function ChampionshipWizard({
               </Button>
             )
           )}
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={close}>
             {t('common:cancel')}
           </Button>
           <Button
             type="button"
-            onClick={handleSave}
-            disabled={saving || !canSave()}
+            onClick={() => finish(handleSave)}
+            disabled={saving || finished}
             className="bg-yellow-500 hover:bg-yellow-600 text-white"
           >
             {saving ? t('common:saving') : t('common:save')}
           </Button>
         </ModalFooter>
       ) : (
-        <ModalFooter className="border-t mt-6 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <ModalFooter className={FOOTER}>
+          <Button type="button" variant="outline" onClick={close}>
             {t('common:cancel')}
           </Button>
           {step > 0 && (
-            <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
+            <Button type="button" variant="outline" onClick={() => goTo(step - 1)}>
               <ChevronLeft className="w-4 h-4 mr-1" />
               {t('common:back')}
             </Button>
           )}
           {step < WIZARD_STEPS.length - 1 ? (
-            <Button
-              type="button"
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canNext()}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-            >
+            <Button type="button" onClick={next} className="bg-yellow-500 hover:bg-yellow-600 text-white">
               {t('wizard.next')}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
               type="button"
-              onClick={handleCreate}
-              disabled={saving || !canNext()}
+              onClick={() => finish(handleCreate)}
+              disabled={saving}
               className="bg-yellow-500 hover:bg-yellow-600 text-white"
             >
               {saving ? t('wizard.creating') : t('wizard.createChampionship')}

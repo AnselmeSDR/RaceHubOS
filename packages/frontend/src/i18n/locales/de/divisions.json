@@ -45,7 +45,6 @@
   "filters": {
     "divisions": "Divisionen",
     "categories": "Kategorien",
-    "hint": "Nur Fahrer und Autos dieser Divisionen und Kategorien werden angeboten; keine Auswahl = alle. Bleibt bei der Meisterschaft gespeichert.",
     "configHint": "Dieselben Filter wie im Assistenten: Sie begrenzen die hinzuzufügenden Fahrer und die Autos.",
     "outOfDivision": "außerhalb der Divisionen",
     "outOfCategory": "außerhalb der Kategorien"
