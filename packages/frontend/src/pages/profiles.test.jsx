@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import i18n from '@/i18n'
 import CarProfile from './CarProfile'
+import DivisionProfile from './DivisionProfile'
 import DriverProfile from './DriverProfile'
 import TrackProfile from './TrackProfile'
 
@@ -193,5 +194,54 @@ describe.each(profiles)('$name profile', (profile) => {
 
     expect(await screen.findByText('the list')).toBeInTheDocument()
     expect(calls(fetchMock, new RegExp(`/api${list}/${record.id}$`), 'DELETE')).toHaveLength(1)
+  })
+})
+
+describe('division profile', () => {
+  const profile = {
+    Page: DivisionProfile,
+    list: '/divisions',
+    record: { id: 'x1', name: 'GOLD', scope: 'driver', order: 1, drivers: [], cars: [], championships: [] },
+  }
+  const itself = /\/api\/divisions\/x1$/
+
+  test('shows the division; the arrow in the header leads back to the list', async () => {
+    stubApi(profile)
+    renderProfile(profile)
+    await screen.findByRole('heading', { name: 'GOLD' })
+    await userEvent.click(within(screen.getByTestId('division-profile-header')).getAllByRole('button')[0])
+    expect(screen.getByText('the list')).toBeInTheDocument()
+  })
+
+  test('an unknown id says so and leads back to the list', async () => {
+    stubApi(profile, { found: false })
+    renderProfile(profile)
+    expect(await screen.findByText('Division not found')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('the list')).toBeInTheDocument()
+  })
+
+  test('editing opens the form; closing it reloads the division', async () => {
+    const fetchMock = stubApi(profile)
+    renderProfile(profile)
+    await screen.findByRole('heading', { name: 'GOLD' })
+
+    await userEvent.click(within(screen.getByTestId('division-profile-actions')).getAllByRole('button')[0])
+    await userEvent.click(within(screen.getByTestId('modal')).getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByTestId('modal')).not.toBeInTheDocument())
+    await waitFor(() => expect(calls(fetchMock, itself, undefined)).toHaveLength(2))
+  })
+
+  test('deleting sends the division to the bin and goes back to the list', async () => {
+    const fetchMock = stubApi(profile)
+    renderProfile(profile)
+    await screen.findByRole('heading', { name: 'GOLD' })
+
+    await userEvent.click(screen.getByTestId('delete-button'))
+    await userEvent.click(screen.getByTestId('delete-button'))
+
+    expect(await screen.findByText('the list')).toBeInTheDocument()
+    expect(calls(fetchMock, itself, 'DELETE')).toHaveLength(1)
   })
 })

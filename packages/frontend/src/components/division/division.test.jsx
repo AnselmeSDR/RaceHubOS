@@ -3,10 +3,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event'
 import { ChampionshipStatus } from '@racehubos/shared'
 import i18n from '@/i18n'
-import { field, jsonReply, routeFetch, withStatus } from '@/test/helpers'
+import { field, jsonReply, renderCell, routeFetch, sortValue, withStatus } from '@/test/helpers'
 import DivisionBadge from './DivisionBadge'
 import DivisionCard from './DivisionCard'
 import DivisionChampionships from './DivisionChampionships'
+import { divisionColumns } from './divisionColumns'
 import DivisionFormModal from './DivisionFormModal'
 import DivisionIdentity from './DivisionIdentity'
 import DivisionMembers from './DivisionMembers'
@@ -271,5 +272,49 @@ describe('DivisionChampionships', () => {
     cleanup()
     inRouter(<DivisionChampionships division={gold} />)
     expect(screen.getByText('No championship is run for this division.')).toBeInTheDocument()
+  })
+})
+
+describe('divisionColumns', () => {
+  const t = i18n.getFixedT('en', 'divisions')
+  const onEdit = vi.fn()
+  const gold = {
+    id: 'dv1',
+    name: 'GOLD',
+    color: '#F5D13C',
+    scope: 'driver',
+    order: 2,
+    drivers: people(3),
+    _count: { drivers: 3 },
+  }
+  const gt3 = { id: 'ct1', name: 'GT3', color: '#E11D48', scope: 'car', order: 1, cars: cars(2), _count: { cars: 2 } }
+
+  test('a driver division: rank, name with its badge, how many drivers and the first two; the pencil edits', async () => {
+    const columns = divisionColumns(t, 'driver', { onEdit })
+    expect(columns.map((c) => c.header)).toEqual(['Rank', 'Division', 'Drivers', ''])
+
+    expect(renderCell(columns, 'order', gold).container).toHaveTextContent('2')
+    cleanup()
+    renderCell(columns, 'name', gold)
+    expect(screen.getAllByText('GOLD').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('division-badge')).toHaveTextContent('GOLD')
+    cleanup()
+    expect(renderCell(columns, 'drivers', gold).container).toHaveTextContent('3(Driver 0, Driver 1…)')
+    expect(sortValue(columns, 'drivers', gold)).toBe(3)
+    cleanup()
+
+    renderCell(columns, 'actions', gold)
+    await userEvent.click(screen.getByRole('button'))
+    expect(onEdit).toHaveBeenCalledWith(gold)
+  })
+
+  test('a category: its order and its cars by brand and model; none yet', () => {
+    const columns = divisionColumns(t, 'car', { onEdit })
+    expect(columns.map((c) => c.header)).toEqual(['Order', 'Category', 'Cars', ''])
+    expect(renderCell(columns, 'cars', gt3).container).toHaveTextContent('2(Audi R0, Audi R1)')
+    cleanup()
+    const empty = { ...gt3, cars: undefined, _count: undefined }
+    expect(renderCell(columns, 'cars', empty).container.textContent).toBe('0')
+    expect(sortValue(columns, 'cars', empty)).toBe(0)
   })
 })
