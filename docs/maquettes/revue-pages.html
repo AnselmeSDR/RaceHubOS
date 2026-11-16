@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : revue des pages</title>
+<style>
+:root {
+  --bg: #09090b;
+  --card: #1c1c1f;
+  --tile: #232327;
+  --hover: #2a2a2f;
+  --border: #2e2e33;
+  --line: #26262a;
+  --fg: #fafafa;
+  --muted: #8b8b94;
+  --faint: #5b5b63;
+  --q: #60a5fa;
+  --r: #4ade80;
+  --p: #c084fc;
+  --b: #fb923c;
+  --gold: #facc15;
+  --silver: #d4d4d8;
+  --bronze: #fb923c;
+  --accent: #3b82f6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #000; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1260px; margin: 0 auto; padding: 32px 16px 96px; display: flex; flex-direction: column; gap: 64px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+.intro { margin: 0; color: #a1a1aa; line-height: 1.55; max-width: 920px; font-size: 14px; }
+.intro + .intro { margin-top: 8px; }
+section > h2 { margin: 0 0 4px; font-size: 20px; }
+section > .why { margin: 0 0 18px; color: #a1a1aa; font-size: 14px; line-height: 1.55; max-width: 920px; }
+.state { margin: 22px 0 8px; font-size: 12px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+.now { display: block; width: 612px; max-width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+ul.points { margin: 16px 0 0; padding-left: 20px; color: #d4d4d8; font-size: 13.5px; line-height: 1.65; max-width: 920px; }
+ol.points { margin: 8px 0 0; padding-left: 22px; color: #d4d4d8; font-size: 14px; line-height: 1.75; max-width: 920px; }
+code { font-size: .9em; color: #e4e4e7; background: #18181b; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.gold { color: var(--gold); font-weight: 600; }
+
+/* The page frame the proposals sit in */
+.screen { width: 1190px; max-width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.panel > h3 { margin: 0; padding: 10px 14px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.panel > h3 .muted { font-weight: 400; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+
+/* Pictures: the common layer of the app */
+.av { flex: none; width: 24px; height: 24px; border-radius: 20%; background: var(--c); overflow: hidden; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #111; }
+.av img { width: 100%; height: 100%; display: block; }
+.av.s { width: 18px; height: 18px; font-size: 9px; }
+.av.l { width: 48px; height: 48px; font-size: 20px; }
+.car { flex: none; width: 34px; height: 22px; object-fit: contain; }
+.badge { display: inline-flex; align-items: center; height: 17px; padding: 0 6px; border-radius: 5px; font-size: 10px; font-weight: 700; letter-spacing: .02em; color: #111; background: var(--c); white-space: nowrap; }
+.badge.more { background: #2e2e33; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #26262b; white-space: nowrap; }
+.chip.practice { color: var(--p); }
+.chip.qualif { color: var(--q); }
+.chip.race { color: var(--r); }
+.chip.balancing { color: var(--b); }
+.nb { display: inline-flex; min-width: 24px; justify-content: center; height: 17px; padding: 0 5px; border-radius: 9px; font-size: 10.5px; font-weight: 700; background: var(--c); color: #fff; }
+
+/* Lists */
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.search { flex: 1; height: 30px; border-radius: 8px; background: var(--tile); border: 1px solid var(--border); display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: var(--faint); gap: 8px; }
+.tbtn { height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font: 500 12px Inter, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 6px; }
+.tbtn.on { color: var(--fg); background: var(--tile); }
+.grid-list { display: grid; column-gap: 12px; font-size: 13px; }
+.grid-list > div { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; height: 40px; padding: 0 12px; border-top: 1px solid var(--line); }
+.grid-list > div > * { min-width: 0; }
+.grid-list > .head { height: 32px; border-top: none; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+.grid-list > .hov { background: var(--hover); }
+.r { text-align: right; }
+.who { display: flex; align-items: center; gap: 8px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.who span { overflow: hidden; text-overflow: ellipsis; }
+.check { width: 14px; height: 14px; border: 1.5px solid #52525b; border-radius: 4px; visibility: hidden; }
+.hov .check, .hov .edit { visibility: visible; }
+.edit { visibility: hidden; color: var(--muted); font-size: 13px; text-align: right; }
+.sorted::after { content: ' ↑'; color: var(--fg); }
+.badges { display: flex; gap: 4px; overflow: hidden; }
+
+/* Cards */
+.cards { display: grid; gap: 10px; }
+.ccar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.ccar .pic { height: 96px; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 85%, color-mix(in srgb, var(--c) 35%, transparent), transparent 70%); }
+.ccar .pic img { width: 150px; height: 88px; object-fit: contain; }
+.ccar .body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 7px; }
+.ccar .brand { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.ccar .model { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bars { display: grid; grid-template-columns: max-content 1fr 14px; gap: 3px 8px; align-items: center; font-size: 10.5px; color: var(--muted); }
+.bars b { font-weight: 600; color: var(--fg); text-align: right; }
+.bar { display: block; height: 4px; border-radius: 2px; background: #2e2e33; position: relative; overflow: hidden; }
+.bar::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--v); background: var(--k); border-radius: 2px; }
+.foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.ctrack { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.tile { flex: none; width: 40px; height: 40px; border-radius: 20%; background: var(--c); overflow: hidden; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ctrack b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctrack small { font-size: 11px; color: var(--muted); }
+.cdiv { padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 8px; border-top: 3px solid var(--c); }
+.cdiv .top { display: flex; align-items: center; gap: 10px; }
+.cdiv .logo { width: 44px; height: 44px; border-radius: 20%; object-fit: cover; background: var(--c); }
+.cdiv b { font-size: 13.5px; }
+.faces { display: flex; align-items: center; }
+.faces .av { margin-left: -5px; box-shadow: 0 0 0 2px var(--card); }
+.faces .av:first-child { margin-left: 0; }
+.faces small { margin-left: 8px; font-size: 11px; color: var(--muted); }
+
+/* Profile header */
+.phead { display: flex; align-items: center; gap: 12px; padding: 4px 4px 2px; }
+.phead h4 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+.phead .stats { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 3px; }
+.phead .stats b { color: var(--fg); font-weight: 600; }
+
+/* Settings */
+.set { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 14px; border-top: 1px solid var(--line); font-size: 13px; }
+.set:first-of-type { border-top: none; }
+.set .grow { flex: 1; }
+.set small { display: block; color: var(--muted); font-size: 11.5px; }
+.tog { width: 34px; height: 20px; border-radius: 10px; background: var(--accent); position: relative; flex: none; }
+.tog::after { content: ''; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.tog.off { background: #3f3f46; }
+.tog.off::after { right: auto; left: 2px; }
+.seg { display: inline-flex; background: var(--tile); border: 1px solid var(--border); border-radius: 9px; padding: 2px; position: relative; }
+.seg button { position: relative; z-index: 1; border: none; background: transparent; color: var(--muted); font: 500 12px Inter, system-ui, sans-serif; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+.seg button.on { color: var(--fg); }
+.seg .pill { position: absolute; top: 2px; bottom: 2px; border-radius: 7px; background: #3a3a41; transition: left .35s cubic-bezier(.32,.72,0,1), width .35s cubic-bezier(.32,.72,0,1); }
+@media (prefers-reduced-motion: reduce) { .seg .pill { transition: none; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #52525b; flex: none; }
+.btn { height: 30px; padding: 0 12px; border-radius: 8px; border: none; font: 600 12.5px Inter, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 6px; background: var(--tile); color: var(--fg); border: 1px solid var(--border); }
+.btn.go { background: var(--r); color: #052e16; border: none; }
+
+/* Free session */
+.lineup > div { grid-template-columns: 34px 1fr 1fr 44px; }
+.ctrl { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--c); color: #fff; }
+.sel { height: 28px; border-radius: 7px; background: var(--tile); display: flex; align-items: center; padding: 0 10px; font-size: 12.5px; margin-right: 10px; }
+.sel.empty { color: var(--faint); }
+.popover { position: absolute; right: 0; bottom: 40px; width: 300px; background: #202024; border: 1px solid #3a3a41; border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.6); padding: 6px; font-size: 13px; }
+.popover .item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; }
+.popover .item:hover { background: var(--hover); }
+.popover small { display: block; color: var(--muted); font-size: 11px; }
+
+/* Revision marks */
+.intro.rev { color: #e4e4e7; border-left: 3px solid var(--accent); padding-left: 12px; }
+.tag { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.tag.ok { background: #14321f; color: var(--r); }
+.tag.todo { background: #3a2a10; color: var(--b); }
+.link { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ph { border: 1px dashed #3a3a41; border-radius: 12px; padding: 14px; text-align: center; color: var(--faint); font-size: 12.5px; }
+
+/* More divisions, on hover */
+.badges.open { overflow: visible; }
+.badge.more { position: relative; cursor: default; }
+.badge.more .pop { display: none; position: absolute; top: 22px; left: -6px; z-index: 5; flex-direction: column; align-items: flex-start; gap: 5px; padding: 8px; background: #202024; border: 1px solid #3a3a41; border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.6); }
+.badge.more:hover .pop, .badge.more:focus .pop { display: flex; }
+.av.m { width: 28px; height: 28px; }
+.hd { display: inline-flex; align-items: center; gap: 6px; }
+.hd i { font-style: normal; color: #45454c; }
+.box { width: 14px; height: 14px; border: 1.5px solid #3f3f46; border-radius: 4px; }
+
+/* Dashboard */
+.strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.strip .chip { height: 24px; padding: 0 9px; font-size: 12px; gap: 6px; }
+.strip .chip.done { opacity: .55; }
+.strip .chip.next { box-shadow: 0 0 0 1.5px currentColor; }
+.sd { width: 6px; height: 6px; border-radius: 50%; background: #71717a; }
+
+/* Session sheet */
+.shead { display: flex; align-items: center; gap: 12px; padding: 2px 4px 4px; }
+.shead h4 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.shead .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.shead .sum { margin-left: auto; display: flex; gap: 22px; font-size: 12px; color: var(--muted); text-align: right; }
+.shead .sum b { display: block; font-size: 17px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.lapbox { max-height: 372px; overflow: auto; }
+.laps { display: grid; grid-template-columns: 56px repeat(var(--n), minmax(76px, 1fr)); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.laps > div { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; height: 26px; border-top: 1px solid var(--line); text-align: center; }
+.laps > div > :first-child { color: var(--faint); }
+.laps > .head { position: sticky; top: 0; z-index: 1; height: 38px; border-top: none; border-bottom: 1px solid var(--border); background: var(--card); font-weight: 700; }
+.laps > .head span { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.laps > .head > :first-child { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.laps .own { color: var(--gold); font-weight: 700; }
+.laps .top b { background: #3b1d5e; color: #e9d5ff; border-radius: 5px; padding: 1px 6px; }
+.flow { columns: 9rem; column-gap: 0; padding: 4px 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.flow > div { display: flex; justify-content: space-between; height: 26px; align-items: center; padding: 0 16px; border-right: 1px solid var(--line); break-inside: avoid; }
+.flow > div > :first-child { color: var(--faint); }
+
+/* Settings */
+.st { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.dot.live { background: var(--r); box-shadow: 0 0 0 3px rgba(74,222,128,.2); }
+#settings .cu-on, #settings.on .cu-off { display: none; }
+#settings.on .cu-on { display: inline-flex; }
+#settings.on .set.cu-on { display: flex; }
+.set { padding-top: 7px; padding-bottom: 7px; }
+.set.sub { padding-left: 30px; }
+.set.hide { display: none; }
+.tog { cursor: pointer; transition: background .2s; }
+.tog::after { transition: right .25s cubic-bezier(.32,.72,0,1); }
+.tog.off::after { right: 16px; left: auto; }
+.btn { cursor: pointer; white-space: nowrap; }
+.btn.ico { width: 30px; padding: 0; justify-content: center; }
+.pick { height: 30px; min-width: 130px; padding: 0 10px; border-radius: 8px; background: var(--tile); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+.step { display: inline-flex; align-items: center; background: var(--tile); border: 1px solid var(--border); border-radius: 8px; height: 30px; }
+.step button { width: 30px; height: 28px; border: none; background: transparent; color: var(--fg); font-size: 15px; cursor: pointer; }
+.step b { min-width: 26px; text-align: center; font-size: 13px; }
+.kv { display: flex; flex-wrap: wrap; gap: 4px 22px; color: var(--muted); font-size: 12.5px; }
+.kv b { color: var(--fg); font-weight: 600; margin-left: 4px; }
+details.fold { display: block; padding: 0; border-top: 1px solid var(--line) !important; }
+details.fold summary { display: flex; align-items: center; min-height: 40px; padding: 0 14px; cursor: pointer; list-style: none; color: var(--muted); }
+details.fold summary::before { content: '›'; margin-right: 8px; transition: transform .2s; }
+details.fold[open] summary::before { transform: rotate(90deg); }
+.log { margin: 0 14px 12px; height: 90px; border-radius: 8px; background: #151517; display: grid; place-items: center; font: 12px ui-monospace, monospace; color: var(--faint); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Revue des pages</h1>
+    <p class="intro">On passe sur les autres pages la même grille que pour l'assistant de championnat : le skill apple-design (hiérarchie, densité, une couleur par sens, réponse immédiate, mouvement) et tes règles (rien qui flotte, du compact, des colonnes alignées, rien d'écrit deux fois). À gauche, chaque page telle qu'elle est aujourd'hui en sombre. Dessous, la proposition, faite avec les vraies données de <code>dev.db</code>.</p>
+    <p class="intro">Les huit sections sont indépendantes : tu peux en garder une partie, comme pour l'assistant.</p>
+    <p class="intro rev"><b>Révision du 16 novembre</b>, après ton retour. Validées : 2, 3, 5, 8, les défauts et l'ordre. La 1 est réduite à tes trois points. Les 4, 6 et 7 sont redessinées ci-dessous et restent à valider.</p>
+  </header>
+
+  <section>
+    <h2>1 · Les listes : une ligne de 40 px, des chiffres sans icône <span class="tag ok">validée, réduite</span></h2>
+    <p class="why">Pilotes, Championnats, Historique, Statistiques et la vue Liste des autres pages. Aujourd'hui une ligne fait 57 à 63 px, et chaque cellule répète son icône (tours, drapeau, trophée). On voit 11 pilotes sur 25. Le reste de la liste ne change pas : barre de recherche, cases à cocher, crayon, poignées et flèches des en-têtes restent comme aujourd'hui.</p>
+    <div class="state">Aujourd'hui</div>
+    <img class="now" src="revue-pages/drivers.jpg" alt="">
+    <div class="state">Proposé (survole un « +4 »)</div>
+    <div class="screen" style="overflow:visible"><div class="panel" id="list"></div></div>
+    <ul class="points">
+      <li>Lignes de 40 px : 17 pilotes à l'écran au lieu de 11.</li>
+      <li>Les chiffres sont alignés à droite, sans icône : leur sens est dit une fois, dans l'en-tête.</li>
+      <li>Deux divisions au plus, puis « +4 ». Au survol (ou au focus clavier) du « +4 », les autres s'affichent dans une bulle. La ligne de Damien PEL ne passe plus sur trois lignes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2 · Les grilles : six voitures par ligne au lieu de trois <span class="tag ok">validée</span></h2>
+    <p class="why">Voitures, Circuits et Divisions en vue Grille. Une carte de voiture fait 470 px de haut pour une petite image et trois réglages, soit 3 voitures par écran. Le nom de la voiture prend sa couleur : « M1 Procar #7 » est illisible (bleu nuit sur noir). Un circuit sans image montre une épingle générique. Le nom d'une division est écrit trois fois (logo, badge, titre).</p>
+    <div class="state">Aujourd'hui</div>
+    <img class="now" src="revue-pages/cars.jpg" alt="">
+    <div class="state">Proposé</div>
+    <div class="screen">
+      <div class="cards" id="cars" style="grid-template-columns: repeat(6, 1fr)"></div>
+      <div class="cards" id="tracks" style="grid-template-columns: repeat(5, 1fr)"></div>
+      <div class="cards" id="divs" style="grid-template-columns: repeat(6, 1fr)"></div>
+    </div>
+    <ul class="points">
+      <li>Voiture : l'illustration devient l'identité de la carte, posée sur un halo de sa couleur. Le texte reste dans la couleur du texte, donc toujours lisible. Les trois réglages tiennent sur une ligne de barres, et 18 voitures sur trois rangées.</li>
+      <li>Circuit : une ligne de 60 px avec sa couleur ou son image, et sa longueur, ses virages et ses sessions.</li>
+      <li>Division : logo et nom une seule fois, l'échelon en petit, les visages des membres. Leur couleur ne sert plus qu'au liseré du haut.</li>
+      <li>Crayon et corbeille quittent chaque carte : ils restent dans la fiche.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3 · Les fiches : rien d'écrit deux fois <span class="tag ok">validée</span></h2>
+    <p class="why">Fiches pilote, voiture, circuit et division. Sur la fiche d'Anselme SDR, ses 10 records répètent tous « Anselme SDR », sur des lignes de 60 px, et les trois premiers ont un fond en dégradé. Son nom en tête prend sa couleur (#3b3a38) et sort gris foncé sur fond noir. Les sessions récentes affichent un « P1 » grisé sans temps.</p>
+    <div class="state">Aujourd'hui</div>
+    <img class="now" src="revue-pages/driver.jpg" alt="">
+    <div class="state">Proposé</div>
+    <div class="screen" id="profile"></div>
+    <ul class="points">
+      <li>Le nom en tête est en couleur de texte. La couleur du pilote reste sur sa photo et sur son numéro.</li>
+      <li>Records : rang, voiture (image et nom), circuit, type et temps, en colonnes alignées sur 36 px. Le podium se lit à l'or, à l'argent et au bronze du rang, sans fond en dégradé.</li>
+      <li>Sessions récentes : date, type, session, circuit, place et meilleur tour, chacun dans sa colonne. Une session pas encore courue garde ses cases vides.</li>
+      <li>Même règle sur les fiches voiture (sans répéter la voiture) et circuit (sans répéter le circuit).</li>
+      <li>Fiche division : aujourd'hui, la ligne de Damien PEL n'affiche plus son nom, mangé par ses 6 badges. Sur la fiche d'une division, on n'affiche plus les badges des membres (ils sont tous de cette division). Et le panneau vide « Aucun championnat ne se court pour cette division » disparaît : « 0 championnat » est déjà en tête.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4 · Le tableau de bord : maintenant, récemment, depuis toujours <span class="tag todo">refaite, à valider</span></h2>
+    <p class="why">La première version ne faisait que tasser les mêmes blocs. Or l'accueil d'aujourd'hui ne dit rien de ce qui se passe : quatre compteurs, trois records qui sont la première ligne des tableaux du dessous, puis « Actions rapides » (trois liens de la barre latérale) et « Système » (« Backend API : OK »). Le championnat en cours n'y est pas, les dernières sessions non plus.</p>
+    <div class="state">Aujourd'hui</div>
+    <img class="now" src="revue-pages/dashboard-full.jpg" alt="">
+    <div class="state">Proposé</div>
+    <div class="screen" id="dash"></div>
+    <ul class="points">
+      <li><b>Maintenant</b> : le championnat en cours, ses sessions dans l'ordre de passage (les pastilles du bandeau et du bracket), la prochaine session avec ses pilotes, et « Reprendre ». Une session qui tourne prend cette place (le bandeau vert d'aujourd'hui). Sans championnat en cours : le dernier terminé et « Nouveau championnat ».</li>
+      <li><b>Récemment</b> : les dernières sessions terminées, avec le premier et le meilleur tour. Une ligne ouvre la fiche de la session.</li>
+      <li><b>Depuis toujours</b> : classement et meilleurs tours en colonnes titrées, plus de « 18C · 10V · 17P » à décoder. Le meilleur de chaque colonne est en or : la carte « Records absolus » disparaît, elle répétait ces trois chiffres.</li>
+      <li>Disparaissent aussi : les quatre tuiles (une ligne de liens sous le titre), « Actions rapides » et « Système ». L'état du CU est déjà dans la barre du bas (« PAS DE CU ») ; l'API et le WebSocket ne se signalent que s'ils tombent.</li>
+      <li>Chaque bloc reste son propre module, pour les add-ons.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5 · Course libre et équilibrage : « Démarrer » répond toujours <span class="tag ok">validée</span></h2>
+    <p class="why">Sans CU, « Démarrer » est grisé, et un avertissement orange « Connecter un CU » est posé à côté. Le panneau de droite dit « Aucun classement disponible ». En équilibrage, le champ « Temps max » a pour indication « 0 = pas de filtre ».</p>
+    <div class="state">Aujourd'hui</div>
+    <img class="now" src="revue-pages/race.jpg" alt="">
+    <div class="state">Proposé (clic sur « Démarrer » sans CU)</div>
+    <div class="screen" id="free"></div>
+    <ul class="points">
+      <li>« Démarrer » n'est jamais grisé. Sans CU, il ouvre au-dessus de lui la liste des CU connus, avec « Connecter », et « Rechercher un CU ». Une fois connecté, la course part. L'avertissement orange disparaît.</li>
+      <li>Le classement montre déjà les pilotes de la grille, avec des tirets à la place des temps, au lieu de « Aucun classement disponible ».</li>
+      <li>Équilibrage : un champ vide veut dire « sans limite ». Plus de 0 écrit par défaut, ni de « 0 = pas de filtre ».</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6 · La fiche de session : les tours en tableau <span class="tag todo">dessinée, à valider</span></h2>
+    <p class="why">La première version n'était que du texte, d'où « je ne vois pas la différence ». La voici dessinée sur deux vraies sessions. Aujourd'hui, l'historique d'une course de 6 pilotes fait 345 lignes, avec le pilote et sa voiture réécrits sur chacune : impossible de comparer deux pilotes au même tour. Et un essai d'un seul pilote ouvre sur un podium « 1er · Vainqueur ».</p>
+    <div class="state">Aujourd'hui : une course de 6 pilotes</div>
+    <img class="now" src="revue-pages/session-race.jpg" alt="">
+    <div class="state">Proposé : la même course</div>
+    <div class="screen" id="sheetRace"></div>
+    <div class="state">Aujourd'hui : un essai d'un seul pilote</div>
+    <img class="now" src="revue-pages/session.jpg" alt="">
+    <div class="state">Proposé : le même essai</div>
+    <div class="screen" id="sheetPractice"></div>
+    <ul class="points">
+      <li><b>Tours</b> : une ligne par tour, une colonne par pilote, dans l'ordre d'arrivée. 63 lignes au lieu de 345, et deux pilotes se comparent au même tour. Le meilleur tour de chaque pilote est en or, celui de la session en violet (les couleurs du classement). L'en-tête reste visible quand on fait défiler.</li>
+      <li>Avec un seul pilote, les tours se rangent en colonnes sur la largeur, sans pilote ni voiture répétés.</li>
+      <li><b>Podium</b> : seulement pour une course d'au moins deux pilotes. Un essai ou une qualif ouvre sur son classement.</li>
+      <li><b>Résumé</b> (tours, durée, meilleur tour) : dans l'en-tête, à droite. Aujourd'hui il est sous le podium, et disparaîtrait avec lui.</li>
+      <li>Le classement lui-même ne change pas.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7 · Réglages et add-ons <span class="tag todo">refaite, à valider</span></h2>
+    <p class="why">Ma première version était fausse : elle fondait « Tours minimum avant annonce » dans un sous-titre de « Annonce meilleur tour », et oubliait la voix, la langue, le mode administrateur, le pilote de référence, l'état du CU et le journal. J'ai relu le code de la page : sept cartes, quinze réglages et actions. Les voici tous, chacun avec sa commande.</p>
+    <div class="state">Aujourd'hui (page entière)</div>
+    <img class="now" src="revue-pages/settings-full.jpg" alt="">
+    <div class="state">Proposé <span class="seg" id="cuState" style="margin-left:10px;vertical-align:middle;text-transform:none;letter-spacing:0"><i class="pill"></i><button class="on" data-cu="off">CU non connecté</button><button data-cu="on">CU connecté</button></span></div>
+    <div class="screen" id="settings">
+      <div class="cols">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <h3>Control Unit <span class="st cu-off"><i class="dot"></i>Non connecté</span><span class="st cu-on"><i class="dot live"></i>Connecté</span></h3>
+            <div class="set"><div class="grow">Control Unit <small class="num">ef:01:db:77:f8:6f</small></div><button class="btn cu-off">Connecter</button><button class="btn cu-on">Déconnecter</button><button class="btn cu-off" style="background:transparent;color:var(--muted)">Oublier</button></div>
+            <div class="set"><div class="grow">Connexion automatique</div><i class="tog"></i></div>
+            <div class="set cu-off"><div class="grow muted">Un autre CU</div><button class="btn">Rechercher un CU</button></div>
+            <div class="set cu-on"><div class="grow kv"><span>Start <b class="num">0</b></span><span>Mode <b class="num">8</b></span><span>Display <b class="num">3</b></span><span>Fuel <b class="num">15, 15, 15, 15, 15, 15</b></span></div></div>
+            <details class="set fold"><summary><span class="grow">Journal <small style="display:inline">· aucune entrée</small></span></summary><div class="log">Aucun log</div></details>
+          </div>
+          <div class="panel">
+            <h3>Pilote de référence</h3>
+            <div class="set"><div class="grow muted" style="font-size:12px">Tous les tours d'équilibrage lui sont attribués, quel que soit celui qui tient la manette.</div><span class="pick">Le STIG ▾</span><button class="btn">Créer Le STIG</button></div>
+            <div class="set"><div class="grow">Anciens tours d'équilibrage <small>Les réattribue au pilote de référence.</small></div><button class="btn">Attribuer</button></div>
+          </div>
+          <div class="panel">
+            <h3>Application</h3>
+            <div class="set"><div class="grow">Version <b class="num">1.35.0</b> <span style="color:var(--r)">· à jour</span></div><button class="btn">Vérifier</button></div>
+            <div class="set"><div class="grow">Mode administrateur <small>Displays, Test, Simulateur</small></div><i class="tog off"></i></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <h3>Affichage</h3>
+            <div class="set"><div class="grow">Thème</div><span class="seg"><i class="pill"></i><button>Clair</button><button class="on">Sombre</button></span></div>
+            <div class="set"><div class="grow">Vue par défaut</div><span class="seg"><i class="pill"></i><button class="on">Grille</button><button>Liste</button></span></div>
+            <div class="set"><div class="grow">Langue</div><span class="pick">Français ▾</span></div>
+          </div>
+          <div class="panel" id="voice">
+            <h3>Annonces vocales</h3>
+            <div class="set"><div class="grow">Meilleur tour <small>À chaque nouveau meilleur tour de la session.</small></div><i class="tog" id="bestLap"></i></div>
+            <div class="set sub" id="minLaps"><div class="grow">Tours minimum avant annonce <small>Rien n'est annoncé tant que le pilote de tête n'a pas fait ce nombre de tours.</small></div><span class="step"><button>−</button><b class="num">2</b><button>+</button></span></div>
+            <div class="set"><div class="grow">Podium <small>Les résultats, à la fin de la session.</small></div><i class="tog" id="podium"></i></div>
+            <div class="set" id="voicePick"><div class="grow">Voix</div><span class="pick" style="min-width:220px">Voix par défaut ▾</span><button class="btn ico" title="Tester la voix">▶</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="points">
+      <li><b>L'annonce du meilleur tour et « Tours minimum avant annonce » sont deux réglages</b>, chacun sur sa ligne : un interrupteur, puis le compteur − 2 + (essaie-les). Comme aujourd'hui, le compteur ne s'affiche que si l'annonce est active, et la voix que si une des deux annonces l'est. La voix a enfin son intitulé.</li>
+      <li><b>Control Unit</b> : aujourd'hui trois ou quatre cartes (« Aucun appareil connecté », « Sélectionner un appareil », « État du Device », « Logs »). Un seul panneau : l'état dans le titre, le CU connu avec « Connecter » ou « Déconnecter », la connexion automatique, « Rechercher un CU » (aujourd'hui « Rechercher un nouveau circuit »), l'état du CU une fois connecté, et le journal replié (il s'ouvre d'un clic). Bascule « CU connecté » au-dessus pour voir l'autre état.</li>
+      <li><b>Affichage</b> : thème et vue par défaut sont des choix entre deux valeurs, donc des boutons segmentés dont la pastille glisse, pas des interrupteurs. La langue garde sa liste.</li>
+      <li><b>Application</b> : la version et son état sur une ligne, avec « Vérifier » ; une nouvelle version y affiche « Mettre à jour ». Le mode administrateur garde son sous-titre, qui dit ce qu'il ouvre.</li>
+      <li>Un seul bleu pour tous les interrupteurs (aujourd'hui bleu, vert, orange, jaune, violet), et plus d'icône colorée devant chaque ligne. Les sous-titres qui répètent l'intitulé disparaissent (« Mode nuit · Interface sombre », « Langue · Langue de l'interface »), et sous un titre « Annonces vocales » les lignes s'appellent « Meilleur tour » et « Podium ». Les sous-titres qui expliquent restent.</li>
+      <li>Deux colonnes : l'interrupteur n'est plus à 1 100 px de son intitulé.</li>
+      <li>Add-ons : la phrase « Placé à la main dans addons/ : l'app ne le met jamais à jour ni ne le supprime » devient l'infobulle de l'étiquette « Dossier local ». La liste des fichiers du cœur modifiés se replie sous l'add-on (« 2 fichiers du cœur »).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>8 · Le mouvement, partout <span class="tag ok">validée</span></h2>
+    <p class="why">Ce que l'assistant fait déjà, étendu au reste de l'app.</p>
+    <ul class="points">
+      <li>Toutes les commandes segmentées (Grille | Liste, Pilotes | Voitures, Essais | Qualif | Course, onglets des add-ons) : la pastille glisse d'un choix à l'autre, comme ci-dessus.</li>
+      <li>Une ligne ou une carte répond à l'appui (légère compression), pas au relâchement.</li>
+      <li>De la liste à la fiche, la photo du pilote (ou l'image de la voiture) vole de la ligne jusqu'à l'en-tête de la fiche, et y retourne au retour.</li>
+      <li>Grille ↔ Liste : les éléments glissent de leur place dans l'une à leur place dans l'autre au lieu de sauter.</li>
+      <li>Tout se coupe avec « Réduire les animations » du système.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Défauts vus en passant <span class="tag ok">validés</span></h2>
+    <ul class="points">
+      <li>Une couleur de fiche utilisée comme couleur de texte sans vérifier le contraste : le nom d'Anselme SDR en tête de sa fiche, « M1 Procar #7 » sur la grille des voitures, et dans le classement de course les codes SDR et PAR, presque invisibles sur fond sombre (capture de la section 6).</li>
+      <li>Fiche division : le nom de Damien PEL disparaît derrière ses badges.</li>
+      <li>Fiche pilote : « 39 courses » en tête compte en fait ses 39 sessions, essais et qualifs compris. Anselme SDR a couru 23 courses.</li>
+      <li>Réglages : « Rechercher un nouveau circuit » cherche un CU.</li>
+      <li>Le titre du tableau de bord reste « Dashboard » en français.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Ordre <span class="tag ok">validé</span></h2>
+    <ol class="points">
+      <li>D'abord les tests qui manquent sur les pages touchées, avant toute modification.</li>
+      <li>Les défauts ci-dessus.</li>
+      <li>Les listes (1, les trois points), puis les fiches (3).</li>
+      <li>Les grilles (2), puis le tableau de bord (4) une fois validé.</li>
+      <li>« Démarrer » qui répond toujours (5), puis la fiche de session (6) une fois validée.</li>
+      <li>Réglages et add-ons (7) une fois validés, puis le mouvement (8) page par page.</li>
+    </ol>
+  </section>
+</main>
+
+<script src="revue-pages-data.js"></script>
+<script>
+const { drivers, cars, tracks, divisions, anselme, standings, toplaps, race, practice, champ, recent } = window.DATA
+const time = (ms) => (ms ? (ms / 1000).toFixed(3) : '—')
+const fr = (n) => String(n).replace('.', ',')
+const av = (d, cls = '') =>
+  `<span class="av ${cls}" style="--c:${d.color}" title="${d.name}">${d.img ? `<img src="${d.img}" alt="">` : d.name[0]}</span>`
+const pod = (rank) => (rank === 1 ? 'color:var(--gold)' : rank === 2 ? 'color:var(--silver)' : rank === 3 ? 'color:var(--bronze)' : 'color:var(--muted)')
+const badges = (list, max = 2) =>
+  list.slice(0, max).map((v) => `<span class="badge" style="--c:${v.color}">${v.name}</span>`).join('') +
+  (list.length > max ? `<span class="badge more">+${list.length - max}</span>` : '')
+const TYPES = { practice: 'Essais', qualif: 'Qualif', race: 'Course', balancing: 'Équilibrage' }
+const chip = (type) => `<span class="chip ${type}">${TYPES[type]}</span>`
+const carByName = Object.fromEntries(cars.map((c) => [c.name, c]))
+
+// 1. The drivers list: only the row height, the plain right-aligned figures and the "+n" divisions change
+{
+  const cols = '18px minmax(10rem,1.6fr) 64px minmax(9rem,1.4fr) repeat(4, 96px) 96px 22px'
+  const hd = (label, right) => `<span class="hd ${right ? 'r' : ''}" style="${right ? 'justify-content:flex-end' : ''}"><i>⠿</i>${label}<i>⇅</i></span>`
+  const head = `<div class="head"><i class="box"></i>${hd('Pilote')}${hd('N°')}${hd('Division')}${hd('Tours', 1)}${hd('Courses', 1)}${hd('Victoires', 1)}${hd('Podiums', 1)}${hd('Record', 1)}<span></span></div>`
+  const more = (list, max = 2) =>
+    list.slice(0, max).map((v) => `<span class="badge" style="--c:${v.color}">${v.name}</span>`).join('') +
+    (list.length > max
+      ? `<span class="badge more" tabindex="0">+${list.length - max}<span class="pop">${list.slice(max).map((v) => `<span class="badge" style="--c:${v.color}">${v.name}</span>`).join('')}</span></span>`
+      : '')
+  const rows = drivers.slice(0, 17).map((d) => `<div>
+    <i class="box"></i>
+    <span class="who">${av(d, 'm')}<span>${d.name}</span></span>
+    <span>${d.number != null ? `<span class="nb num" style="--c:${d.color}">${d.number}</span>` : '<span class="muted">–</span>'}</span>
+    <span class="badges open">${more(d.divisions) || '<span class="muted">–</span>'}</span>
+    <span class="r num">${d.laps ?? '–'}</span><span class="r num">${d.races}</span><span class="r num">${d.wins}</span><span class="r num">${d.podiums}</span>
+    <span class="r num" style="font-weight:700">${time(d.best)}</span><span class="muted r">✎</span></div>`)
+  list.innerHTML = `<div class="toolbar"><div class="search">⌕ Rechercher un pilote…</div><button class="tbtn">Colonnes</button></div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:12px;color:var(--muted)"><i class="box"></i>Afficher les éléments supprimés</div>
+    <div class="grid-list" style="grid-template-columns:${cols}">${head}${rows.join('')}</div>`
+}
+
+// 2. Cars, tracks, divisions
+document.getElementById('cars').innerHTML = cars.slice(0, 12).map((c) => `<div class="ccar" style="--c:${c.color}">
+  <div class="pic">${c.img ? `<img src="${c.img}" alt="">` : ''}</div>
+  <div class="body"><div><div class="brand">${c.brand}${c.year ? ` · ${c.year}` : ''}</div><div class="model">${c.model}</div></div>
+  <div class="bars">${[['Vitesse', c.speed, '#22c55e'], ['Freinage', c.brake, '#ef4444'], ['Réservoir', c.fuel, '#3b82f6']]
+    .map(([l, v, k]) => `<span>${l}</span><i class="bar" style="--v:${v * 10}%;--k:${k}"></i><b class="num">${v}</b>`).join('')}</div>
+  <div class="foot"><span>${c.races} sessions</span><span class="num">${time(c.best)}</span></div></div></div>`).join('')
+document.getElementById('tracks').innerHTML = tracks.map((t) => `<div class="ctrack"><span class="tile" style="--c:${t.color}">${t.img ? `<img src="${t.img}" alt="">` : ''}</span>
+  <div style="min-width:0"><b>${t.name}</b><small>${fr(t.length)} m · ${t.corners} virages · ${t.sessions} sessions</small></div></div>`).join('')
+document.getElementById('divs').innerHTML = divisions.sort((a, b) => a.order - b.order).map((v) => `<div class="cdiv" style="--c:${v.color}">
+  <div class="top">${v.img ? `<img class="logo" src="${v.img}" alt="">` : '<span class="logo"></span>'}<div><b>${v.name}</b><div class="muted" style="font-size:11px">Échelon ${v.order}</div></div></div>
+  <div class="faces">${v.drivers.slice(0, 5).map((d) => av(d, 's')).join('')}<small>${v.count} pilote${v.count > 1 ? 's' : ''}</small></div></div>`).join('')
+
+// 3. A driver's profile
+{
+  const me = { ...drivers.find((d) => d.name === 'Anselme SDR'), ...anselme.figures }
+  const records = anselme.records.map((r, i) => `<div><span class="num" style="${pod(i + 1)};font-weight:700">${i + 1}</span>
+    <span class="who" style="font-weight:500"><img class="car" src="${r.carImg ?? ''}" alt=""><span>${r.car}</span></span>
+    <span class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.track}</span><span>${chip(r.type)}</span>
+    <span class="r num" style="font-weight:600;${i === 0 ? 'color:var(--gold)' : ''}">${time(r.time)}</span></div>`)
+  const date = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const sessions = anselme.sessions.map((s) => `<div><span class="muted num" style="white-space:nowrap">${date(s.date)}</span><span>${chip(s.type)}</span>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span><span class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.track ?? ''}</span>
+    <span class="r num" style="${s.pos ? pod(s.pos) : ''};font-weight:600">${s.pos ? `P${s.pos}` : ''}</span><span class="r num muted">${s.best ? time(s.best) : ''}</span></div>`)
+  profile.innerHTML = `<div class="phead">${av(me, 'l')}<div><h4>${me.name} <span class="nb" style="--c:${me.color}">${me.number}</span>${badges(me.divisions)}</h4>
+      <div class="stats"><span><b>${me.races}</b> courses</span><span><b>${me.sessions}</b> sessions</span><span><b>${me.wins}</b> victoires</span><span><b>${me.podiums}</b> podiums</span><span><b>${me.laps}</b> tours</span><span>record <b class="num">${time(me.best)}</b></span></div></div></div>
+    <div class="cols">
+      <div class="panel"><h3>Records <span class="muted">${anselme.records.length}</span></h3><div class="grid-list" style="grid-template-columns:16px minmax(0,1.5fr) minmax(0,1.3fr) max-content 46px">
+        <div class="head"><span>#</span><span>Voiture</span><span>Circuit</span><span>Type</span><span class="r">Temps</span></div>${records.join('')}</div></div>
+      <div class="panel"><h3>Sessions récentes</h3><div class="grid-list" style="grid-template-columns:max-content max-content minmax(0,1fr) minmax(0,1.1fr) 26px 58px">
+        <div class="head"><span>Date</span><span>Type</span><span>Session</span><span>Circuit</span><span class="r">Pl.</span><span class="r">Meilleur</span></div>${sessions.join('')}</div></div>
+    </div>`
+}
+
+// 4. The dashboard: now, lately, all-time
+{
+  const day = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const cut = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis'
+  const top = { races: Math.max(...standings.map((d) => d.races)), wins: Math.max(...standings.map((d) => d.wins)), podiums: Math.max(...standings.map((d) => d.podiums)), best: Math.min(...standings.map((d) => d.best).filter(Boolean)) }
+  const cell = (d, k, show = (v) => v) => `<span class="r num ${d[k] === top[k] ? 'gold' : ''}">${show(d[k])}</span>`
+  const stand = standings.map((d, i) => `<div><span class="num" style="${pod(i + 1)};font-weight:700">${i + 1}</span><span class="who">${av(d)}<span>${d.name}</span></span>
+    ${cell(d, 'races')}${cell(d, 'wins')}${cell(d, 'podiums')}${cell(d, 'best', time)}</div>`)
+  const laps = toplaps.map((l, i) => `<div><span class="num" style="${pod(i + 1)};font-weight:700">${i + 1}</span><span class="who">${av(l)}<span>${l.name}</span></span>
+    <span class="who" style="font-weight:400"><img class="car" src="${l.carImg ?? ''}" alt=""><span class="muted">${l.car}</span></span>
+    <span class="muted" style="${cut}">${l.track}</span>
+    <span class="r num ${i === 0 ? 'gold' : ''}" style="font-weight:600">${time(l.time)}</span></div>`)
+  const next = champ.sessions.find((s) => s.status !== 'finished')
+  const done = champ.sessions.filter((s) => s.status === 'finished').length
+  const strip = champ.sessions.map((s) => `<span class="chip ${s.type} ${s.status === 'finished' ? 'done' : ''} ${s === next ? 'next' : ''}">${s.label}${s.status === 'finished' ? '<i class="sd"></i>' : ''}</span>`).join('')
+  const last = recent.slice(0, 5).map((s) => `<div><span class="muted num" style="white-space:nowrap">${day(s.date)}</span><span>${chip(s.type)}</span>
+    <span style="${cut};font-weight:600">${s.name}</span><span class="${s.championship ? '' : 'muted'}" style="${cut}">${s.championship ?? 'Mode libre'}</span>
+    <span class="who" style="font-weight:500">${s.winner ? av(s.winner, 's') : ''}<span>${s.winner?.name ?? ''}</span></span><span class="r num">${time(s.best)}</span></div>`)
+  dash.innerHTML = `<div style="display:flex;align-items:baseline;gap:18px;padding:2px 4px">
+      <b style="font-size:18px">Tableau de bord</b>
+      <span class="muted" style="font-size:13px"><u>${drivers.length} pilotes</u> · <u>${cars.length} voitures</u> · <u>${tracks.length} circuits</u> · <u>72 sessions</u></span></div>
+    <div class="cols" style="grid-template-columns:1fr 1.25fr;align-items:stretch">
+      <div class="panel" style="display:flex;flex-direction:column"><h3>Championnat en cours <span class="link">Tous les championnats →</span></h3>
+        <div style="flex:1;display:flex;flex-direction:column;gap:14px;padding:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="tile" style="--c:${champ.trackColor};width:48px;height:48px">${champ.trackImg ? `<img src="${champ.trackImg}" alt="">` : ''}</span>
+            <div style="flex:1;min-width:0"><b style="font-size:18px">${champ.name}</b><div class="muted" style="font-size:12px;${cut}">${champ.track} · ${champ.participants} pilotes · automatique</div></div>
+            <div style="text-align:right;white-space:nowrap"><b class="num" style="font-size:20px">${done}</b><span class="muted" style="font-size:12px"> / ${champ.sessions.length} sessions</span></div>
+          </div>
+          <div class="strip">${strip}</div>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--line)">
+            <div style="flex:1"><div class="muted" style="font-size:11px;margin-bottom:5px">À suivre</div>
+              <div style="display:flex;align-items:center;gap:10px"><span class="chip ${next.type}" style="height:22px;font-size:12px">${next.label}</span>
+                <span class="faces">${next.drivers.map((d) => av(d)).join('')}<small>${next.drivers.length} pilotes</small></span></div></div>
+            <button class="btn go" style="height:34px;padding:0 16px">Reprendre</button>
+          </div>
+        </div></div>
+      <div class="panel"><h3>Dernières sessions <span class="link">Historique →</span></h3><div class="grid-list" style="grid-template-columns:max-content max-content minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) 62px">
+        <div class="head"><span>Date</span><span>Type</span><span>Session</span><span>Championnat</span><span>1er</span><span class="r">Meilleur</span></div>${last.join('')}</div></div>
+    </div>
+    <div class="cols">
+      <div class="panel"><h3>Classement des pilotes <span class="link">Statistiques →</span></h3><div class="grid-list" style="grid-template-columns:16px minmax(0,1fr) 60px 68px 64px 56px">
+        <div class="head"><span>#</span><span>Pilote</span><span class="r">Courses</span><span class="r">Victoires</span><span class="r">Podiums</span><span class="r">Record</span></div>${stand.join('')}</div></div>
+      <div class="panel"><h3>Meilleurs tours</h3><div class="grid-list" style="grid-template-columns:16px minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr) 48px">
+        <div class="head"><span>#</span><span>Pilote</span><span>Voiture</span><span>Circuit</span><span class="r">Temps</span></div>${laps.join('')}</div></div>
+    </div>`
+}
+
+// 6. The session sheet: laps as a table, a line per lap and a column per driver
+{
+  const clock = (ms) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`
+  const lap = (ms) => (ms >= 60000 ? `${Math.floor(ms / 60000)}:${(ms % 60000 / 1000).toFixed(3).padStart(6, '0')}` : (ms / 1000).toFixed(3))
+  const head = (s, note) => {
+    const best = Math.min(...s.drivers.map((d) => d.best))
+    const holder = s.drivers.find((d) => d.best === best)
+    const date = new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    return `<div class="shead"><span class="muted" style="font-size:18px">←</span><div><h4>${s.name} ${chip(s.type)}<span class="chip">Terminée</span></h4>
+      <div class="meta">${[s.track, s.championship, date].filter(Boolean).join(' · ')}</div></div>
+      <div class="sum"><span><b>${Math.max(...s.drivers.map((d) => d.total))}</b>tours</span><span><b>${clock(s.duration)}${s.type === 'race' && s.maxDuration ? `<span class="muted" style="font-size:12px"> / ${clock(s.maxDuration)}</span>` : ''}</b>durée</span>
+        <span><b style="color:var(--p)">${lap(best)}</b>meilleur tour${s.drivers.length > 1 ? `, ${holder.code}` : ''}</span></div></div>${note}`
+  }
+  const best = Math.min(...race.drivers.map((d) => d.best))
+  const rows = Array.from({ length: Math.max(...race.drivers.map((d) => d.laps.length)) }, (_, i) =>
+    `<div><span>${i + 1}</span>${race.drivers.map((d) => {
+      const t = d.laps[i]
+      if (!t) return '<span></span>'
+      return `<span class="${t === best ? 'top' : t === d.best ? 'own' : ''}"><b style="font-weight:inherit">${lap(t)}</b></span>`
+    }).join('')}</div>`)
+  sheetRace.innerHTML = head(race, '<div class="ph">Podium, puis classement : inchangés (voir la capture au-dessus)</div>') +
+    `<div class="panel"><h3>Tours <span class="muted">${race.drivers.reduce((n, d) => n + d.laps.length, 0)}</span></h3><div class="lapbox"><div class="laps" style="--n:${race.drivers.length}">
+      <div class="head"><span>Tour</span>${race.drivers.map((d) => `<span>${av(d, 's')}${d.code}</span>`).join('')}</div>${rows.join('')}</div></div></div>`
+  const solo = practice.drivers[0]
+  sheetPractice.innerHTML = head(practice, '<div class="ph">Classement : inchangé. Pas de podium : c\'est un essai, et il n\'y a qu\'un pilote.</div>') +
+    `<div class="panel"><h3>Tours <span class="muted">${solo.laps.length}</span></h3><div class="flow">${solo.laps.map((t, i) => `<div><span>${i + 1}</span><b class="${t === solo.best ? 'gold' : ''}" style="font-weight:${t === solo.best ? 700 : 400}">${lap(t)}</b></div>`).join('')}</div></div>`
+}
+
+// 5. Free session: Start always answers
+{
+  const grid = [['Romain DAN', 'Porsche 911 GT3 R #75', '#ef4444'], ['Anselme SDR', 'Toyota Supra #35', '#3b82f6'], ['Amelia GRE', 'AMG GT3 #8', '#eab308'], [null, null, '#22c55e']]
+  const byName = Object.fromEntries(drivers.map((d) => [d.name, d]))
+  const rows = grid.map(([n, c, k], i) => `<div><span class="ctrl" style="--c:${k}">${i + 1}</span><span class="sel ${n ? '' : 'empty'}">${n ?? '—'}</span><span class="sel ${c ? '' : 'empty'}">${c ?? '—'}</span><span class="r num ${n ? '' : 'muted'}">${n ? i + 1 : '—'}</span></div>`)
+  const stand = grid.filter(([n]) => n).map(([n], i) => `<div><span class="num muted">${i + 1}</span><span class="who">${av(byName[n])}<span>${n}</span></span><span class="r muted">—</span><span class="r muted">—</span></div>`)
+  free.innerHTML = `<div style="display:grid;grid-template-columns:1.9fr 1fr;gap:12px;align-items:start">
+    <div class="panel" style="position:relative"><h3>Essais <span class="chip">Brouillon</span></h3>
+      <div class="grid-list lineup"><div class="head"><span>Man.</span><span>Pilote</span><span>Voiture</span><span class="r">Grille</span></div>${rows.join('')}</div>
+      <div style="display:flex;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line);position:relative">
+        <div class="popover">
+          <div class="item"><i class="dot"></i><div style="flex:1">Control Unit<small class="num">ef:01:db:77:f8:6f</small></div><button class="btn go">Connecter</button></div>
+          <div class="item muted">Rechercher un CU…</div>
+        </div>
+        <button class="btn go">▶ Démarrer</button></div></div>
+    <div class="panel"><h3>Classement <span class="seg" style="margin-left:auto"><i class="pill"></i><button class="on">Essais</button><button>Qualif</button><button>Course</button></span></h3>
+      <div class="grid-list" style="grid-template-columns:20px minmax(0,1fr) 54px 54px"><div class="head"><span>#</span><span>Pilote</span><span class="r">Tours</span><span class="r">Meilleur</span></div>${stand.join('')}</div></div>
+  </div>`
+}
+
+// Segmented controls: the pill glides to the choice
+function place(seg) {
+  const on = seg.querySelector('button.on')
+  const pill = seg.querySelector('.pill')
+  pill.style.left = `${on.offsetLeft}px`
+  pill.style.width = `${on.offsetWidth}px`
+}
+document.querySelectorAll('.seg').forEach((seg) => {
+  place(seg)
+  seg.addEventListener('pointerdown', (e) => {
+    const button = e.target.closest('button')
+    if (!button) return
+    seg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === button))
+    place(seg)
+  })
+})
+
+// 7. Settings: every control answers
+document.querySelectorAll('#settings .tog').forEach((tog) => tog.addEventListener('click', () => {
+  tog.classList.toggle('off')
+  const on = (id) => !document.getElementById(id).classList.contains('off')
+  minLaps.classList.toggle('hide', !on('bestLap'))
+  voicePick.classList.toggle('hide', !on('bestLap') && !on('podium'))
+}))
+document.querySelectorAll('.step').forEach((step) => {
+  const [less, more] = step.querySelectorAll('button')
+  const value = step.querySelector('b')
+  less.addEventListener('click', () => (value.textContent = Math.max(0, Number(value.textContent) - 1)))
+  more.addEventListener('click', () => (value.textContent = Number(value.textContent) + 1))
+})
+cuState.addEventListener('pointerdown', (e) => {
+  const button = e.target.closest('button')
+  if (button) settings.classList.toggle('on', button.dataset.cu === 'on')
+})
+</script>
+</body>
+</html>
