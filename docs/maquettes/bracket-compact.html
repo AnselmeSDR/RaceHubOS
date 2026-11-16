@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : bracket compact</title>
+<style>
+:root {
+  --bg: #09090b;
+  --card: #1c1c1f;
+  --tile: #232327;
+  --border: #2e2e33;
+  --fg: #fafafa;
+  --muted: #8b8b94;
+  --faint: #5b5b63;
+  --q: #60a5fa;
+  --r: #4ade80;
+  --gold: #facc15;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #000; font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1260px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 56px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+.intro { margin: 0; color: #a1a1aa; line-height: 1.55; max-width: 900px; font-size: 14px; }
+section > h2 { margin: 0 0 4px; font-size: 19px; }
+section > .why { margin: 0 0 16px; color: #a1a1aa; font-size: 14px; line-height: 1.55; max-width: 900px; }
+.reco { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 600; color: #052e16; background: var(--r); border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+.state { margin: 18px 0 6px; font-size: 12px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+ul.points { margin: 14px 0 0; padding-left: 20px; color: #d4d4d8; font-size: 13.5px; line-height: 1.65; max-width: 900px; }
+code { font-size: .9em; color: #e4e4e7; background: #18181b; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+/* The panel as it sits on the championship page */
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; width: 1190px; max-width: 100%; }
+.av { flex: none; width: 16px; height: 16px; border-radius: 20%; background: var(--c); overflow: hidden; }
+.av img { width: 100%; height: 100%; display: block; }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.dot.finished { background: rgba(139, 139, 148, .55); }
+.dot.active { background: var(--r); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .dot.active { animation: none; } }
+.num { font-variant-numeric: tabular-nums; }
+
+/* A: compact groups, the ranking carried by the races */
+.flow { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.zone { display: flex; flex-direction: column; gap: 6px; }
+.zone > b { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.zone.q > b { color: var(--q); }
+.zone.r > b { color: var(--r); }
+.cards { display: flex; gap: 8px; flex-wrap: wrap; }
+.chev { align-self: center; color: var(--faint); margin-top: 18px; }
+.g { width: 11.5rem; background: var(--tile); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px 7px; cursor: pointer; transition: border-color .15s; }
+.g:hover { border-color: #45454c; }
+.g header { display: flex; align-items: center; justify-content: space-between; height: 18px; font-size: 12px; font-weight: 700; }
+.q .g header span { color: var(--q); }
+.r .g header span { color: var(--r); }
+.row { display: flex; align-items: center; gap: 6px; height: 19px; font-size: 12px; }
+.row .rk { width: 14px; text-align: right; color: var(--muted); font-size: 11px; }
+.row .rk.pod { color: var(--gold); font-weight: 600; }
+.row .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .t { color: var(--muted); font-size: 11px; }
+.row .p { font-size: 11px; font-weight: 600; color: var(--muted); width: 18px; text-align: right; }
+.row .p.pod { color: var(--gold); }
+.slot { flex: 1; height: 13px; border: 1px dashed #3a3a40; border-radius: 5px; }
+
+/* B: one line per driver */
+.paths { display: grid; grid-template-columns: repeat(2, max-content); gap: 0 40px; }
+.paths table { border-collapse: collapse; font-size: 12px; }
+.paths th { font-size: 11px; font-weight: 600; text-align: left; color: var(--faint); padding: 0 10px 4px 0; text-transform: uppercase; letter-spacing: .04em; }
+.paths td { height: 24px; padding: 0 10px 0 0; border-top: 1px solid #26262a; white-space: nowrap; }
+.paths .who { display: flex; align-items: center; gap: 6px; min-width: 8.5rem; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 18px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #26262b; }
+.chip.q { color: var(--q); }
+.chip.r { color: var(--r); }
+.paths .t { color: var(--muted); font-size: 11px; }
+
+/* C: a strip of sessions with their faces */
+.strip { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pill { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 8px; border: 1px solid var(--border); background: var(--tile); border-radius: 10px; }
+.pill > span { font-size: 12px; font-weight: 700; }
+.pill.q > span { color: var(--q); }
+.pill.r > span { color: var(--r); }
+.faces { display: flex; }
+.faces > * { margin-left: -4px; box-shadow: 0 0 0 2px var(--tile); }
+.faces > *:first-child { margin-left: 0; }
+.faces .av { width: 20px; height: 20px; }
+.faces .free { width: 20px; height: 20px; border-radius: 20%; border: 1px dashed #4a4a52; background: var(--tile); font-size: 10px; color: var(--muted); display: grid; place-items: center; }
+.faces .win { box-shadow: 0 0 0 2px var(--gold); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Bracket du championnat, en compact</h1>
+    <p class="intro">Le panneau qui s'ouvre par le bouton « bracket » d'un championnat automatique. Aujourd'hui il prend 470 px de haut pour 6 pilotes, et près de 600 pour 12. Partout ci-dessous, les phrases flottantes disparaissent : « En attente des qualifications… », « Classement après toutes les qualifs », le sous-titre « Qualif 1 » qui répète Q1, la ligne « 6 participants · 3 qualifs · 2 courses » et le badge « En attente ». Le statut devient le point du bandeau des sessions (vert qui pulse = en cours, gris = finie, rien = à venir). Exemple « avant » : le championnat « test » (6 pilotes, 3 qualifs, 2 courses). Exemple « après » : 12 pilotes, qualifs finies, R1 courue, R2 en cours.</p>
+  </header>
+
+  <section>
+    <h2>A · Des groupes compacts, le classement dans les courses <span class="reco">Recommandée</span></h2>
+    <p class="why">Mêmes groupes qu'aujourd'hui en petites cartes côte à côte : les qualifs, puis les courses. La colonne « Classement qualif » du milieu disparaît, car les courses le montrent déjà : chaque place d'une course porte le rang du pilote au classement des qualifs. Avant la fin des qualifs, ces places sont vides et numérotées, ce qui dit sans phrase que R1 prend les 3 premiers.</p>
+    <div class="state">Avant les qualifs</div>
+    <div class="panel" id="a1"></div>
+    <div class="state">Qualifs finies, R1 courue, R2 en cours</div>
+    <div class="panel" id="a2"></div>
+    <ul class="points">
+      <li>135 px de haut pour 6 pilotes et 190 px pour 12, au lieu de 470 et près de 600. Les cartes gardent une largeur fixe et passent à la ligne quand il y en a beaucoup.</li>
+      <li>Dans une qualif finie, le rang au classement général précède le pilote (or pour le podium), et son meilleur tour le suit. Dans une course finie, la place d'arrivée (P1 en or) remplace le temps.</li>
+      <li>Les libellés suivent l'ordre de passage, comme le bandeau (Q1…Q9). Aujourd'hui, un ancien championnat affiche « Q1 » sur toutes ses qualifs.</li>
+      <li>Un clic sur une carte ouvre sa session, comme aujourd'hui.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>B · Une ligne par pilote</h2>
+    <p class="why">On ne lit plus les groupes mais le parcours de chaque pilote : sa qualif et son temps, son rang, sa course et sa place. Les pilotes sont triés par rang une fois les qualifs finies, sinon par qualif. La liste se coupe en deux colonnes.</p>
+    <div class="state">Avant les qualifs</div>
+    <div class="panel" id="b1"></div>
+    <div class="state">Qualifs finies, R1 courue, R2 en cours</div>
+    <div class="panel" id="b2"></div>
+    <ul class="points">
+      <li>Très lisible pour un pilote (« où je roule, où j'en suis »), moins pour voir qui est avec qui : il faut repérer les mêmes Q2 ou R1.</li>
+      <li>Hauteur : une ligne de 24 px pour deux pilotes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>C · Une frise de visages</h2>
+    <p class="why">Le plus petit possible : une ligne de sessions, chacune avec les photos de ses pilotes (le nom au survol). Les places libres d'une course portent leur rang, et le vainqueur d'une course finie a un anneau doré.</p>
+    <div class="state">Avant les qualifs</div>
+    <div class="panel" id="c1"></div>
+    <div class="state">Qualifs finies, R1 courue, R2 en cours</div>
+    <div class="panel" id="c2"></div>
+    <ul class="points">
+      <li>Une seule ligne de 34 px, mais ni nom, ni temps, ni place sans survol, et le survol n'existe pas au doigt sur le PC de course. Le détail reste dans la session.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const D = {
+  'Amelia GRE': '#0a2180', 'Damien PEL': '#a73044', 'Anselme SDR': '#3b3a38', 'Felix WAG': '#84CC16',
+  'Antoine GIR': '#fc79a5', 'Grace MOL': '#3B82F6', 'Tobias KEL': '#132ca0', 'Oliver ASH': '#29b7ef',
+  'Lukas BRE': '#e61116', 'Léa BOU': '#dd0b17', 'Océane PIC': '#1938c7', 'Lily HOL': '#09399b',
+  'Lena FIS': '#f675a1', 'Romain DAN': '#2fabf1', 'Henry WAL': '#4d4d4d', 'Lucy PAR': '#00007c',
+}
+const file = (name) => name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(' ', '-') + '.png'
+const av = (name, cls = 'av') =>
+  `<span class="${cls}" style="--c:${D[name]}" title="${name}"><img src="../../site/sources/drivers/portraits/${file(name)}" alt=""></span>`
+const time = (ms) => (ms / 1000).toFixed(3)
+const dot = (status) => (status === 'draft' ? '' : `<i class="dot ${status}" title="${status === 'active' ? 'En cours' : 'Terminée'}"></i>`)
+
+// Before: the "test" championship
+const before = {
+  qualifs: [
+    { status: 'draft', drivers: [['Amelia GRE'], ['Damien PEL']] },
+    { status: 'draft', drivers: [['Anselme SDR'], ['Felix WAG']] },
+    { status: 'draft', drivers: [['Antoine GIR'], ['Grace MOL']] },
+  ],
+  ranks: {},
+  races: [
+    { status: 'draft', slots: [1, 2, 3], drivers: [] },
+    { status: 'draft', slots: [4, 5, 6], drivers: [] },
+  ],
+}
+// After: 12 drivers, qualifs done, R1 run, R2 running
+const after = {
+  qualifs: [
+    { status: 'finished', drivers: [['Lukas BRE', 9557], ['Léa BOU', 9703], ['Tobias KEL', 10528], ['Oliver ASH', 11235]] },
+    { status: 'finished', drivers: [['Lily HOL', 10133], ['Anselme SDR', 10235], ['Damien PEL', 10282], ['Océane PIC', 10653]] },
+    { status: 'finished', drivers: [['Romain DAN', 10096], ['Henry WAL', 10476], ['Lena FIS', 10560], ['Lucy PAR', 10588]] },
+  ],
+  ranks: { 'Lukas BRE': 1, 'Léa BOU': 2, 'Romain DAN': 3, 'Lily HOL': 4, 'Anselme SDR': 5, 'Damien PEL': 6, 'Henry WAL': 7, 'Tobias KEL': 8, 'Lena FIS': 9, 'Lucy PAR': 10, 'Océane PIC': 11, 'Oliver ASH': 12 },
+  races: [
+    { status: 'finished', slots: [1, 2, 3, 4, 5, 6], drivers: { 'Lukas BRE': 3, 'Léa BOU': 2, 'Romain DAN': 1, 'Lily HOL': 5, 'Anselme SDR': 4, 'Damien PEL': 6 } },
+    { status: 'active', slots: [7, 8, 9, 10, 11, 12], drivers: { 'Henry WAL': 0, 'Tobias KEL': 0, 'Lena FIS': 0, 'Lucy PAR': 0, 'Océane PIC': 0, 'Oliver ASH': 0 } },
+  ],
+}
+const byRank = (ranks) => Object.fromEntries(Object.entries(ranks).map(([n, r]) => [r, n]))
+
+function optionA(s) {
+  const at = byRank(s.ranks)
+  const qualif = (g, i) => `<div class="g"><header><span>Q${i + 1}</span>${dot(g.status)}</header>${g.drivers
+    .map(([name, ms]) => {
+      const rk = s.ranks[name]
+      return `<div class="row">${rk ? `<span class="rk num ${rk <= 3 ? 'pod' : ''}">${rk}</span>` : ''}${av(name)}<span class="nm">${name}</span>${ms && g.status === 'finished' ? `<span class="t num">${time(ms)}</span>` : ''}</div>`
+    })
+    .join('')}</div>`
+  const race = (g, i) => `<div class="g"><header><span>R${i + 1}</span>${dot(g.status)}</header>${g.slots
+    .map((rk) => {
+      const name = at[rk]
+      if (!name) return `<div class="row"><span class="rk num">${rk}</span><span class="slot"></span></div>`
+      const p = g.drivers[name]
+      return `<div class="row"><span class="rk num">${rk}</span>${av(name)}<span class="nm">${name}</span>${g.status === 'finished' ? `<span class="p num ${p <= 3 ? 'pod' : ''}">P${p}</span>` : ''}</div>`
+    })
+    .join('')}</div>`
+  return `<div class="flow">
+    <div class="zone q"><b>Qualifications</b><div class="cards">${s.qualifs.map(qualif).join('')}</div></div>
+    <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    <div class="zone r"><b>Courses</b><div class="cards">${s.races.map(race).join('')}</div></div>
+  </div>`
+}
+
+function optionB(s) {
+  const lines = s.qualifs.flatMap((g, q) => g.drivers.map(([name, ms]) => ({ name, ms, q, qs: g.status })))
+  if (Object.keys(s.ranks).length) lines.sort((a, b) => s.ranks[a.name] - s.ranks[b.name])
+  const raceOf = (name) => s.races.findIndex((r) => name in (Array.isArray(r.drivers) ? {} : r.drivers))
+  const tr = (l) => {
+    const rk = s.ranks[l.name]
+    const r = raceOf(l.name)
+    const race = s.races[r]
+    const p = race?.drivers[l.name]
+    return `<tr><td><span class="who">${av(l.name)}${l.name}</span></td>
+      <td><span class="chip q">Q${l.q + 1}${dot(l.qs)}</span> ${l.qs === 'finished' ? `<span class="t num">${time(l.ms)}</span>` : ''}</td>
+      <td class="num" style="${rk <= 3 ? 'color:var(--gold);font-weight:600' : 'color:var(--muted)'}">${rk ?? ''}</td>
+      <td>${r >= 0 ? `<span class="chip r">R${r + 1}${dot(race.status)}</span>` : ''} ${race?.status === 'finished' ? `<b class="num" style="font-size:11px;color:${p <= 3 ? 'var(--gold)' : 'var(--muted)'}">P${p}</b>` : ''}</td></tr>`
+  }
+  const half = Math.ceil(lines.length / 2)
+  const table = (part) => `<table><tr><th>Pilote</th><th>Qualif</th><th>Rang</th><th>Course</th></tr>${part.map(tr).join('')}</table>`
+  return `<div class="paths">${table(lines.slice(0, half))}${table(lines.slice(half))}</div>`
+}
+
+function optionC(s) {
+  const at = byRank(s.ranks)
+  const pill = (kind, label, status, faces) => `<div class="pill ${kind}"><span>${label}</span><div class="faces">${faces}</div>${dot(status)}</div>`
+  const q = s.qualifs.map((g, i) => pill('q', `Q${i + 1}`, g.status, g.drivers.map(([n]) => av(n)).join('')))
+  const r = s.races.map((g, i) => {
+    const order = g.status === 'finished' ? Object.entries(g.drivers).sort((a, b) => a[1] - b[1]).map(([n]) => n) : g.slots.map((rk) => at[rk])
+    const faces = order.map((n, j) => (n ? av(n, `av${g.status === 'finished' && j === 0 ? ' win' : ''}`) : `<span class="free num">${g.slots[j]}</span>`))
+    return pill('r', `R${i + 1}`, g.status, faces.join(''))
+  })
+  return `<div class="strip">${q.join('')}<svg class="chev" style="margin:0 4px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>${r.join('')}</div>`
+}
+
+a1.innerHTML = optionA(before)
+a2.innerHTML = optionA(after)
+b1.innerHTML = optionB(before)
+b2.innerHTML = optionB(after)
+c1.innerHTML = optionC(before)
+c2.innerHTML = optionC(after)
+</script>
+</body>
+</html>

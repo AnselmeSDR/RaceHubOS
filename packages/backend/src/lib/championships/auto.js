@@ -27,11 +27,11 @@ export function qualifRanking(qualifSessions, participants = []) {
 export const isQualif = (session) => session.type === SessionType.QUALIF;
 export const isRace = (session) => session.type === SessionType.RACE;
 
-/** A qualifying or race group of the bracket: `Q1`, `R2`… */
-export const bracketGroup = (prefix) => (session) => ({
+/** A qualifying or race group of the bracket, labelled by its rank in running order like the session tabs: `Q1`, `R2`… */
+export const bracketGroup = (prefix) => (session, rank) => ({
   sessionId: session.id,
   group: session.autoGroup,
-  label: `${prefix}${(session.autoGroup ?? 0) + 1}`,
+  label: `${prefix}${rank + 1}`,
   name: session.name,
   status: session.status,
   drivers: session.drivers,

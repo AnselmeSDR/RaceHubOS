@@ -67,7 +67,7 @@ describe('the qualifying ranking', () => {
 
 test('bracket groups and session kinds', () => {
   const session = { id: 's', autoGroup: 1, name: 'Quali 2', status: 'draft', drivers: [], type: SessionType.QUALIF };
-  expect(bracketGroup('Q')(session)).toEqual({
+  expect(bracketGroup('Q')(session, 1)).toEqual({
     sessionId: 's',
     group: 1,
     label: 'Q2',
@@ -75,6 +75,7 @@ test('bracket groups and session kinds', () => {
     status: 'draft',
     drivers: [],
   });
-  expect(bracketGroup('R')({ ...session, autoGroup: null }).label).toBe('R1');
+  // Its rank in running order, whatever its group: sessions without one were all `R1`
+  expect(bracketGroup('R')({ ...session, autoGroup: null }, 2).label).toBe('R3');
   expect([isQualif(session), isRace(session), isRace({ type: SessionType.RACE })]).toEqual([true, false, true]);
 });

@@ -82,17 +82,7 @@
       "finishing": "Finishing",
       "finished": "Finished"
     },
-    "waitingQualifs": "Waiting for qualifications...",
-    "participants_one": "{{count}} participant",
-    "participants_other": "{{count}} participants",
-    "qualifsCount_one": "{{count}} qualif",
-    "qualifsCount_other": "{{count}} qualifs",
-    "racesCount_one": "{{count}} race",
-    "racesCount_other": "{{count}} races",
-    "qualifications": "Qualifications",
-    "races": "Races",
-    "qualifRanking": "Qualif Ranking",
-    "rankingAfterQualifs": "Ranking after<br/>all qualifs"
+    "rank": "Rank"
   },
   "standings": {
     "unknownDriver": "Unknown driver",

@@ -152,7 +152,7 @@ export class ChampionshipService {
       include: {
         drivers: { ...liveDrivers, include: { driver: true, car: true }, orderBy: { controller: 'asc' } },
       },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
     const qualifSessions = sessions.filter(isQualif);
     const allQualifsFinished = qualifSessions.length > 0 && qualifSessions.every(isFinished);
