@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] - 2026-11-16
+
+### Changed
+- Championship wizard: a driver is dragged with the mouse, a finger or a pen, lifts and lands where dropped, or springs back when refused, the reason under the session; drivers glide to their new group when the groups change; the window grows out of its button and the steps slide; Next and Create always answer, the field that is missing saying so on itself; the buttons stay at the bottom while the steps scroll under them; the help sentences are gone.
+
 ## [1.33.0] - 2026-11-14
 
 ### Changed
