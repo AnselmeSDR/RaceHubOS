@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { REFERENCE_DRIVER_NAME } from '@racehubos/shared'
 import SettingsPanel from './SettingsPanel'
 import { AlertTriangle, Loader2, RefreshCw, UserCog } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -85,8 +86,14 @@ export default function ReferenceDriverSettings() {
     }
   }
 
+  const stigExists = drivers.some((driver) => driver.name === REFERENCE_DRIVER_NAME)
+
   return (
-    <SettingsPanel title={t('referenceDriver.title')} testId="settings-reference-driver">
+    <SettingsPanel
+      title={t('referenceDriver.title')}
+      icon={<UserCog className="size-4 text-muted-foreground" />}
+      testId="settings-reference-driver"
+    >
       <div className="space-y-4 border-t border-border px-4 py-3">
         <p className="text-xs text-muted-foreground">{t('referenceDriver.description')}</p>
 
@@ -108,7 +115,13 @@ export default function ReferenceDriverSettings() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={handleCreateStig} disabled={referenceBusy !== null}>
+          {/* Already there, the STIG is picked in the list: nothing to create */}
+          <Button
+            variant="outline"
+            onClick={handleCreateStig}
+            disabled={referenceBusy !== null || stigExists}
+            title={stigExists ? t('referenceDriver.stigExists') : undefined}
+          >
             {referenceBusy === 'create' ? <Loader2 className="size-4 animate-spin" /> : <UserCog className="size-4" />}
             {referenceBusy === 'create' ? t('referenceDriver.creating') : t('referenceDriver.createStig')}
           </Button>

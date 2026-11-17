@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Languages, LayoutGrid, List, Moon, Sun } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useApp } from '@/context/AppContext'
 import { LANGUAGES } from '@/i18n'
@@ -34,7 +35,10 @@ export default function AppearanceSettings() {
 
   return (
     <SettingsPanel title={t('appearance.title')} testId="settings-appearance">
-      <SettingRow label={t('appearance.theme')}>
+      <SettingRow
+        label={t('appearance.theme')}
+        icon={isDark ? <Moon className="size-4 text-blue-500" /> : <Sun className="size-4 text-yellow-500" />}
+      >
         <Segmented
           label={t('appearance.theme')}
           value={isDark ? 'dark' : 'light'}
@@ -45,7 +49,16 @@ export default function AppearanceSettings() {
           ]}
         />
       </SettingRow>
-      <SettingRow label={t('appearance.defaultView')}>
+      <SettingRow
+        label={t('appearance.defaultView')}
+        icon={
+          defaultViewMode === 'grid' ? (
+            <LayoutGrid className="size-4 text-green-500" />
+          ) : (
+            <List className="size-4 text-green-500" />
+          )
+        }
+      >
         <Segmented
           label={t('appearance.defaultView')}
           value={defaultViewMode}
@@ -56,7 +69,7 @@ export default function AppearanceSettings() {
           ]}
         />
       </SettingRow>
-      <SettingRow label={t('appearance.language')}>
+      <SettingRow label={t('appearance.language')} icon={<Languages className="size-4 text-blue-500" />}>
         <Select value={i18n.language} onValueChange={(lng) => i18n.changeLanguage(lng)}>
           <SelectTrigger className="w-36" aria-label={t('appearance.language')}>
             <SelectValue />

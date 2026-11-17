@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw } from 'lucide-react'
+import { Link2, Radio, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import { useDevice, SIMULATOR_ADDRESS } from '@/context/DeviceContext'
@@ -82,6 +82,7 @@ export default function DeviceList({ onLog }) {
           <SettingRow
             key={device.id || device.address}
             testId="settings-device"
+            icon={<Radio className={`size-4 ${device.type === 'simulator' ? 'text-purple-500' : 'text-blue-500'}`} />}
             label={
               <>
                 {device.name}
@@ -113,7 +114,7 @@ export default function DeviceList({ onLog }) {
         )
       })}
 
-      <SettingRow label={t('devices.autoConnect')}>
+      <SettingRow label={t('devices.autoConnect')} icon={<Link2 className="size-4 text-blue-500" />}>
         <SettingSwitch
           on={autoConnect}
           onToggle={() => handleAutoConnectChange(!autoConnect)}
@@ -122,7 +123,10 @@ export default function DeviceList({ onLog }) {
       </SettingRow>
 
       {!connected && (
-        <SettingRow label={<span className="font-normal text-muted-foreground">{t('devices.other')}</span>}>
+        <SettingRow
+          label={<span className="font-normal text-muted-foreground">{t('devices.other')}</span>}
+          icon={<Search className="size-4 text-muted-foreground" />}
+        >
           <Button variant="outline" size="sm" onClick={handleScan} disabled={scanning}>
             {scanning && <RefreshCw className="size-4 animate-spin" />}
             {scanning ? t('devices.scanning') : t('devices.scan')}

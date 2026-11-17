@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { REFERENCE_DRIVER_NAME } from '@racehubos/shared'
 import i18n from '@/i18n'
 import ReferenceDriverSettings from './ReferenceDriverSettings'
 
 const json = (body) => ({ ok: true, json: async () => body })
 const ayrton = { id: 'd1', name: 'Ayrton' }
-const stig = { id: 'stig', name: 'The STIG' }
+const stig = { id: 'stig', name: REFERENCE_DRIVER_NAME }
 let api
 let fetchMock
 
@@ -108,11 +109,31 @@ test('creating the STIG makes them the reference and reloads the list', async ()
   await user.click(screen.getByRole('button', { name: 'Create The STIG' }))
   expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled()
   expect(picker()).toBeDisabled()
-  resolveStig(json({ success: true, data: stig }))
 
+  // The reloaded list holds the STIG: there is nothing left to create
+  api.drivers = async () => json({ success: true, data: [ayrton, stig] })
+  resolveStig(json({ success: true, data: stig }))
   expect(await screen.findByText('The STIG was created and set as reference driver')).toBeInTheDocument()
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5))
-  expect(screen.getByRole('button', { name: 'Create The STIG' })).toBeEnabled()
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Create The STIG' })).toBeDisabled())
+})
+
+test('the STIG already exists: its creation is greyed out and says why; another driver may still be chosen', async () => {
+  api.drivers = async () => json({ success: true, data: [ayrton, stig] })
+  api.reference = async () => json({ success: true, data: stig })
+  render(<ReferenceDriverSettings />)
+  const create = screen.getByRole('button', { name: 'Create The STIG' })
+  await waitFor(() => expect(create).toBeDisabled())
+  expect(create).toHaveAttribute('title', 'The STIG already exists')
+  expect(picker()).toBeEnabled()
+})
+
+test('without the STIG among the drivers, it can be created, with no word about it existing', async () => {
+  render(<ReferenceDriverSettings />)
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  const create = screen.getByRole('button', { name: 'Create The STIG' })
+  expect(create).toBeEnabled()
+  expect(create).not.toHaveAttribute('title')
 })
 
 test('creating the STIG may fail', async () => {

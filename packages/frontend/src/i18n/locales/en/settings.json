@@ -82,6 +82,7 @@
     "none": "No reference driver",
     "noneWarning": "Without a reference driver, balancing laps are credited to nobody.",
     "createStig": "Create The STIG",
+    "stigExists": "The STIG already exists",
     "creating": "Creating...",
     "created": "The STIG was created and set as reference driver",
     "migrate": "Claim past balancing laps",

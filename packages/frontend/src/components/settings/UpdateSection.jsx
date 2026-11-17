@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
-import { AlertTriangle, ArrowUpCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowUpCircle, CheckCircle, Download, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Modal, { ModalFooter } from '@/components/ui/Modal'
 
@@ -118,7 +118,8 @@ export default function UpdateSection() {
     <div data-testid="settings-update" className="border-t border-border px-4 py-2.5">
       <div className="space-y-3">
         <div className="flex min-h-7 items-center justify-between gap-4">
-          <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
+          <div className="flex flex-wrap items-center gap-x-2 text-sm">
+            <Download className="mr-1 size-4 text-blue-500" />
             <span className="font-medium">{t('update.currentVersion')}</span>
             <span className="font-mono font-bold">{updateInfo?.currentVersion || '...'}</span>
             {updateInfo && !updateInfo.updateAvailable && !updateInfo.error && !updating && (

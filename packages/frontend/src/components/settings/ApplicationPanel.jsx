@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Shield } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import SettingSwitch from './SettingSwitch'
 import SettingsPanel, { SettingRow } from './SettingsPanel'
@@ -11,7 +12,11 @@ export default function ApplicationPanel() {
   return (
     <SettingsPanel title={t('application.title')} testId="settings-application">
       <UpdateSection />
-      <SettingRow label={t('appearance.adminMode')} description={t('appearance.adminModeDesc')}>
+      <SettingRow
+        label={t('appearance.adminMode')}
+        description={t('appearance.adminModeDesc')}
+        icon={<Shield className="size-4 text-purple-500" />}
+      >
         <SettingSwitch on={isAdmin} onToggle={toggleAdmin} label={t('appearance.adminMode')} />
       </SettingRow>
     </SettingsPanel>

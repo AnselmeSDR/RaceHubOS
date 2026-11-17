@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Cpu } from 'lucide-react'
 import { useDevice } from '@/context/DeviceContext'
 
 /** What the Control Unit reports (start lights, mode, display, fuel), while one is connected. */
@@ -10,8 +11,9 @@ export default function CuStatusCard() {
   return (
     <div
       data-testid="settings-cu-status"
-      className="flex flex-wrap gap-x-6 gap-y-1 border-t border-border px-4 py-3 text-sm"
+      className="flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-border px-4 py-3 text-sm"
     >
+      <Cpu className="-mr-3 size-4 text-muted-foreground" />
       {[
         { label: t('cuStatus.start'), value: cuStatus.start },
         { label: t('cuStatus.mode'), value: cuStatus.mode || '-' },

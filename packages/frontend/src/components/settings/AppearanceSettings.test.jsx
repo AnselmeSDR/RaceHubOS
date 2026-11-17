@@ -43,6 +43,7 @@ beforeEach(async () => {
 // Unmount first: the voice list listener is removed from the stubbed speechSynthesis
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 afterAll(() => i18n.changeLanguage('en'))
@@ -167,6 +168,21 @@ describe('voice announcements', () => {
 
     synth.voices = [daniel]
     act(() => synth.listeners.forEach((listener) => listener()))
+    expect(picker).toHaveTextContent('Daniel (en-GB)')
+  })
+
+  test('voices a browser fills in without saying so appear too: the list is read again shortly after', () => {
+    vi.useFakeTimers()
+    voice.bestLapEnabled = true
+    synth.voices = []
+    Object.assign(voice, { voiceId: 'daniel' })
+    render(<VoiceSettings />)
+    const picker = screen.getByTestId('settings-voice').querySelector('[role="combobox"]')
+    expect(picker).toHaveTextContent('Default voice')
+
+    // No `voiceschanged` event: the voices are just there a moment later
+    synth.voices = [daniel]
+    act(() => vi.advanceTimersByTime(600))
     expect(picker).toHaveTextContent('Daniel (en-GB)')
   })
 

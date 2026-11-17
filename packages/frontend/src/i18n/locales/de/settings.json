@@ -82,6 +82,7 @@
     "none": "Kein Referenzfahrer",
     "noneWarning": "Ohne Referenzfahrer werden Abgleichrunden keinem Fahrer zugeordnet.",
     "createStig": "The STIG anlegen",
+    "stigExists": "The STIG existiert bereits",
     "creating": "Wird angelegt …",
     "created": "The STIG wurde angelegt und als Referenzfahrer festgelegt",
     "migrate": "Bisherige Abgleichrunden zuordnen",

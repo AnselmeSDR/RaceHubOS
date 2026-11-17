@@ -82,6 +82,7 @@
     "none": "Aucun pilote de référence",
     "noneWarning": "Sans pilote de référence, les tours d'équilibrage ne sont attribués à personne.",
     "createStig": "Créer Le STIG",
+    "stigExists": "Le STIG existe déjà",
     "creating": "Création...",
     "created": "Le STIG a été créé et défini comme pilote de référence",
     "migrate": "Attribuer les anciens tours d'équilibrage",

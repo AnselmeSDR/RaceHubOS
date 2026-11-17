@@ -5,5 +5,6 @@ export * from './championshipGroups.js';
 export * from './division.js';
 export * from './fuelMode.js';
 export * from './localized.js';
+export * from './referenceDriver.js';
 export * from './sessionStatus.js';
 export * from './sessionTypes.js';

@@ -1,4 +1,4 @@
-import { SessionType } from '@racehubos/shared';
+import { REFERENCE_DRIVER_NAME, SessionType } from '@racehubos/shared';
 import { DIVISIONS_INCLUDE, withDivisions } from './divisions.js';
 /**
  * Reference driver ("Le STIG"): the constant behind every balancing run.
@@ -9,7 +9,7 @@ import { DIVISIONS_INCLUDE, withDivisions } from './divisions.js';
  */
 
 const STIG_DEFAULTS = {
-  name: 'Le STIG',
+  name: REFERENCE_DRIVER_NAME,
   color: '#E5E7EB',
 };
 
