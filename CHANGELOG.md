@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] - 2026-11-17
+
+### Changed
+- Every page reviewed: lists show 17 rows instead of 11, figures on the right without icons and two divisions then "+n"; car, track and division cards are compact (six cars per row); profiles list records and recent sessions in aligned columns without repeating themselves; the dashboard shows the championship under way, the latest sessions and titled standings; Start always answers, offering the known Control Units when none is connected; a session's laps are a table with one column per driver; settings are five panels in two columns, each setting on its own line; pictures glide from a list to a profile and tabs slide, all cut by the system's reduced motion.
+
+### Fixed
+- A dark driver colour no longer hides their name on the race leaderboard; profile and card names are in the text colour; "Races" counts races, not every session; on a division's page a driver's name is no longer hidden by their other divisions; the scan button says it looks for a Control Unit; the dashboard has its French title.
+
 ## [1.35.0] - 2026-11-16
 
 ### Changed
