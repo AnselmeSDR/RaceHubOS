@@ -81,11 +81,14 @@ export const trackColor = (track) => track.color || '#9333EA'
 export const driverColor = (driver) => driver.color || '#3B82F6'
 export const divisionColor = (division) => division.color || '#6B7280'
 
-const brightness = (hex) => {
+const channels = (hex) => {
   const match = /^#([0-9a-f]{6})$/i.exec(hex ?? '')
-  if (!match) return null
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16))
-  return 0.299 * r + 0.587 * g + 0.114 * b
+  return match && [0, 2, 4].map((i) => parseInt(match[1].slice(i, i + 2), 16))
+}
+
+const brightness = (hex) => {
+  const rgb = channels(hex)
+  return rgb && 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
 }
 
 /** Dark text on a light colour, white on the others: a badge stays readable (SILVER, GOLD, PLATINIUM). */
@@ -96,3 +99,44 @@ export const textOnWhite = (hex) => ((brightness(hex) ?? 0) > 200 ? '#1c1917' : 
 
 /** The colour itself as text on the dark theme, unless too dark to read: then light text. */
 export const textOnDark = (hex) => ((brightness(hex) ?? 255) < 80 ? '#e7e5e4' : hex)
+
+// The cards a record's colour is written on, in each theme (--card of index.css)
+export const CARD = { light: '#ffffff', dark: '#1c1c1f' }
+
+const mixed = (from, to, amount) => from.map((channel, i) => channel + (to[i] - channel) * amount)
+const hexOf = (rgb) => `#${rgb.map((channel) => Math.round(channel).toString(16).padStart(2, '0')).join('')}`
+
+// Relative luminance and contrast ratio of WCAG 2
+const luminance = (rgb) => {
+  const [r, g, b] = rgb.map((channel) => {
+    const value = channel / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => {
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+/** `background` under `alpha` of `hex`: the tint a record's colour gives its row. */
+export function tinted(background, hex, alpha) {
+  const [under, over] = [channels(background), channels(hex)]
+  return under && over ? hexOf(mixed(under, over, alpha)) : background
+}
+
+/**
+ * `hex` as large text on `background`: itself when it reads (3:1), else pulled toward white on a dark
+ * background or black on a light one until it does, so that its hue stays. Anything but `#rrggbb` is
+ * left as it is.
+ */
+export function readableOn(hex, background) {
+  const [ink, under] = [channels(hex), channels(background)]
+  if (!ink || !under) return hex
+  const toward = luminance(under) < 0.18 ? [255, 255, 255] : [0, 0, 0]
+  for (let step = 0; step < 10; step++) {
+    const shade = mixed(ink, toward, step / 10)
+    if (contrast(shade, under) >= 3) return step ? hexOf(shade) : hex
+  }
+  return hexOf(toward)
+}

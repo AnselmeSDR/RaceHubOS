@@ -13,6 +13,7 @@ const driver = {
   img: null,
   number: 12,
   divisions: [{ id: 'dv1', name: 'SILVER', color: '#C4C4C4', scope: 'driver', order: 2 }],
+  races: 4,
   wins: 3,
   podiums: 5,
   bestLap: 7654,
@@ -32,11 +33,11 @@ describe('DriverCard', () => {
   test('name, number, divisions, results and best lap', () => {
     render(<DriverCard driver={driver} onClick={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
     const card = screen.getByTestId('entity-card')
-    expect(within(card).getByRole('heading', { name: 'AYRTON' })).toHaveStyle({ color: '#FFCC00' })
+    expect(within(card).getByRole('heading', { name: 'AYRTON' })).not.toHaveAttribute('style')
     expect(card).toHaveTextContent('12')
     // A pale division takes dark text
     expect(within(card).getByTitle('SILVER')).toHaveStyle({ backgroundColor: '#C4C4C4', color: '#1c1917' })
-    for (const text of ['Races6', 'Podiums5', 'Laps120', 'Best Lap7.654s']) expect(card).toHaveTextContent(text)
+    for (const text of ['Races4', 'Podiums5', 'Laps120', 'Best Lap7.654s']) expect(card).toHaveTextContent(text)
     // Podiums stand out once there is one, and a winner wears a trophy
     expect(within(card).getByText('Podiums').parentElement).toHaveClass('ring-yellow-400')
     expect(card.querySelectorAll('.bg-yellow-500')).toHaveLength(1)
@@ -48,6 +49,7 @@ describe('DriverCard', () => {
       img: 'https://img.test/a.png',
       number: null,
       divisions: [],
+      races: 0,
       wins: 0,
       podiums: 0,
       bestLap: null,
@@ -89,20 +91,49 @@ describe('driverColumns', () => {
     expect(name.firstChild.firstChild).toHaveStyle({ backgroundColor: '#FFCC00' })
     expect(renderCell(columns, 'number', driver).container).toHaveTextContent('12')
     expect(renderCell(columns, 'divisions', driver).container).toHaveTextContent('SILVER')
-    expect(renderCell(columns, 'sessions', driver).container).toHaveTextContent('6')
+    // Races, not sessions: practice and qualifying do not count
+    expect(renderCell(columns, 'races', driver).container).toHaveTextContent('4')
     expect(renderCell(columns, 'wins', driver).container).toHaveTextContent('3')
     expect(renderCell(columns, 'podiums', driver).container).toHaveTextContent('5')
     expect(renderCell(columns, 'laps', driver).container).toHaveTextContent('120')
     expect(renderCell(columns, 'bestLap', driver).container).toHaveTextContent('7.654s')
   })
 
+  test('figures sit on the right without an icon; two divisions at most, the others behind a "+n"', () => {
+    expect(columns.filter((c) => c.meta?.align === 'right').map((c) => c.id)).toEqual([
+      'races',
+      'wins',
+      'podiums',
+      'laps',
+      'bestLap',
+    ])
+    for (const id of ['races', 'wins', 'laps']) {
+      const { container, unmount } = renderCell(columns, id, driver)
+      expect(container.querySelector('svg')).toBeNull()
+      unmount()
+    }
+    const divisions = ['GOLD', 'SILVER', 'BRONZE', 'GUEST'].map((name, i) => ({
+      ...driver.divisions[0],
+      id: name,
+      name,
+      order: i,
+    }))
+    const cell = renderCell(columns, 'divisions', { ...driver, divisions }).container
+    expect(
+      within(cell)
+        .getAllByTestId('division-badge')
+        .map((badge) => badge.textContent)
+    ).toEqual(['GOLD', 'SILVER'])
+    expect(within(cell).getByTestId('division-more')).toHaveTextContent('+2')
+  })
+
   test('cells of a bare driver', () => {
     const bare = { ...driver, img: 'https://img.test/a.png', color: null, number: null, divisions: [], wins: null }
-    const empty = { ...bare, podiums: null, bestLap: null, _count: undefined }
+    const empty = { ...bare, races: undefined, podiums: null, bestLap: null, _count: undefined }
     expect(renderCell(columns, 'name', empty).container.querySelector('img')).toBeInTheDocument()
     expect(renderCell(columns, 'number', empty).container).toHaveTextContent('-')
     expect(renderCell(columns, 'divisions', empty).container).toHaveTextContent('-')
-    for (const id of ['sessions', 'wins', 'podiums', 'laps']) {
+    for (const id of ['races', 'wins', 'podiums', 'laps']) {
       expect(renderCell(columns, id, empty).container).toHaveTextContent('0')
     }
     expect(renderCell(columns, 'bestLap', empty).container).toHaveTextContent('-')
@@ -111,7 +142,8 @@ describe('driverColumns', () => {
   test('sorting', () => {
     expect(sortValue(columns, 'divisions', driver)).toBe('SILVER')
     expect(sortValue(columns, 'divisions', { ...driver, divisions: undefined })).toBe('')
-    expect(sortValue(columns, 'sessions', { ...driver, _count: undefined })).toBe(0)
+    expect(sortValue(columns, 'races', driver)).toBe(4)
+    expect(sortValue(columns, 'races', { ...driver, races: undefined })).toBe(0)
     expect(sortValue(columns, 'laps', driver)).toBe(120)
     expect(sortValue(columns, 'laps', { ...driver, _count: undefined })).toBe(0)
     expect(sortValue(columns, 'bestLap', { ...driver, bestLap: null })).toBe(Infinity)

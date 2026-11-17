@@ -2,27 +2,29 @@ import { useTranslation } from 'react-i18next'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import LapTime from '@/components/race/LapTime'
 import DriverAvatar from './DriverAvatar'
-import { driverColor } from '@/lib/colors'
+import { pictureName } from '@/lib/viewTransition'
 
 /** Picture, name, number, divisions and figures of a driver, at the top of their profile. */
 export default function DriverIdentity({ driver }) {
   const { t } = useTranslation('drivers')
-  const color = driverColor(driver)
 
   return (
     <div className="min-w-0 flex items-center gap-3" data-testid="driver-identity">
-      <DriverAvatar driver={driver} alt={driver.name} className="size-10" />
+      <DriverAvatar
+        driver={driver}
+        alt={driver.name}
+        className="size-10"
+        transitionName={pictureName('driver', driver.id)}
+      />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-black text-lg" style={{ color }}>
-            {driver.name}
-          </h1>
+          <h1 className="font-black text-lg">{driver.name}</h1>
           {driver.number && <span className="text-sm font-black italic text-muted-foreground">#{driver.number}</span>}
           <DivisionBadges divisions={driver.divisions} />
         </div>
         <div className="text-xs flex flex-wrap items-center gap-3">
           <span className="text-blue-500 font-medium">
-            {driver._count?.sessions || 0} {t('glossary:race', { count: driver._count?.sessions || 0 })}
+            {driver.races || 0} {t('glossary:race', { count: driver.races || 0 })}
           </span>
           <span className="text-yellow-500 font-medium">
             {driver.wins || 0} {t('glossary:win', { count: driver.wins || 0 })}

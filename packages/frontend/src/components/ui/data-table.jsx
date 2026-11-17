@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Columns3, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { PRESS } from '@/lib/press'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -269,6 +270,7 @@ export function DataTable({
               {headerGroup.headers.map((header) => {
                 const isFixed = header.column.id === 'select' || header.column.id === 'actions'
                 const canDrag = !isFixed
+                const figure = header.column.columnDef.meta?.align === 'right'
                 return (
                   <motion.th
                     key={header.id}
@@ -287,7 +289,7 @@ export function DataTable({
                     onDragEnter={(e) => canDrag && handleDragEnter(e, header.column.id)}
                     onDragOver={handleDragOver}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className={cn('flex items-center gap-3', figure && 'justify-end')}>
                       {canDrag && (
                         <span
                           draggable
@@ -304,7 +306,8 @@ export function DataTable({
                         return (
                           <div
                             className={cn(
-                              'flex-1 flex items-center gap-2',
+                              'flex items-center gap-2',
+                              !figure && 'flex-1',
                               canSort && 'cursor-pointer select-none hover:text-foreground'
                             )}
                             onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
@@ -338,7 +341,7 @@ export function DataTable({
                 data-testid="list-row"
                 data-entity-id={row.original?.id}
                 data-state={row.getIsSelected() && 'selected'}
-                className={cn(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
+                className={cn(onRowClick && `cursor-pointer active:bg-muted ${PRESS}`, rowClassName?.(row.original))}
                 onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -348,12 +351,13 @@ export function DataTable({
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     data-slot="table-cell"
                     className={cn(
-                      'align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0',
+                      'h-10 align-middle text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0',
                       cell.column.id === 'actions'
                         ? 'px-1 py-1 text-center'
                         : cell.column.id === 'select'
-                          ? 'p-2 text-center'
-                          : 'px-4 py-3',
+                          ? 'px-2 py-1 text-center'
+                          : 'px-4 py-1',
+                      cell.column.columnDef.meta?.align === 'right' && 'text-right tabular-nums',
                       cell.column.columnDef.meta?.className
                     )}
                   >

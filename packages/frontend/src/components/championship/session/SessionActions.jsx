@@ -1,24 +1,25 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, Flag, Pause, Play, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatClock } from './progress'
+import StartButton from './StartButton'
 
 const BADGE = 'flex items-center gap-1.5 px-2 py-1 rounded font-medium'
 const WARNING = 'text-sm text-orange-600 flex items-center gap-1'
 
 /**
- * The Control Unit's state and what can be done from it: start a draft, advance the lights or
- * resume a stopped CU, pause, resume or finish, and reset a finished session.
+ * The Control Unit's state and what can be done from it: start a draft (`onIncomplete` when a
+ * controller is half set), advance the lights or resume a stopped CU, pause, resume or finish, and
+ * reset a finished session.
  */
 export default function SessionActions({
   state,
   cuStart,
   pauseDuration,
-  canStartNow,
   deviceConnected,
   hasIncompleteConfig,
   onStart,
+  onIncomplete,
   onTriggerCuStart,
   onPause,
   onResume,
@@ -26,16 +27,6 @@ export default function SessionActions({
   onReset,
 }) {
   const { t } = useTranslation('championships')
-  const [starting, setStarting] = useState(false)
-
-  async function start() {
-    setStarting(true)
-    try {
-      await onStart()
-    } finally {
-      setStarting(false)
-    }
-  }
 
   return (
     <div className="px-4 py-3 bg-muted/50 border-t border-border flex items-center justify-between gap-2">
@@ -60,27 +51,17 @@ export default function SessionActions({
       <div className="flex items-center gap-2 flex-wrap">
         {state.canStart && (
           <>
-            {!deviceConnected && (
-              <span className={WARNING}>
-                <AlertTriangle className="w-4 h-4" /> {t('sessionSection.connectCu')}
-              </span>
-            )}
             {hasIncompleteConfig && (
               <span className={WARNING}>
                 <AlertTriangle className="w-4 h-4" /> {t('sessionSection.incompleteConfig')}
               </span>
             )}
-            <Button onClick={start} disabled={!canStartNow || starting}>
-              {starting ? (
-                <>
-                  <RefreshCw className="size-4 animate-spin" /> {t('sessionSection.starting')}
-                </>
-              ) : (
-                <>
-                  <Play className="size-4" /> {t('sessionSection.start')}
-                </>
-              )}
-            </Button>
+            <StartButton
+              deviceConnected={deviceConnected}
+              incomplete={hasIncompleteConfig}
+              onStart={onStart}
+              onIncomplete={onIncomplete}
+            />
           </>
         )}
         {state.isLights && (

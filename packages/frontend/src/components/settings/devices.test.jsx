@@ -45,12 +45,10 @@ describe('ConnectionStatus', () => {
   test.each([
     ['AA:BB', 'Connected: AA:BB'],
     ['SIMULATOR', 'Connected: Simulator'],
-  ])('connected to %s, with the way to disconnect', async (address, text) => {
+  ])('connected to %s', (address, text) => {
     Object.assign(device, { connected: true, deviceAddress: address })
     render(<ConnectionStatus />)
     expect(screen.getByText(text)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
-    expect(device.disconnect).toHaveBeenCalled()
   })
 })
 
@@ -125,7 +123,7 @@ describe('DeviceList', () => {
     expect(onLog).toHaveBeenLastCalledWith('Error: timeout')
   })
 
-  test('the connected device is ticked; connecting another needs a disconnect first', () => {
+  test('the connected device disconnects from its own line; connecting another needs that first', async () => {
     Object.assign(device, {
       connected: true,
       deviceAddress: 'AA:BB',
@@ -134,8 +132,13 @@ describe('DeviceList', () => {
     render(<DeviceList onLog={vi.fn()} />)
     const [connectedRow, otherRow] = screen.getAllByTestId('settings-device')
     expect(within(connectedRow).queryByRole('button', { name: 'Connect' })).not.toBeInTheDocument()
+    // Connected, a unit is neither forgotten nor searched for
+    expect(within(connectedRow).queryByRole('button', { name: 'Forget' })).not.toBeInTheDocument()
     expect(within(otherRow).getByRole('button', { name: 'Connect' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Search for a new track' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Search for a Control Unit' })).not.toBeInTheDocument()
+
+    await userEvent.click(within(connectedRow).getByRole('button', { name: 'Disconnect' }))
+    expect(device.disconnect).toHaveBeenCalled()
   })
 
   test('while connecting or scanning, the buttons say so', () => {
@@ -148,7 +151,7 @@ describe('DeviceList', () => {
   test('scanning logs how many devices answered', async () => {
     const onLog = vi.fn()
     render(<DeviceList onLog={onLog} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Search for a new track' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Search for a Control Unit' }))
     expect(device.scan).toHaveBeenCalledWith(15000)
     expect(onLog.mock.calls).toEqual([['Scanning...'], ['1 device(s) found']])
   })
@@ -159,27 +162,25 @@ describe('DeviceList', () => {
     app.isAdmin = true
     render(<DeviceList onLog={onLog} />)
     const [trackRow, simulatorRow] = screen.getAllByTestId('settings-device')
-    expect(within(simulatorRow).queryByTitle('Delete')).not.toBeInTheDocument()
+    expect(within(simulatorRow).queryByRole('button', { name: 'Forget' })).not.toBeInTheDocument()
 
-    await user.click(within(trackRow).getByTitle('Delete'))
+    await user.click(within(trackRow).getByRole('button', { name: 'Forget' }))
     expect(device.removeDevice).toHaveBeenCalledWith('dev1')
     expect(onLog).toHaveBeenLastCalledWith('Device Carrera AppConnect deleted')
 
     device.removeDevice.mockResolvedValue({ success: false, error: 'busy' })
-    await user.click(within(trackRow).getByTitle('Delete'))
+    await user.click(within(trackRow).getByRole('button', { name: 'Forget' }))
     expect(onLog).toHaveBeenLastCalledWith('Error: busy')
   })
 
   test('auto-connect is read from the preferences and saved when switched', async () => {
     fetchMock.mockResolvedValue(json({ success: true, data: true }))
     render(<DeviceList onLog={vi.fn()} />)
-    const toggle = screen.getByRole('switch', { name: 'Auto' })
+    const toggle = screen.getByRole('switch', { name: 'Connect automatically' })
     await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
-    expect(screen.getByText('Auto')).toBeInTheDocument()
 
     await userEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByText('Manual')).toBeInTheDocument()
     const [url, options] = fetchMock.mock.calls.at(-1)
     expect(url).toMatch(/\/api\/preferences\/autoConnect$/)
     expect(options).toMatchObject({ method: 'PUT', body: JSON.stringify({ value: false }) })
@@ -189,9 +190,10 @@ describe('DeviceList', () => {
     fetchMock.mockRejectedValue(new Error('down'))
     render(<DeviceList onLog={vi.fn()} />)
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    expect(screen.getByRole('switch', { name: 'Auto' })).toHaveAttribute('aria-checked', 'false')
+    const toggle = screen.getByRole('switch', { name: 'Connect automatically' })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
     // Saving while the server is down does not break the switch
-    await userEvent.click(screen.getByRole('switch', { name: 'Auto' }))
-    expect(screen.getByRole('switch', { name: 'Auto' })).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
   })
 })

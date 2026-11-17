@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Play, Volume2 } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useVoice } from '@/context/VoiceContext'
 import { voicesByLanguage } from '@/lib/speech'
 import SettingSwitch from './SettingSwitch'
+import SettingsPanel, { SettingRow } from './SettingsPanel'
 
-/** Spoken announcements: best lap (and after how many laps), podium, and the voice that speaks. */
+/**
+ * Spoken announcements: the best lap, after how many laps it starts being announced (a setting of its
+ * own), the podium, and the voice that speaks.
+ */
 export default function VoiceSettings() {
   const { t, i18n } = useTranslation('settings')
   const {
@@ -29,69 +33,52 @@ export default function VoiceSettings() {
   }, [])
   const voices = voicesByLanguage(i18n.resolvedLanguage)
 
+  const STEP = 'size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted'
+
   return (
-    <div className="space-y-4" data-testid="settings-voice">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Volume2 className={`size-4 ${bestLapEnabled ? 'text-orange-500' : 'text-muted-foreground'}`} />
-          <div>
-            <p className="font-medium text-sm">{t('appearance.bestLapVoice')}</p>
-            <p className="text-xs text-muted-foreground">{t('appearance.bestLapVoiceDesc')}</p>
-          </div>
-        </div>
+    <SettingsPanel title={t('appearance.voiceTitle')} testId="settings-voice">
+      <SettingRow label={t('appearance.bestLapVoice')} description={t('appearance.bestLapVoiceDesc')}>
         <SettingSwitch
           on={bestLapEnabled}
           onToggle={() => saveBestLapEnabled(!bestLapEnabled)}
-          color="bg-orange-600"
           label={t('appearance.bestLapVoice')}
         />
-      </div>
+      </SettingRow>
 
+      {/* A setting of its own, shown while the announcement it holds back is on */}
       {bestLapEnabled && (
-        <div className="flex items-center justify-between pl-7">
-          <p className="text-sm text-muted-foreground">{t('appearance.minLapsBeforeAnnounce')}</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => saveMinLaps(minLaps - 1)}
-              className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
-            >
-              -
-            </button>
-            <span className="w-8 text-center font-mono text-sm">{minLaps}</span>
-            <button
-              onClick={() => saveMinLaps(minLaps + 1)}
-              className="size-7 rounded border border-border flex items-center justify-center text-sm hover:bg-muted"
-            >
-              +
-            </button>
-          </div>
-        </div>
+        <SettingRow
+          sub
+          testId="settings-min-laps"
+          label={t('appearance.minLapsBeforeAnnounce')}
+          description={t('appearance.minLapsDesc')}
+        >
+          <button onClick={() => saveMinLaps(minLaps - 1)} className={STEP} aria-label={t('appearance.fewerLaps')}>
+            −
+          </button>
+          <span className="w-8 text-center font-mono text-sm">{minLaps}</span>
+          <button onClick={() => saveMinLaps(minLaps + 1)} className={STEP} aria-label={t('appearance.moreLaps')}>
+            +
+          </button>
+        </SettingRow>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Volume2 className={`size-4 ${podiumEnabled ? 'text-yellow-500' : 'text-muted-foreground'}`} />
-          <div>
-            <p className="font-medium text-sm">{t('appearance.podiumVoice')}</p>
-            <p className="text-xs text-muted-foreground">{t('appearance.podiumVoiceDesc')}</p>
-          </div>
-        </div>
+      <SettingRow label={t('appearance.podiumVoice')} description={t('appearance.podiumVoiceDesc')}>
         <SettingSwitch
           on={podiumEnabled}
           onToggle={() => savePodiumEnabled(!podiumEnabled)}
-          color="bg-yellow-600"
           label={t('appearance.podiumVoice')}
         />
-      </div>
+      </SettingRow>
 
       {(bestLapEnabled || podiumEnabled) && (
-        <div className="flex items-center gap-2 pl-7">
+        <SettingRow label={t('appearance.voice')}>
           {/* One voice per interface language, the language's default voice unless chosen */}
           <Select
             value={voices.some((v) => v.voiceURI === voiceId) ? voiceId : '_default'}
             onValueChange={(v) => saveVoiceId(v === '_default' ? '' : v)}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="w-56" aria-label={t('appearance.voice')}>
               <SelectValue placeholder={t('appearance.defaultVoice')} />
             </SelectTrigger>
             <SelectContent position="popper" sideOffset={4} className="max-h-52 overflow-y-auto">
@@ -110,8 +97,8 @@ export default function VoiceSettings() {
           >
             <Play className="size-3.5" />
           </button>
-        </div>
+        </SettingRow>
       )}
-    </div>
+    </SettingsPanel>
   )
 }

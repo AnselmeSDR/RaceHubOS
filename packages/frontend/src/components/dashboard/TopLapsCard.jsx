@@ -1,55 +1,53 @@
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Timer } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import CarPicture from '@/components/car/CarPicture'
 import DriverAvatar from '@/components/driver/DriverAvatar'
-import { formatLap, PODIUM_COLORS } from './format'
+import { rankClass } from '@/components/profile/podium'
+import { GOLD, GRID_HEAD, GRID_LIST, GRID_ROW } from '@/lib/gridList'
+import { formatLap } from './format'
+import Panel from './Panel'
+import { useApiData } from './useApiData'
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const LAPS = '/stats/laptimes?limit=10&sortBy=lapTime&sortOrder=asc&unique=true&has_championship=true'
 
-/** The ten fastest laps of the championships, one per driver, with car and track. */
+/** The ten fastest laps of the championships, one per driver, with car and track, each in its column. */
 export default function TopLapsCard() {
   const { t } = useTranslation('dashboard')
-  const [topLaps, setTopLaps] = useState([])
-
-  useEffect(() => {
-    fetch(`${API_URL}/stats/laptimes?limit=10&sortBy=lapTime&sortOrder=asc&unique=true&has_championship=true`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.success) setTopLaps(d.data || [])
-      })
-      .catch(() => {})
-  }, [])
-
-  if (topLaps.length === 0) return null
+  const laps = useApiData(LAPS, [])
+  if (laps.length === 0) return null
 
   return (
-    <Card data-testid="dashboard-top-laps">
-      <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <Timer className="size-4 text-green-500" />
-          <h2 className="font-semibold text-sm">{t('topLaps.title')}</h2>
+    <Panel testId="dashboard-top-laps" title={t('topLaps.title')}>
+      <div
+        className={GRID_LIST}
+        style={{ gridTemplateColumns: 'max-content minmax(0,auto) minmax(0,auto) minmax(0,auto) max-content' }}
+      >
+        <div className={GRID_HEAD}>
+          <span>#</span>
+          <span>{t('glossary:driver', { count: 1 })}</span>
+          <span>{t('glossary:car', { count: 1 })}</span>
+          <span>{t('glossary:track', { count: 1 })}</span>
+          <span className="text-right">{t('common:time')}</span>
         </div>
-        <div className="space-y-2">
-          {topLaps.map((lap, i) => (
-            <div key={i} className="flex items-center gap-3 p-1.5 -mx-1.5 rounded-lg">
-              <span
-                className={`w-5 text-center font-bold text-xs ${i < 3 ? PODIUM_COLORS[i] : 'text-muted-foreground'}`}
-              >
-                {i + 1}
+        {laps.map((lap, i) => (
+          <div key={i} data-testid="top-lap" className={GRID_ROW}>
+            <span className={`font-bold tabular-nums ${rankClass(i + 1)}`}>{i + 1}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              {lap.driver && <DriverAvatar driver={lap.driver} className="size-6" />}
+              <span className="truncate font-medium">{lap.driver?.name || '?'}</span>
+            </span>
+            <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+              {lap.car && <CarPicture car={lap.car} alt="" className="size-6" />}
+              <span className="truncate">
+                {lap.car?.brand} {lap.car?.model}
               </span>
-              {lap.driver && <DriverAvatar driver={lap.driver} />}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{lap.driver?.name || '?'}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {lap.car?.brand} {lap.car?.model} · {lap.track?.name}
-                </p>
-              </div>
-              <span className="font-mono font-bold text-purple-500 text-xs">{formatLap(lap.lapTime)}</span>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            </span>
+            <span className="truncate text-muted-foreground">{lap.track?.name}</span>
+            <span className={`text-right font-mono font-semibold tabular-nums ${i === 0 ? GOLD : ''}`}>
+              {formatLap(lap.lapTime)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Panel>
   )
 }

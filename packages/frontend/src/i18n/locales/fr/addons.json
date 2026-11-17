@@ -56,7 +56,9 @@
     "replacement": "{{addon}} remplace {{file}} : les modifications de {{hidden}} sont masquées.",
     "replacementAlone": "{{addon}} remplace entièrement {{file}}.",
     "orphan": "{{addon}} modifie {{file}}, que le cœur n'a plus : cette modification n'a aucun effet.",
-    "hint": "Désactivez l'un de ces add-ons, ou demandez à son auteur d'envelopper le fichier avec @base."
+    "hint": "Désactivez l'un de ces add-ons, ou demandez à son auteur d'envelopper le fichier avec @base.",
+    "coreFiles_one": "{{count}} fichier du cœur",
+    "coreFiles_other": "{{count}} fichiers du cœur"
   },
   "progress": {
     "install": "Installation de {{addon}}",

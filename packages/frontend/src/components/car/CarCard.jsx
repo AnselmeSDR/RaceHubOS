@@ -1,87 +1,80 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Zap, Flame, FlaskConical } from 'lucide-react'
-import { formatLevel, levelPercent } from '@racehubos/shared'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import CardActions from '@/components/crud/CardActions'
+import { levelPercent, toLevel } from '@racehubos/shared'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
+import { pictureName } from '@/lib/viewTransition'
+import { PRESS } from '@/lib/press'
 
-/** A car in the grid of the cars page: picture, settings gauges and races count. */
-export default function CarCard({ car, onClick, onEdit, onDelete }) {
+const GAUGES = [
+  ['fields.speed', 'maxSpeed', '#22C55E'],
+  ['fields.braking', 'brakeForce', '#EF4444'],
+  ['fields.tank', 'fuelCapacity', '#3B82F6'],
+]
+
+/**
+ * A car in the grid of the cars page: its picture on a halo of its colour, its three settings as
+ * gauges, its races and its record. The text stays in the text colour: a dark car colour would not read.
+ */
+export default function CarCard({ car, onClick }) {
   const { t } = useTranslation('cars')
-  const color = carColor(car)
+  const races = car.races || 0
 
   return (
-    <Card
+    <article
       data-testid="entity-card"
       data-entity-id={car.id}
       onClick={onClick}
-      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all"
-      style={{ background: `linear-gradient(135deg, ${color}10 0%, ${color}05 100%)` }}
+      className={`cursor-pointer overflow-hidden rounded-xl border border-border bg-card hover:border-foreground/30 ${PRESS}`}
     >
-      <CardActions onEdit={onEdit} onDelete={onDelete} />
-      <div className="absolute top-0 left-0 w-1 h-full opacity-80" style={{ backgroundColor: color }} />
-
-      <div className="relative p-6 pb-4">
-        <div className="flex items-start justify-between mb-4">
-          <CarPicture car={car} alt="" className="size-20" />
-          <div className="flex flex-col items-end gap-2">
-            {car.year && (
-              <Badge variant="secondary" className="shadow-md">
-                {car.year}
-              </Badge>
-            )}
-            <DivisionBadges divisions={car.divisions} className="flex flex-wrap justify-end gap-1" />
-          </div>
-        </div>
-        <h3 className="font-black text-xl tracking-tight text-foreground uppercase">{car.brand}</h3>
-        <p className="font-bold text-lg" style={{ color: color }}>
-          {car.model}
-        </p>
-        <div className="h-1 w-16 rounded-full mt-2" style={{ backgroundColor: color }} />
+      <div
+        className="relative grid h-24 place-items-center"
+        style={{
+          background: `radial-gradient(ellipse at 50% 85%, color-mix(in srgb, ${carColor(car)} 35%, transparent), transparent 70%)`,
+        }}
+      >
+        <CarPicture
+          car={car}
+          alt=""
+          className={car.img ? 'h-[88px] w-[150px] rounded-none' : 'size-14'}
+          transitionName={pictureName('car', car.id)}
+        />
       </div>
-
-      <div className="relative px-6 pb-6 space-y-3">
-        {[
-          { icon: <Zap className="w-4 h-4" />, label: t('fields.speed'), value: car.maxSpeed, color: '#22C55E' },
-          { icon: <Flame className="w-4 h-4" />, label: t('fields.braking'), value: car.brakeForce, color: '#EF4444' },
-          {
-            icon: <FlaskConical className="w-4 h-4" />,
-            label: t('fields.tank'),
-            value: car.fuelCapacity,
-            color: '#3B82F6',
-            display: car.fuelCapacity,
-          },
-        ].map((spec) => (
-          <div key={spec.label} className="flex items-center justify-between p-2 bg-card/60 rounded-lg">
-            <div className="flex items-center gap-2">
-              <span style={{ color: spec.color }}>{spec.icon}</span>
-              <span className="text-xs font-medium text-muted-foreground uppercase">{spec.label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-20 bg-muted rounded-full h-2">
-                <div
-                  className="h-2 rounded-full"
-                  style={{ width: `${levelPercent(spec.value)}%`, backgroundColor: spec.color }}
+      <div className="flex flex-col gap-2 px-2.5 pt-2 pb-2.5">
+        <div className="min-w-0">
+          {/* The categories beside the brand: on the picture, an outlined badge would not read */}
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+              {car.brand}
+              {car.year ? ` · ${car.year}` : ''}
+            </p>
+            <DivisionBadges divisions={car.divisions} max={2} className="flex shrink-0 items-center gap-1" />
+          </div>
+          <h3 className="truncate text-sm font-bold text-foreground">{car.model}</h3>
+        </div>
+        <dl className="grid grid-cols-[max-content_1fr_max-content] items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          {GAUGES.map(([label, key, colour]) => (
+            <Fragment key={key}>
+              <dt>{t(label)}</dt>
+              <span className="h-1 overflow-hidden rounded-full bg-muted">
+                <span
+                  data-testid={`gauge-${key}`}
+                  className="block h-full rounded-full"
+                  style={{ width: `${levelPercent(car[key])}%`, backgroundColor: colour }}
                 />
-              </div>
-              <span className="text-sm font-black w-12 text-right tabular-nums" style={{ color: spec.color }}>
-                {formatLevel(spec.display ?? spec.value)}
               </span>
-            </div>
-          </div>
-        ))}
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase">{t('glossary:race', { count: 2 })}</span>
-            <span className="text-lg font-black" style={{ color: color }}>
-              {car._count?.sessions || 0}
-            </span>
-          </div>
-        </div>
+              <dd className="text-right font-semibold text-foreground tabular-nums">{toLevel(car[key])}</dd>
+            </Fragment>
+          ))}
+        </dl>
+        <p className="flex items-baseline justify-between text-[11px] text-muted-foreground">
+          <span>
+            {races} {t('glossary:race', { count: races })}
+          </span>
+          {car.bestLap > 0 && <span className="font-mono tabular-nums">{(car.bestLap / 1000).toFixed(3)}s</span>}
+        </p>
       </div>
-    </Card>
+    </article>
   )
 }

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { DivisionScope } from '@racehubos/shared'
 import DivisionBadge from './DivisionBadge'
 import DivisionLogo from './DivisionLogo'
+import { pictureName } from '@/lib/viewTransition'
 
 /** Logo, name, badge, rank and counts of a division, at the top of its page. */
 export default function DivisionIdentity({ division }) {
@@ -12,7 +13,7 @@ export default function DivisionIdentity({ division }) {
 
   return (
     <div className="min-w-0 flex items-center gap-3" data-testid="division-identity">
-      <DivisionLogo division={division} className="size-11" />
+      <DivisionLogo division={division} className="size-11" transitionName={pictureName('division', division.id)} />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-black text-lg">{division.name}</h1>

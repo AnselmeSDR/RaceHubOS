@@ -3,8 +3,11 @@ import { useApp } from '@/context/AppContext'
 import DriverAvatar from '@/components/driver/DriverAvatar'
 import CarPicture from '@/components/car/CarPicture'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
+import { CARD, readableOn, tinted } from '@/lib/colors'
 
 const BLACK = ['#000', '#000000', 'black']
+// How much of the driver's colour the row lays under the name (the gradient of LeaderboardRow)
+const ROW_TINT = 0.27
 
 // Sizes by width of the board (container queries): tight below @3xl, full above, larger again from @5xl
 // when the board is expanded. Written out whole: Tailwind only builds the classes it finds in the source.
@@ -37,17 +40,16 @@ export default function RowIdentity({ driver, car, color, expanded }) {
   const { t } = useTranslation('race')
   const sizes = expanded ? SIZES.expanded : SIZES.compact
   const lastName = (driver.name || t('common:unknown')).split(' ').pop()
+  // A black name is outlined in the dark; any other colour too close to the row is pulled away from it
+  const outlined = isDark && BLACK.includes(color?.toLowerCase())
+  const ink = outlined ? color : readableOn(color, tinted(CARD[isDark ? 'dark' : 'light'], color, ROW_TINT))
   return (
     <>
       {/* Last name - Large NASCAR style, room on the right for the italic slant */}
       <div>
         <span
           className={`font-black italic uppercase whitespace-nowrap pr-[0.15em] ${sizes.name[nameLength(lastName)]}`}
-          style={{
-            color,
-            // A black name stays readable on a dark background
-            WebkitTextStroke: isDark && BLACK.includes(color?.toLowerCase()) ? '2px white' : 'none',
-          }}
+          style={{ color: ink, WebkitTextStroke: outlined ? '2px white' : 'none' }}
         >
           {lastName}
         </span>

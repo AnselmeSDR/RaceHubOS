@@ -10,6 +10,7 @@ import CarSpecsCard from '../components/car/CarSpecsCard'
 import CarIdentity from '../components/car/CarIdentity'
 import CarProfileActions from '../components/car/CarProfileActions'
 import CarRecentSessions from '../components/car/CarRecentSessions'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -86,7 +87,12 @@ export default function CarProfile() {
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/cars')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            // The picture flies back to its line or card
+            onClick={() => withViewTransition(() => navigate('/cars'), pictureName('car', id))}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <CarIdentity car={car} />
@@ -125,14 +131,7 @@ export default function CarProfile() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
-          <RecordsList
-            title={t('common:topRecords')}
-            records={car.records}
-            showDriverAvatar={true}
-            showCarAvatar={false}
-            showCar={false}
-            showTrack={true}
-          />
+          <RecordsList title={t('common:topRecords')} records={car.records} hide="car" />
 
           <CarRecentSessions car={car} />
         </div>

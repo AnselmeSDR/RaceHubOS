@@ -26,10 +26,10 @@ const track = {
 const inRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('TrackIdentity', () => {
-  test('name, length, corners and sessions in the track colour', () => {
+  test('name in the text colour, length, corners and sessions', () => {
     render(<TrackIdentity track={track} />)
     const identity = screen.getByTestId('track-identity')
-    expect(screen.getByRole('heading', { name: 'Monza' })).toHaveStyle({ color: '#00AA00' })
+    expect(screen.getByRole('heading', { name: 'Monza' })).not.toHaveAttribute('style')
     for (const text of ['1200m', '3 corners', '1 Session']) expect(identity).toHaveTextContent(text)
     expect(identity.querySelector('svg').parentElement).toHaveStyle({ backgroundColor: '#00AA00' })
   })
@@ -115,12 +115,20 @@ describe('TrackRecentSessions', () => {
     expect(first).toHaveAttribute('href', '/sessions/s1')
     expect(first).toHaveTextContent('Qualifying')
     expect(first).toHaveTextContent('Saturday quali')
-    expect(first).toHaveTextContent('4 Drivers')
-    expect(first).toHaveTextContent(new Date(createdAt).toLocaleDateString('en'))
+    expect([...screen.getByTestId('columns').children].map((th) => th.textContent)).toEqual([
+      'Date',
+      'Type',
+      'Session',
+      'Drivers',
+    ])
+    expect(first.lastChild).toHaveTextContent('4')
+    expect(first).toHaveTextContent(
+      new Date(createdAt).toLocaleDateString('en', { day: 'numeric', month: 'short', year: '2-digit' })
+    )
 
     // Without a name, the session goes by its type
     expect(within(second).getAllByText('Race')).toHaveLength(2)
-    expect(second).toHaveTextContent('0 Drivers')
+    expect(second.lastChild).toHaveTextContent('0')
     expect(third).toHaveTextContent('Untyped')
   })
 

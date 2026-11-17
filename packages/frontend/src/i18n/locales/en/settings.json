@@ -1,6 +1,5 @@
 {
   "update": {
-    "title": "Update",
     "currentVersion": "Current version",
     "check": "Check",
     "newVersionAvailable": "New version available: v{{version}}",
@@ -24,43 +23,45 @@
     "disconnect": "Disconnect"
   },
   "devices": {
-    "title": "Select a device",
-    "auto": "Auto",
-    "manual": "Manual",
     "new": "(new)",
     "connecting": "Connecting...",
     "connect": "Connect",
     "scanning": "Scanning...",
-    "scan": "Search for a new track"
+    "scan": "Search for a Control Unit",
+    "autoConnect": "Connect automatically",
+    "other": "Another Control Unit",
+    "forget": "Forget"
   },
   "cuStatus": {
-    "title": "Device status",
     "start": "Start",
     "mode": "Mode",
     "display": "Display",
     "fuel": "Fuel"
   },
   "appearance": {
-    "themeNight": "Night mode",
-    "themeDay": "Day mode",
-    "darkInterface": "Dark interface",
-    "lightInterface": "Light interface",
     "defaultView": "Default view",
-    "bestLapVoice": "Best lap announcement",
-    "bestLapVoiceDesc": "Voice when a new record is set",
+    "bestLapVoice": "Best lap",
+    "bestLapVoiceDesc": "At each new best lap of the session.",
     "minLapsBeforeAnnounce": "Minimum laps before announcement",
-    "podiumVoice": "Podium announcement",
-    "podiumVoiceDesc": "Voice results at the end of the session",
+    "podiumVoice": "Podium",
+    "podiumVoiceDesc": "The results, at the end of the session.",
     "defaultVoice": "Default voice",
     "testVoice": "Test voice",
     "testVoicePhrase": "Best lap, Anselme, 6.142 seconds",
     "adminMode": "Administrator mode",
     "adminModeDesc": "Displays, Test, Simulator",
     "language": "Language",
-    "languageDesc": "Interface language"
+    "title": "Display",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "voiceTitle": "Voice announcements",
+    "minLapsDesc": "Nothing is announced until the leader has completed this many laps.",
+    "voice": "Voice",
+    "fewerLaps": "One lap fewer",
+    "moreLaps": "One lap more"
   },
   "logs": {
-    "title": "Logs",
     "empty": "No logs",
     "controllerLap": "Ctrl {{n}}: {{time}}s",
     "controllerSector": "Ctrl {{n}}: sector {{sector}}",
@@ -68,7 +69,11 @@
     "errorWith": "Error: {{error}}",
     "scanning": "Scanning...",
     "devicesFound": "{{count}} device(s) found",
-    "deviceDeleted": "Device {{name}} deleted"
+    "deviceDeleted": "Device {{name}} deleted",
+    "journal": "Log",
+    "count_one": "{{count}} entry",
+    "count_other": "{{count}} entries",
+    "none": "no entry"
   },
   "referenceDriver": {
     "title": "Reference driver",
@@ -87,5 +92,11 @@
     "migrated_other": "{{count}} laps reassigned to {{name}}",
     "error": "Error: {{message}}",
     "migrateButton": "Claim"
+  },
+  "cu": {
+    "title": "Control Unit"
+  },
+  "application": {
+    "title": "Application"
   }
 }

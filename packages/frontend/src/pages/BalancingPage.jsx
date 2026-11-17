@@ -68,7 +68,12 @@ export default function BalancingPage() {
           {showStandings && (
             <div>
               <h2 className="text-sm font-semibold mb-3">{t('page.standingsTitle')}</h2>
-              <BalancingStandings standings={standings[SessionType.BALANCING]} />
+              <BalancingStandings
+                standings={standings[SessionType.BALANCING]}
+                lineup={(session?.drivers ?? []).map((entry) => ({
+                  car: entry.car ?? cars.find((car) => car.id === entry.carId),
+                }))}
+              />
             </div>
           )}
         </div>

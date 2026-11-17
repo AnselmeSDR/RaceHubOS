@@ -9,10 +9,10 @@ import { CONTROLLERS, availableFor } from './controllerConfigs'
 const NONE = '_none'
 const CELL = 'w-full h-8 text-xs border-none shadow-none bg-transparent hover:bg-muted/50 transition-colors'
 
-function Picker({ value, items, label, onChange }) {
+function Picker({ value, items, label, invalid, onChange }) {
   return (
     <Select value={value || NONE} onValueChange={(v) => onChange(v === NONE ? '' : v)}>
-      <SelectTrigger className={CELL}>
+      <SelectTrigger className={CELL} aria-invalid={invalid || undefined}>
         <SelectValue placeholder="---" />
       </SelectTrigger>
       <SelectContent>
@@ -34,6 +34,11 @@ function Picker({ value, items, label, onChange }) {
 export default function ControllersTable({ session, configs, drivers, cars, incomplete, onChange, onCopyPractice }) {
   const { t } = useTranslation('championships')
   const withDrivers = session.type !== SessionType.BALANCING
+  // What a half-set controller lacks: its empty field is marked, and takes the focus when the start is asked
+  const missing = (ctrl) => {
+    const half = incomplete.find((entry) => entry.controller === ctrl)
+    return half && (half.hasDriver ? 'car' : 'driver')
+  }
 
   return (
     <>
@@ -72,6 +77,7 @@ export default function ControllersTable({ session, configs, drivers, cars, inco
                     value={configs[ctrl].driverId}
                     items={availableFor(drivers, configs, ctrl, 'driverId')}
                     label={(d) => d.name}
+                    invalid={missing(ctrl) === 'driver'}
                     onChange={(v) => onChange(ctrl, 'driverId', v)}
                   />
                 </td>
@@ -81,6 +87,7 @@ export default function ControllersTable({ session, configs, drivers, cars, inco
                   value={configs[ctrl].carId}
                   items={availableFor(cars, configs, ctrl, 'carId')}
                   label={(c) => `${c.brand} ${c.model}`}
+                  invalid={missing(ctrl) === 'car'}
                   onChange={(v) => onChange(ctrl, 'carId', v)}
                 />
               </td>

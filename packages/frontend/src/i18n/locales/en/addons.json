@@ -56,7 +56,9 @@
     "replacement": "{{addon}} replaces {{file}}: the changes from {{hidden}} are hidden.",
     "replacementAlone": "{{addon}} replaces {{file}} entirely.",
     "orphan": "{{addon}} changes {{file}}, which the core no longer has: that change does nothing.",
-    "hint": "Disable one of these add-ons, or ask its author to wrap the file with @base."
+    "hint": "Disable one of these add-ons, or ask its author to wrap the file with @base.",
+    "coreFiles_one": "{{count}} core file",
+    "coreFiles_other": "{{count}} core files"
   },
   "progress": {
     "install": "Installing {{addon}}",

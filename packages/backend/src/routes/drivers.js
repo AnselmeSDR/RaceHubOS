@@ -33,7 +33,13 @@ const LIST = {
     _count: { select: { laps: notDeleted, sessions: notDeleted } },
   },
   counts: ['sessions', 'laps'],
-  computed: { divisions: byDivision, bestLap: byBestLap, wins: byNumber('wins'), podiums: byNumber('podiums') },
+  computed: {
+    divisions: byDivision,
+    bestLap: byBestLap,
+    races: byNumber('races'),
+    wins: byNumber('wins'),
+    podiums: byNumber('podiums'),
+  },
   shape: withFigures,
 };
 

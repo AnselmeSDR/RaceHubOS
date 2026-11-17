@@ -1,10 +1,24 @@
 import { useTranslation } from 'react-i18next'
 import BalancingStandingRow from './BalancingStandingRow'
 
-/** Each car's best balancing lap, the fastest first; cars without a timed lap are left out. */
-export default function BalancingStandings({ standings = [] }) {
+/**
+ * Each car's best balancing lap, the fastest first; cars without a timed lap are left out. While none
+ * has one, the cars of `lineup` (the session about to run) already stand there, dashes in place of their times.
+ */
+export default function BalancingStandings({ standings = [], lineup = [] }) {
   const { t } = useTranslation('balancing')
   const sorted = standings.filter((s) => s.lapTime > 0).sort((a, b) => a.lapTime - b.lapTime)
+  const waiting = lineup.filter((entry) => entry.car)
+
+  if (sorted.length === 0 && waiting.length > 0) {
+    return (
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden divide-y divide-border">
+        {waiting.map((entry) => (
+          <BalancingStandingRow key={entry.car.id} standing={{ car: entry.car }} gap={null} />
+        ))}
+      </div>
+    )
+  }
 
   if (sorted.length === 0) {
     return (

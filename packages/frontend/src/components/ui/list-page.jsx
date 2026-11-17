@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSetPageHeader } from '@/context/PageHeaderContext'
 import ExportButton from './ExportButton'
+import { withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -74,7 +75,8 @@ export function ListPage({
   }, [preferenceKey])
 
   function handleViewModeChange(mode) {
-    setViewMode(mode)
+    // The pictures glide from their place in one view to their place in the other
+    withViewTransition(() => setViewMode(mode))
     if (preferenceKey) {
       fetch(`${API_URL}/api/preferences/viewMode:${preferenceKey}`, {
         method: 'PUT',

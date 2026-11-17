@@ -4,31 +4,32 @@
     "fallbackName": "Course active",
     "join": "Rejoindre"
   },
-  "records": {
-    "title": "Records absolus",
-    "fastestLap": "Meilleur tour",
-    "mostWins": "Plus de victoires",
-    "mostPodiums": "Plus de podiums"
+  "championship": {
+    "current": "Championnat en cours",
+    "last": "Dernier championnat",
+    "all": "Tous les championnats",
+    "none": "Aucun championnat pour le moment",
+    "create": "Nouveau championnat",
+    "next": "À suivre",
+    "resume": "Reprendre",
+    "open": "Ouvrir",
+    "of_one": "/ {{count}} session",
+    "of_other": "/ {{count}} sessions",
+    "drivers_one": "{{count}} pilote",
+    "drivers_other": "{{count}} pilotes",
+    "mode": {
+      "auto": "automatique",
+      "manual": "manuel"
+    }
+  },
+  "recent": {
+    "title": "Dernières sessions",
+    "first": "1er"
   },
   "driverLeaderboard": {
-    "title": "Classement pilotes",
-    "seeAll": "Voir tout →",
-    "racesShort": "C",
-    "winsShort": "V",
-    "podiumsShort": "P"
+    "title": "Classement des pilotes"
   },
   "topLaps": {
     "title": "Meilleurs tours"
-  },
-  "quickActions": {
-    "title": "Actions rapides",
-    "startRace": "Lancer une course"
-  },
-  "system": {
-    "title": "Système",
-    "backendApi": "Backend API",
-    "database": "Base de données",
-    "ok": "OK",
-    "off": "Off"
   }
 }

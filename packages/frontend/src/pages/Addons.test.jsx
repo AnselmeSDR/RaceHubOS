@@ -135,8 +135,10 @@ describe('installed add-ons', () => {
     expect(card('planner').getByRole('button', { name: 'Uninstall' })).toBeInTheDocument()
 
     // A developer's folder: never updated or removed by the app
-    expect(card('mine').getByText('Local folder')).toBeInTheDocument()
-    expect(card('mine').getByText(/the app never updates or removes it/)).toBeInTheDocument()
+    // said by the label's tooltip, not by a sentence on the card
+    expect(card('mine').getByText('Local folder').title).toMatch(/the app never updates or removes it/)
+    expect(card('mine').queryByText(/the app never updates or removes it/)).toBeNull()
+    expect(card('planner').getByText('Market')).not.toHaveAttribute('title')
     expect(card('mine').getByTestId('addon-disabled-reason')).toHaveTextContent(
       'Disabled: build failed: missing export'
     )
@@ -285,7 +287,32 @@ describe('install from a link', () => {
 })
 
 describe('override stacks', () => {
-  test('each stack from the top down to the core, and the warnings', async () => {
+  test('the core files an add-on changes fold under it, each stack from the top down to the core', async () => {
+    const timing = { ...listing.addons[0], id: 'timing' }
+    serve({
+      ...listing,
+      addons: [...listing.addons, timing, { ...timing, id: 'pits' }, { ...timing, id: 'quiet' }],
+      overrides: {
+        stacks: [
+          { file: 'packages/frontend/src/Leaderboard.jsx', layers: ['timing', 'pits'] },
+          { file: 'packages/frontend/src/Board.jsx', layers: ['timing'] },
+        ],
+        replacements: [],
+        orphans: [],
+      },
+    })
+    await renderPage()
+    const files = within(screen.getByTestId('addon-timing')).getByTestId('addon-core-files')
+    expect(files).not.toHaveAttribute('open')
+    expect(within(files).getByText('2 core files')).toBeInTheDocument()
+    expect(within(files).getByText('pits → timing → core')).toBeInTheDocument()
+    expect(within(screen.getByTestId('addon-pits')).getByText('1 core file')).toBeInTheDocument()
+    // An add-on that changes no core file has nothing to fold, and without a conflict there is no warning
+    expect(within(screen.getByTestId('addon-quiet')).queryByTestId('addon-core-files')).toBeNull()
+    expect(screen.queryByTestId('override-stacks')).toBeNull()
+  })
+
+  test('a file replaced, or changed though the core no longer has it, is a warning', async () => {
     serve({
       ...listing,
       overrides: {
@@ -299,7 +326,6 @@ describe('override stacks', () => {
     })
     await renderPage()
     const stacks = within(screen.getByTestId('override-stacks'))
-    expect(stacks.getByText('pits → timing → core')).toBeInTheDocument()
     expect(stacks.getAllByTestId('override-warning').map((w) => w.textContent)).toEqual([
       'pits replaces packages/frontend/src/Leaderboard.jsx: the changes from timing are hidden.',
       'race replaces packages/frontend/src/Board.jsx entirely.',

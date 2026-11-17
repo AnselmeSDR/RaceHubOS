@@ -9,6 +9,7 @@ import DriverFormModal from '../components/driver/DriverFormModal'
 import DriverIdentity from '../components/driver/DriverIdentity'
 import DriverProfileActions from '../components/driver/DriverProfileActions'
 import DriverRecentSessions from '../components/driver/DriverRecentSessions'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -88,7 +89,12 @@ export default function DriverProfile() {
         className="border-b px-4 py-3 flex flex-wrap gap-3 items-center justify-between"
       >
         <div className="basis-full sm:basis-auto sm:flex-1 min-w-0 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/drivers')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            // The picture flies back to its line or card
+            onClick={() => withViewTransition(() => navigate('/drivers'), pictureName('driver', id))}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <DriverIdentity driver={driver} />
@@ -125,17 +131,7 @@ export default function DriverProfile() {
       <div className="flex-1 overflow-auto p-4 space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
-          <RecordsList
-            title={t('common:topRecords')}
-            records={driver.records?.map((r) => ({
-              ...r,
-              driver: { name: driver.name, color: driver.color, img: driver.img },
-            }))}
-            showDriverAvatar={false}
-            showCarAvatar={true}
-            showCar={true}
-            showTrack={true}
-          />
+          <RecordsList title={t('common:topRecords')} records={driver.records} hide="driver" />
 
           <DriverRecentSessions driver={driver} />
         </div>

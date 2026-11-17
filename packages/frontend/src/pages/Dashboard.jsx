@@ -1,25 +1,24 @@
-import ActiveSessionBanner from '@/components/dashboard/ActiveSessionBanner'
+import DashboardCounts from '@/components/dashboard/DashboardCounts'
 import DriverLeaderboardCard from '@/components/dashboard/DriverLeaderboardCard'
-import QuickActions from '@/components/dashboard/QuickActions'
-import RecordsCard from '@/components/dashboard/RecordsCard'
-import StatCards from '@/components/dashboard/StatCards'
-import SystemStatus from '@/components/dashboard/SystemStatus'
+import NowCard from '@/components/dashboard/NowCard'
+import RecentSessionsCard from '@/components/dashboard/RecentSessionsCard'
 import TopLapsCard from '@/components/dashboard/TopLapsCard'
 
-/** Home page: each block is its own module, for add-ons to wrap or extend. */
+/**
+ * Home page: what is going on now, what happened lately, then the all-time figures. Each block is its
+ * own module, for add-ons to wrap or extend.
+ */
 export default function Dashboard() {
   return (
-    <div className="p-4 space-y-4">
-      <ActiveSessionBanner />
-      <StatCards />
-      <RecordsCard />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="@container p-4 space-y-4">
+      <DashboardCounts />
+      <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+        <NowCard />
+        <RecentSessionsCard />
+      </div>
+      <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-2">
         <DriverLeaderboardCard />
         <TopLapsCard />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <QuickActions />
-        <SystemStatus />
       </div>
     </div>
   )

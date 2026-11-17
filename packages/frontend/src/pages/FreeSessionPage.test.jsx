@@ -104,6 +104,8 @@ test('the session panel, the leaderboard and the track standings', async () => {
   await waitFor(() => expect(received.StandingsTabs.standings.practice).toHaveLength(1))
   expect(received.StandingsTabs).toMatchObject({
     drivers: ['d'],
+    // The session's entries, shown while nobody is ranked
+    lineup: [],
     activeTab: SessionType.PRACTICE,
     onTabChange: app.setFreeType,
   })

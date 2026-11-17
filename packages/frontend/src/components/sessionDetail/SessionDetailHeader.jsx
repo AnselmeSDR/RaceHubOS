@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import DeleteButton from '@/components/ui/DeleteButton'
 import ExportButton from '@/components/ui/ExportButton'
+import SessionSummary from './SessionSummary'
 
 const TYPE_ICONS = { [SessionType.BALANCING]: Scale, [SessionType.RACE]: Flag }
 
@@ -19,7 +20,10 @@ function formatDate(date, locale) {
   })
 }
 
-/** A stored session's name, type, status, track, championship and date, with back, export and delete. */
+/**
+ * A stored session's name, type, status, track, championship and date, its summary (laps, duration,
+ * fastest lap), with back, export and delete.
+ */
 export default function SessionDetailHeader({ session, onBack, onDelete }) {
   const { t, i18n } = useTranslation('sessions')
   const TypeIcon = TYPE_ICONS[session.type] || Clock
@@ -62,6 +66,9 @@ export default function SessionDetailHeader({ session, onBack, onDelete }) {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <div className="mr-3 hidden sm:block">
+          <SessionSummary session={session} />
+        </div>
         <ExportButton url={`/api/sessions/${session.id}/export`} />
         <DeleteButton variant="outline" onDelete={onDelete} />
       </div>

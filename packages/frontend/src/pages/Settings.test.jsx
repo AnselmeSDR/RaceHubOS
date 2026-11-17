@@ -51,12 +51,21 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-test('every section is on the page', () => {
+test('five panels, each setting under its own; everything about the Control Unit in one', () => {
   render(<Settings />)
-  for (const section of ['update', 'connection', 'devices', 'appearance', 'voice', 'reference-driver', 'logs']) {
-    expect(screen.getByTestId(`settings-${section}`)).toBeInTheDocument()
-  }
-  expect(screen.getByText('No logs')).toBeInTheDocument()
+  expect(screen.getAllByRole('heading', { level: 2 }).map((title) => title.firstChild.textContent)).toEqual([
+    'Control Unit',
+    'Reference driver',
+    'Application',
+    'Display',
+    'Voice announcements',
+  ])
+  const unit = within(screen.getByTestId('settings-control-unit'))
+  for (const part of ['connection', 'devices', 'logs']) expect(unit.getByTestId(`settings-${part}`)).toBeInTheDocument()
+  expect(within(screen.getByTestId('settings-application')).getByTestId('settings-update')).toBeInTheDocument()
+  // The log is folded under its count
+  expect(screen.getByTestId('settings-logs')).not.toHaveAttribute('open')
+  expect(unit.getByText('· no entry')).toBeInTheDocument()
 })
 
 test('laps and sectors of the Control Unit go to the log', () => {
@@ -70,7 +79,7 @@ test('laps and sectors of the Control Unit go to the log', () => {
 
 test('the device steps go to the log, and the log clears', async () => {
   render(<Settings />)
-  await userEvent.click(screen.getByRole('button', { name: 'Search for a new track' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Search for a Control Unit' }))
   expect(logLines().map((line) => line.textContent)).toEqual(['Scanning...', '0 device(s) found'])
 
   await userEvent.click(screen.getByRole('button', { name: 'Clear' }))
@@ -86,7 +95,8 @@ test('the log keeps the last hundred lines, scrolled to the end', () => {
   expect(lines).toHaveLength(100)
   expect(lines[0]).toHaveTextContent('sector 5')
   expect(scrolled).toHaveBeenLastCalledWith(480)
-  expect(scrolled.mock.contexts.at(-1)).toBe(screen.getByTestId('settings-logs').lastElementChild)
+  expect(scrolled.mock.contexts.at(-1)).toBe(screen.getByTestId('settings-logs').querySelector('.overflow-y-auto'))
+  expect(screen.getByText('· 100 entries')).toBeInTheDocument()
 })
 
 test('leaving the page closes its sockets', () => {

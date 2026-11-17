@@ -4,31 +4,32 @@
     "fallbackName": "Active race",
     "join": "Join"
   },
-  "records": {
-    "title": "All-time records",
-    "fastestLap": "Fastest lap",
-    "mostWins": "Most wins",
-    "mostPodiums": "Most podiums"
+  "championship": {
+    "current": "Current championship",
+    "last": "Last championship",
+    "all": "All championships",
+    "none": "No championship yet",
+    "create": "New championship",
+    "next": "Up next",
+    "resume": "Resume",
+    "open": "Open",
+    "of_one": "/ {{count}} session",
+    "of_other": "/ {{count}} sessions",
+    "drivers_one": "{{count}} driver",
+    "drivers_other": "{{count}} drivers",
+    "mode": {
+      "auto": "automatic",
+      "manual": "manual"
+    }
+  },
+  "recent": {
+    "title": "Latest sessions",
+    "first": "1st"
   },
   "driverLeaderboard": {
-    "title": "Driver standings",
-    "seeAll": "See all →",
-    "racesShort": "R",
-    "winsShort": "W",
-    "podiumsShort": "P"
+    "title": "Driver standings"
   },
   "topLaps": {
     "title": "Fastest laps"
-  },
-  "quickActions": {
-    "title": "Quick actions",
-    "startRace": "Start a race"
-  },
-  "system": {
-    "title": "System",
-    "backendApi": "Backend API",
-    "database": "Database",
-    "ok": "OK",
-    "off": "Off"
   }
 }

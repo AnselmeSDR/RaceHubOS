@@ -12,14 +12,16 @@ import CarCard from '@/components/car/CarCard'
 import CarFormModal from '@/components/car/CarFormModal'
 import { carColumns } from '@/components/car/carColumns'
 import { usePagedList } from '@/hooks/usePagedList'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
 const EMPTY_FILTERS = { divisionId: [] }
 
 /** Every car, filtered by category. */
 export default function Cars() {
   const { t } = useTranslation('cars')
   const navigate = useNavigate()
+  // The picture flies from its line or card to the header of the profile
+  const open = (id) => withViewTransition(() => navigate(`/cars/${id}`), pictureName('car', id))
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const list = usePagedList('/api/cars', filterParams(filters))
   const categories = useDivisions(DivisionScope.CAR)
@@ -37,15 +39,6 @@ export default function Cars() {
 
   const columns = useMemo(() => carColumns(t, { onEdit: (car) => setForm({ car }) }), [t])
 
-  // Deletion is confirmed inside the button itself, then the list reloads
-  async function handleDelete(id) {
-    try {
-      await fetch(`${API_URL}/api/cars/${id}`, { method: 'DELETE' })
-    } finally {
-      list.reload()
-    }
-  }
-
   return (
     <ColumnFilterContext.Provider value={filterContext}>
       <ListPage
@@ -58,17 +51,11 @@ export default function Cars() {
         searchPlaceholder={t('searchPlaceholder')}
         addLabel={t('addLabel')}
         onAdd={() => setForm({ car: null })}
-        onRowClick={(row) => !list.showDeleted && navigate(`/cars/${row.id}`)}
+        onRowClick={(row) => !list.showDeleted && open(row.id)}
         renderGrid={(data) => (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(11.5rem,1fr))] gap-3">
             {data.map((car) => (
-              <CarCard
-                key={car.id}
-                car={car}
-                onClick={() => navigate(`/cars/${car.id}`)}
-                onEdit={() => setForm({ car })}
-                onDelete={() => handleDelete(car.id)}
-              />
+              <CarCard key={car.id} car={car} onClick={() => open(car.id)} />
             ))}
           </div>
         )}

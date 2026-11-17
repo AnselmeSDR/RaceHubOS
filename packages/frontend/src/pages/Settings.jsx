@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
 import AppearanceSettings from '@/components/settings/AppearanceSettings'
-import ConnectionLogs from '@/components/settings/ConnectionLogs'
-import ConnectionStatus from '@/components/settings/ConnectionStatus'
-import CuStatusCard from '@/components/settings/CuStatusCard'
-import DeviceList from '@/components/settings/DeviceList'
+import ApplicationPanel from '@/components/settings/ApplicationPanel'
+import ControlUnitPanel from '@/components/settings/ControlUnitPanel'
 import ReferenceDriverSettings from '@/components/settings/ReferenceDriverSettings'
-import UpdateSection from '@/components/settings/UpdateSection'
+import VoiceSettings from '@/components/settings/VoiceSettings'
 
 const WS_URL = import.meta.env.VITE_WS_URL || ''
 
@@ -35,14 +33,19 @@ export default function Settings() {
   }, [t])
 
   return (
-    <div className="p-4 space-y-4">
-      <UpdateSection />
-      <ConnectionStatus />
-      <DeviceList onLog={addLogEntry} />
-      <CuStatusCard />
-      <AppearanceSettings />
-      <ReferenceDriverSettings />
-      <ConnectionLogs logs={logs} onClear={() => setLogs([])} />
+    // Two columns once there is room: a control is never far from what it sets
+    <div className="@container p-4">
+      <div className="grid grid-cols-1 items-start gap-4 @4xl:grid-cols-2">
+        <div className="space-y-4">
+          <ControlUnitPanel logs={logs} onLog={addLogEntry} onClearLogs={() => setLogs([])} />
+          <ReferenceDriverSettings />
+          <ApplicationPanel />
+        </div>
+        <div className="space-y-4">
+          <AppearanceSettings />
+          <VoiceSettings />
+        </div>
+      </div>
     </div>
   )
 }

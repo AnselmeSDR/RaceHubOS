@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import SettingsPanel from './SettingsPanel'
 import { AlertTriangle, Loader2, RefreshCw, UserCog } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -86,15 +86,9 @@ export default function ReferenceDriverSettings() {
   }
 
   return (
-    <Card data-testid="settings-reference-driver">
-      <CardContent className=" space-y-4">
-        <div>
-          <h3 className="font-semibold flex items-center gap-2">
-            <UserCog className="size-4 text-muted-foreground" />
-            {t('referenceDriver.title')}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">{t('referenceDriver.description')}</p>
-        </div>
+    <SettingsPanel title={t('referenceDriver.title')} testId="settings-reference-driver">
+      <div className="space-y-4 border-t border-border px-4 py-3">
+        <p className="text-xs text-muted-foreground">{t('referenceDriver.description')}</p>
 
         <div className="flex flex-wrap items-center gap-3">
           <Select
@@ -155,7 +149,7 @@ export default function ReferenceDriverSettings() {
             {referenceMessage.text}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsPanel>
   )
 }

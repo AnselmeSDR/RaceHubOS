@@ -51,6 +51,19 @@ test('a header sorts its column, numbers from the largest then from the smallest
   expect(names()).toEqual(['Bruno', 'Carlos', 'Ayrton'])
 })
 
+test('a column of figures is on the right, its header too; the others stay on the left', () => {
+  const figures = columns.map((column) =>
+    column.accessorKey === 'laps' ? { ...column, meta: { align: 'right' } } : column
+  )
+  render(<DataTable columns={figures} data={rows} />)
+  const [, name, , laps] = within(screen.getAllByTestId('list-row')[0]).getAllByRole('cell')
+  expect(laps).toHaveClass('text-right', 'tabular-nums')
+  expect(name).not.toHaveClass('text-right')
+  // The handle and the arrows follow the label to the right
+  expect(screen.getByText('Laps').closest('th').firstChild).toHaveClass('justify-end')
+  expect(screen.getByText('Name').closest('th').firstChild).not.toHaveClass('justify-end')
+})
+
 test('with onSortChange the caller sorts: told the column and direction, the rows left as given', async () => {
   const onSortChange = vi.fn()
   render(<DataTable columns={columns} data={rows} onSortChange={onSortChange} />)

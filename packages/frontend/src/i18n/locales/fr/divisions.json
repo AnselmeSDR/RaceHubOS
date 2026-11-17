@@ -9,6 +9,8 @@
   "emptyCategoriesHint": "Classez vos voitures : GT3, DTM, Formule…",
   "add": "Ajouter",
   "remove": "Retirer {{name}}",
+  "more_one": "{{count}} autre",
+  "more_other": "{{count}} autres",
   "noneYet": "Aucune pour l'instant : créez-en dans Divisions.",
   "pickerHint": "Aucune, une ou plusieurs.",
   "noDivision": "Sans division",
@@ -21,9 +23,7 @@
     "rank": "Échelon {{n}}",
     "order": "Ordre {{n}}",
     "noDrivers": "Aucun pilote",
-    "noCars": "Aucune voiture",
-    "more_one": "+{{count}} de plus",
-    "more_other": "+{{count}} de plus"
+    "noCars": "Aucune voiture"
   },
   "form": {
     "createDivision": "Nouvelle division",
@@ -53,8 +53,7 @@
     "notFound": "Division introuvable",
     "since": "Membre depuis",
     "addDriver": "Ajouter un pilote…",
-    "addCar": "Ajouter une voiture…",
-    "noChampionships": "Aucun championnat ne retient cette division."
+    "addCar": "Ajouter une voiture…"
   },
   "picker": {
     "drivers_one": "{{count}} pilote",

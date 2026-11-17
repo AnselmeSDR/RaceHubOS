@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpCircle, Power, PowerOff, Puzzle, Trash2 } from 'lucide-react'
+import { ArrowUpCircle, ChevronRight, Power, PowerOff, Puzzle, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -32,7 +32,7 @@ function Toggle({ addon, busy, onAction }) {
   )
 }
 
-function AddonCard({ addon, busy, onAction, onUninstall }) {
+function AddonCard({ addon, stacks, busy, onAction, onUninstall }) {
   const { t, i18n } = useTranslation('addons')
   const lang = i18n.resolvedLanguage
   const { manifest, installed } = addon
@@ -52,7 +52,14 @@ function AddonCard({ addon, busy, onAction, onUninstall }) {
                 <span className="font-mono text-xs text-muted-foreground">v{manifest.version}</span>
               )}
               <Status addon={addon} />
-              <Badge variant="outline">{t(`installed.source.${source}`)}</Badge>
+              {/* A folder put there by hand: what that means is said when asked, not on every card */}
+              <Badge
+                variant="outline"
+                title={installed ? undefined : t('installed.localHint')}
+                className={installed ? '' : 'cursor-help'}
+              >
+                {t(`installed.source.${source}`)}
+              </Badge>
             </div>
             {manifest?.author && (
               <p className="text-xs text-muted-foreground">{t('installed.by', { author: manifest.author })}</p>
@@ -68,7 +75,24 @@ function AddonCard({ addon, busy, onAction, onUninstall }) {
             {t('installed.disabledReason', { reason: addon.disabledReason })}
           </p>
         )}
-        {!installed && <p className="text-xs text-muted-foreground">{t('installed.localHint')}</p>}
+        {stacks.length > 0 && (
+          <details data-testid="addon-core-files" className="group text-sm">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
+              {t('overrides.coreFiles', { count: stacks.length })}
+            </summary>
+            <div className="mt-2 space-y-2 pl-5">
+              {stacks.map((stack) => (
+                <div key={stack.file}>
+                  <p className="font-mono text-xs break-all">{stack.file}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[...stack.layers].reverse().join(' → ')} → {t('overrides.core')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         {(addon.update || installed) && (
           <div className="flex flex-wrap gap-2">
@@ -92,7 +116,7 @@ function AddonCard({ addon, busy, onAction, onUninstall }) {
 }
 
 /** The add-ons in addons/, with what can be done with each. */
-export default function InstalledAddons({ addons, busy, onAction }) {
+export default function InstalledAddons({ addons, stacks = [], busy, onAction }) {
   const { t, i18n } = useTranslation('addons')
   const [uninstalling, setUninstalling] = useState(null)
 
@@ -106,6 +130,8 @@ export default function InstalledAddons({ addons, busy, onAction }) {
         <AddonCard
           key={addon.id}
           addon={addon}
+          // The core files this add-on changes, folded under it
+          stacks={stacks.filter((stack) => stack.layers.includes(addon.id))}
           busy={busy}
           onAction={onAction}
           onUninstall={() => setUninstalling(addon)}

@@ -13,6 +13,7 @@ const { device, live, received, spy } = vi.hoisted(() => {
   return { device: {}, live: {}, received, spy }
 })
 vi.mock('@/context/DeviceContext', () => ({ useDevice: () => device }))
+vi.mock('@/context/AppContext', () => ({ useApp: () => ({ isAdmin: false }) }))
 vi.mock('@/context/SessionContext', () => ({ useSession: () => live }))
 vi.mock('@/components/race/Podium', () => ({ default: spy('Podium') }))
 vi.mock('@/components/ui', async (original) => ({ ...(await original()), StartLights: spy('StartLights') }))
@@ -236,11 +237,19 @@ describe('the controllers of a draft', () => {
     expect(savedDrivers()[0]).toEqual({ controller: 0, driverId: 'd1', carId: 'c1', gridPos: 2 })
   })
 
-  test('a half-set controller is pointed out and blocks the start', () => {
+  test('a half-set controller is pointed out; asked to start, its empty field takes the focus and nothing starts', () => {
     show(newSession({ drivers: [entry(0, 'd1', null), entry(3, null, 'c2')] }))
     expect(screen.getByText('Ctrl 1: driver without car · Ctrl 4: car without driver')).toBeInTheDocument()
     expect(screen.getByText('Incomplete config')).toBeInTheDocument()
-    expect(button('Start')).toBeDisabled()
+    const pickers = screen.getAllByRole('combobox')
+    // Controller 1 lacks its car, controller 4 its driver
+    expect(
+      pickers.map((picker, i) => (picker.getAttribute('aria-invalid') ? i : null)).filter((i) => i !== null)
+    ).toEqual([1, 6])
+    expect(button('Start')).toBeEnabled()
+    fireEvent.click(button('Start'))
+    expect(pickers[1]).toHaveFocus()
+    expect(props.onStart).not.toHaveBeenCalled()
   })
 
   test('balancing sets cars only', () => {
@@ -310,10 +319,12 @@ describe('the limits of a draft', () => {
     expect(props.onSaveConfig).toHaveBeenLastCalledWith({ gracePeriod: 30000 })
   })
 
-  test('unset, the limits read 0 and the grace period 30 s', () => {
+  test('unset, the limits are empty, which reads "No limit", and the grace period is 30 s', () => {
     show(newSession())
-    expect(limit('Duration (min)')).toHaveValue(0)
-    expect(limit('Max laps')).toHaveValue(0)
+    for (const label of ['Duration (min)', 'Max laps']) {
+      expect(limit(label)).toHaveValue(null)
+      expect(limit(label)).toHaveAttribute('placeholder', 'No limit')
+    }
     expect(limit('Grace (sec)')).toHaveValue(30)
   })
 
@@ -535,11 +546,59 @@ describe('the actions', () => {
     expect(props.onStart).toHaveBeenCalledTimes(1)
   })
 
-  test('without a device, the start waits for one', () => {
-    device.connected = false
+  test('without a device, the start offers the known ones: once one is connected, the session starts', async () => {
+    const known = [
+      { id: 1, name: 'Control Unit', address: 'AA:BB', type: 'cu' },
+      { id: 2, name: 'Simulator', address: 'SIMULATOR', type: 'simulator' },
+    ]
+    Object.assign(device, {
+      connected: false,
+      devices: known,
+      scanResults: [{ name: 'Second CU', address: 'CC:DD', type: 'cu' }],
+      scan: vi.fn(),
+      connect: vi.fn(async () => ({ success: true })),
+    })
     show(newSession())
-    expect(screen.getByText('Connect a CU')).toBeInTheDocument()
-    expect(button('Start')).toBeDisabled()
+    // No warning beside the button, which is never greyed out
+    expect(screen.queryByText('Connect a CU')).not.toBeInTheDocument()
+    expect(button('Start')).toBeEnabled()
+
+    fireEvent.click(button('Start'))
+    const offered = await screen.findByTestId('start-devices')
+    expect(props.onStart).not.toHaveBeenCalled()
+    // The known unit, then the one the last search found; the simulator is for the admin mode
+    expect(
+      within(offered)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent)
+    ).toEqual(['Control UnitAA:BBConnect', 'Second CUCC:DDConnect'])
+    fireEvent.click(within(offered).getByRole('button', { name: 'Search for a Control Unit' }))
+    expect(device.scan).toHaveBeenCalled()
+
+    await act(async () => fireEvent.click(within(offered).getAllByRole('button', { name: 'Connect' })[0]))
+    expect(device.connect).toHaveBeenCalledWith('AA:BB')
+    expect(props.onStart).toHaveBeenCalledTimes(1)
+    expect(screen.queryByTestId('start-devices')).not.toBeInTheDocument()
+  })
+
+  test('a device that cannot be connected says why, and nothing starts; none known says so', async () => {
+    Object.assign(device, {
+      connected: false,
+      devices: [{ id: 1, name: 'Control Unit', address: 'AA:BB', type: 'cu' }],
+      scanResults: [],
+      connect: vi.fn(async () => ({ success: false, error: 'Out of range' })),
+    })
+    const { unmount } = show(newSession())
+    fireEvent.click(button('Start'))
+    await act(async () => fireEvent.click(await screen.findByRole('button', { name: 'Connect' })))
+    expect(screen.getByRole('alert')).toHaveTextContent('Out of range')
+    expect(props.onStart).not.toHaveBeenCalled()
+    unmount()
+
+    device.devices = []
+    show(newSession())
+    fireEvent.click(button('Start'))
+    expect(await screen.findByText('No known Control Unit')).toBeInTheDocument()
   })
 
   test('in the lights, START advances them; Escape cancels the session', () => {

@@ -75,13 +75,27 @@ test('what each column sorts by', () => {
   expect(column('date').accessorFn(session)).toBe(session.updatedAt)
 })
 
-test('the name with its championship, or the short id', () => {
-  cell('name')
-  expect(screen.getByText('Grand Prix')).toBeInTheDocument()
-  expect(screen.getByText('Winter Cup')).toBeInTheDocument()
+test('the name alone, the championship in its own column, or the short id', () => {
+  expect(cell('name').container.textContent).toBe('Grand Prix')
+  cleanup()
+  expect(cell('championship').container).toHaveTextContent('Winter Cup')
   cleanup()
   cell('name', { id: 'abcdef1234' })
   expect(screen.getByText('Session #abcdef12')).toBeInTheDocument()
+})
+
+test('drivers, laps and duration are plain figures on the right', () => {
+  expect(columns.filter((c) => c.meta?.align === 'right').map((c) => c.id)).toEqual(['drivers', 'laps', 'duration'])
+  for (const [id, text] of [
+    ['drivers', '3'],
+    ['laps', '42'],
+    ['duration', '5:07'],
+  ]) {
+    const { container } = cell(id)
+    expect(container.textContent).toBe(text)
+    expect(container.querySelector('svg')).toBeNull()
+    cleanup()
+  }
 })
 
 test('type, track and status in words', () => {

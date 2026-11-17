@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
 import DriverAvatar from '@/components/driver/DriverAvatar'
 import LinkCell from '@/components/crud/LinkCell'
+import { FIGURE } from '@/components/crud/figure'
 import { filteredColumn as filtered } from '@/components/crud/filteredColumn'
 import CarPicture from '@/components/car/CarPicture'
 
@@ -29,7 +30,7 @@ export function statsColumns(t, { lang, onOpen }) {
         if (index >= 3) return <span className="text-muted-foreground font-medium">{index + 1}</span>
         return (
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white ${PODIUM_BACKGROUNDS[index]}`}
+            className={`size-7 rounded-lg flex items-center justify-center font-bold text-white ${PODIUM_BACKGROUNDS[index]}`}
           >
             {index === 0 ? <Trophy className="w-4 h-4" /> : index + 1}
           </div>
@@ -40,6 +41,7 @@ export function statsColumns(t, { lang, onOpen }) {
       id: 'lapTime',
       accessorKey: 'lapTime',
       header: t('common:time'),
+      meta: FIGURE,
       cell: ({ row }) => (
         <span className={`font-mono font-bold ${row.index < 3 ? 'text-yellow-600 dark:text-yellow-400' : ''}`}>
           {formatTime(row.original.lapTime)}
@@ -59,7 +61,7 @@ export function statsColumns(t, { lang, onOpen }) {
             onOpen={onOpen}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
-            {driver && <DriverAvatar driver={driver} />}
+            {driver && <DriverAvatar driver={driver} className="size-7" />}
             <span className="font-medium truncate">{driver?.name}</span>
           </LinkCell>
         )
@@ -78,7 +80,7 @@ export function statsColumns(t, { lang, onOpen }) {
             onOpen={onOpen}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
-            {car && <CarPicture car={car} alt="" />}
+            {car && <CarPicture car={car} alt="" className="size-7" />}
             <span className="text-muted-foreground truncate">
               {car?.brand} {car?.model}
             </span>

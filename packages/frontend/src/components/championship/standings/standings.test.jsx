@@ -82,6 +82,18 @@ describe('StandingStats', () => {
 describe('StandingsTabs', () => {
   const rows = () => screen.getAllByTestId('standing-row')
 
+  test('nobody ranked yet: the drivers of the grid already stand there, dashes in place of their rank and time', () => {
+    const lineup = [
+      { driverId: 'd1', driver: { name: 'Ana' }, car: { brand: 'Ford', model: 'GT' } },
+      { driverId: null, car: { brand: 'Audi', model: 'R8' } },
+      { driverId: 'd2' },
+    ]
+    render(<StandingsTabs lineup={lineup} drivers={[{ id: 'd2', name: 'Ben' }]} activeTab={SessionType.QUALIF} />)
+    expect(screen.queryByText('No standings available')).not.toBeInTheDocument()
+    // A controller without a driver is not a line
+    expect(rows().map((row) => row.textContent)).toEqual(['–AAnaFord GT--', '–BBen--'])
+  })
+
   test('one tab per session type, the active one selected', async () => {
     const onTabChange = vi.fn()
     render(<StandingsTabs activeTab={SessionType.QUALIF} onTabChange={onTabChange} />)

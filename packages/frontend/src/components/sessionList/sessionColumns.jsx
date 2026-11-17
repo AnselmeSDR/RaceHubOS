@@ -1,4 +1,5 @@
-import { Flag, MapPin, Trophy, Users2 } from 'lucide-react'
+import { MapPin } from 'lucide-react'
+import { FIGURE } from '@/components/crud/figure'
 import { filteredColumn } from '@/components/crud/filteredColumn'
 import { Badge } from '@/components/ui/badge'
 import { sessionBadgeClass } from '@/lib/colors'
@@ -31,18 +32,11 @@ export function sessionColumns(t, { lang }) {
     {
       accessorKey: 'name',
       header: t('columns.name'),
+      // The championship has its own column
       cell: ({ row }) => (
-        <div>
-          <span className="font-semibold">
-            {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
-          </span>
-          {row.original.championship && (
-            <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-              <Trophy className="h-3 w-3 text-yellow-500" />
-              {row.original.championship.name}
-            </div>
-          )}
-        </div>
+        <span className="font-semibold">
+          {row.original.name || t('unnamedSession', { id: row.original.id.slice(0, 8) })}
+        </span>
       ),
     },
     filteredColumn(
@@ -93,28 +87,21 @@ export function sessionColumns(t, { lang }) {
       id: 'drivers',
       accessorFn: (row) => row.drivers?.length || 0,
       header: t('glossary:driver', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Users2 className="w-4 h-4" />
-          {row.original.drivers?.length || 0}
-        </span>
-      ),
+      meta: FIGURE,
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.drivers?.length || 0}</span>,
     },
     {
       id: 'laps',
       accessorFn: (row) => row._count?.laps || 0,
       header: t('glossary:lap', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {row.original._count?.laps || 0}
-        </span>
-      ),
+      meta: FIGURE,
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original._count?.laps || 0}</span>,
     },
     {
       id: 'duration',
       accessorFn: (row) => (row.startedAt && row.finishedAt ? new Date(row.finishedAt) - new Date(row.startedAt) : 0),
       header: t('columns.duration'),
+      meta: FIGURE,
       cell: ({ row }) => (
         <span className="text-muted-foreground">{formatDuration(row.original.startedAt, row.original.finishedAt)}</span>
       ),

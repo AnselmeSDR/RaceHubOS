@@ -32,11 +32,11 @@ function HeaderAddButton() {
   return header?.onAdd ? <button onClick={header.onAdd}>{header.addLabel}</button> : null
 }
 
-async function shown() {
+async function shown(entry = '/championships') {
   render(
     <PageHeaderProvider>
       <HeaderAddButton />
-      <MemoryRouter initialEntries={['/championships']}>
+      <MemoryRouter initialEntries={[entry]}>
         <Routes>
           <Route path="/championships" element={<Championships />} />
           <Route path="/championships/:id" element={<div data-testid="championship-page" />} />
@@ -95,6 +95,13 @@ test('adding opens the wizard; closing it reloads the list', async () => {
   act(() => received.ChampionshipWizard.onClose())
   expect(screen.queryByTestId('ChampionshipWizard')).not.toBeInTheDocument()
   await waitFor(() => expect(listQueries().length).toBe(before + 1))
+})
+
+test('sent here to create one (from the home page), the wizard is open at once', async () => {
+  await shown({ pathname: '/championships', state: { create: true } })
+  expect(screen.getByTestId('ChampionshipWizard')).toBeInTheDocument()
+  act(() => received.ChampionshipWizard.onClose())
+  expect(screen.queryByTestId('ChampionshipWizard')).not.toBeInTheDocument()
 })
 
 test('a championship created by the wizard reloads the list', async () => {

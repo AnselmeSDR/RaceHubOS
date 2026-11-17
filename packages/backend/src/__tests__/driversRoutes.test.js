@@ -87,6 +87,7 @@ describe('GET /api/drivers', () => {
     expect(await names('sortBy=bestLap&sortOrder=asc')).toEqual(['Ana', 'Ben', 'Cid']);
     expect(await names('sortBy=bestLap&sortOrder=desc')).toEqual(['Cid', 'Ben', 'Ana']);
     expect(await names('sortBy=bestLap&limit=1&offset=1')).toEqual(['Ben']);
+    expect(await names('sortBy=races&sortOrder=desc')).toEqual(['Ana', 'Ben', 'Cid']);
     expect((await names('sortBy=wins&sortOrder=desc'))[0]).toBe('Ana');
     expect((await names('sortBy=podiums&sortOrder=asc'))[0]).toBe('Cid');
 

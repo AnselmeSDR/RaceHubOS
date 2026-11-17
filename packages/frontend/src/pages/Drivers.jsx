@@ -12,6 +12,7 @@ import { divisionFilterOptions } from '@/components/division/divisionFilterOptio
 import { useDivisions } from '@/hooks/useDivisions'
 import { usePagedList } from '@/hooks/usePagedList'
 import { filterParams, hasColumnFilters } from '@/lib/listFilters'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const EMPTY_FILTERS = { divisionId: [] }
@@ -20,6 +21,8 @@ const EMPTY_FILTERS = { divisionId: [] }
 export default function Drivers() {
   const { t } = useTranslation('drivers')
   const navigate = useNavigate()
+  // The picture flies from its line or card to the header of the profile
+  const open = (id) => withViewTransition(() => navigate(`/drivers/${id}`), pictureName('driver', id))
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const list = usePagedList('/api/drivers', filterParams(filters))
   const divisions = useDivisions(DivisionScope.DRIVER)
@@ -58,14 +61,14 @@ export default function Drivers() {
         searchPlaceholder={t('searchPlaceholder')}
         addLabel={t('addLabel')}
         onAdd={() => setForm({ driver: null })}
-        onRowClick={(row) => !list.showDeleted && navigate(`/drivers/${row.id}`)}
+        onRowClick={(row) => !list.showDeleted && open(row.id)}
         renderGrid={(data) => (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.map((driver) => (
               <DriverCard
                 key={driver.id}
                 driver={driver}
-                onClick={() => navigate(`/drivers/${driver.id}`)}
+                onClick={() => open(driver.id)}
                 onEdit={() => setForm({ driver })}
                 onDelete={() => handleDelete(driver.id)}
               />

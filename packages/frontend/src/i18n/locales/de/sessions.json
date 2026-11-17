@@ -47,6 +47,7 @@
     "noLapData": "Keine Rundendaten",
     "noParticipants": "Keine Teilnehmer",
     "lapHistory": "Rundenverlauf ({{count}})",
+    "bestLap": "schnellste Runde",
     "time": "Zeit",
     "deleteMessage": "Diese Sitzung löschen?"
   }

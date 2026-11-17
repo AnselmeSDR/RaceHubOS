@@ -47,6 +47,7 @@
     "noLapData": "Aucune donnée de tour",
     "noParticipants": "Aucun participant",
     "lapHistory": "Historique des tours ({{count}})",
+    "bestLap": "meilleur tour",
     "time": "Temps",
     "deleteMessage": "Supprimer cette session ?"
   }

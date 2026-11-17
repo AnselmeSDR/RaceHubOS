@@ -2,6 +2,7 @@ import { DivisionScope } from '@racehubos/shared'
 import { editColumn } from '@/components/crud/editColumn'
 import DivisionBadge from './DivisionBadge'
 import DivisionLogo from './DivisionLogo'
+import { pictureName } from '@/lib/viewTransition'
 
 /** The columns of the divisions table of `scope`; a row opens the division's page, `onEdit(division)` its form. */
 export function divisionColumns(t, scope, { onEdit }) {
@@ -20,7 +21,11 @@ export function divisionColumns(t, scope, { onEdit }) {
       header: t(category ? 'glossary:category' : 'glossary:division', { count: 1 }),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <DivisionLogo division={row.original} className="size-8" />
+          <DivisionLogo
+            division={row.original}
+            className="size-7"
+            transitionName={pictureName('division', row.original.id)}
+          />
           <span className="font-semibold">{row.original.name}</span>
           <DivisionBadge division={row.original} />
         </div>

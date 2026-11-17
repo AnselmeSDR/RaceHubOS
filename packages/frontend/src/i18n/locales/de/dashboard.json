@@ -4,31 +4,32 @@
     "fallbackName": "Laufendes Rennen",
     "join": "Öffnen"
   },
-  "records": {
-    "title": "Bisherige Rekorde",
-    "fastestLap": "Schnellste Runde",
-    "mostWins": "Meiste Siege",
-    "mostPodiums": "Meiste Podestplätze"
+  "championship": {
+    "current": "Laufende Meisterschaft",
+    "last": "Letzte Meisterschaft",
+    "all": "Alle Meisterschaften",
+    "none": "Noch keine Meisterschaft",
+    "create": "Neue Meisterschaft",
+    "next": "Als Nächstes",
+    "resume": "Fortsetzen",
+    "open": "Öffnen",
+    "of_one": "/ {{count}} Session",
+    "of_other": "/ {{count}} Sessions",
+    "drivers_one": "{{count}} Fahrer",
+    "drivers_other": "{{count}} Fahrer",
+    "mode": {
+      "auto": "automatisch",
+      "manual": "manuell"
+    }
+  },
+  "recent": {
+    "title": "Letzte Sessions",
+    "first": "1."
   },
   "driverLeaderboard": {
-    "title": "Fahrerwertung",
-    "seeAll": "Alle anzeigen →",
-    "racesShort": "R",
-    "winsShort": "S",
-    "podiumsShort": "P"
+    "title": "Fahrerwertung"
   },
   "topLaps": {
     "title": "Schnellste Runden"
-  },
-  "quickActions": {
-    "title": "Schnellzugriff",
-    "startRace": "Rennen starten"
-  },
-  "system": {
-    "title": "System",
-    "backendApi": "Serververbindung",
-    "database": "Datenbank",
-    "ok": "OK",
-    "off": "Aus"
   }
 }

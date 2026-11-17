@@ -65,11 +65,13 @@ describe('championshipColumns', () => {
     cell('track', {})
     expect(screen.getByText('Not defined')).toBeInTheDocument()
     cleanup()
-    cell('qualifs')
-    expect(screen.getByText('1').querySelector('svg')).toHaveClass('text-blue-500')
+    // Counts are plain figures on the right: the header says what they count
+    expect(cell('qualifs').container).toHaveTextContent('1')
     cleanup()
-    cell('races')
-    expect(screen.getByText('2').querySelector('svg')).toHaveClass('text-green-500')
+    const races = cell('races').container
+    expect(races).toHaveTextContent('2')
+    expect(races.querySelector('svg')).toBeNull()
+    expect(columns.filter((c) => c.meta?.align === 'right').map((c) => c.id)).toEqual(['qualifs', 'races'])
     cleanup()
     cell('status')
     expect(screen.getByText('In progress')).toBeInTheDocument()

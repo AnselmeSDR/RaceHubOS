@@ -1,9 +1,10 @@
-import { Flag } from 'lucide-react'
 import { formatLevel, levelPercent } from '@racehubos/shared'
 import { editColumn } from '@/components/crud/editColumn'
+import { FIGURE } from '@/components/crud/figure'
 import { filteredColumn } from '@/components/crud/filteredColumn'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import CarPicture from '@/components/car/CarPicture'
+import { pictureName } from '@/lib/viewTransition'
 
 /** The columns of the cars table; `onEdit(car)` opens a car's form. */
 export function carColumns(t, { onEdit }) {
@@ -20,7 +21,7 @@ export function carColumns(t, { onEdit }) {
         const car = row.original
         return (
           <div className="flex items-center gap-3">
-            <CarPicture car={car} alt="" />
+            <CarPicture car={car} alt="" className="size-7" transitionName={pictureName('car', car.id)} />
             <span className="font-medium">{car.model}</span>
           </div>
         )
@@ -33,7 +34,7 @@ export function carColumns(t, { onEdit }) {
       (row) => row.divisions?.map((d) => d.name).join(', ') ?? '',
       ({ row }) =>
         row.original.divisions?.length ? (
-          <DivisionBadges divisions={row.original.divisions} />
+          <DivisionBadges divisions={row.original.divisions} max={2} className="flex items-center gap-1" />
         ) : (
           <span className="text-muted-foreground">-</span>
         )
@@ -42,6 +43,7 @@ export function carColumns(t, { onEdit }) {
       id: 'year',
       accessorKey: 'year',
       header: t('fields.year'),
+      meta: FIGURE,
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.year || '-'}</span>,
     },
     {
@@ -84,14 +86,14 @@ export function carColumns(t, { onEdit }) {
       id: 'fuelCapacity',
       accessorKey: 'fuelCapacity',
       header: t('fields.fuel'),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground tabular-nums">{formatLevel(row.original.fuelCapacity)}</span>
-      ),
+      meta: FIGURE,
+      cell: ({ row }) => <span className="text-muted-foreground">{formatLevel(row.original.fuelCapacity)}</span>,
     },
     {
       id: 'bestLap',
       accessorFn: (row) => row.bestLap || Infinity,
       header: t('common:record'),
+      meta: FIGURE,
       cell: ({ row }) => (
         <span className="font-mono font-bold">
           {row.original.bestLap ? `${(row.original.bestLap / 1000).toFixed(3)}s` : '-'}
@@ -102,12 +104,8 @@ export function carColumns(t, { onEdit }) {
       id: 'sessions',
       accessorFn: (row) => row._count?.sessions || 0,
       header: t('glossary:session', { count: 2 }),
-      cell: ({ row }) => (
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {row.original._count?.sessions || 0}
-        </span>
-      ),
+      meta: FIGURE,
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original._count?.sessions || 0}</span>,
     },
     editColumn(onEdit),
   ]

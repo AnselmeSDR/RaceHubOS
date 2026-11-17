@@ -10,6 +10,7 @@ import TrackIdentity from '../components/track/TrackIdentity'
 import TrackProfileActions from '../components/track/TrackProfileActions'
 import TrackRecord from '../components/track/TrackRecord'
 import TrackRecentSessions from '../components/track/TrackRecentSessions'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -86,7 +87,12 @@ export default function TrackProfile() {
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/tracks')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            // The picture flies back to its line or card
+            onClick={() => withViewTransition(() => navigate('/tracks'), pictureName('track', id))}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <TrackIdentity track={track} />
@@ -125,14 +131,7 @@ export default function TrackProfile() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Records */}
-          <RecordsList
-            title={t('common:topRecords')}
-            records={track.records}
-            showDriverAvatar={true}
-            showCarAvatar={true}
-            showCar={true}
-            showTrack={false}
-          />
+          <RecordsList title={t('common:topRecords')} records={track.records} hide="track" />
 
           <TrackRecentSessions track={track} />
         </div>

@@ -65,7 +65,10 @@ describe('statsColumns', () => {
     expect(screen.getByText('4')).toHaveClass('text-muted-foreground')
   })
 
-  test('the lap time, golden on the podium', () => {
+  test('the lap time on the right, golden on the podium', () => {
+    expect(statsColumns(t, { lang: 'en', onOpen: vi.fn() }).find((c) => c.id === 'lapTime').meta).toEqual({
+      align: 'right',
+    })
     cell('lapTime', lap, 1)
     expect(screen.getByText('7.123s')).toHaveClass('text-yellow-600')
     cleanup()

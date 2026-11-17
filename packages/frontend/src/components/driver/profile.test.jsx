@@ -24,6 +24,7 @@ const driver = {
     { id: 'dv1', name: 'BRONZE', color: '#945434', scope: 'driver' },
     { id: 'dv2', name: 'Guests', shortName: 'INV', color: '#424242', scope: 'driver' },
   ],
+  races: 4,
   wins: 3,
   podiums: 5,
   bestLap: 7654,
@@ -33,11 +34,12 @@ const driver = {
 const inRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('DriverIdentity', () => {
-  test('name, number, divisions and figures in the driver colour', () => {
+  test('name in the text colour, number, divisions and figures; races are not sessions', () => {
     render(<DriverIdentity driver={driver} />)
     const identity = screen.getByTestId('driver-identity')
-    expect(screen.getByRole('heading', { name: 'Ayrton' })).toHaveStyle({ color: '#FFCC00' })
-    for (const text of ['#12', '6 Races', '3 Wins', '5 Podiums', '120 Laps', 'Record', '7.654']) {
+    // The driver's colour is their picture's, not their name's: a dark one would not read
+    expect(screen.getByRole('heading', { name: 'Ayrton' })).not.toHaveAttribute('style')
+    for (const text of ['#12', '4 Races', '3 Wins', '5 Podiums', '120 Laps', 'Record', '7.654']) {
       expect(identity).toHaveTextContent(text)
     }
     expect(within(identity).getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FFCC00' })
@@ -55,7 +57,16 @@ describe('DriverIdentity', () => {
   })
 
   test('without colour, number, division, record or figures', () => {
-    const bare = { ...driver, color: null, number: null, divisions: [], bestLap: null, wins: 0, podiums: null }
+    const bare = {
+      ...driver,
+      color: null,
+      number: null,
+      divisions: [],
+      bestLap: null,
+      races: 0,
+      wins: 0,
+      podiums: null,
+    }
     expect(driverColor(bare)).toBe('#3B82F6')
     render(<DriverIdentity driver={{ ...bare, _count: undefined }} />)
     const identity = screen.getByTestId('driver-identity')
@@ -115,24 +126,43 @@ describe('DriverRecentSessions', () => {
     expect(screen.getByText('No sessions')).toBeInTheDocument()
   })
 
-  test('each session links to its page with track, position and best lap', () => {
+  test('each session links to its page: date, kind, name, track, place and best lap, each in its column', () => {
+    const startedAt = '2026-03-14T10:00:00Z'
     const sessions = [
       {
         id: 'sd1',
-        session: { id: 's1', type: SessionType.RACE, track: { name: 'Monza' } },
+        session: { id: 's1', name: 'Sunday race', type: SessionType.RACE, track: { name: 'Monza' }, startedAt },
         finalPos: 2,
         bestLapTime: 61234,
       },
       { id: 'sd2', sessionId: 's2', session: null },
     ]
     inRouter(<DriverRecentSessions driver={{ ...driver, sessions }} />)
+    expect([...screen.getByTestId('columns').children].map((th) => th.textContent)).toEqual([
+      'Date',
+      'Type',
+      'Session',
+      'Track',
+      'Pos.',
+      'Best',
+    ])
     const [first, second] = screen.getAllByRole('link')
 
     expect(first).toHaveAttribute('href', '/sessions/s1')
-    for (const text of ['Race', 'Monza', '1:01.234']) expect(first).toHaveTextContent(text)
-    expect(within(first).getByText('P2')).toHaveStyle({ color: '#FFCC00' })
+    const day = new Date(startedAt).toLocaleDateString('en', { day: 'numeric', month: 'short', year: '2-digit' })
+    expect([...first.children].map((cell) => cell.textContent)).toEqual([
+      day,
+      'Race',
+      'Sunday race',
+      'Monza',
+      'P2',
+      '1:01.234',
+    ])
+    // The place reads from the podium colours, not from the driver's
+    expect(within(first).getByText('P2')).toHaveClass('text-gray-400')
     expect(second).toHaveAttribute('href', '/sessions/s2')
-    expect(second).toHaveTextContent('Unknown track')
+    // A session not run yet keeps its cells empty
+    expect([...second.children].map((cell) => cell.textContent)).toEqual(['', '', '', 'Unknown track', '', ''])
   })
 
   test('shows the last eight sessions only', () => {

@@ -226,3 +226,20 @@
   --sidebar-border: oklch(0.274 0.006 286.033);
   --sidebar-ring: oklch(0.442 0.017 285.823);
 }
+
+/* View transitions (lib/viewTransition.js): a picture glides from its line to its profile, quickly and without bounce */
+::view-transition-group(*) {
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.3, 1, 0.4, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

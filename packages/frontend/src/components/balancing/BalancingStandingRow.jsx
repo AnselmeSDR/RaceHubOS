@@ -32,7 +32,7 @@ export default function BalancingStandingRow({ standing, position, gap }) {
         <span
           className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm ${podiumBadge(position)}`}
         >
-          {position}
+          {position ?? '–'}
         </span>
         <CarThumb car={car} />
         <div className="flex-1 min-w-0">

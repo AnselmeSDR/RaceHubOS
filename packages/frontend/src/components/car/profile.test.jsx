@@ -32,10 +32,10 @@ const car = {
 const inRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('CarIdentity', () => {
-  test('name, year, settings, sessions and record in the car colour', () => {
+  test('name in the text colour, year, settings, sessions and record', () => {
     render(<CarIdentity car={car} />)
     const identity = screen.getByTestId('car-identity')
-    expect(screen.getByRole('heading', { name: 'Porsche 911' })).toHaveStyle({ color: '#FF0000' })
+    expect(screen.getByRole('heading', { name: 'Porsche 911' })).not.toHaveAttribute('style')
     for (const text of ['1973', formatLevel(80), formatLevel(50), formatLevel(100), '2 Sessions', 'Record', '4.321']) {
       expect(identity).toHaveTextContent(text)
     }
@@ -116,7 +116,7 @@ describe('CarRecentSessions', () => {
     expect(first).toHaveTextContent('Race')
     expect(first).toHaveTextContent('Monza')
     expect(first).toHaveTextContent('12.345')
-    expect(within(first).getByText('P1')).toHaveStyle({ color: '#FF0000' })
+    expect(within(first).getByText('P1')).toHaveClass('text-yellow-500')
 
     expect(second).toHaveAttribute('href', '/sessions/s2')
     expect(second).toHaveTextContent('Unknown track')

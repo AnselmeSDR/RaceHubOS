@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card'
 import CardActions from '@/components/crud/CardActions'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
 import DriverAvatar from './DriverAvatar'
+import { pictureName } from '@/lib/viewTransition'
+import { PRESS } from '@/lib/press'
 
 /** A driver in the grid of the drivers page: picture, number, divisions, results and best lap. */
 export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
@@ -16,7 +18,7 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
       data-testid="entity-card"
       data-entity-id={driver.id}
       onClick={onClick}
-      className="relative overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300"
+      className={`relative overflow-hidden cursor-pointer hover:shadow-2xl duration-300 ${PRESS}`}
       style={{
         background: `linear-gradient(135deg, ${driver.color}15 0%, ${driver.color}05 100%)`,
         boxShadow: `0 4px 6px rgba(0,0,0,0.1), 0 0 20px ${driver.color}40`,
@@ -34,7 +36,12 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
       <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
           <div className="relative">
-            <DriverAvatar driver={driver} alt={driver.name} className="size-20 font-black" />
+            <DriverAvatar
+              driver={driver}
+              alt={driver.name}
+              className="size-20 font-black"
+              transitionName={pictureName('driver', driver.id)}
+            />
             {wins > 0 && (
               <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center ring-2 ring-white shadow-lg">
                 <Trophy className="w-4 h-4 text-white" />
@@ -53,9 +60,7 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
             <DivisionBadges divisions={driver.divisions} className="flex flex-wrap justify-end gap-1" />
           </div>
         </div>
-        <h3 className="font-black text-2xl tracking-tight mb-1" style={{ color: driver.color }}>
-          {driver.name?.toUpperCase()}
-        </h3>
+        <h3 className="font-black text-2xl tracking-tight mb-1 text-foreground">{driver.name?.toUpperCase()}</h3>
         <div className="h-1 w-16 rounded-full" style={{ backgroundColor: driver.color }} />
       </div>
 
@@ -65,7 +70,7 @@ export default function DriverCard({ driver, onClick, onEdit, onDelete }) {
             {
               icon: <Flag className="w-4 h-4" />,
               label: t('glossary:race', { count: 2 }),
-              value: driver._count?.sessions || 0,
+              value: driver.races || 0,
             },
             {
               icon: <Trophy className="w-4 h-4" />,

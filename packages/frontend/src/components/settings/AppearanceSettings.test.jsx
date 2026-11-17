@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent from '@testing-library/user-event'
 import i18n from '@/i18n'
 import AppearanceSettings from './AppearanceSettings'
+import VoiceSettings from './VoiceSettings'
 
 const { app, voice } = vi.hoisted(() => ({ app: {}, voice: {} }))
 vi.mock('@/context/AppContext', () => ({ useApp: () => app }))
@@ -48,30 +49,33 @@ afterAll(() => i18n.changeLanguage('en'))
 
 const switchNamed = (name) => screen.getByRole('switch', { name })
 
+const choice = (name) => screen.getByRole('radio', { name })
+
 describe('appearance', () => {
-  test('day theme; switching calls the app', async () => {
+  test('the theme is a choice between two values in sight; picking the other calls the app', async () => {
     render(<AppearanceSettings />)
-    expect(screen.getByText('Light interface')).toBeInTheDocument()
-    expect(switchNamed('Day mode')).toHaveAttribute('aria-checked', 'false')
-    await userEvent.click(switchNamed('Day mode'))
-    expect(app.toggleTheme).toHaveBeenCalled()
+    expect(choice('Light')).toHaveAttribute('aria-checked', 'true')
+    expect(choice('Dark')).toHaveAttribute('aria-checked', 'false')
+    // The one already picked does nothing
+    await userEvent.click(choice('Light'))
+    expect(app.toggleTheme).not.toHaveBeenCalled()
+    await userEvent.click(choice('Dark'))
+    expect(app.toggleTheme).toHaveBeenCalledTimes(1)
   })
 
   test('night theme', () => {
     app.isDark = true
     render(<AppearanceSettings />)
-    expect(screen.getByText('Dark interface')).toBeInTheDocument()
-    expect(switchNamed('Night mode')).toHaveAttribute('aria-checked', 'true')
+    expect(choice('Dark')).toHaveAttribute('aria-checked', 'true')
   })
 
   test('the default view is read from the preferences and saved when switched', async () => {
     fetchMock.mockResolvedValue(json({ success: true, data: 'list' }))
     render(<AppearanceSettings />)
-    await waitFor(() => expect(switchNamed('Default view')).toHaveAttribute('aria-checked', 'false'))
-    expect(screen.getByText('List')).toBeInTheDocument()
+    await waitFor(() => expect(choice('List')).toHaveAttribute('aria-checked', 'true'))
 
-    await userEvent.click(switchNamed('Default view'))
-    expect(screen.getByText('Grid')).toBeInTheDocument()
+    await userEvent.click(choice('Grid'))
+    expect(choice('Grid')).toHaveAttribute('aria-checked', 'true')
     const [url, options] = fetchMock.mock.calls.at(-1)
     expect(url).toMatch(/\/api\/preferences\/viewMode:default$/)
     expect(options).toMatchObject({ method: 'PUT', body: JSON.stringify({ value: 'grid' }) })
@@ -81,9 +85,9 @@ describe('appearance', () => {
     fetchMock.mockRejectedValue(new Error('down'))
     render(<AppearanceSettings />)
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    expect(switchNamed('Default view')).toHaveAttribute('aria-checked', 'true')
-    await userEvent.click(switchNamed('Default view'))
-    expect(switchNamed('Default view')).toHaveAttribute('aria-checked', 'false')
+    expect(choice('Grid')).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(choice('List'))
+    expect(choice('List')).toHaveAttribute('aria-checked', 'true')
   })
 
   test('changing the language changes the interface', async () => {
@@ -94,45 +98,40 @@ describe('appearance', () => {
     expect(i18n.language).toBe('de')
     expect(await screen.findByText('Sprache')).toBeInTheDocument()
   })
-
-  test('admin mode', async () => {
-    app.isAdmin = true
-    render(<AppearanceSettings />)
-    expect(switchNamed('Administrator mode')).toHaveAttribute('aria-checked', 'true')
-    await userEvent.click(switchNamed('Administrator mode'))
-    expect(app.toggleAdmin).toHaveBeenCalled()
-  })
 })
 
 describe('voice announcements', () => {
   test('both off: no lap count, no voice choice', async () => {
-    render(<AppearanceSettings />)
+    render(<VoiceSettings />)
     expect(screen.queryByText('Minimum laps before announcement')).not.toBeInTheDocument()
     expect(screen.queryByTitle('Test voice')).not.toBeInTheDocument()
 
-    await userEvent.click(switchNamed('Best lap announcement'))
+    await userEvent.click(switchNamed('Best lap'))
     expect(voice.saveBestLapEnabled).toHaveBeenCalledWith(true)
-    await userEvent.click(switchNamed('Podium announcement'))
+    await userEvent.click(switchNamed('Podium'))
     expect(voice.savePodiumEnabled).toHaveBeenCalledWith(true)
   })
 
   test('best lap on: the minimum lap count goes up and down', async () => {
     voice.bestLapEnabled = true
-    render(<AppearanceSettings />)
-    const row = screen.getByText('Minimum laps before announcement').parentElement
-    expect(row).toHaveTextContent('3')
-    await userEvent.click(within(row).getByRole('button', { name: '+' }))
+    render(<VoiceSettings />)
+    // A setting of its own, on its own line: what it sets, what it does, and its counter
+    const row = screen.getByTestId('settings-min-laps')
+    expect(row).toHaveTextContent('Minimum laps before announcement')
+    expect(row).toHaveTextContent('Nothing is announced until the leader has completed this many laps.')
+    expect(row).toHaveTextContent('−3+')
+    await userEvent.click(within(row).getByRole('button', { name: 'One lap more' }))
     expect(voice.saveMinLaps).toHaveBeenLastCalledWith(4)
-    await userEvent.click(within(row).getByRole('button', { name: '-' }))
+    await userEvent.click(within(row).getByRole('button', { name: 'One lap fewer' }))
     expect(voice.saveMinLaps).toHaveBeenLastCalledWith(2)
-    await userEvent.click(switchNamed('Best lap announcement'))
+    await userEvent.click(switchNamed('Best lap'))
     expect(voice.saveBestLapEnabled).toHaveBeenCalledWith(false)
   })
 
   test('the voices of the interface language come first; choosing one saves it', async () => {
     const user = userEvent.setup()
     voice.podiumEnabled = true
-    render(<AppearanceSettings />)
+    render(<VoiceSettings />)
     const picker = screen.getByTestId('settings-voice').querySelector('[role="combobox"]')
     expect(picker).toHaveTextContent('Default voice')
 
@@ -149,7 +148,7 @@ describe('voice announcements', () => {
   test('the chosen voice is shown; back to the default saves an empty choice', async () => {
     const user = userEvent.setup()
     Object.assign(voice, { podiumEnabled: true, voiceId: 'thomas' })
-    render(<AppearanceSettings />)
+    render(<VoiceSettings />)
     const picker = screen.getByTestId('settings-voice').querySelector('[role="combobox"]')
     expect(picker).toHaveTextContent('Thomas (fr-FR)')
 
@@ -162,7 +161,7 @@ describe('voice announcements', () => {
     voice.bestLapEnabled = true
     synth.voices = []
     Object.assign(voice, { voiceId: 'daniel' })
-    render(<AppearanceSettings />)
+    render(<VoiceSettings />)
     const picker = screen.getByTestId('settings-voice').querySelector('[role="combobox"]')
     expect(picker).toHaveTextContent('Default voice')
 
@@ -173,13 +172,13 @@ describe('voice announcements', () => {
 
   test('the test button speaks a sample sentence', async () => {
     voice.bestLapEnabled = true
-    render(<AppearanceSettings />)
+    render(<VoiceSettings />)
     await userEvent.click(screen.getByTitle('Test voice'))
     expect(voice.speak).toHaveBeenCalledWith('Best lap, Anselme, 6.142 seconds')
   })
 
   test('leaving the page stops listening to the voice list', () => {
-    const { unmount } = render(<AppearanceSettings />)
+    const { unmount } = render(<VoiceSettings />)
     expect(synth.listeners.size).toBe(1)
     unmount()
     expect(synth.listeners.size).toBe(0)

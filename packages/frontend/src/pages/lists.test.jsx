@@ -25,6 +25,7 @@ const pages = [
     newTitle: 'New driver',
     editTitle: 'Edit driver',
     opens: 'profile',
+    cardActions: true,
   },
   {
     name: 'tracks',
@@ -118,7 +119,25 @@ describe.each(pages)('$name page', (page) => {
     expect(screen.queryByTestId('modal')).not.toBeInTheDocument()
     await waitFor(() => expect(listCalls(page.name)).toHaveLength(2))
   })
+})
 
+describe.each(pages.filter((p) => !p.cardActions))('$name page cards', (page) => {
+  test('a card carries no pencil or bin: both are in the profile; the pencil of its row still opens the form', async () => {
+    stubApi(page)
+    const { unmount } = renderPage(page)
+    const card = await screen.findByTestId('entity-card')
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
+    unmount()
+
+    renderTable(page)
+    const row = await screen.findByTestId('list-row')
+    await userEvent.click(within(row).getAllByRole('button').at(-1))
+    expect(within(screen.getByTestId('modal')).getByText(page.editTitle)).toBeInTheDocument()
+    expect(screen.queryByText('profile page')).not.toBeInTheDocument()
+  })
+})
+
+describe.each(pages.filter((p) => p.cardActions))('$name page card actions', (page) => {
   test('deleting from a card reloads the list', async () => {
     const user = userEvent.setup()
     stubApi(page)
@@ -131,9 +150,7 @@ describe.each(pages)('$name page', (page) => {
     const deletion = fetchMock.mock.calls.find(([, options]) => options?.method === 'DELETE')
     expect(deletion[0]).toMatch(new RegExp(`/api/${page.name}/x1$`))
   })
-})
 
-describe.each(pages.filter((p) => p.opens === 'profile'))('$name page edit button', (page) => {
   test('the card pencil opens the form of that record', async () => {
     stubApi(page)
     renderPage(page)

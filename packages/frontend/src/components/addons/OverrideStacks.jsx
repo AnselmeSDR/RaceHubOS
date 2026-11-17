@@ -3,13 +3,14 @@ import { AlertTriangle, FileCode } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 /**
- * Core files changed by add-ons: each stack from the top layer down to the core, and the
- * one real conflict, a layer that replaces the file — docs/ADDONS.md § Stacking.
+ * What goes wrong in the core files changed by add-ons: the one real conflict, a layer that replaces
+ * the file, and a change to a file the core no longer has — docs/ADDONS.md § Stacking. The stacks
+ * themselves are listed under each add-on.
  */
 export default function OverrideStacks({ overrides }) {
   const { t } = useTranslation('addons')
-  const { stacks, replacements, orphans } = overrides
-  if (stacks.length === 0 && orphans.length === 0) return null
+  const { replacements, orphans } = overrides
+  if (replacements.length === 0 && orphans.length === 0) return null
 
   const warnings = [
     ...replacements.map((r) =>
@@ -27,7 +28,7 @@ export default function OverrideStacks({ overrides }) {
           <FileCode className="size-4 text-violet-500" />
           {t('overrides.title')}
         </h2>
-        {warnings.length > 0 && (
+        {
           <div className="space-y-1 rounded-lg bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
             {warnings.map((warning) => (
               <p key={warning} className="flex items-start gap-2" data-testid="override-warning">
@@ -37,15 +38,7 @@ export default function OverrideStacks({ overrides }) {
             ))}
             {replacements.some((r) => r.hides.length > 0) && <p className="text-xs">{t('overrides.hint')}</p>}
           </div>
-        )}
-        {stacks.map((stack) => (
-          <div key={stack.file} className="text-sm">
-            <p className="font-mono text-xs break-all">{stack.file}</p>
-            <p className="text-muted-foreground">
-              {[...stack.layers].reverse().join(' → ')} → {t('overrides.core')}
-            </p>
-          </div>
-        ))}
+        }
       </CardContent>
     </Card>
   )

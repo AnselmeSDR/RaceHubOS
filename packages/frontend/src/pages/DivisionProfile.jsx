@@ -9,6 +9,7 @@ import DivisionIdentity from '@/components/division/DivisionIdentity'
 import DivisionMembers from '@/components/division/DivisionMembers'
 import DivisionProfileActions from '@/components/division/DivisionProfileActions'
 import { getData } from '@/lib/sessionApi'
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -70,7 +71,12 @@ export default function DivisionProfile() {
         className="border-b px-4 py-3 flex flex-wrap gap-3 items-center justify-between"
       >
         <div className="basis-full sm:basis-auto sm:flex-1 min-w-0 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/divisions')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            // The picture flies back to its line or card
+            onClick={() => withViewTransition(() => navigate('/divisions'), pictureName('division', id))}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <DivisionIdentity division={division} />
@@ -90,7 +96,11 @@ export default function DivisionProfile() {
       )}
 
       <div className="@container flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 gap-4 items-start @5xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div
+          className={`grid grid-cols-1 gap-4 items-start ${
+            division.championships?.length ? '@5xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]' : ''
+          }`}
+        >
           <DivisionMembers division={division} onChange={setDivision} />
           <DivisionChampionships division={division} />
         </div>

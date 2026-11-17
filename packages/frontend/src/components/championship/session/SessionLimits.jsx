@@ -14,8 +14,8 @@ function Limit({ label, ...input }) {
 }
 
 /**
- * A draft's limits: duration in minutes and laps (0 for none), then the grace period (5 to 300 s)
- * or, in balancing, the slowest lap time kept.
+ * A draft's limits: duration in minutes and laps, then the grace period (5 to 300 s) or, in
+ * balancing, the slowest lap time kept. An empty field means no limit.
  */
 export default function SessionLimits({ session, maxLapTime, onSaveConfig, onMaxLapTimeChange }) {
   const { t } = useTranslation('championships')
@@ -26,18 +26,18 @@ export default function SessionLimits({ session, maxLapTime, onSaveConfig, onMax
       <Limit
         key={`dur-${session.id}-${session.maxDuration}`}
         label={t('sessionSection.duration')}
-        defaultValue={session.maxDuration ? Math.round(session.maxDuration / 60000) : 0}
+        defaultValue={session.maxDuration ? Math.round(session.maxDuration / 60000) : ''}
         onBlur={(e) => onSaveConfig({ maxDuration: whole(e) > 0 ? whole(e) * 60000 : null })}
         min="0"
-        placeholder={t('sessionSection.durationPlaceholder')}
+        placeholder={t('sessionSection.noLimit')}
       />
       <Limit
         key={`laps-${session.id}-${session.maxLaps}`}
         label={t('sessionSection.maxLaps')}
-        defaultValue={session.maxLaps || 0}
+        defaultValue={session.maxLaps || ''}
         onBlur={(e) => onSaveConfig({ maxLaps: whole(e) > 0 ? whole(e) : null })}
         min="0"
-        placeholder={t('sessionSection.maxLapsPlaceholder')}
+        placeholder={t('sessionSection.noLimit')}
       />
       {session.type === SessionType.BALANCING ? (
         <Limit
@@ -50,7 +50,7 @@ export default function SessionLimits({ session, maxLapTime, onSaveConfig, onMax
             onMaxLapTimeChange?.(seconds > 0 ? Math.round(seconds * 1000) : null)
           }}
           min="0"
-          placeholder={t('sessionSection.maxLapTimePlaceholder')}
+          placeholder={t('sessionSection.noLimit')}
         />
       ) : (
         <Limit

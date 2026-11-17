@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
+import { Tooltip } from 'radix-ui'
 import { DivisionScope } from '@racehubos/shared'
 import { divisionColor, textOn, textOnDark, textOnWhite } from '@/lib/colors'
 
@@ -41,15 +42,50 @@ export default function DivisionBadge({ division, large = false, faded = false, 
   )
 }
 
-/** The badges of `divisions`, nothing without one. */
-export function DivisionBadges({ divisions, className = 'flex flex-wrap items-center gap-1', ...props }) {
+/** How many more divisions there are, shown in a bubble when hovered or focused. */
+function MoreDivisions({ divisions, ...props }) {
+  const { t } = useTranslation('divisions')
+  return (
+    <Tooltip.Provider delayDuration={0}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <span
+            tabIndex={0}
+            data-testid="division-more"
+            aria-label={t('more', { count: divisions.length })}
+            className="shrink-0 rounded-full bg-muted px-2 py-px text-[11px] font-extrabold leading-[18px] text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            +{divisions.length}
+          </span>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            className="z-50 flex flex-col items-start gap-1 rounded-lg border border-border bg-popover p-2 shadow-lg"
+          >
+            {divisions.map((division) => (
+              <DivisionBadge key={division.id} division={division} {...props} />
+            ))}
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  )
+}
+
+/** The badges of `divisions`, nothing without one; past `max`, the others wait behind a "+n". */
+export function DivisionBadges({ divisions, max, className = 'flex flex-wrap items-center gap-1', ...props }) {
   if (!divisions?.length) return null
+  const shown = max == null ? divisions : divisions.slice(0, max)
   // min-w-0: a long name is cut rather than widening its row
   return (
     <span className={`min-w-0 max-w-full ${className}`}>
-      {divisions.map((division) => (
+      {shown.map((division) => (
         <DivisionBadge key={division.id} division={division} {...props} />
       ))}
+      {shown.length < divisions.length && <MoreDivisions divisions={divisions.slice(shown.length)} {...props} />}
     </span>
   )
 }

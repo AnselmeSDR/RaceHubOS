@@ -29,27 +29,32 @@ afterEach(() => {
 })
 
 describe('DivisionCard', () => {
-  test('a driver division: its short name as logo, its rank, its first drivers and how many more', () => {
+  test('a driver division: its name once, its rank, the faces of its first five drivers and how many there are', () => {
     const gold = { id: 'g', name: 'Gold league', shortName: 'GOLD', color: '#F5D13C', scope: 'driver', order: 1 }
-    render(<DivisionCard division={{ ...gold, drivers: people(3), _count: { drivers: 5 } }} onClick={vi.fn()} />)
+    render(<DivisionCard division={{ ...gold, drivers: people(7), _count: { drivers: 7 } }} onClick={vi.fn()} />)
     const card = screen.getByTestId('entity-card')
     expect(within(card).getByText('Rank 1')).toBeInTheDocument()
     expect(within(card).getByRole('heading', { name: 'Gold league' })).toBeInTheDocument()
-    expect(within(card).getAllByText(/^Driver \d$/)).toHaveLength(3)
-    expect(card).toHaveTextContent('+2 more')
+    // Without a logo, the square carries the short name on the division's colour; no badge repeats it
+    expect(within(card).getByText('GOLD').parentElement).toHaveStyle({ backgroundColor: '#F5D13C' })
+    expect(within(card).queryByTestId('division-badge')).not.toBeInTheDocument()
+    expect(card).toHaveStyle({ borderTopColor: '#F5D13C' })
+    expect(within(card).getAllByText('D')).toHaveLength(5)
+    expect(within(card).getByText('7 Drivers')).toBeInTheDocument()
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
   })
 
-  test('a category: its first cars pictured, "more" under them; none yet', () => {
+  test('a category: its first cars pictured and how many there are; none yet', () => {
     const gt3 = { id: 'gt3', name: 'GT3', color: '#E11D48', scope: 'car', order: 2 }
     render(<DivisionCard division={{ ...gt3, cars: cars(3), _count: { cars: 4 } }} onClick={vi.fn()} />)
     expect(screen.getByText('Order 2')).toBeInTheDocument()
-    const pictures = screen.getAllByRole('img', { name: /^Audi R\d$/ })
-    expect(pictures).toHaveLength(3)
-    expect(screen.getByText('+1 more').previousElementSibling).toContainElement(pictures[0])
+    expect(screen.getAllByRole('img', { name: /^Audi R\d$/ })).toHaveLength(3)
+    // The size of the faces of a driver division, side by side: car pictures have no background to overlap on
+    expect(screen.getAllByRole('img', { name: /^Audi R\d$/ })[1].parentElement).toHaveClass('size-5', 'ml-0.5')
+    expect(screen.getByText('4 Cars')).toBeInTheDocument()
     cleanup()
     render(<DivisionCard division={{ ...gt3, cars: [], _count: { cars: 0 } }} onClick={vi.fn()} />)
     expect(screen.getByText('No cars')).toBeInTheDocument()
-    expect(screen.queryByText(/more/)).not.toBeInTheDocument()
   })
 })
 
@@ -183,6 +188,25 @@ describe('DivisionMembers', () => {
     expect(row).toHaveTextContent(new Date(ana.since).toLocaleDateString('en'))
   })
 
+  test('several other divisions wait behind a "+n", shown when hovered or focused: the name keeps its room', async () => {
+    routeFetch({ '/api/drivers': { success: true, data: others } })
+    const more = ['SILVER', 'BRONZE'].map((name) => ({ id: name, name, scope: 'driver', color: '#777777' }))
+    inRouter(
+      <DivisionMembers
+        division={{ ...gold, drivers: [{ ...ana, divisions: [GOLD, INVITE, ...more] }] }}
+        onChange={vi.fn()}
+      />
+    )
+    const row = screen.getByTestId('division-member')
+    expect(within(row).queryByTestId('division-badge')).not.toBeInTheDocument()
+    const rest = within(row).getByTestId('division-more')
+    expect(rest).toHaveTextContent('+3')
+    expect(rest).toHaveAccessibleName('3 more')
+
+    await userEvent.hover(rest)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('INVITÉSILVERBRONZE')
+  })
+
   test('a driver not in it is added; the division comes back', async () => {
     const changed = { ...gold, drivers: [ana, { ...others[2], since: ana.since }] }
     const mock = routeFetch({
@@ -270,8 +294,9 @@ describe('DivisionChampionships', () => {
         .map((b) => b.textContent)
     ).toEqual(['GOLD', 'GT3'])
     cleanup()
+    // None: no panel, the header of the page already says "0 championship"
     inRouter(<DivisionChampionships division={gold} />)
-    expect(screen.getByText('No championship is run for this division.')).toBeInTheDocument()
+    expect(screen.queryByTestId('division-championships')).not.toBeInTheDocument()
   })
 })
 

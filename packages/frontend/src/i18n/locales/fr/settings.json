@@ -1,6 +1,5 @@
 {
   "update": {
-    "title": "Mise à jour",
     "currentVersion": "Version actuelle",
     "check": "Vérifier",
     "newVersionAvailable": "Nouvelle version disponible : v{{version}}",
@@ -24,43 +23,45 @@
     "disconnect": "Déconnecter"
   },
   "devices": {
-    "title": "Sélectionner un appareil",
-    "auto": "Auto",
-    "manual": "Manuel",
     "new": "(nouveau)",
     "connecting": "Connexion...",
     "connect": "Connecter",
     "scanning": "Recherche en cours...",
-    "scan": "Rechercher un nouveau circuit"
+    "scan": "Rechercher un CU",
+    "autoConnect": "Connexion automatique",
+    "other": "Un autre CU",
+    "forget": "Oublier"
   },
   "cuStatus": {
-    "title": "État du Device",
     "start": "Start",
     "mode": "Mode",
     "display": "Display",
     "fuel": "Fuel"
   },
   "appearance": {
-    "themeNight": "Mode nuit",
-    "themeDay": "Mode jour",
-    "darkInterface": "Interface sombre",
-    "lightInterface": "Interface claire",
     "defaultView": "Vue par défaut",
-    "bestLapVoice": "Annonce meilleur tour",
-    "bestLapVoiceDesc": "Voix quand un nouveau record est établi",
+    "bestLapVoice": "Meilleur tour",
+    "bestLapVoiceDesc": "À chaque nouveau meilleur tour de la session.",
     "minLapsBeforeAnnounce": "Tours minimum avant annonce",
-    "podiumVoice": "Annonce podium",
-    "podiumVoiceDesc": "Résultats vocaux en fin de session",
+    "podiumVoice": "Podium",
+    "podiumVoiceDesc": "Les résultats, à la fin de la session.",
     "defaultVoice": "Voix par défaut",
     "testVoice": "Tester la voix",
     "testVoicePhrase": "Meilleur tour, Anselme, 6,142 secondes",
     "adminMode": "Mode administrateur",
     "adminModeDesc": "Displays, Test, Simulateur",
     "language": "Langue",
-    "languageDesc": "Langue de l'interface"
+    "title": "Affichage",
+    "theme": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "voiceTitle": "Annonces vocales",
+    "minLapsDesc": "Rien n'est annoncé tant que le pilote de tête n'a pas fait ce nombre de tours.",
+    "voice": "Voix",
+    "fewerLaps": "Un tour de moins",
+    "moreLaps": "Un tour de plus"
   },
   "logs": {
-    "title": "Logs",
     "empty": "Aucun log",
     "controllerLap": "Ctrl {{n}}: {{time}}s",
     "controllerSector": "Ctrl {{n}}: secteur {{sector}}",
@@ -68,7 +69,11 @@
     "errorWith": "Erreur: {{error}}",
     "scanning": "Scan en cours...",
     "devicesFound": "{{count}} appareil(s) trouvé(s)",
-    "deviceDeleted": "Device {{name}} supprimé"
+    "deviceDeleted": "Device {{name}} supprimé",
+    "journal": "Journal",
+    "count_one": "{{count}} entrée",
+    "count_other": "{{count}} entrées",
+    "none": "aucune entrée"
   },
   "referenceDriver": {
     "title": "Pilote de référence",
@@ -87,5 +92,11 @@
     "migrated_other": "{{count}} tours réattribués à {{name}}",
     "error": "Erreur : {{message}}",
     "migrateButton": "Attribuer"
+  },
+  "cu": {
+    "title": "Control Unit"
+  },
+  "application": {
+    "title": "Application"
   }
 }

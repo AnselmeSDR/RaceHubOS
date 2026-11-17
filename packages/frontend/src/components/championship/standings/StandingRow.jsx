@@ -5,7 +5,7 @@ import StandingStats from './StandingStats'
 import { podiumBadge, podiumRow } from '@/lib/podium'
 import { lapCount } from './standingsOrder'
 
-// A driver's place, avatar, car and laps, then the tab's figures
+// A driver's place (a dash while not ranked), avatar, car and laps, then the tab's figures
 export default function StandingRow({ standing, driver, position, gap, tab }) {
   const { t } = useTranslation('championships')
   const laps = lapCount(standing)
@@ -17,7 +17,7 @@ export default function StandingRow({ standing, driver, position, gap, tab }) {
       <span
         className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full font-black text-sm ${podiumBadge(position)}`}
       >
-        {position}
+        {position ?? '–'}
       </span>
 
       <DriverAvatar driver={{ name: '?', ...driver }} alt={driver.name} />

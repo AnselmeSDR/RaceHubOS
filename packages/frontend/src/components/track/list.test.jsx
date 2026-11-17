@@ -28,29 +28,27 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('TrackCard', () => {
-  test('name, length, corners, record and races, in the track colour', () => {
-    render(<TrackCard track={track} onClick={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
+  test('one line: its colour, its name, then length, corners and sessions; a click opens it', async () => {
+    const onClick = vi.fn()
+    render(<TrackCard track={track} onClick={onClick} />)
     const card = screen.getByTestId('entity-card')
-    expect(within(card).getByRole('heading', { name: 'Monza' })).toBeInTheDocument()
-    for (const text of ['Length1200m', 'Corners3', 'Record9.876s', 'by Ayrton', 'Races4']) {
-      expect(card).toHaveTextContent(text)
-    }
-    expect(within(card).getByText('1200m')).toHaveStyle({ color: '#00AA00' })
+    expect(card).toHaveAttribute('data-entity-id', 't1')
+    expect(within(card).getByRole('heading', { name: 'Monza' })).not.toHaveAttribute('style')
+    expect(within(card).getByText('1200m · 3 corners · 4 Sessions')).toBeInTheDocument()
+    // The colour alone, without a generic pin
+    expect(card.firstChild).toHaveStyle({ backgroundColor: '#00AA00' })
+    expect(card.firstChild).toBeEmptyDOMElement()
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
+    await userEvent.click(card)
+    expect(onClick).toHaveBeenCalled()
   })
 
-  test('a bare track: picture, nothing measured, no record, default colour', () => {
+  test('a bare track: its picture, nothing measured, no session yet', () => {
     const bare = { ...track, img: 'https://img.test/m.png', color: null, length: null, corners: null, bestLap: null }
-    render(<TrackCard track={{ ...bare, _count: undefined }} onClick={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    render(<TrackCard track={{ ...bare, _count: undefined }} onClick={vi.fn()} />)
     const card = screen.getByTestId('entity-card')
     expect(card.querySelector('img')).toHaveAttribute('src', 'https://img.test/m.png')
-    for (const text of ['Length', 'Corners', 'Record']) expect(card).not.toHaveTextContent(text)
-    expect(card).toHaveTextContent('Races0')
-    expect(card.firstChild.nextSibling).toHaveStyle({ backgroundColor: '#9333EA' })
-  })
-
-  test('a record without its holder', () => {
-    render(<TrackCard track={{ ...track, bestLapBy: null }} onClick={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
-    expect(screen.getByTestId('entity-card')).not.toHaveTextContent('by')
+    expect(within(card).getByText('0 Sessions')).toBeInTheDocument()
   })
 })
 
@@ -69,6 +67,20 @@ describe('trackColumns', () => {
     expect(renderCell(columns, 'corners', track).container).toHaveTextContent('3')
     expect(renderCell(columns, 'bestLap', track).container).toHaveTextContent('9.876sby Ayrton')
     expect(renderCell(columns, 'sessions', track).container).toHaveTextContent('4')
+  })
+
+  test('figures sit on the right without an icon', () => {
+    expect(columns.filter((c) => c.meta?.align === 'right').map((c) => c.id)).toEqual([
+      'length',
+      'corners',
+      'bestLap',
+      'sessions',
+    ])
+    for (const id of ['length', 'corners', 'sessions']) {
+      const { container, unmount } = renderCell(columns, id, track)
+      expect(container.querySelector('svg')).toBeNull()
+      unmount()
+    }
   })
 
   test('cells of a bare track', () => {

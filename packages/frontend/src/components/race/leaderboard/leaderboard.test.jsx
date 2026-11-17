@@ -114,6 +114,23 @@ describe('RowIdentity', () => {
     expect(screen.getAllByTestId('division-badge').map((b) => b.textContent)).toEqual(['GOLD', 'GT3'])
   })
 
+  test('a name too close to its row is pulled away from it, in each theme; one that reads is kept', () => {
+    const nameColor = (color) => {
+      cleanup()
+      render(<RowIdentity driver={{ name: 'Lucy Par' }} car={{}} color={color} />)
+      return screen.getByText('Par').style.color
+    }
+    const rgb = (hex) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`
+    // On white: a navy reads, a yellow is darkened
+    expect(nameColor('#00007c')).toBe(rgb('#00007c'))
+    expect(nameColor('#fff349')).toBe(rgb('#99922c'))
+    // In the dark: the navy and a dark grey are lightened
+    app.isDark = true
+    expect(nameColor('#00007c')).toBe(rgb('#6666b0'))
+    expect(nameColor('#3b3a38')).toBe(rgb('#767574'))
+    expect(nameColor('#cafd02')).toBe(rgb('#cafd02'))
+  })
+
   test('an unknown driver gets an initial; a black name is outlined in the dark', () => {
     app.isDark = true
     render(<RowIdentity driver={{ number: 7 }} car={{ name: 'Kart' }} color="#000000" />)

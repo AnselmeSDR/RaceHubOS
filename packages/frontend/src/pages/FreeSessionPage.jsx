@@ -10,6 +10,10 @@ import { useFreeSession } from '../hooks/useFreeSession'
 import { useFreeSessionReferences } from '../hooks/useFreeSessionReferences'
 import { useTrackStandings } from '../hooks/useTrackStandings'
 
+/** The session's entries with their car, for the standings to show before anybody is ranked. */
+const lineupOf = (session, cars) =>
+  (session?.drivers ?? []).map((entry) => ({ ...entry, car: entry.car ?? cars.find((car) => car.id === entry.carId) }))
+
 export default function FreeSessionPage() {
   const { startRace: triggerCuStart } = useDevice()
   const { session, entries, maxLapsCompleted } = useSession()
@@ -73,6 +77,7 @@ export default function FreeSessionPage() {
             <FreeSessionStandingsPanel
               standings={standings}
               drivers={drivers}
+              lineup={lineupOf(session, cars)}
               activeTab={freeType}
               onTabChange={setFreeType}
             />

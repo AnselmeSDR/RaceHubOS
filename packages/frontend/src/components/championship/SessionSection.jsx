@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, Flag, UserMinus } from 'lucide-react'
 import { isSessionUnderway, SessionStatus, SessionType } from '@racehubos/shared'
@@ -91,6 +91,7 @@ export default function SessionSection({
   const { cuStatus, socketConnected, connected: deviceConnected } = useDevice()
   const live = useSession()
   const [confirmingReset, setConfirmingReset] = useState(false)
+  const sectionRef = useRef(null)
 
   if (!session) {
     return (
@@ -139,7 +140,11 @@ export default function SessionSection({
   const withdrawn = (session.withdrawals ?? []).map((w) => w.driver?.name).filter(Boolean)
 
   return (
-    <div data-testid="session-section" className="bg-card rounded-xl border border-border overflow-hidden">
+    <div
+      ref={sectionRef}
+      data-testid="session-section"
+      className="bg-card rounded-xl border border-border overflow-hidden"
+    >
       <SessionHeader
         session={session}
         label={sessionLabelOf(session, sessions, t)}
@@ -228,10 +233,10 @@ export default function SessionSection({
         state={state}
         cuStart={cuStatus?.start}
         pauseDuration={live.pauseDuration}
-        canStartNow={deviceConnected && incomplete.length === 0}
         deviceConnected={deviceConnected}
         hasIncompleteConfig={incomplete.length > 0}
         onStart={onStart}
+        onIncomplete={() => sectionRef.current?.querySelector('[aria-invalid="true"]')?.focus()}
         onTriggerCuStart={onTriggerCuStart}
         onPause={onPause}
         onResume={onResume}

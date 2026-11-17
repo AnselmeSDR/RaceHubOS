@@ -7,26 +7,18 @@ import TrackCard from '@/components/track/TrackCard'
 import TrackFormModal from '@/components/track/TrackFormModal'
 import { trackColumns } from '@/components/track/trackColumns'
 import { usePagedList } from '@/hooks/usePagedList'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
+import { pictureName, withViewTransition } from '@/lib/viewTransition'
 
 export default function Tracks() {
   const { t } = useTranslation('tracks')
   const navigate = useNavigate()
+  // The picture flies from its line or card to the header of the profile
+  const open = (id) => withViewTransition(() => navigate(`/tracks/${id}`), pictureName('track', id))
   const list = usePagedList('/api/tracks')
   // null: closed; { track: null }: a new track; { track }: editing it
   const [form, setForm] = useState(null)
 
   const columns = useMemo(() => trackColumns(t, { onEdit: (track) => setForm({ track }) }), [t])
-
-  // Deletion is confirmed inside the button itself, then the list reloads
-  async function handleDelete(id) {
-    try {
-      await fetch(`${API_URL}/api/tracks/${id}`, { method: 'DELETE' })
-    } finally {
-      list.reload()
-    }
-  }
 
   return (
     <ListPage
@@ -39,20 +31,14 @@ export default function Tracks() {
       searchPlaceholder={t('searchPlaceholder')}
       addLabel={t('addLabel')}
       onAdd={() => setForm({ track: null })}
-      onRowClick={(row) => !list.showDeleted && navigate(`/tracks/${row.id}`)}
+      onRowClick={(row) => !list.showDeleted && open(row.id)}
       deleteEndpoint="/api/tracks"
       emptyTitle={t('emptyTitle')}
       emptyMessage={t('emptyMessage')}
       renderGrid={(data) => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
           {data.map((track) => (
-            <TrackCard
-              key={track.id}
-              track={track}
-              onClick={() => navigate(`/tracks/${track.id}`)}
-              onEdit={() => setForm({ track })}
-              onDelete={() => handleDelete(track.id)}
-            />
+            <TrackCard key={track.id} track={track} onClick={() => open(track.id)} />
           ))}
         </div>
       )}

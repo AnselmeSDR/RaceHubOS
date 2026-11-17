@@ -129,6 +129,7 @@ export default function DivisionMembers({ division, onChange }) {
         )}
         {members.map((member) => {
           const label = category ? carName(member) : member.name
+          const others = member.divisions?.filter((other) => other.id !== division.id) ?? []
           return (
             <li
               key={member.id}
@@ -137,9 +138,11 @@ export default function DivisionMembers({ division, onChange }) {
             >
               <span className="flex flex-1 min-w-0 items-center gap-2">
                 {category ? <CarName car={member} /> : <DriverName driver={member} />}
+                {/* One other division shows; several wait behind a "+n", or the name has no room left */}
                 <DivisionBadges
-                  divisions={member.divisions?.filter((other) => other.id !== division.id)}
-                  className="flex shrink-0 gap-1"
+                  divisions={others}
+                  max={others.length > 1 ? 0 : 1}
+                  className="flex shrink-0 items-center gap-1"
                 />
               </span>
               {figures.map(([key, value]) => (

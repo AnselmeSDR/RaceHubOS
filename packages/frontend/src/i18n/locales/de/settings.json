@@ -1,6 +1,5 @@
 {
   "update": {
-    "title": "Aktualisierung",
     "currentVersion": "Installierte Version",
     "check": "Prüfen",
     "newVersionAvailable": "Neue Version verfügbar: v{{version}}",
@@ -24,43 +23,45 @@
     "disconnect": "Trennen"
   },
   "devices": {
-    "title": "Gerät auswählen",
-    "auto": "Automatisch",
-    "manual": "Manuell",
     "new": "(neu)",
     "connecting": "Verbindung wird hergestellt …",
     "connect": "Verbinden",
     "scanning": "Suche läuft …",
-    "scan": "Nach einer Control Unit suchen"
+    "scan": "Nach einer Control Unit suchen",
+    "autoConnect": "Automatisch verbinden",
+    "other": "Eine andere Control Unit",
+    "forget": "Vergessen"
   },
   "cuStatus": {
-    "title": "Gerätestatus",
     "start": "Start",
     "mode": "Modus",
     "display": "Anzeige",
     "fuel": "Tankstand"
   },
   "appearance": {
-    "themeNight": "Nachtmodus",
-    "themeDay": "Tagmodus",
-    "darkInterface": "Dunkle Oberfläche",
-    "lightInterface": "Helle Oberfläche",
     "defaultView": "Standardansicht",
-    "bestLapVoice": "Bestzeit ansagen",
-    "bestLapVoiceDesc": "Neue Bestzeit per Sprache ansagen",
+    "bestLapVoice": "Beste Runde",
+    "bestLapVoiceDesc": "Bei jeder neuen besten Runde der Session.",
     "minLapsBeforeAnnounce": "Mindestrunden vor einer Ansage",
-    "podiumVoice": "Siegeransage",
-    "podiumVoiceDesc": "Ergebnisse am Ende der Sitzung ansagen",
+    "podiumVoice": "Podium",
+    "podiumVoiceDesc": "Die Ergebnisse am Ende der Session.",
     "defaultVoice": "Standardstimme",
     "testVoice": "Stimme testen",
     "testVoicePhrase": "Neue Bestzeit für Testfahrer: 8,23 Sekunden.",
     "adminMode": "Administratormodus",
     "adminModeDesc": "Anzeigen, Test, Simulator",
     "language": "Sprache",
-    "languageDesc": "Sprache der Oberfläche"
+    "title": "Anzeige",
+    "theme": "Design",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "voiceTitle": "Sprachansagen",
+    "minLapsDesc": "Nichts wird angesagt, bis der Führende so viele Runden gefahren ist.",
+    "voice": "Stimme",
+    "fewerLaps": "Eine Runde weniger",
+    "moreLaps": "Eine Runde mehr"
   },
   "logs": {
-    "title": "Protokolle",
     "empty": "Keine Protokolle",
     "controllerLap": "Regler {{n}}: {{time}} s",
     "controllerSector": "Regler {{n}}: Sektor {{sector}}",
@@ -68,7 +69,11 @@
     "errorWith": "Fehler: {{error}}",
     "scanning": "Suche läuft …",
     "devicesFound": "{{count}} Gerät(e) gefunden",
-    "deviceDeleted": "Gerät {{name}} gelöscht"
+    "deviceDeleted": "Gerät {{name}} gelöscht",
+    "journal": "Protokoll",
+    "count_one": "{{count}} Eintrag",
+    "count_other": "{{count}} Einträge",
+    "none": "kein Eintrag"
   },
   "referenceDriver": {
     "title": "Referenzfahrer",
@@ -87,5 +92,11 @@
     "migrated_other": "{{count}} Runden {{name}} zugeordnet",
     "error": "Fehler: {{message}}",
     "migrateButton": "Zuordnen"
+  },
+  "cu": {
+    "title": "Control Unit"
+  },
+  "application": {
+    "title": "Anwendung"
   }
 }

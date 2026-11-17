@@ -21,6 +21,7 @@ const car = {
   brakeForce: 50,
   fuelCapacity: 100,
   bestLap: 4321,
+  races: 1,
   _count: { sessions: 2 },
   divisions: [GT3],
 }
@@ -44,39 +45,45 @@ afterEach(() => {
 })
 
 describe('CarCard', () => {
-  test('brand, model, year, categories, gauges and races, in the car colour', async () => {
+  test('brand and year, model, categories, gauges, races and record; the car colour is its halo only', async () => {
     const onClick = vi.fn()
-    render(<CarCard car={car} onClick={onClick} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    render(<CarCard car={car} onClick={onClick} />)
     const card = screen.getByTestId('entity-card')
     expect(card).toHaveAttribute('data-entity-id', 'c1')
-    expect(within(card).getByRole('heading', { name: 'porsche' })).toBeInTheDocument()
-    expect(within(card).getByText('911')).toHaveStyle({ color: '#FF0000' })
-    expect(card).toHaveTextContent('1973')
+    // The model names the card, in the text colour: a dark car colour would not read
+    expect(within(card).getByRole('heading', { name: '911' })).not.toHaveAttribute('style')
+    expect(within(card).getByText('porsche · 1973')).not.toHaveAttribute('style')
+    expect(card.firstChild.style.background).toContain('rgb(255, 0, 0)')
+    // No pencil or bin on the card: they are in the profile
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
     // A category is outlined in its colour on a transparent background
     const category = within(card).getByTitle('GT3')
     expect(category).toHaveStyle({ borderColor: '#E11D48' })
     expect(category.style.backgroundColor).toBe('')
-    for (const value of [80, 50, 100]) expect(card).toHaveTextContent(formatLevel(value))
-    expect(card).toHaveTextContent('Races2')
+    for (const [key, value] of [
+      ['maxSpeed', 80],
+      ['brakeForce', 50],
+      ['fuelCapacity', 100],
+    ]) {
+      expect(within(card).getByTestId(`gauge-${key}`)).toHaveStyle({ width: `${levelPercent(value)}%` })
+    }
+    for (const text of ['Speed8', 'Braking5', 'Tank10', '1 Race', '4.321s']) expect(card).toHaveTextContent(text)
     expect(within(card).getByText('p')).toBeInTheDocument()
     await userEvent.click(card)
     expect(onClick).toHaveBeenCalled()
   })
 
-  test('a picture, no year, no races yet, default colour', () => {
-    render(
-      <CarCard
-        car={{ ...car, img: 'https://img.test/911.png', year: null, color: null, _count: undefined }}
-        onClick={vi.fn()}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />
-    )
+  test('a picture, no year, no races nor record yet, more than two categories', () => {
+    const divisions = ['GT3', 'GTE', 'DTM'].map((name) => ({ ...car.divisions[0], id: name, name }))
+    const bare = { ...car, img: 'https://img.test/911.png', year: null, races: undefined, bestLap: null, divisions }
+    render(<CarCard car={bare} onClick={vi.fn()} />)
     const card = screen.getByTestId('entity-card')
     expect(card.querySelector('img')).toHaveAttribute('src', 'https://img.test/911.png')
     expect(card).not.toHaveTextContent('1973')
-    expect(card).toHaveTextContent('Races0')
-    expect(within(card).getByText('911')).toHaveStyle({ color: '#22C55E' })
+    expect(card).toHaveTextContent('0 Races')
+    expect(card).not.toHaveTextContent(/\d\.\d{3}s/)
+    expect(within(card).getAllByTestId('division-badge')).toHaveLength(2)
+    expect(within(card).getByTestId('division-more')).toHaveTextContent('+1')
   })
 })
 
@@ -114,6 +121,24 @@ describe('carColumns', () => {
     expect(renderCell(columns, 'fuelCapacity', car).container).toHaveTextContent(formatLevel(100))
     expect(renderCell(columns, 'bestLap', car).container).toHaveTextContent('4.321s')
     expect(renderCell(columns, 'sessions', car).container).toHaveTextContent('2')
+  })
+
+  test('figures sit on the right without an icon; two categories at most, the others behind a "+n"', () => {
+    expect(columns.filter((c) => c.meta?.align === 'right').map((c) => c.id)).toEqual([
+      'year',
+      'fuelCapacity',
+      'bestLap',
+      'sessions',
+    ])
+    expect(renderCell(columns, 'sessions', car).container.querySelector('svg')).toBeNull()
+    const divisions = ['GT3', 'GTE', 'DTM'].map((name, i) => ({ ...car.divisions[0], id: name, name, order: i }))
+    const cell = renderCell(columns, 'divisions', { ...car, divisions }).container
+    expect(
+      within(cell)
+        .getAllByTestId('division-badge')
+        .map((badge) => badge.textContent)
+    ).toEqual(['GT3', 'GTE'])
+    expect(within(cell).getByTestId('division-more')).toHaveTextContent('+1')
   })
 
   test('cells of a bare car', () => {

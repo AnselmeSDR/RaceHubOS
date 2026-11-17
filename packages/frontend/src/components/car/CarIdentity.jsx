@@ -2,21 +2,20 @@ import { useTranslation } from 'react-i18next'
 import { Zap, Flame, FlaskConical } from 'lucide-react'
 import { formatLevel } from '@racehubos/shared'
 import LapTime from '@/components/race/LapTime'
-import { carColor } from '@/lib/colors'
 import CarPicture from '@/components/car/CarPicture'
 import { DivisionBadges } from '@/components/division/DivisionBadge'
+import { pictureName } from '@/lib/viewTransition'
 
 /** Picture, name and figures of a car, at the top of its profile. */
 export default function CarIdentity({ car }) {
   const { t } = useTranslation('cars')
-  const color = carColor(car)
 
   return (
     <div className="flex items-center gap-3" data-testid="car-identity">
-      <CarPicture car={car} className="size-10" />
+      <CarPicture car={car} className="size-10" transitionName={pictureName('car', car.id)} />
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-black text-lg" style={{ color }}>
+          <h1 className="font-black text-lg">
             {car.brand} {car.model}
           </h1>
           {car.year && <span className="text-sm text-muted-foreground">{car.year}</span>}

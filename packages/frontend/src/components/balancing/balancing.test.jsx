@@ -192,6 +192,17 @@ describe('BalancingStandings', () => {
     expect(screen.getByText('No standings available')).toBeInTheDocument()
   })
 
+  test('no timed lap yet: the cars of the session already stand there, dashes in place of their rank and time', () => {
+    const lineup = [{ car: { id: 'c1', brand: 'Ford', model: 'GT' } }, { car: undefined }]
+    render(<BalancingStandings standings={[]} lineup={lineup} />)
+    expect(screen.queryByText('No standings available')).not.toBeInTheDocument()
+    const rows = screen.getAllByTestId('balancing-standing')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toHaveTextContent('–')
+    expect(rows[0]).toHaveTextContent('Ford GT')
+    expect(rows[0]).toHaveTextContent('--')
+  })
+
   test('the fastest car first, the gap behind it, the figures it has, its sessions from the second', () => {
     const standings = [
       {

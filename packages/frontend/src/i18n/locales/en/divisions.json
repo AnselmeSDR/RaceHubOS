@@ -9,6 +9,8 @@
   "emptyCategoriesHint": "Sort your cars: GT3, DTM, Formula…",
   "add": "Add",
   "remove": "Remove {{name}}",
+  "more_one": "{{count}} more",
+  "more_other": "{{count}} more",
   "noneYet": "None yet: create some in Divisions.",
   "pickerHint": "None, one or several.",
   "noDivision": "No division",
@@ -21,9 +23,7 @@
     "rank": "Rank {{n}}",
     "order": "Order {{n}}",
     "noDrivers": "No drivers",
-    "noCars": "No cars",
-    "more_one": "+{{count}} more",
-    "more_other": "+{{count}} more"
+    "noCars": "No cars"
   },
   "form": {
     "createDivision": "New division",
@@ -53,8 +53,7 @@
     "notFound": "Division not found",
     "since": "Member since",
     "addDriver": "Add a driver…",
-    "addCar": "Add a car…",
-    "noChampionships": "No championship is run for this division."
+    "addCar": "Add a car…"
   },
   "picker": {
     "drivers_one": "{{count}} driver",

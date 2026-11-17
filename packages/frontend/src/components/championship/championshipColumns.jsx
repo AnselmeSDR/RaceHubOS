@@ -1,22 +1,19 @@
-import { Clock, Flag, MapPin, Trophy } from 'lucide-react'
+import { MapPin, Trophy } from 'lucide-react'
 import { ChampionshipStatus, SessionType } from '@racehubos/shared'
+import { FIGURE } from '@/components/crud/figure'
 import { filteredColumn } from '@/components/crud/filteredColumn'
 import ChampionshipStatusBadge from './ChampionshipStatusBadge'
 
 const countOf = (type) => (row) => row.sessions?.filter((s) => s.type === type).length || 0
 
-// A count of sessions with its icon
-function countColumn(id, header, Icon, count) {
+// A count of sessions
+function countColumn(id, header, count) {
   return {
     id,
     accessorFn: count,
     header,
-    cell: ({ row }) => (
-      <span className="flex items-center gap-1.5 text-muted-foreground">
-        <Icon className={`w-4 h-4 ${id === 'qualifs' ? 'text-blue-500' : 'text-green-500'}`} />
-        {count(row.original)}
-      </span>
-    ),
+    meta: FIGURE,
+    cell: ({ row }) => <span className="text-muted-foreground">{count(row.original)}</span>,
   }
 }
 
@@ -33,7 +30,7 @@ export function championshipColumns(t, { tracks }) {
       header: t('columns.name'),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="size-7 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
             <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
           </div>
           <span className="font-semibold">{row.original.name}</span>
@@ -52,8 +49,8 @@ export function championshipColumns(t, { tracks }) {
         </span>
       )
     ),
-    countColumn('qualifs', t('columns.qualifs'), Clock, countOf(SessionType.QUALIF)),
-    countColumn('races', t('columns.races'), Flag, countOf(SessionType.RACE)),
+    countColumn('qualifs', t('columns.qualifs'), countOf(SessionType.QUALIF)),
+    countColumn('races', t('columns.races'), countOf(SessionType.RACE)),
     filteredColumn(
       'status',
       'status',

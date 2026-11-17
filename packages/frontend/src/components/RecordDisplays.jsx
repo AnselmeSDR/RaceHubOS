@@ -1,135 +1,93 @@
 import { useTranslation } from 'react-i18next'
-import { Trophy, Clock, MapPin } from 'lucide-react'
+import { Clock } from 'lucide-react'
+import { SessionType } from '@racehubos/shared'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { sessionBadgeClass } from '@/lib/colors'
-import LapTime from './race/LapTime'
-import DriverAvatar from '@/components/driver/DriverAvatar'
-import { SessionType, sessionTypeKey } from '@racehubos/shared'
 import CarPicture from '@/components/car/CarPicture'
+import DriverAvatar from '@/components/driver/DriverAvatar'
+import { rankClass } from '@/components/profile/podium'
+import SessionTypeBadge from '@/components/profile/SessionTypeBadge'
+import { GOLD, GRID_HEAD, GRID_LIST, GRID_ROW } from '@/lib/gridList'
+import LapTime from './race/LapTime'
 
-export function RecordItem({
-  position,
-  lapTime,
-  driver,
-  car,
-  track,
-  sessionType,
-  showDriverAvatar = true,
-  showCarAvatar = true,
-  showCar = true,
-  onClick,
-}) {
-  const { t } = useTranslation('common')
-  const isTopThree = position <= 3
-  const sessionColor = sessionBadgeClass(sessionType)
-  const sessionLabel = t(sessionTypeKey(sessionType || SessionType.PRACTICE))
-
-  return (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-        onClick ? 'cursor-pointer' : ''
-      } hover:bg-muted ${
-        position === 1
-          ? 'bg-gradient-to-r from-yellow-500/15 to-transparent border-l-4 border-yellow-400'
-          : position === 2
-            ? 'bg-gradient-to-r from-gray-400/10 to-transparent border-l-4 border-gray-300'
-            : position === 3
-              ? 'bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-400'
-              : ''
-      }`}
-    >
-      {/* Position */}
-      <span
-        className={`w-7 h-7 flex items-center justify-center rounded-full font-black text-sm flex-shrink-0 ${
-          position === 1
-            ? 'bg-yellow-400 text-yellow-950'
-            : position === 2
-              ? 'bg-gray-300 text-gray-800'
-              : position === 3
-                ? 'bg-orange-400 text-orange-950'
-                : 'text-muted-foreground'
-        }`}
-      >
-        {position === 1 ? <Trophy className="size-3.5" /> : position}
-      </span>
-
-      {/* Pictures, side by side: the layer has no ring to overlap them */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {showDriverAvatar && driver && <DriverAvatar driver={{ name: '?', ...driver }} alt={driver.name} />}
-        {showCarAvatar && car && <CarPicture car={car} />}
-      </div>
-
-      {/* Info */}
-      <div className="@container flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-foreground truncate">{driver?.name || t('unknown')}</span>
-          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${sessionColor}`}>
-            {sessionLabel}
-          </Badge>
-        </div>
-        {/* Car and track side by side when there is room, stacked otherwise */}
-        <div className="flex flex-col gap-0.5 @sm:flex-row @sm:items-center @sm:gap-3 text-xs text-muted-foreground mt-0.5">
-          {showCar && car && (
-            <span className="flex items-center gap-1 min-w-0">
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: car.color || '#6B7280' }}
-              />
-              <span className="truncate">
-                {car.brand} {car.model}
-              </span>
-            </span>
-          )}
-          {track && (
-            <span className="flex items-center gap-1 min-w-0">
-              <MapPin className="size-3 flex-shrink-0" />
-              <span className="truncate">{track.name}</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Lap time */}
-      <div className="flex-shrink-0">
-        <LapTime time={lapTime} size={isTopThree ? 'lg' : 'md'} highlight={position === 1} />
-      </div>
-    </div>
-  )
+const CUT = 'truncate'
+const COLUMNS = {
+  driver: { width: 'minmax(0,auto)', label: 'glossary:driver' },
+  car: { width: 'minmax(0,auto)', label: 'glossary:car' },
+  track: { width: 'minmax(0,auto)', label: 'glossary:track' },
+}
+const CELLS = {
+  driver: ({ driver }, t) => (
+    <>
+      {driver && <DriverAvatar driver={{ name: '?', ...driver }} className="size-6" />}
+      <span className={`${CUT} font-medium`}>{driver?.name || t('unknown')}</span>
+    </>
+  ),
+  car: ({ car }) =>
+    car && (
+      <>
+        <CarPicture car={car} alt="" className="size-6" />
+        <span className={CUT}>
+          {car.brand} {car.model}
+        </span>
+      </>
+    ),
+  track: ({ track }) => <span className={`${CUT} text-muted-foreground`}>{track?.name}</span>,
 }
 
-export function RecordsList({
-  title,
-  records,
-  emptyMessage,
-  showDriverAvatar = true,
-  showCarAvatar = true,
-  showCar = true,
-  showTrack = true,
-}) {
+/**
+ * The best laps, one line each: rank, driver, car, track, kind of session and time. A profile leaves out
+ * its own column with `hide` (`driver`, `car` or `track`): it would repeat itself on every line.
+ */
+export function RecordsList({ title, records, emptyMessage, hide }) {
   const { t } = useTranslation('common')
+  const columns = Object.keys(COLUMNS).filter((key) => key !== hide)
   return (
     <Card>
       <CardContent className="p-0">
         <div className="px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold">{title || t('topRecords')}</h3>
         </div>
-        {records && records.length > 0 ? (
-          <div className="p-2 space-y-0.5">
+        {records?.length > 0 ? (
+          <div
+            role="table"
+            className={GRID_LIST}
+            style={{
+              gridTemplateColumns: `max-content ${columns.map((key) => COLUMNS[key].width).join(' ')} max-content max-content`,
+            }}
+          >
+            <div role="row" className={GRID_HEAD}>
+              <span role="columnheader">#</span>
+              {columns.map((key) => (
+                <span key={key} role="columnheader">
+                  {t(COLUMNS[key].label, { count: 1 })}
+                </span>
+              ))}
+              <span role="columnheader">{t('type')}</span>
+              <span role="columnheader" className="text-right">
+                {t('time')}
+              </span>
+            </div>
             {records.map((record, index) => (
-              <RecordItem
-                key={record.id}
-                position={index + 1}
-                lapTime={record.lapTime}
-                driver={record.driver}
-                car={record.car}
-                track={showTrack ? record.track : null}
-                sessionType={record.sessionType}
-                showDriverAvatar={showDriverAvatar}
-                showCarAvatar={showCarAvatar}
-                showCar={showCar}
-              />
+              <div key={record.id} role="row" data-testid="record" className={GRID_ROW}>
+                <span role="cell" className={`font-bold tabular-nums ${rankClass(index + 1)}`}>
+                  {index + 1}
+                </span>
+                {columns.map((key) => (
+                  <span key={key} role="cell" className="flex min-w-0 items-center gap-2">
+                    {CELLS[key](record, t)}
+                  </span>
+                ))}
+                <span role="cell">
+                  <SessionTypeBadge type={record.sessionType || SessionType.PRACTICE} />
+                </span>
+                <span role="cell" className="text-right">
+                  <LapTime
+                    time={record.lapTime}
+                    size="sm"
+                    className={`font-semibold ${index === 0 ? GOLD : 'text-foreground'}`}
+                  />
+                </span>
+              </div>
             ))}
           </div>
         ) : (

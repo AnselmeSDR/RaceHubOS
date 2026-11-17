@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react'
 import { CHAMPIONSHIP_STATUSES } from '@racehubos/shared'
@@ -17,9 +17,11 @@ const EMPTY_FILTERS = { trackId: [], status: [] }
 export default function Championships() {
   const { t } = useTranslation('championships')
   const navigate = useNavigate()
+  const location = useLocation()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [tracks, setTracks] = useState([])
-  const [creating, setCreating] = useState(false)
+  // The home page sends here to create one: the wizard opens at once
+  const [creating, setCreating] = useState(() => !!location.state?.create)
   const list = usePagedList('/api/championships', filterParams(filters))
 
   useEffect(() => {

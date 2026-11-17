@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { io } from 'socket.io-client'
-import { AlertTriangle, ArrowUpCircle, CheckCircle, Download, Loader2, RefreshCw } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { AlertTriangle, ArrowUpCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Modal, { ModalFooter } from '@/components/ui/Modal'
 
@@ -116,106 +115,96 @@ export default function UpdateSection() {
   }, [t])
 
   return (
-    <Card data-testid="settings-update">
-      <CardContent>
-        <h2 className="font-semibold mb-3 flex items-center gap-2">
-          <Download className="size-4 text-blue-500" />
-          {t('update.title')}
-        </h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+    <div data-testid="settings-update" className="border-t border-border px-4 py-2.5">
+      <div className="space-y-3">
+        <div className="flex min-h-7 items-center justify-between gap-4">
+          <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
+            <span className="font-medium">{t('update.currentVersion')}</span>
+            <span className="font-mono font-bold">{updateInfo?.currentVersion || '...'}</span>
+            {updateInfo && !updateInfo.updateAvailable && !updateInfo.error && !updating && (
+              <span className="text-xs text-green-600 dark:text-green-400">{t('update.upToDate')}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!updating && (
+              <Button variant="outline" size="sm" onClick={checkUpdate} disabled={checking}>
+                {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                {t('update.check')}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {updateInfo?.updateAvailable && !updating && (
+          <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
             <div>
-              <p className="text-sm text-muted-foreground">{t('update.currentVersion')}</p>
-              <p className="font-mono font-bold">{updateInfo?.currentVersion || '...'}</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {t('update.newVersionAvailable', { version: updateInfo.latestVersion })}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              {!updating && (
-                <Button variant="outline" size="sm" onClick={checkUpdate} disabled={checking}>
-                  {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-                  {t('update.check')}
+            <Button size="sm" onClick={() => applyUpdate()}>
+              <ArrowUpCircle className="size-4" />
+              {t('update.updateButton')}
+            </Button>
+          </div>
+        )}
+
+        {updateInfo?.error && !updating && <p className="text-sm text-destructive">{updateInfo.error}</p>}
+
+        {(updating || updateProgress?.status === 'error') && updateProgress && (
+          <div className="space-y-2">
+            <div
+              className={`flex items-center gap-2 ${updateProgress.status === 'error' ? 'p-3 bg-destructive/10 rounded-lg border border-destructive/30' : ''}`}
+            >
+              {updateProgress.status === 'running' && <Loader2 className="size-4 animate-spin text-blue-500" />}
+              {updateProgress.status === 'complete' && <CheckCircle className="size-4 text-green-500" />}
+              {updateProgress.status === 'error' && <span className="text-destructive font-bold">✕</span>}
+              <p className={`text-sm flex-1 ${updateProgress.status === 'error' ? 'text-destructive' : ''}`}>
+                {updateProgress.message}
+              </p>
+              {updateProgress.status === 'error' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setUpdateProgress(null)
+                    setUpdating(false)
+                  }}
+                >
+                  {t('common:close')}
                 </Button>
               )}
             </div>
+            {updateProgress.status === 'running' && (
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-500 rounded-full"
+                  style={{ width: `${(updateProgress.step / 7) * 100}%` }}
+                />
+              </div>
+            )}
+            {updateProgress.status === 'complete' && (
+              <p className="text-xs text-muted-foreground">{t('update.restarting')}</p>
+            )}
           </div>
-
-          {updateInfo?.updateAvailable && !updating && (
-            <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  {t('update.newVersionAvailable', { version: updateInfo.latestVersion })}
-                </p>
-              </div>
-              <Button size="sm" onClick={() => applyUpdate()}>
-                <ArrowUpCircle className="size-4" />
-                {t('update.updateButton')}
-              </Button>
-            </div>
-          )}
-
-          {updateInfo && !updateInfo.updateAvailable && !updateInfo.error && !updating && (
-            <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-              <CheckCircle className="size-4" />
-              {t('update.upToDate')}
-            </p>
-          )}
-
-          {updateInfo?.error && !updating && <p className="text-sm text-destructive">{updateInfo.error}</p>}
-
-          {(updating || updateProgress?.status === 'error') && updateProgress && (
-            <div className="space-y-2">
-              <div
-                className={`flex items-center gap-2 ${updateProgress.status === 'error' ? 'p-3 bg-destructive/10 rounded-lg border border-destructive/30' : ''}`}
-              >
-                {updateProgress.status === 'running' && <Loader2 className="size-4 animate-spin text-blue-500" />}
-                {updateProgress.status === 'complete' && <CheckCircle className="size-4 text-green-500" />}
-                {updateProgress.status === 'error' && <span className="text-destructive font-bold">✕</span>}
-                <p className={`text-sm flex-1 ${updateProgress.status === 'error' ? 'text-destructive' : ''}`}>
-                  {updateProgress.message}
-                </p>
-                {updateProgress.status === 'error' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setUpdateProgress(null)
-                      setUpdating(false)
-                    }}
-                  >
-                    {t('common:close')}
-                  </Button>
-                )}
-              </div>
-              {updateProgress.status === 'running' && (
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 transition-all duration-500 rounded-full"
-                    style={{ width: `${(updateProgress.step / 7) * 100}%` }}
-                  />
-                </div>
-              )}
-              {updateProgress.status === 'complete' && (
-                <p className="text-xs text-muted-foreground">{t('update.restarting')}</p>
-              )}
-            </div>
-          )}
-        </div>
-        <Modal
-          open={confirmReplace}
-          onClose={() => setConfirmReplace(false)}
-          title={t('update.diverged.title')}
-          icon={<AlertTriangle className="size-5 text-amber-500" />}
-        >
-          <p className="text-sm">{t('update.diverged.message')}</p>
-          <ModalFooter>
-            <Button variant="outline" onClick={() => setConfirmReplace(false)}>
-              {t('common:cancel')}
-            </Button>
-            <Button variant="destructive" onClick={() => applyUpdate(true)}>
-              {t('update.diverged.confirm')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      <Modal
+        open={confirmReplace}
+        onClose={() => setConfirmReplace(false)}
+        title={t('update.diverged.title')}
+        icon={<AlertTriangle className="size-5 text-amber-500" />}
+      >
+        <p className="text-sm">{t('update.diverged.message')}</p>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setConfirmReplace(false)}>
+            {t('common:cancel')}
+          </Button>
+          <Button variant="destructive" onClick={() => applyUpdate(true)}>
+            {t('update.diverged.confirm')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
   )
 }

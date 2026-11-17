@@ -1,4 +1,6 @@
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { Clock, Flag, FlaskConical } from 'lucide-react'
 import { STANDARD_SESSION_TYPES, SessionType, sessionTypeFullKey, sessionTypeKey } from '@racehubos/shared'
 
@@ -23,6 +25,7 @@ const TAB_STYLE = {
 // One tab per session type; the short label when the panel is narrow
 export default function StandingsTabBar({ activeTab, onTabChange }) {
   const { t } = useTranslation('championships')
+  const underline = useId()
   return (
     <div role="tablist" className="flex border-b border-border">
       {STANDARD_SESSION_TYPES.map((id) => {
@@ -36,10 +39,18 @@ export default function StandingsTabBar({ activeTab, onTabChange }) {
             aria-selected={isActive}
             onClick={() => onTabChange(id)}
             title={label}
-            className={`flex-1 min-w-0 px-2 py-3 text-xs font-semibold whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
-              isActive ? `${active} border-b-2 bg-muted/50` : `${idle} hover:bg-muted`
+            className={`relative flex-1 min-w-0 px-2 py-3 text-xs font-semibold whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
+              isActive ? `${active} bg-muted/50` : `${idle} hover:bg-muted`
             }`}
           >
+            {/* One line for the bar: it glides to the picked tab and takes its colour */}
+            {isActive && (
+              <motion.span
+                layoutId={underline}
+                transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+                className="absolute inset-x-0 bottom-0 h-0.5 bg-current"
+              />
+            )}
             <Icon className="hidden @xs:block w-4 h-4 shrink-0" />
             <span className="hidden @md:inline truncate">{label}</span>
             <span className="@md:hidden truncate">{t(sessionTypeKey(id))}</span>

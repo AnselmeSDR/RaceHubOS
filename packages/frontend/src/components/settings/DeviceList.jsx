@@ -1,22 +1,34 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle, Radio, RefreshCw, Trash2, Wifi } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import { useDevice, SIMULATOR_ADDRESS } from '@/context/DeviceContext'
+import { offeredDevices } from '@/lib/devices'
 import SettingSwitch from './SettingSwitch'
+import { SettingRow } from './SettingsPanel'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 /**
- * Known and scanned devices, to connect, forget or scan for; the simulator only in admin mode.
+ * The rows of the Control Unit panel: known and scanned devices, to connect, disconnect or forget,
+ * the automatic connection, and the search for another unit; the simulator only in admin mode.
  * `onLog` receives each step for the connection log.
  */
 export default function DeviceList({ onLog }) {
   const { t } = useTranslation('settings')
-  const { connected, deviceAddress, devices, scanResults, scanning, connecting, scan, connect, removeDevice } =
-    useDevice()
+  const {
+    connected,
+    deviceAddress,
+    devices,
+    scanResults,
+    scanning,
+    connecting,
+    scan,
+    connect,
+    disconnect,
+    removeDevice,
+  } = useDevice()
   const { isAdmin } = useApp()
   const [autoConnect, setAutoConnect] = useState(false)
 
@@ -60,86 +72,63 @@ export default function DeviceList({ onLog }) {
     )
   }
 
-  const allDevices = [...devices].filter((d) => isAdmin || d.type !== 'simulator')
-  for (const scanDevice of scanResults) {
-    if (!allDevices.find((d) => d.address === scanDevice.address)) {
-      if (!isAdmin && scanDevice.type === 'simulator') continue
-      allDevices.push({ ...scanDevice, isNew: true })
-    }
-  }
+  const allDevices = offeredDevices(devices, scanResults, isAdmin)
 
   return (
-    <Card data-testid="settings-devices">
-      <CardContent className="">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold flex items-center gap-2">
-            <Wifi className="size-4 text-blue-500" />
-            {t('devices.title')}
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {autoConnect ? t('devices.auto') : t('devices.manual')}
-            </span>
-            <SettingSwitch
-              on={autoConnect}
-              onToggle={() => handleAutoConnectChange(!autoConnect)}
-              color="bg-blue-600"
-              label={t('devices.auto')}
-            />
-          </div>
-        </div>
+    <div data-testid="settings-devices">
+      {allDevices.map((device) => {
+        const current = connected && deviceAddress === device.address
+        return (
+          <SettingRow
+            key={device.id || device.address}
+            testId="settings-device"
+            label={
+              <>
+                {device.name}
+                {device.isNew && <span className="ml-2 text-xs text-blue-500">{t('devices.new')}</span>}
+              </>
+            }
+            description={<span className="font-mono">{device.address}</span>}
+          >
+            {current ? (
+              <Button variant="outline" size="sm" onClick={disconnect}>
+                {t('connection.disconnect')}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleConnect(device.address)}
+                disabled={connecting || connected}
+              >
+                {connecting ? t('devices.connecting') : t('devices.connect')}
+              </Button>
+            )}
+            {device.type !== 'simulator' && !current && (
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => handleDelete(device)}>
+                {t('devices.forget')}
+              </Button>
+            )}
+          </SettingRow>
+        )
+      })}
 
-        <div className="space-y-2">
-          {allDevices.map((device) => (
-            <div
-              key={device.id || device.address}
-              data-testid="settings-device"
-              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                connected && deviceAddress === device.address
-                  ? 'border-green-500/50 bg-green-500/10'
-                  : device.isNew
-                    ? 'border-blue-500/50 bg-blue-500/10'
-                    : 'border-border hover:bg-muted'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Radio className={`size-4 ${device.type === 'simulator' ? 'text-purple-500' : 'text-blue-500'}`} />
-                <div>
-                  <p className="font-medium text-sm">
-                    {device.name}
-                    {device.isNew && <span className="ml-2 text-xs text-blue-500">{t('devices.new')}</span>}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{device.address}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {connected && deviceAddress === device.address ? (
-                  <CheckCircle className="size-5 text-green-500" />
-                ) : (
-                  <Button size="sm" onClick={() => handleConnect(device.address)} disabled={connecting || connected}>
-                    {connecting ? t('devices.connecting') : t('devices.connect')}
-                  </Button>
-                )}
-                {device.type !== 'simulator' && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => handleDelete(device)}
-                    title={t('common:delete')}
-                  >
-                    <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+      <SettingRow label={t('devices.autoConnect')}>
+        <SettingSwitch
+          on={autoConnect}
+          onToggle={() => handleAutoConnectChange(!autoConnect)}
+          label={t('devices.autoConnect')}
+        />
+      </SettingRow>
 
-        <Button variant="outline" className="w-full mt-3" onClick={handleScan} disabled={scanning || connected}>
-          {scanning && <RefreshCw className="size-4 animate-spin" />}
-          {scanning ? t('devices.scanning') : t('devices.scan')}
-        </Button>
-      </CardContent>
-    </Card>
+      {!connected && (
+        <SettingRow label={<span className="font-normal text-muted-foreground">{t('devices.other')}</span>}>
+          <Button variant="outline" size="sm" onClick={handleScan} disabled={scanning}>
+            {scanning && <RefreshCw className="size-4 animate-spin" />}
+            {scanning ? t('devices.scanning') : t('devices.scan')}
+          </Button>
+        </SettingRow>
+      )}
+    </div>
   )
 }

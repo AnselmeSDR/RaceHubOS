@@ -159,6 +159,8 @@ describe('the session', () => {
   test('the panel gets the drivers, cars and controls of the open session', async () => {
     await opened()
     expect(received.SessionSection).toMatchObject({ session: draft, sessions: [], drivers: ['d'], cars: ['c'] })
+    // The cars of the session, for the standings to show while none has a timed lap
+    expect(received.BalancingStandings.lineup).toEqual([{ car: {} }])
     expect(received.SessionSection.onTriggerCuStart).toBe(device.startRace)
     await act(() => received.SessionSection.onStart())
     await act(() => received.SessionSection.onPause())

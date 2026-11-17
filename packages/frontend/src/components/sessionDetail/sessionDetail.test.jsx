@@ -8,6 +8,7 @@ import SessionDnfList from './SessionDnfList'
 import SessionLapHistory from './SessionLapHistory'
 import SessionPodiumCard from './SessionPodiumCard'
 import SessionResults from './SessionResults'
+import SessionSummary from './SessionSummary'
 
 const { received, spy } = vi.hoisted(() => {
   const received = {}
@@ -83,26 +84,49 @@ describe('SessionDetailHeader', () => {
 })
 
 describe('SessionPodiumCard', () => {
-  test('the podium of a finished session, with how it ended', () => {
-    render(<SessionPodiumCard session={{ ...finishedRace, finishingAt: '2026-03-01T14:35:00Z' }} />)
-    expect(received.Podium).toEqual({
-      drivers: finishedRace.drivers,
-      sessionType: SessionType.RACE,
-      stats: { duration: 300, maxDuration: 300000, maxLaps: 20, gracePeriod: 30000, gracePeriodUsed: true },
-    })
-  })
+  const ben = { id: 'sd2', controller: 1, driver: { name: 'Ben' }, bestLapTime: 7100 }
+  const race = { ...finishedRace, drivers: [...finishedRace.drivers, ben] }
 
-  test('no duration when it never started', () => {
-    render(<SessionPodiumCard session={{ ...finishedRace, startedAt: null }} />)
-    expect(received.Podium.stats).toMatchObject({ duration: null, gracePeriodUsed: false })
+  test('the podium of a finished race of at least two drivers; how it ended is not its business', () => {
+    render(<SessionPodiumCard session={race} />)
+    expect(received.Podium).toEqual({ drivers: race.drivers, sessionType: SessionType.RACE })
   })
 
   test.each([
-    ['an unfinished session', { status: SessionStatus.ACTIVE }],
+    ['an unfinished race', { status: SessionStatus.ACTIVE }],
+    ['a practice', { type: SessionType.PRACTICE }],
+    ['a qualifying', { type: SessionType.QUALIF }],
     ['a balancing session', { type: SessionType.BALANCING }],
-    ['a session without drivers', { drivers: [] }],
+    ['a race of one driver', { drivers: finishedRace.drivers }],
+    ['a race without drivers', { drivers: [] }],
   ])('none for %s', (_, change) => {
-    const { container } = render(<SessionPodiumCard session={{ ...finishedRace, ...change }} />)
+    const { container } = render(<SessionPodiumCard session={{ ...race, ...change }} />)
+    expect(container).toBeEmptyDOMElement()
+  })
+})
+
+describe('SessionSummary', () => {
+  const figures = () => [...screen.getByTestId('session-summary').children].map((figure) => figure.textContent)
+
+  test("the leader's laps, the duration against the limit of a race, the fastest lap and who set it", () => {
+    const drivers = [
+      { id: 'sd1', driver: ana, totalLaps: 12, bestLapTime: 7100 },
+      { id: 'sd2', driver: { name: 'Ben' }, totalLaps: 11, bestLapTime: 7000 },
+    ]
+    render(<SessionSummary session={{ ...finishedRace, drivers }} />)
+    expect(figures()).toEqual(['12Laps', '5:00 / 5:00Duration', '7.000fastest lap, Ben'])
+  })
+
+  test('a practice of one driver: no limit beside the duration, nobody to name; only what is known', () => {
+    const practice = { ...finishedRace, type: SessionType.PRACTICE }
+    const { unmount } = render(
+      <SessionSummary
+        session={{ ...practice, drivers: [{ id: 'sd1', driver: ana, totalLaps: 1, bestLapTime: 7000 }] }}
+      />
+    )
+    expect(figures()).toEqual(['1Lap', '5:00Duration', '7.000fastest lap'])
+    unmount()
+    const { container } = render(<SessionSummary session={{ ...practice, startedAt: null, drivers: [] }} />)
     expect(container).toBeEmptyDOMElement()
   })
 })
@@ -163,28 +187,54 @@ describe('SessionResults', () => {
 })
 
 describe('SessionLapHistory', () => {
+  const ben = {
+    id: 'sd2',
+    controller: 1,
+    driver: { name: 'Ben BOU' },
+    totalLaps: 2,
+    totalTime: 15000,
+    bestLapTime: 7100,
+  }
+  const lap = (controller, lapNumber, lapTime) => ({ id: `${controller}-${lapNumber}`, controller, lapNumber, lapTime })
   const session = {
     ...finishedRace,
-    laps: [
-      { id: 'l1', controller: 0, lapNumber: 1, lapTime: 7000 },
-      { id: 'l2', controller: 5, lapNumber: 1, lapTime: 9000 },
-    ],
+    // Ben finishes first: his column comes first
+    drivers: [{ ...finishedRace.drivers[0], totalLaps: 1, totalTime: 7000 }, ben],
+    laps: [lap(0, 1, 7000), lap(1, 1, 7900), lap(1, 2, 7100), lap(5, 1, 9000)],
   }
+  const cells = (row) =>
+    within(row)
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent)
 
-  test('every lap with its driver and car, the fastest highlighted', () => {
+  test('a line per lap and a column per driver in finishing order, two drivers compared on the same lap', () => {
     render(<SessionLapHistory session={session} />)
-    expect(screen.getByText('Lap history (2)')).toBeInTheDocument()
-    const [, first, second] = screen.getAllByRole('row')
-    expect(first).toHaveClass('bg-purple-500/10')
-    expect(within(first).getByText('Ana')).toBeInTheDocument()
+    expect(screen.getByText('Lap history (4)')).toBeInTheDocument()
+    expect(screen.getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Lap', 'BBOU', 'AAna', '?Ctrl 6'])
+    const [first, second] = screen.getAllByTestId('lap')
+    expect(cells(first)).toEqual(['1', '7.900', '7.000', '9.000'])
+    // Ana and the unknown controller ran one lap only
+    expect(cells(second)).toEqual(['2', '7.100', '', ''])
     // The driver's mark is the common picture layer, its initial on its colour
-    expect(within(first).getByText('A').parentElement).toHaveClass('rounded-[20%]')
-    expect(within(first).getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FF0000' })
-    expect(first).toHaveTextContent('Ferrari 499P')
-    // A lap of an unknown controller
-    expect(second).not.toHaveClass('bg-purple-500/10')
-    expect(within(second).getByText('Ctrl 6')).toBeInTheDocument()
-    expect(within(second).getByText('?').parentElement).toHaveStyle({ backgroundColor: '#6B7280' })
+    expect(screen.getByText('A').parentElement).toHaveStyle({ backgroundColor: '#FF0000' })
+    expect(screen.getByText('?').parentElement).toHaveStyle({ backgroundColor: '#6B7280' })
+  })
+
+  test("each driver's best lap in gold, the fastest of the session in purple", () => {
+    render(<SessionLapHistory session={session} />)
+    expect(screen.getByText('7.000')).toHaveClass('bg-purple-500/20')
+    expect(screen.getByText('7.100')).toHaveClass('text-yellow-600')
+    expect(screen.getByText('9.000')).toHaveClass('text-yellow-600')
+    expect(screen.getByText('7.900')).not.toHaveClass('text-yellow-600', 'bg-purple-500/20')
+  })
+
+  test('a single driver: the laps flow in columns, without a driver nor a car repeated, the best in gold', () => {
+    const solo = { ...session, drivers: [ben], laps: [lap(1, 1, 7900), lap(1, 2, 7100)] }
+    render(<SessionLapHistory session={solo} />)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId('lap').map((line) => line.textContent)).toEqual(['17.900', '27.100'])
+    expect(screen.queryByText('BOU')).not.toBeInTheDocument()
+    expect(screen.getByText('7.100')).toHaveClass('text-yellow-600')
   })
 
   test('none without laps, nor for a balancing session', () => {

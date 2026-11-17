@@ -59,7 +59,7 @@ export default function Addons() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="installed" className="space-y-4">
-          <InstalledAddons addons={data.addons} busy={busy} onAction={run} />
+          <InstalledAddons addons={data.addons} stacks={data.overrides.stacks} busy={busy} onAction={run} />
           <OverrideStacks overrides={data.overrides} />
         </TabsContent>
         <TabsContent value="market">

@@ -47,6 +47,7 @@
     "noLapData": "No lap data",
     "noParticipants": "No participants",
     "lapHistory": "Lap history ({{count}})",
+    "bestLap": "fastest lap",
     "time": "Time",
     "deleteMessage": "Delete this session?"
   }
