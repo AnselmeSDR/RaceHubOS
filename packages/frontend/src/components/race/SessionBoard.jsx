@@ -1,11 +1,13 @@
 import { SessionStatus, SessionType } from '@racehubos/shared'
+import LapAnalysis from '@/components/lapAnalysis/LapAnalysis'
 import { leaderboardSortBy } from '@/lib/leaderboardEntries'
 import SessionLeaderboard from './SessionLeaderboard'
 import StartingGrid from './StartingGrid'
 
 /**
- * A session's starting grid before its first lap, its leaderboard after. Practice is sorted as the page
- * chose (`practiceSortBy`, changed through `onPracticeSortChange`), qualifying by best lap, a race in race order.
+ * A session's starting grid before its first lap; its leaderboard after, then the analysis of its laps.
+ * Practice is sorted as the page chose (`practiceSortBy`, changed through `onPracticeSortChange`),
+ * qualifying by best lap, a race in race order.
  */
 export default function SessionBoard({ session, entries, maxLaps, expanded, practiceSortBy, onPracticeSortChange }) {
   if (!session) return null
@@ -13,13 +15,16 @@ export default function SessionBoard({ session, entries, maxLaps, expanded, prac
   if (maxLaps === 0 && session.status !== SessionStatus.FINISHED) return <StartingGrid entries={entries} />
 
   return (
-    <SessionLeaderboard
-      entries={entries}
-      expanded={expanded}
-      sortBy={leaderboardSortBy(session.type, practiceSortBy)}
-      onSortChange={session.type === SessionType.PRACTICE ? onPracticeSortChange : undefined}
-      sessionType={session.type}
-      sessionStatus={session.status}
-    />
+    <>
+      <SessionLeaderboard
+        entries={entries}
+        expanded={expanded}
+        sortBy={leaderboardSortBy(session.type, practiceSortBy)}
+        onSortChange={session.type === SessionType.PRACTICE ? onPracticeSortChange : undefined}
+        sessionType={session.type}
+        sessionStatus={session.status}
+      />
+      <LapAnalysis entries={entries} sessionType={session.type} />
+    </>
   )
 }

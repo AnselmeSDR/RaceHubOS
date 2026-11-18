@@ -8,10 +8,11 @@ import SessionDnfList from '../components/sessionDetail/SessionDnfList'
 import SessionLapHistory from '../components/sessionDetail/SessionLapHistory'
 import SessionPodiumCard from '../components/sessionDetail/SessionPodiumCard'
 import SessionResults from '../components/sessionDetail/SessionResults'
+import LapAnalysis from '../components/lapAnalysis/LapAnalysis'
 import { deleteSession, getData } from '../lib/sessionApi'
 import { sessionEntries } from '../lib/sessionResults'
 
-/** A stored session: its podium, leaderboard (or balancing chart) and lap history. */
+/** A stored session: its podium, leaderboard (or balancing chart), the analysis of its laps and their history. */
 export default function SessionDetail() {
   const { t } = useTranslation('sessions')
   const { id } = useParams()
@@ -64,6 +65,7 @@ export default function SessionDetail() {
         <SessionPodiumCard session={session} />
         <SessionDnfList entries={entries} />
         <SessionResults session={session} entries={entries} />
+        <LapAnalysis entries={entries} sessionType={session.type} />
         <SessionLapHistory session={session} />
       </div>
     </div>

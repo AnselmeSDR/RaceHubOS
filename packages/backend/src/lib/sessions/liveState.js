@@ -21,7 +21,7 @@ export function liveDriverOf(entry) {
   };
 }
 
-/** The laps of each controller, in order (`controller → [{ lapNumber, lapTime }]`), for a balancing chart. */
+/** The laps of each controller, in order (`controller → [{ lapNumber, lapTime }]`), for the charts. */
 export function lapHistoryOf(laps) {
   const history = new Map();
   for (const lap of [...laps].sort((a, b) => a.lapNumber - b.lapNumber)) {

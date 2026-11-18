@@ -21,6 +21,7 @@ vi.mock('@/components/sessionDetail/SessionPodiumCard', () => spy('SessionPodium
 vi.mock('@/components/sessionDetail/SessionDnfList', () => spy('SessionDnfList'))
 vi.mock('@/components/sessionDetail/SessionResults', () => spy('SessionResults'))
 vi.mock('@/components/sessionDetail/SessionLapHistory', () => spy('SessionLapHistory'))
+vi.mock('@/components/lapAnalysis/LapAnalysis', () => spy('SessionLapAnalysis'))
 
 const session = {
   id: 's1',
@@ -65,6 +66,7 @@ test('a spinner, then every block with the whole session and its ranked entries'
     'SessionPodiumCard',
     'SessionDnfList',
     'SessionResults',
+    'SessionLapAnalysis',
     'SessionLapHistory',
   ])
   for (const name of ['SessionDetailHeader', 'SessionPodiumCard', 'SessionResults', 'SessionLapHistory']) {
@@ -72,6 +74,8 @@ test('a spinner, then every block with the whole session and its ranked entries'
   }
   expect(received.SessionResults.entries.map((e) => e.id)).toEqual(['a', 'b'])
   expect(received.SessionDnfList.entries).toBe(received.SessionResults.entries)
+  // The lap analysis sits between the leaderboard and the laps, on the same entries
+  expect(received.SessionLapAnalysis).toEqual({ entries: received.SessionResults.entries, sessionType: session.type })
 })
 
 test.each([

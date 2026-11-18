@@ -96,5 +96,34 @@
     "toConfigure_other": "{{count}} Regler zu konfigurieren",
     "toConfigureWithSlots_one": "{{count}} Regler zu konfigurieren ({{slots}})",
     "toConfigureWithSlots_other": "{{count}} Regler zu konfigurieren ({{slots}})"
+  },
+  "analysis": {
+    "title": "Rundenanalyse",
+    "views": {
+      "pace": "Tempo",
+      "gaps": "Abstände",
+      "spread": "Konstanz"
+    },
+    "what": {
+      "pace": "Saubere Runden in Sekunden, gleitender Median über {{count}}",
+      "gaps": "Abstand zum Führenden, in Sekunden",
+      "spread": "Saubere Runden, in Sekunden"
+    },
+    "lap": "Runde {{lap}}",
+    "driverLap": "{{driver}} · Runde {{lap}}",
+    "incidents": "Zwischenfälle",
+    "incident": "Zwischenfall",
+    "seconds": "{{value}} s",
+    "key": {
+      "clean": "eine saubere Runde",
+      "median": "Median",
+      "best": "Beste"
+    },
+    "columns": {
+      "median": "Median",
+      "spread": "Konstanz",
+      "incidents": "Zwischenfälle",
+      "lost": "Zeitverlust"
+    }
   }
 }

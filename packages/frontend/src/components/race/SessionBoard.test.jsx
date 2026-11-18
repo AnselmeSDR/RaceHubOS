@@ -14,6 +14,7 @@ const { received, spy } = vi.hoisted(() => {
 })
 vi.mock('@/components/race/SessionLeaderboard', () => spy('SessionLeaderboard'))
 vi.mock('@/components/race/StartingGrid', () => spy('StartingGrid'))
+vi.mock('@/components/lapAnalysis/LapAnalysis', () => spy('LapAnalysis'))
 
 const entries = [{ id: 'e1' }]
 
@@ -28,6 +29,14 @@ test('the starting grid before the first lap', () => {
   render(<SessionBoard session={{ status: SessionStatus.READY }} entries={entries} maxLaps={0} />)
   expect(received.StartingGrid).toEqual({ entries })
   expect(screen.queryByTestId('SessionLeaderboard')).not.toBeInTheDocument()
+  expect(screen.queryByTestId('LapAnalysis')).not.toBeInTheDocument()
+})
+
+test('the lap analysis under the leaderboard, with the same entries', () => {
+  const session = { type: SessionType.QUALIF, status: SessionStatus.ACTIVE }
+  const { container } = render(<SessionBoard session={session} entries={entries} maxLaps={2} />)
+  expect([...container.children].map((node) => node.dataset.testid)).toEqual(['SessionLeaderboard', 'LapAnalysis'])
+  expect(received.LapAnalysis).toEqual({ entries, sessionType: SessionType.QUALIF })
 })
 
 test('the leaderboard of a finished session, even without laps', () => {

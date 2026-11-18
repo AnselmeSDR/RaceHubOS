@@ -91,11 +91,9 @@ export class SessionService extends EventEmitter {
     driver.totalLaps++;
     driver.lastLapTime = roundedLap;
 
-    // Track lap history for balancing chart
-    if (isBalancing) {
-      if (!this.lapHistory.has(controller)) this.lapHistory.set(controller, []);
-      this.lapHistory.get(controller).push({ lapNumber: driver.totalLaps, lapTime: roundedLap });
-    }
+    // Each lap is kept for the charts: balancing, and the lap analysis of the other sessions
+    if (!this.lapHistory.has(controller)) this.lapHistory.set(controller, []);
+    this.lapHistory.get(controller).push({ lapNumber: driver.totalLaps, lapTime: roundedLap });
 
     const previousSessionBest = this.getSessionBestLapTime();
     if (driver.bestLapTime === null || lapTime < driver.bestLapTime) driver.bestLapTime = roundedLap;
@@ -202,11 +200,10 @@ export class SessionService extends EventEmitter {
     this.sessionStatus = session.status;
     this.sessionDrivers = session.drivers.map(liveDriverOf);
 
-    // Load lap history for balancing sessions (needed for chart data)
-    this.lapHistory =
-      session.type === SessionType.BALANCING
-        ? lapHistoryOf(await this.prisma.lap.findMany({ where: { sessionId: session.id, deletedAt: null } }))
-        : new Map();
+    // The laps already driven, for the charts
+    this.lapHistory = lapHistoryOf(
+      await this.prisma.lap.findMany({ where: { sessionId: session.id, deletedAt: null } })
+    );
 
     this.recalculatePositions();
     this.emitLeaderboard();
@@ -440,11 +437,9 @@ export class SessionService extends EventEmitter {
     }
   }
 
+  /** The leaderboard with each driver's laps in order, for the charts. */
   getEnrichedLeaderboard() {
-    if (this.currentPhase === SessionType.BALANCING && this.lapHistory.size > 0) {
-      return this.sessionDrivers.map((d) => ({ ...d, laps: this.lapHistory.get(d.controller) || [] }));
-    }
-    return this.sessionDrivers;
+    return this.sessionDrivers.map((d) => ({ ...d, laps: this.lapHistory.get(d.controller) || [] }));
   }
 
   emitLeaderboard() {

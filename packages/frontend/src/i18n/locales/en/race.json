@@ -96,5 +96,34 @@
     "toConfigure_other": "{{count}} controllers to configure",
     "toConfigureWithSlots_one": "{{count}} controller to configure ({{slots}})",
     "toConfigureWithSlots_other": "{{count}} controllers to configure ({{slots}})"
+  },
+  "analysis": {
+    "title": "Lap analysis",
+    "views": {
+      "pace": "Pace",
+      "gaps": "Gaps",
+      "spread": "Consistency"
+    },
+    "what": {
+      "pace": "Clean laps in seconds, rolling median of {{count}}",
+      "gaps": "Gap to the leader, in seconds",
+      "spread": "Clean laps, in seconds"
+    },
+    "lap": "Lap {{lap}}",
+    "driverLap": "{{driver}} · lap {{lap}}",
+    "incidents": "Incidents",
+    "incident": "incident",
+    "seconds": "{{value}} s",
+    "key": {
+      "clean": "a clean lap",
+      "median": "median",
+      "best": "best"
+    },
+    "columns": {
+      "median": "Median",
+      "spread": "Consistency",
+      "incidents": "Incidents",
+      "lost": "Time lost"
+    }
   }
 }

@@ -414,7 +414,7 @@ describe('GET /api/sessions/:id/leaderboard', () => {
     });
   });
 
-  test('otherwise from the stored laps: totals, best and last lap, in race order, divisions shown', async () => {
+  test('otherwise from the stored laps: totals, best and last lap, each lap in order, in race order, divisions shown', async () => {
     const s = await newSession();
     const gold = await prisma.division.create({ data: { name: 'GOLD', scope: 'driver' } });
     const gt3 = await prisma.division.create({ data: { name: 'GT3', scope: 'car' } });
@@ -426,10 +426,10 @@ describe('GET /api/sessions/:id/leaderboard', () => {
     await prisma.sessionDriver.create({
       data: { sessionId: s.id, driverId: ben.id, carId: gt.id, controller: 1, gridPos: 1 },
     });
-    await lap(s, ana, 0, 8000.4, { timestamp: new Date('2026-01-01T10:01:00Z') });
-    await lap(s, ana, 0, 8200, { timestamp: new Date('2026-01-01T10:02:00Z') });
+    await lap(s, ana, 0, 8000.4, { lapNumber: 1, timestamp: new Date('2026-01-01T10:01:00Z') });
+    await lap(s, ana, 0, 8200, { lapNumber: 2, timestamp: new Date('2026-01-01T10:02:00Z') });
     await lap(s, ana, 0, 7000, { deletedAt: new Date() });
-    await lap(s, ben, 1, 7900, { timestamp: new Date('2026-01-01T10:01:30Z') });
+    await lap(s, ben, 1, 7900, { lapNumber: 1, timestamp: new Date('2026-01-01T10:01:30Z') });
 
     const res = await api.get(`/api/sessions/${s.id}/leaderboard`);
     expect(res.body.data.map((e) => [e.controller, e.totalLaps, e.totalTime, e.bestLapTime, e.lastLapTime])).toEqual([
@@ -442,10 +442,16 @@ describe('GET /api/sessions/:id/leaderboard', () => {
       driver: { name: 'Ana', divisions: [{ name: 'GOLD' }] },
       car: { divisions: [{ name: 'GT3' }] },
     });
-    expect(res.body.data[0]).not.toHaveProperty('laps');
+    expect(res.body.data.map((e) => e.laps)).toEqual([
+      [
+        { lapNumber: 1, lapTime: 8000 },
+        { lapNumber: 2, lapTime: 8200 },
+      ],
+      [{ lapNumber: 1, lapTime: 7900 }],
+    ]);
   });
 
-  test('a balancing session also gives each lap in order, and a car without laps', async () => {
+  test('a balancing session too, and a car without laps', async () => {
     const s = await newSession({ type: SessionType.BALANCING });
     await prisma.sessionDriver.create({ data: { sessionId: s.id, carId: gt.id, controller: 0 } });
     await prisma.sessionDriver.create({ data: { sessionId: s.id, carId: gt.id, controller: 1 } });

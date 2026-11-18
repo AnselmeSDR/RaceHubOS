@@ -69,6 +69,32 @@ describe('sessionEntries', () => {
   })
 })
 
+test("a stored session's entries carry their laps in order, rounded, as the live ones do", () => {
+  const entries = sessionEntries({
+    type: SessionType.QUALIF,
+    drivers: [
+      { id: 'a', controller: 0, bestLapTime: 8000 },
+      { id: 'b', controller: 2, bestLapTime: 9000 },
+    ],
+    laps: [
+      { controller: 0, lapNumber: 2, lapTime: 8000.4 },
+      { controller: 0, lapNumber: 1, lapTime: 8100.6 },
+      { controller: 5, lapNumber: 1, lapTime: 7000 },
+    ],
+  })
+  expect(entries.map((e) => [e.id, e.laps])).toEqual([
+    [
+      'a',
+      [
+        { lapNumber: 1, lapTime: 8101 },
+        { lapNumber: 2, lapTime: 8000 },
+      ],
+    ],
+    ['b', []],
+  ])
+  expect(sessionEntries({ type: SessionType.RACE, drivers: [{ id: 'a', controller: 0 }] })[0].laps).toEqual([])
+})
+
 describe('balancingEntries', () => {
   test('only for a balancing session with laps', () => {
     expect(balancingEntries(null)).toEqual([])

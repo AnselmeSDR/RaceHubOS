@@ -122,37 +122,40 @@ describe('loading a session', () => {
     expect(service.currentPhase).toBe(SessionType.RACE);
   });
 
-  test('a balancing session gets back the history of its laps, deleted ones left out', async () => {
-    const session = await newSession({ type: SessionType.BALANCING });
-    const stored = (controller, lapNumber, lapTime, data = {}) =>
-      prisma.lap.create({
-        data: {
-          sessionId: session.id,
-          trackId: track.id,
-          carId: gt.id,
-          controller,
-          phase: 'balancing',
-          lapNumber,
-          lapTime,
-          ...data,
-        },
-      });
-    await stored(0, 2, 9100.4);
-    await stored(0, 1, 9500);
-    await stored(1, 1, 9900, { deletedAt: new Date() });
-    await service.loadSession(session.id);
+  test.each([SessionType.RACE, SessionType.BALANCING])(
+    'a %s session gets back the history of its laps, deleted ones left out',
+    async (type) => {
+      const session = await newSession({ type });
+      const stored = (controller, lapNumber, lapTime, data = {}) =>
+        prisma.lap.create({
+          data: {
+            sessionId: session.id,
+            trackId: track.id,
+            carId: gt.id,
+            controller,
+            phase: type,
+            lapNumber,
+            lapTime,
+            ...data,
+          },
+        });
+      await stored(0, 2, 9100.4);
+      await stored(0, 1, 9500);
+      await stored(1, 1, 9900, { deletedAt: new Date() });
+      await service.loadSession(session.id);
 
-    expect(service.getLeaderboard().map((d) => [d.controller, d.laps])).toEqual([
-      [
-        0,
+      expect(service.getLeaderboard().map((d) => [d.controller, d.laps])).toEqual([
         [
-          { lapNumber: 1, lapTime: 9500 },
-          { lapNumber: 2, lapTime: 9100 },
+          0,
+          [
+            { lapNumber: 1, lapTime: 9500 },
+            { lapNumber: 2, lapTime: 9100 },
+          ],
         ],
-      ],
-      [1, []],
-    ]);
-  });
+        [1, []],
+      ]);
+    }
+  );
 
   test('a session caught finishing finishes once its grace period is over', async () => {
     jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
@@ -382,6 +385,33 @@ describe('laps', () => {
         .at(-1)
         .map((d) => d.gap)
     ).toEqual([null, 1000]);
+  });
+
+  test("each driver's laps go out with the leaderboard, for the lap analysis", async () => {
+    const session = await newSession();
+    await service.startSession(session.id);
+    expect(
+      sent('session:leaderboard')
+        .at(-1)
+        .map((d) => d.laps)
+    ).toEqual([[], []]);
+    await lap(0, 9000.4);
+    await lap(1, 9500);
+    await lap(0, 9100);
+    expect(
+      sent('session:leaderboard')
+        .at(-1)
+        .map((d) => [d.controller, d.laps])
+    ).toEqual([
+      [
+        0,
+        [
+          { lapNumber: 1, lapTime: 9000 },
+          { lapNumber: 2, lapTime: 9100 },
+        ],
+      ],
+      [1, [{ lapNumber: 1, lapTime: 9500 }]],
+    ]);
   });
 
   test('balancing keeps each lap for the chart, up to its lap count, then finishes', async () => {

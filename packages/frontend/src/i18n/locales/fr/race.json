@@ -96,5 +96,34 @@
     "toConfigure_other": "{{count}} manettes à configurer",
     "toConfigureWithSlots_one": "{{count}} manette à configurer ({{slots}})",
     "toConfigureWithSlots_other": "{{count}} manettes à configurer ({{slots}})"
+  },
+  "analysis": {
+    "title": "Analyse des tours",
+    "views": {
+      "pace": "Rythme",
+      "gaps": "Écarts",
+      "spread": "Régularité"
+    },
+    "what": {
+      "pace": "Tours propres en secondes, médiane glissante sur {{count}}",
+      "gaps": "Écart au leader, en secondes",
+      "spread": "Tours propres, en secondes"
+    },
+    "lap": "Tour {{lap}}",
+    "driverLap": "{{driver}} · tour {{lap}}",
+    "incidents": "Incidents",
+    "incident": "incident",
+    "seconds": "{{value}} s",
+    "key": {
+      "clean": "un tour propre",
+      "median": "médian",
+      "best": "meilleur"
+    },
+    "columns": {
+      "median": "Médian",
+      "spread": "Régularité",
+      "incidents": "Incidents",
+      "lost": "Temps perdu"
+    }
   }
 }

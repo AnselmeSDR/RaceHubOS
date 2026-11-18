@@ -37,11 +37,25 @@ function gapToLeader(sd, leader, isRace) {
   return null
 }
 
-/** A stored session's drivers as ranked leaderboard entries, in the format of the live session context. */
+/** The laps of each controller in order, rounded (`controller → [{ lapNumber, lapTime }]`). */
+function lapsByController(laps = []) {
+  const byController = new Map()
+  for (const lap of [...laps].sort((a, b) => a.lapNumber - b.lapNumber)) {
+    if (!byController.has(lap.controller)) byController.set(lap.controller, [])
+    byController.get(lap.controller).push({ lapNumber: lap.lapNumber, lapTime: Math.round(lap.lapTime) })
+  }
+  return byController
+}
+
+/**
+ * A stored session's drivers as ranked leaderboard entries, each with its laps in order, in the
+ * format of the live session context.
+ */
 export function sessionEntries(session) {
   if (!session?.drivers?.length) return []
   const isRace = session.type === SessionType.RACE
   const fastest = fastestLapTime(session.drivers)
+  const laps = lapsByController(session.laps)
   const sorted = [...session.drivers].sort(compare(isRace))
   const leader = sorted[0]
 
@@ -62,6 +76,7 @@ export function sessionEntries(session) {
     positionDelta: 0,
     hasFastestLap: fastest && sd.bestLapTime === fastest,
     isDNF: sd.isDNF || false,
+    laps: laps.get(sd.controller) || [],
   }))
 }
 
@@ -69,18 +84,13 @@ export function sessionEntries(session) {
 export function balancingEntries(session) {
   if (!session || session.type !== SessionType.BALANCING || !session.laps?.length) return []
 
-  const lapsByController = new Map()
-  for (const lap of session.laps) {
-    if (!lapsByController.has(lap.controller)) lapsByController.set(lap.controller, [])
-    lapsByController.get(lap.controller).push({ lapNumber: lap.lapNumber, lapTime: Math.round(lap.lapTime) })
-  }
-
+  const laps = lapsByController(session.laps)
   return (session.drivers || []).map((sd) => ({
     id: sd.id,
     controller: sd.controller,
     driver: sd.driver,
     car: sd.car,
-    laps: (lapsByController.get(sd.controller) || []).sort((a, b) => a.lapNumber - b.lapNumber),
+    laps: laps.get(sd.controller) || [],
     stats: { laps: sd.totalLaps || 0, bestLap: sd.bestLapTime || null },
   }))
 }
