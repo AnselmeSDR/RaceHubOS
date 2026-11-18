@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquettes : analyse des tours</title>
+<style>
+:root {
+  --page: #000;
+  --bg: #09090b;
+  --card: #1c1c1f;
+  --tile: #232327;
+  --hover: #2e2e33;
+  --border: #2e2e33;
+  --line: #29292e;
+  --fg: #fafafa;
+  --soft: #d4d4d8;
+  --prose: #a1a1aa;
+  --muted: #8b8b94;
+  --faint: #5b5b63;
+  --gold: #facc15;
+  --fastest: #d8b4fe;
+  --fastest-bg: rgba(168, 85, 247, .22);
+  --reco: #4ade80;
+}
+:root[data-theme="light"] {
+  --page: #e4e4e7;
+  --bg: #f4f4f5;
+  --card: #ffffff;
+  --tile: #f4f4f5;
+  --hover: #e4e4e7;
+  --border: #e4e4e7;
+  --line: #ececef;
+  --fg: #18181b;
+  --soft: #3f3f46;
+  --prose: #52525b;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+  --gold: #a16207;
+  --fastest: #7e22ce;
+  --fastest-bg: rgba(168, 85, 247, .16);
+  --reco: #16a34a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); font-family: Inter, system-ui, sans-serif; color: var(--fg); }
+main { max-width: 1260px; margin: 0 auto; padding: 32px 16px 96px; display: flex; flex-direction: column; gap: 56px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+.intro { margin: 0; color: var(--prose); line-height: 1.55; max-width: 920px; font-size: 14px; }
+section > h2 { margin: 0 0 4px; font-size: 20px; }
+section > .why { margin: 0 0 16px; color: var(--prose); font-size: 14px; line-height: 1.55; max-width: 920px; }
+.reco { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 600; color: #052e16; background: var(--reco); border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+:root[data-theme="light"] .reco { color: #fff; }
+ul.points, ol.points { margin: 14px 0 0; padding-left: 20px; color: var(--soft); font-size: 13.5px; line-height: 1.65; max-width: 920px; }
+ol.points { font-size: 14px; line-height: 1.75; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* The mockup's own switches */
+.tools { position: sticky; top: 0; z-index: 20; display: flex; gap: 8px; justify-content: flex-end; padding: 10px 0; margin-bottom: -40px; pointer-events: none; }
+.tools > * { pointer-events: auto; }
+
+/* Segmented control, as in the settings */
+.seg { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--tile); border: 1px solid var(--border); }
+.seg button { all: unset; cursor: pointer; height: 24px; padding: 0 11px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.seg button:hover { color: var(--fg); }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--fg); box-shadow: 0 0 0 1px var(--border); }
+.seg button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+
+/* The page frame */
+.screen { width: 1190px; max-width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+
+/* Pictures: the common layer of the app */
+.av { position: relative; flex: none; width: 20px; height: 20px; border-radius: 20%; background: var(--c); overflow: hidden; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; }
+.av img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.av.s { width: 16px; height: 16px; font-size: 8px; }
+
+/* The leaderboard, reduced to what places the block */
+.board { display: grid; grid-template-columns: repeat(3, auto) minmax(0, 1fr) repeat(3, auto); column-gap: 14px; padding: 6px 14px; font-size: 13px; }
+.board > div { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; height: 30px; border-top: 1px solid var(--line); }
+.board > div:first-child { border-top: 0; }
+.board .pos { color: var(--muted); text-align: right; }
+.board .code { font-weight: 800; letter-spacing: .01em; }
+.board .name { color: var(--muted); font-size: 12px; }
+.board .fig { text-align: right; }
+.board .fastest { justify-self: end; border-radius: 5px; padding: 1px 6px; background: var(--fastest-bg); color: var(--fastest); font-weight: 700; }
+
+/* The block */
+.analysis header { display: flex; align-items: center; gap: 12px; padding: 9px 12px 9px 14px; border-bottom: 1px solid var(--line); }
+.analysis h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.analysis header .what { color: var(--muted); font-size: 12px; }
+.analysis header .seg { margin-left: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
+.legend button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px 0 3px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--fg); background: var(--tile); }
+.legend button i { width: 12px; height: 3px; border-radius: 2px; background: var(--c); }
+.legend button[aria-pressed="false"] { color: var(--faint); background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.legend button[aria-pressed="false"] .av, .legend button[aria-pressed="false"] i { opacity: .3; }
+.legend button:hover { background: var(--hover); }
+.legend button:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+.body { position: relative; padding: 4px 6px 8px; }
+.plot { position: relative; height: 300px; }
+.plot svg { display: block; width: 100%; height: 100%; }
+.plot text { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plot .grid { stroke: var(--line); stroke-width: 1; }
+.plot .axis { stroke: var(--border); stroke-width: 1; }
+.plot .cross { stroke: var(--faint); stroke-width: 1; }
+.end { position: absolute; display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; transform: translateY(-50%); pointer-events: none; }
+.end span { color: var(--muted); font-weight: 500; }
+.tip { position: absolute; z-index: 5; pointer-events: none; min-width: 150px; padding: 8px 10px; border-radius: 9px; background: var(--card); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, .28); font-size: 12px; }
+.tip b { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.tip div { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 6px; height: 20px; }
+.tip div.dim { opacity: .45; }
+.tip div em { font-style: normal; color: var(--muted); font-size: 11px; }
+.tip div strong { font-weight: 600; text-align: right; }
+
+/* Consistency: a line per driver, the columns of the leaderboard */
+.spread { display: grid; grid-template-columns: auto auto minmax(0, 1fr) repeat(5, auto); column-gap: 14px; padding: 4px 8px 0; font-size: 13px; }
+.spread > div { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; }
+.spread .head { height: 30px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); }
+.spread .head .fig, .spread .row .fig { text-align: right; }
+.spread .key { display: flex; gap: 14px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--muted); }
+.spread .key span { display: inline-flex; align-items: center; gap: 5px; }
+.spread .key i { display: inline-block; }
+.spread .key .lap { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); opacity: .55; }
+.spread .key .med { width: 2px; height: 12px; background: var(--fg); }
+.spread .key .best { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.spread .row { height: 34px; border-top: 1px solid var(--line); }
+.spread .pos { color: var(--muted); text-align: right; }
+.spread .who { display: flex; align-items: center; gap: 7px; font-weight: 700; }
+.spread .strip { height: 33px; }
+.spread .strip svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spread .foot { height: 22px; }
+.spread .foot text { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.spread .grid { stroke: var(--line); }
+.gold { color: var(--gold); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <div class="tools">
+    <div class="seg" data-switch="session">
+      <button data-value="race" aria-pressed="true">Course</button>
+      <button data-value="qualif" aria-pressed="false">Qualif</button>
+    </div>
+    <div class="seg" data-switch="theme">
+      <button data-value="dark" aria-pressed="true">Sombre</button>
+      <button data-value="light" aria-pressed="false">Clair</button>
+    </div>
+  </div>
+
+  <div>
+    <h1>Analyse des tours</h1>
+    <p class="intro">
+      Un bloc sous le classement d'une session, avec trois vues des mêmes tours. Les données sont celles de
+      <code id="source"></code> dans <code>dev.db</code> ; les boutons en haut à droite changent de session et de thème.
+      Tout réagit au survol, et les pilotes de la légende se masquent d'un clic.
+    </p>
+  </div>
+
+  <section>
+    <h2>1. Rythme <span class="reco">vue par défaut</span></h2>
+    <p class="why">
+      Le rythme de chaque pilote au fil de la session, sur ses tours propres seulement (à moins de 15 % de son meilleur
+      tour) : chaque tour propre avec ses deux voisins de part et d'autre, dont on garde le médian. Les autres tours sont
+      des incidents (sortie, accrochage, arrêt) : une ligne de points par pilote au-dessus, d'autant plus gros que le tour
+      a duré. Au survol d'un pilote, ses vrais tours propres apparaissent.
+    </p>
+    <div class="screen">
+      <div class="panel board" data-board></div>
+      <div class="panel analysis" data-card="pace"></div>
+    </div>
+    <ul class="points">
+      <li>Couleur du pilote, comme dans le classement. Deux pilotes de la même couleur se distinguent au survol (le trait survolé ressort, les autres s'effacent) et par la légende.</li>
+      <li>La bulle donne le vrai temps du tour survolé, pas la médiane. J'ai essayé le temps brut en traits : six pilotes et soixante tours donnent un fouillis illisible.</li>
+      <li>Première version écartée : la médiane de tous les tours jusqu'à 1,5 fois le meilleur. Un tour sur quatre est un incident rattrapé en deux ou trois secondes, et le trait montait à 11 ou 13 s là où personne ne roulait à ce rythme.</li>
+      <li>Le meilleur tour de la session porte la pastille violette du classement.</li>
+      <li>Le tableau des tours reste en dessous : c'est le détail au millième.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. Écarts <span class="reco">courses seulement</span></h2>
+    <p class="why">
+      L'écart au vainqueur à la fin de chaque tour. Qui est au-dessus est devant ; deux traits qui se croisent, c'est un
+      dépassement ; une marche vers le bas, une sortie. C'est la vue qui raconte la course.
+    </p>
+    <div class="screen">
+      <div class="panel analysis" data-card="gaps"></div>
+    </div>
+    <ul class="points">
+      <li>Chaque trait finit sur le visage du pilote et son écart final, celui du classement : en tours pour un pilote qui en a fait moins, et son trait s'arrête à son dernier tour.</li>
+      <li>En qualif et en essais, les tours ne se courent pas ensemble : l'onglet n'existe pas.</li>
+      <li>Pendant une course en direct, la référence est le leader du moment.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Régularité</h2>
+    <p class="why">
+      Une ligne par pilote dans l'ordre du classement, un point par tour propre. Plus les points sont serrés, plus le pilote
+      est régulier ; à droite, les chiffres qui le disent, le meilleur de chaque colonne en or.
+    </p>
+    <div class="screen">
+      <div class="panel analysis" data-card="spread"></div>
+    </div>
+    <ul class="points">
+      <li>« Régularité » est l'écart type des tours propres : ±0.20 veut dire qu'ils tiennent à deux dixièmes près.</li>
+      <li>Les incidents ne sont pas dessinés ici : ils écraseraient l'échelle. Ils sont comptés, avec le temps qu'ils ont coûté (chaque tour d'incident comparé au tour médian du pilote).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>À décider</h2>
+    <ol class="points">
+      <li><b>Où.</b> Je propose le même bloc sous le classement de la fiche de session, d'une session de championnat et du mode libre. Il apparaît à partir de deux tours et se met à jour en direct.</li>
+      <li><b>Les vues.</b> Les trois, ou seulement certaines. « Rythme » ouvert par défaut ; le choix serait mémorisé.</li>
+      <li><b>La règle d'un tour propre.</b> À moins de 15 % du meilleur tour du pilote. Sur les 12 648 tours de <code>dev.db</code>, 52 % y sont, bien groupés ; au-delà, c'est une longue traîne (28 % entre 15 et 50 %, 20 % plus loin). L'équilibrage garde sa propre règle (1,5 fois).</li>
+      <li><b>Écarté.</b> Un graphique des positions tour par tour : les écarts le disent déjà, avec la distance en plus.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+// Laps of two sessions of dev.db (fictional names), for graph-tours.html
+window.SESSIONS = {"race":{"name":"Course 3 - Div 1","type":"race","track":"X-Wald Ring","drivers":[{"name":"Léa BOU","color":"#dd0b17","number":782,"img":"/api/img/drivers/1794315448885-648047351-bg.png","finalPos":1,"bestLapTime":8849,"laps":[10712,9211,9630,9173,9437,9502,11004,10802,9629,9726,9554,9149,10540,11682,11695,9142,10252,9455,10326,9256,9433,9381,9262,9433,9055,8909,9069,9204,10537,14455,10273,9308,9034,9278,10220,13626,9002,9329,13670,9109,13418,11013,17193,9724,9072,9715,9175,9708,9083,9216,9275,9397,9066,11143,9722,8849,14083,11193,8896]},{"name":"Océane PIC","color":"#1938c7","number":5,"img":"/api/img/drivers/1794315449517-604074931-bg.png","finalPos":2,"bestLapTime":8885,"laps":[10637,9972,9406,9471,9159,9258,9280,9430,9215,9736,10653,9178,9146,9895,9504,9699,9345,17076,11609,9236,9156,9133,9272,9301,9306,9710,8977,8885,9505,10786,9069,9419,11006,25361,9245,9774,9551,14206,10430,9629,9123,9280,9275,16361,11591,9147,9430,8999,11233,9058,9328,9455,9657,9345,9510,9453,9852,9490,9297]},{"name":"Lukas BRE","color":"#e61116","number":999,"img":"/api/img/drivers/1794315448729-984509264-bg.png","finalPos":3,"bestLapTime":9081,"laps":[14206,9582,9433,10212,12427,9793,9516,9153,15932,10968,10542,9976,9889,10571,9885,9763,9262,10235,9335,9415,9346,9337,9582,9233,11286,10594,9427,9732,9503,9648,9508,9591,17442,10487,9866,10612,9801,10182,10695,9463,10403,9741,14740,12171,9769,9855,9112,10729,9579,9114,9164,9707,9081,9651,9462,19513,10100,9372]},{"name":"Romain DAN","color":"#2fabf1","number":71,"img":"/api/img/drivers/1794315450317-134867148-bg.png","finalPos":4,"bestLapTime":8702,"laps":[9030,10997,9610,15995,11959,9740,9304,9410,13368,9521,8949,9379,12046,9975,9073,10941,10864,13673,9261,9336,12467,9511,9239,9106,8853,12371,9439,12744,8830,8702,8812,13861,13985,11068,9476,8754,10229,16931,9446,9525,13031,11103,10992,13739,9690,11548,19145,12521,9339,9331,9423,10631,9321,10387,9645,11519]},{"name":"Anselme SDR","color":"#3b3a38","number":42,"img":"/api/img/drivers/1794315450490-484719871-bg.png","finalPos":5,"bestLapTime":9268,"laps":[11154,16106,9912,14891,9378,9372,9430,9575,9573,11484,10767,12404,9397,14574,9956,9746,9379,11015,9718,9446,9428,13000,9432,9645,9400,16079,10205,9783,9765,11343,9987,12869,10378,10687,9444,10142,12922,9960,9934,18060,15784,9930,9492,9291,9268,15096,9785,10883,11485,9324,9531,9299,11048,10047,9548,9356]},{"name":"Henry WAL","color":"#4d4d4d","number":77,"img":"/api/img/drivers/1794315447607-289713845-bg.png","finalPos":6,"bestLapTime":9185,"laps":[14693,12972,9993,10161,9511,9251,9778,9358,9185,12041,10024,20546,15759,9584,12563,13497,10528,9525,12218,9531,9901,9733,9613,9823,9690,11563,9970,9718,10276,10148,10120,9885,10230,12622,9752,10664,10475,9491,10135,10216,12088,10109,10453,13063,9823,11475,9702,9821,10195,9763,9562,10181,11971,11684,11701,12781]}]},"qualif":{"name":"Q2 - 1","type":"qualif","track":"_Autodrome du Warndt","drivers":[{"name":"Antoine GIR","color":"#fc79a5","number":777,"img":"/api/img/drivers/1794315446989-714553452-bg.png","finalPos":1,"bestLapTime":8152,"laps":[12546,16003,10151,13029,11746,15346,8820,9939,8813,14975,13569,9075,19324,9715,9027,10218,10388,16537,9895,8451,8639,8152,12774,9485,8556,17728]},{"name":"Romain DAN","color":"#2fabf1","number":71,"img":"/api/img/drivers/1794315450317-134867148-bg.png","finalPos":2,"bestLapTime":8260,"laps":[10747,11968,8492,12308,18704,14082,15812,8305,9011,13743,9383,8260,8813,10199,8498,8628,12965,8546,14559,11060,10911,13616,8940,11001,8273,8562,11972,8446,8541]},{"name":"Quentin MEU","color":"#f05a82","number":3,"img":"/api/img/drivers/1794315449838-911170423-bg.png","finalPos":3,"bestLapTime":8433,"laps":[12954,13118,10163,11826,13911,11631,10094,14913,13606,10818,10818,14905,13409,8572,8812,9349,8433,12206,11080,10774,9116,12504,10975,8961,14024,8820,8680,9126]},{"name":"Henry WAL","color":"#4d4d4d","number":77,"img":"/api/img/drivers/1794315447607-289713845-bg.png","finalPos":4,"bestLapTime":8825,"laps":[11266,22188,10588,11691,9166,11894,9185,12301,12015,12962,12570,10004,8879,11795,11110,9170,9125,9634,9165,9509,9094,9609,10336,9213,8830,18099,8825,11055]},{"name":"Leonie HAU","color":"#e7d037","number":11,"img":"/api/img/drivers/1794315448247-227560624-bg.png","finalPos":5,"bestLapTime":9657,"laps":[14540,12259,11227,23759,10345,9963,16475,13041,16299,9657,15693,13317,11311,14347,12008,15709,11421,15295,10081,17182,14595,10735,16191]}]}}
+</script>
+<script>
+// A clean lap is within 15 % of the driver's best: where the laps of dev.db stop piling up
+const CLEAN = 1.15
+const CARD = { dark: '#1c1c1f', light: '#ffffff' }
+const VIEWS = { pace: 'Rythme', gaps: 'Écarts', spread: 'Régularité' }
+const WINDOW = 5
+const RAIL = 10
+const WHAT = { pace: `Tours propres en secondes, médiane glissante sur ${WINDOW}`, gaps: 'Écart au vainqueur, en secondes', spread: 'Tours propres, en secondes' }
+const IMG = 'http://localhost:3001'
+let theme = 'dark'
+let data
+
+/* --- colours: `readableOn` of the app (3:1 on the card, hue kept) --- */
+const channels = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const lum = (rgb) => {
+  const [r, g, b] = rgb.map((v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
+const hexOf = (rgb) => '#' + rgb.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')
+function readableOn(hex, background) {
+  const [ink, under] = [channels(hex), channels(background)]
+  const toward = lum(under) < 0.18 ? [255, 255, 255] : [0, 0, 0]
+  for (let step = 0; step < 10; step++) {
+    const shade = ink.map((v, i) => v + ((toward[i] - v) * step) / 10)
+    if (contrast(shade, under) >= 3) return hexOf(shade)
+  }
+  return hexOf(toward)
+}
+
+/* --- figures --- */
+const sec = (ms) => (ms / 1000).toFixed(3)
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = sorted.length >> 1
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+function prepare(session) {
+  const drivers = session.drivers.map((driver, i) => {
+    const best = Math.min(...driver.laps)
+    const limit = best * CLEAN
+    const clean = driver.laps.filter((time) => time <= limit)
+    const middle = median(clean)
+    const mean = clean.reduce((sum, time) => sum + time, 0) / clean.length
+    // The pace: each clean lap with its clean neighbours, then a straight line across an incident
+    const at = driver.laps.flatMap((time, lap) => (time <= limit ? [lap] : []))
+    const trend = driver.laps.map(() => null)
+    at.forEach((lap, k) => (trend[lap] = median(clean.slice(Math.max(0, k - 2), k + WINDOW - 2))))
+    at.slice(1).forEach((lap, k) => {
+      for (let gap = at[k] + 1; gap < lap; gap++) {
+        trend[gap] = trend[at[k]] + ((trend[lap] - trend[at[k]]) * (gap - at[k])) / (lap - at[k])
+      }
+    })
+    let total = 0
+    return {
+      ...driver,
+      i,
+      code: driver.name.split(' ').pop(),
+      best,
+      limit,
+      median: middle,
+      spread: Math.sqrt(clean.reduce((sum, time) => sum + (time - mean) ** 2, 0) / clean.length),
+      incidents: driver.laps.length - clean.length,
+      // What the incidents cost, against a lap at the driver's own pace
+      lost: driver.laps.reduce((sum, time) => sum + (time > limit ? time - middle : 0), 0),
+      trend,
+      elapsed: driver.laps.map((time) => (total += time)),
+    }
+  })
+  return {
+    ...session,
+    drivers,
+    laps: Math.max(...drivers.map((driver) => driver.laps.length)),
+    fastest: Math.min(...drivers.map((driver) => driver.best)),
+  }
+}
+const ink = (driver) => readableOn(driver.color, CARD[theme])
+const avatar = (driver, small) =>
+  `<span class="av${small ? ' s' : ''}" style="--c:${driver.color}">${driver.code[0]}${
+    driver.img ? `<img src="${IMG}${driver.img}" alt="" onerror="this.remove()">` : ''
+  }</span>`
+const ticks = (lo, hi, step) => {
+  const out = []
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-6; v += step) out.push(v)
+  return out
+}
+const niceStep = (range) => [0.5, 1, 2, 5, 10, 20, 50, 100].find((step) => range / step <= 6) ?? 200
+const lapTicks = (laps) => [1, ...ticks(laps > 30 ? 10 : 5, laps, laps > 30 ? 10 : 5)]
+
+/* --- the leaderboard above the block --- */
+function drawBoard(el) {
+  const leader = data.drivers[0]
+  el.innerHTML = data.drivers
+    .map((driver, i) => {
+      const gap =
+        data.type !== 'race'
+          ? i ? `+${sec(driver.best - leader.best)}` : ''
+          : !i ? ''
+          : driver.laps.length < leader.laps.length
+            ? `+${leader.laps.length - driver.laps.length} tour${leader.laps.length - driver.laps.length > 1 ? 's' : ''}`
+            : `+${sec(driver.elapsed.at(-1) - leader.elapsed.at(-1))}`
+      return `<div>
+        <span class="pos num">${i + 1}</span>
+        <span class="code" style="color:${ink(driver)}">${driver.code}</span>
+        ${avatar(driver)}
+        <span class="name">${driver.name}</span>
+        <span class="fig num">${driver.laps.length} tours</span>
+        <span class="num ${driver.best === data.fastest ? 'fastest' : 'fig'}">${sec(driver.best)}</span>
+        <span class="fig num" style="color:var(--muted);min-width:5.5rem">${gap}</span>
+      </div>`
+    })
+    .join('')
+}
+
+/* --- the block --- */
+function mount(el) {
+  const state = { view: el.dataset.card, hidden: new Set(), focus: null, lap: null }
+  el.card = { el, state, draw: () => drawCard(el.card) }
+  el.card.draw()
+}
+function drawCard(card) {
+  const { el, state } = card
+  const views = Object.keys(VIEWS).filter((view) => view !== 'gaps' || data.type === 'race')
+  if (!views.includes(state.view)) state.view = 'pace'
+  el.innerHTML = `
+    <header>
+      <h3>Analyse des tours</h3>
+      <span class="what">${WHAT[state.view]}</span>
+      <div class="seg">${views
+        .map((view) => `<button data-view="${view}" aria-pressed="${view === state.view}">${VIEWS[view]}</button>`)
+        .join('')}</div>
+    </header>
+    ${
+      state.view === 'spread'
+        ? ''
+        : `<div class="legend">${data.drivers
+            .map(
+              (driver) =>
+                `<button data-driver="${driver.i}" aria-pressed="${!state.hidden.has(driver.i)}" style="--c:${ink(driver)}">${avatar(driver, true)}${driver.code}<i></i></button>`
+            )
+            .join('')}</div>`
+    }
+    <div class="body">${state.view === 'spread' ? '<div class="spread"></div>' : '<div class="plot"></div>'}<div class="tip" hidden></div></div>`
+  el.querySelectorAll('[data-view]').forEach((button) => {
+    button.onclick = () => {
+      state.view = button.dataset.view
+      state.lap = state.focus = null
+      drawCard(card)
+    }
+  })
+  el.querySelectorAll('[data-driver]').forEach((button) => {
+    const i = Number(button.dataset.driver)
+    button.onclick = () => {
+      state.hidden.has(i) ? state.hidden.delete(i) : state.hidden.size < data.drivers.length - 1 && state.hidden.add(i)
+      state.focus = null
+      drawCard(card)
+    }
+    button.onmouseenter = () => !state.hidden.has(i) && ((state.focus = i), drawPlot(card))
+    button.onmouseleave = () => ((state.focus = null), drawPlot(card))
+  })
+  if (state.view === 'spread') return drawSpread(card)
+  const plot = el.querySelector('.plot')
+  plot.onmousemove = (event) => {
+    const box = plot.getBoundingClientRect()
+    const { lap, focus } = card.locate(event.clientX - box.left, event.clientY - box.top)
+    if (lap === state.lap && focus === state.focus) return
+    Object.assign(state, { lap, focus })
+    drawPlot(card)
+  }
+  plot.onmouseleave = () => {
+    state.lap = state.focus = null
+    drawPlot(card)
+  }
+  drawPlot(card)
+}
+
+/** The lines of the visible drivers, as `{ driver, values }`. */
+function seriesOf(card) {
+  const shown = data.drivers.filter((driver) => !card.state.hidden.has(driver.i))
+  if (card.state.view === 'pace') {
+    return shown.map((driver) => ({ driver, values: driver.trend.map((time) => (time === null ? null : time / 1000)) }))
+  }
+  const [winner] = data.drivers
+  return shown.map((driver) => ({
+    driver,
+    values: driver.elapsed.slice(0, winner.elapsed.length).map((time, lap) => (time - winner.elapsed[lap]) / 1000),
+  }))
+}
+
+function drawPlot(card) {
+  const { el, state } = card
+  const plot = el.querySelector('.plot')
+  const pace = state.view === 'pace'
+  const series = seriesOf(card)
+  const [W, H] = [plot.clientWidth, plot.clientHeight]
+
+  // Incidents: a row per driver above the pace
+  const m = { l: 46, r: pace ? 14 : 108, t: pace ? 18 + series.length * RAIL : 12, b: 26 }
+
+  // The scale of the pace holds every clean lap, and only them
+  const all = pace
+    ? series.flatMap(({ driver }) => driver.laps.filter((time) => time <= driver.limit).map((time) => time / 1000))
+    : series.flatMap(({ values }) => values.filter((value) => value !== null))
+  const step = niceStep(Math.max(...all) - Math.min(...all))
+  const lo = Math.floor(Math.min(...all, pace ? data.fastest / 1000 : 0) / step) * step
+  const hi = Math.ceil(Math.max(...all) / step) * step
+  const x = (lap) => m.l + ((lap - 1) / Math.max(1, data.laps - 1)) * (W - m.l - m.r)
+  // Pace: the slower, the higher. Gaps: the leader on top, the others below
+  const y = (value) =>
+    pace ? H - m.b - ((value - lo) / (hi - lo)) * (H - m.t - m.b) : m.t + ((value - lo) / (hi - lo)) * (H - m.t - m.b)
+
+  // A clean lap as it was driven; an incident is in the rows above
+  const lapDot = (driver, lap, r) => {
+    const time = driver.laps[lap]
+    if (time === undefined || time > driver.limit) return ''
+    const over = time / 1000 > hi
+    return `<circle cx="${x(lap + 1)}" cy="${y(Math.min(time / 1000, hi))}" r="${r}" ${
+      over ? `fill="var(--card)" stroke="${ink(driver)}" stroke-width="1.5"` : `fill="${ink(driver)}" stroke="var(--card)" stroke-width="${r > 3 ? 2 : 0}"`
+    }/>`
+  }
+  const dim = (driver) => (state.focus !== null && state.focus !== driver.i ? 0.16 : 1)
+  const order = [...series].sort((a, b) => (a.driver.i === state.focus) - (b.driver.i === state.focus))
+  const paths = order.map(({ driver, values }) => {
+    let d = ''
+    const lone = []
+    values.forEach((value, lap) => {
+      if (value === null) return
+      const start = lap === 0 || values[lap - 1] === null
+      if (start && (lap === values.length - 1 || values[lap + 1] === null)) lone.push(lap)
+      d += `${start ? 'M' : 'L'}${x(lap + 1).toFixed(1)} ${y(value).toFixed(1)}`
+    })
+    return `<g opacity="${dim(driver)}">
+      <path d="${d}" fill="none" stroke="${ink(driver)}" stroke-width="${driver.i === state.focus ? 2.5 : 1.75}" stroke-linejoin="round" stroke-linecap="round"/>
+      ${lone.map((lap) => `<circle cx="${x(lap + 1)}" cy="${y(values[lap])}" r="2" fill="${ink(driver)}"/>`).join('')}
+      ${pace && driver.i === state.focus ? `<g opacity=".75">${driver.laps.map((_, lap) => lapDot(driver, lap, 2.5)).join('')}</g>` : ''}
+    </g>`
+  })
+
+  // The longer the lap, the bigger its dot
+  const rail = !pace
+    ? []
+    : series.flatMap(({ driver }, row) =>
+        driver.laps.map((time, lap) => {
+          if (time <= driver.limit) return ''
+          const r = Math.min(4.5, 1.6 + Math.sqrt((time - driver.median) / 1000) * 0.9)
+          const on = lap + 1 === state.lap
+          return `<circle cx="${x(lap + 1)}" cy="${14 + row * RAIL}" r="${on ? r + 1 : r}" fill="${ink(driver)}" opacity="${dim(driver) * (on ? 1 : 0.8)}"/>`
+        })
+      )
+
+  // The session's fastest lap, as in the leaderboard
+  let fastest = ''
+  if (pace) {
+    const holder = series.find(({ driver }) => driver.best === data.fastest)
+    if (holder) {
+      const lap = holder.driver.laps.indexOf(data.fastest) + 1
+      const anchor = x(lap) > W - 80 ? 'end' : 'start'
+      fastest = `<circle cx="${x(lap)}" cy="${y(data.fastest / 1000)}" r="4.5" fill="var(--fastest)" stroke="var(--card)" stroke-width="2"/>
+        <text x="${x(lap) + (anchor === 'end' ? -9 : 9)}" y="${y(data.fastest / 1000) + 4}" text-anchor="${anchor}" style="fill:var(--fastest);font-weight:700">${sec(data.fastest)}</text>`
+    }
+  }
+
+  const cross =
+    state.lap === null
+      ? ''
+      : `<line class="cross" x1="${x(state.lap)}" x2="${x(state.lap)}" y1="${m.t}" y2="${H - m.b}"/>` +
+        series
+          .filter(({ values }) => values[state.lap - 1] != null)
+          .map(({ driver, values }) =>
+            pace
+              ? `<g opacity="${dim(driver)}">${lapDot(driver, state.lap - 1, 4)}</g>`
+              : `<circle cx="${x(state.lap)}" cy="${y(values[state.lap - 1])}" r="4" fill="${ink(driver)}" stroke="var(--card)" stroke-width="2" opacity="${dim(driver)}"/>`
+          )
+          .join('')
+
+  // Gaps: each line ends on its driver, in the margin
+  let ends = ''
+  const down = (driver) => data.drivers[0].laps.length - driver.laps.length
+  if (!pace) {
+    const labels = series
+      .map(({ driver, values }) => ({ driver, lap: values.length, value: values.at(-1), at: y(values.at(-1)) }))
+      .sort((a, b) => a.at - b.at)
+    labels.forEach((label, i) => i && (label.at = Math.max(label.at, labels[i - 1].at + 20)))
+    ends = labels
+      .map(
+        ({ driver, value, at }) =>
+          `<div class="end" style="left:${W - m.r + 10}px;top:${at}px;opacity:${dim(driver)}">${avatar(driver, true)}${driver.code}<span class="num">${
+            !driver.i ? '' : down(driver) ? `+${down(driver)} tour${down(driver) > 1 ? 's' : ''}` : `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(1)}`
+          }</span></div>`
+      )
+      .join('')
+    paths.push(
+      ...labels.map(
+        ({ driver, lap, value, at }) =>
+          `<path d="M${x(lap)} ${y(value)}L${W - m.r + 6} ${at}" fill="none" stroke="${ink(driver)}" stroke-width="1" opacity="${0.35 * dim(driver)}"/>`
+      )
+    )
+  }
+
+  plot.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${VIEWS[state.view]}">
+    ${ticks(lo, hi, step)
+      .map(
+        (value) =>
+          `<line class="${!pace && value === 0 ? 'axis' : 'grid'}" x1="${m.l}" x2="${W - m.r}" y1="${y(value)}" y2="${y(value)}"/>
+           <text x="${m.l - 8}" y="${y(value) + 4}" text-anchor="end">${pace ? value.toFixed(step < 1 ? 1 : 0) : value > 0 ? `+${value}` : String(value).replace('-', '−')}</text>`
+      )
+      .join('')}
+    ${lapTicks(data.laps)
+      .map((lap) => `<text x="${x(lap)}" y="${H - 8}" text-anchor="middle">${lap}</text>`)
+      .join('')}
+    <text x="${m.l - 8}" y="${H - 8}" text-anchor="end">Tour</text>
+    ${pace ? `<text x="${m.l - 8}" y="18" text-anchor="end">Incid.</text>` : ''}
+    ${rail.join('')}${paths.join('')}${fastest}${cross}
+  </svg>${ends}`
+
+  card.locate = (px, py) => {
+    const lap = Math.min(data.laps, Math.max(1, Math.round(1 + ((px - m.l) / (W - m.l - m.r)) * (data.laps - 1))))
+    let focus = null
+    let reach = 16
+    for (const { driver, values } of series) {
+      const value = values[lap - 1]
+      if (value == null || Math.abs(y(value) - py) >= reach) continue
+      reach = Math.abs(y(value) - py)
+      focus = driver.i
+    }
+    return { lap, focus }
+  }
+
+  // What the crosshair reads
+  const tip = el.querySelector('.tip')
+  tip.hidden = state.lap === null
+  if (tip.hidden) return
+  const rows = series
+    .filter(({ driver }) => driver.laps.length >= state.lap)
+    .map(({ driver, values }) => ({ driver, value: values[state.lap - 1], time: driver.laps[state.lap - 1] }))
+    .sort((a, b) => (pace ? a.time - b.time : a.value - b.value))
+  tip.innerHTML =
+    `<b>Tour ${state.lap}</b>` +
+    rows
+      .map(({ driver, value, time }) => {
+        const figure = pace ? sec(time) : driver.i ? `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(3)}` : 'vainqueur'
+        return `<div class="${dim(driver) < 1 ? 'dim' : ''}">${avatar(driver, true)}<span>${driver.code}</span><em>${
+          pace && time > driver.limit ? 'incident' : ''
+        }</em><strong class="num">${figure}</strong></div>`
+      })
+      .join('')
+  const left = x(state.lap) + 18
+  tip.style.left = `${left + tip.offsetWidth > W ? x(state.lap) - tip.offsetWidth - 6 : left}px`
+  tip.style.top = `${m.t + 6}px`
+}
+
+function drawSpread(card) {
+  const { el } = card
+  const grid = el.querySelector('.spread')
+  const best = (key) => Math.min(...data.drivers.map((driver) => driver[key]))
+  const figure = (driver, key, text) => `<span class="fig num ${driver[key] === best(key) ? 'gold' : ''}">${text}</span>`
+  grid.innerHTML =
+    `<div class="head"><span></span><span>Pilote</span>
+      <span class="key"><span><i class="lap"></i>un tour propre</span><span><i class="med"></i>médian</span><span><i class="best"></i>meilleur</span></span>
+      <span class="fig">Meilleur</span><span class="fig">Médian</span><span class="fig">Régularité</span><span class="fig">Incidents</span><span class="fig">Temps perdu</span></div>` +
+    data.drivers
+      .map(
+        (driver, i) => `<div class="row">
+          <span class="pos num">${i + 1}</span>
+          <span class="who">${avatar(driver)}${driver.code}</span>
+          <div class="strip" data-strip="${driver.i}"></div>
+          ${figure(driver, 'best', sec(driver.best))}${figure(driver, 'median', sec(driver.median))}
+          ${figure(driver, 'spread', `±${(driver.spread / 1000).toFixed(2)}`)}${figure(driver, 'incidents', driver.incidents)}
+          ${figure(driver, 'lost', `${(driver.lost / 1000).toFixed(1)} s`)}
+        </div>`
+      )
+      .join('') +
+    `<div class="foot"><span></span><span></span><div class="strip" data-axis></div></div>`
+
+  const clean = data.drivers.flatMap((driver) => driver.laps.filter((time) => time <= driver.limit))
+  const lo = Math.floor(Math.min(...clean) / 500) * 500
+  const hi = Math.ceil(Math.max(...clean) / 500) * 500
+  const W = grid.querySelector('.strip').clientWidth
+  const x = (time) => 6 + ((time - lo) / (hi - lo)) * (W - 12)
+  const marks = ticks(lo, hi, hi - lo > 4000 ? 1000 : 500)
+  const lines = (height) => marks.map((time) => `<line class="grid" x1="${x(time)}" x2="${x(time)}" y1="0" y2="${height}"/>`).join('')
+  const tip = el.querySelector('.tip')
+
+  grid.querySelectorAll('[data-strip]').forEach((strip) => {
+    const driver = data.drivers[Number(strip.dataset.strip)]
+    const dots = driver.laps
+      .map((time, lap) => ({ time, lap, cx: x(time), cy: 17 + (((lap * 7919) % 15) - 7) }))
+      .filter(({ time }) => time <= driver.limit)
+    const top = driver.best === data.fastest ? 'var(--fastest)' : 'var(--gold)'
+    const draw = (over) =>
+      (strip.innerHTML = `<svg viewBox="0 0 ${W} 33">${lines(33)}
+        ${dots
+          .filter(({ time }) => time !== driver.best)
+          .map(
+            ({ cx, cy, lap }) =>
+              `<circle cx="${cx}" cy="${cy}" r="${lap === over ? 4.5 : 3}" fill="${ink(driver)}" opacity="${lap === over ? 1 : 0.5}"/>`
+          )
+          .join('')}
+        <line x1="${x(driver.median)}" x2="${x(driver.median)}" y1="4" y2="30" stroke="var(--fg)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="${x(driver.best)}" cy="17" r="4.5" fill="${top}" stroke="var(--card)" stroke-width="2"/>
+      </svg>`)
+    draw(null)
+    strip.onmousemove = (event) => {
+      const box = strip.getBoundingClientRect()
+      const [px, py] = [event.clientX - box.left, event.clientY - box.top]
+      const near = dots.reduce((a, b) => (Math.hypot(a.cx - px, a.cy - py) < Math.hypot(b.cx - px, b.cy - py) ? a : b))
+      draw(near.lap)
+      tip.hidden = false
+      tip.innerHTML = `<b>${driver.code} · tour ${near.lap + 1}</b><div style="grid-template-columns:1fr"><strong class="num" style="text-align:left">${sec(near.time)}</strong></div>`
+      const body = el.querySelector('.body').getBoundingClientRect()
+      tip.style.left = `${Math.min(box.left - body.left + near.cx + 14, body.width - tip.offsetWidth - 8)}px`
+      tip.style.top = `${box.top - body.top - 54}px`
+    }
+    strip.onmouseleave = () => {
+      draw(null)
+      tip.hidden = true
+    }
+  })
+  grid.querySelector('[data-axis]').innerHTML = `<svg viewBox="0 0 ${W} 22" style="display:block;width:100%;height:22px;overflow:visible">${marks
+    .map((time) => `<text x="${x(time)}" y="15" text-anchor="middle">${(time / 1000).toFixed(time % 1000 ? 1 : 0)}</text>`)
+    .join('')}</svg>`
+}
+
+/* --- the mockup's switches --- */
+function show(session) {
+  data = prepare(window.SESSIONS[session])
+  document.getElementById('source').textContent = `${data.name} (${data.track})`
+  drawAll()
+}
+function drawAll() {
+  document.querySelectorAll('[data-board]').forEach(drawBoard)
+  document.querySelectorAll('[data-card]').forEach((el) => (el.card ? el.card.draw() : mount(el)))
+}
+document.querySelectorAll('[data-switch]').forEach((group) => {
+  group.querySelectorAll('button').forEach((button) => {
+    button.onclick = () => {
+      group.querySelectorAll('button').forEach((other) => other.setAttribute('aria-pressed', other === button))
+      if (group.dataset.switch === 'session') return show(button.dataset.value)
+      theme = button.dataset.value
+      document.documentElement.dataset.theme = theme
+      drawAll()
+    }
+  })
+})
+addEventListener('resize', drawAll)
+show('race')
+</script>
+</body>
+</html>
