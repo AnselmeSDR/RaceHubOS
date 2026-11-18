@@ -1,0 +1,9 @@
+{
+  "main": [13598, 210], "exit": [13992, 4],
+  "serial_rx_isr": [1382, 230], "ctl_pulse_window_isr": [2074, 258],
+  "ctl_pulse0_isr": [2332, 176], "ctl_pulse2_isr": [2508, 194],
+  "timer2_tick_service": [3182, 564],
+  "cmd_version_send": [514, 48], "cmd_ctl_table_set_v4": [838, 46],
+  "reply_append_checksum_v2": [490, 24],
+  "slot_word_compose": [1876, 198], "cmd_dispatch": [1704, 172]
+}

@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width"
+  /><title>CU Firmware · RaceHubOS</title>
+  <style>
+    body {
+      font: 16px system-ui;
+      background: #101827;
+      color: #e5e7eb;
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 24px;
+    }
+    section {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    button,
+    a {
+      color: #67e8f9;
+    }
+    button {
+      background: #0f172a;
+      border: 1px solid #67e8f9;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    label {
+      display: block;
+      margin: 18px 0;
+    }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    input {
+      display: block;
+      margin: 8px 0;
+    }
+    h1 {
+      color: #67e8f9;
+    }
+    fieldset {
+      border: 1px solid #475569;
+      border-radius: 8px;
+      margin: 18px 0;
+      padding: 16px;
+    }
+    input[type="range"] {
+      width: min(100%, 540px);
+      accent-color: #67e8f9;
+    }
+    input[type="number"] {
+      width: 100px;
+      padding: 8px;
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    output {
+      display: inline-block;
+      font-weight: 700;
+      margin: 8px 0;
+    }
+    .exportButton {
+      display: inline-block;
+      border: 1px solid #67e8f9;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 4px 8px 4px 0;
+      text-decoration: none;
+    }
+    .exportButton[aria-disabled="true"] {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    #parameterFields label {
+      margin: 12px 0 6px;
+    }
+    #parameterFields p {
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 6px 0 14px;
+      color: #cbd5e1;
+    }
+    #parameterFields input[type="range"] {
+      display: inline-block;
+      vertical-align: middle;
+      width: calc(100% - 120px);
+      margin: 4px 8px 4px 0;
+    }
+    #parameterFields input[type="number"] {
+      display: inline-block;
+      vertical-align: middle;
+      width: 76px;
+      padding: 6px;
+      margin: 4px 0;
+    }
+    #parameterFields output {
+      display: block;
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    #parameterFields fieldset {
+      margin: 12px 0;
+      padding: 10px;
+    }
+    .optionHelp {
+      font-size: 14px;
+      line-height: 1.45;
+      color: #cbd5e1;
+      margin: 12px 0;
+    }
+    .optionHelp h3 {
+      color: #e5e7eb;
+      margin-bottom: 8px;
+    }
+    .optionHelp summary {
+      cursor: pointer;
+      color: #67e8f9;
+      padding: 8px 0;
+    }
+    .optionTable {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .optionTable th,
+    .optionTable td {
+      border: 1px solid #475569;
+      padding: 10px;
+      vertical-align: top;
+    }
+    .optionTable thead {
+      background: #0f172a;
+    }
+    @media (max-width: 600px) {
+      .optionTable th,
+      .optionTable td {
+        padding: 6px;
+        font-size: 12px;
+      }
+    }
+  </style>
+  <h1>CU Firmware Werkstatt</h1>
+  <label for="workshopLanguage">Sprache</label>
+  <select id="workshopLanguage" aria-describedby="languageHelp">
+    <option value="de" lang="de">Deutsch</option>
+    <option value="en" lang="en">English</option>
+    <option value="fr" lang="fr">Français</option>
+  </select>
+  <p id="languageHelp" class="optionHelp">
+    Sprachwechsel lädt die Werkstatt neu. Ungespeicherte Editorwerte werden
+    verworfen; ein laufender Flash läuft serverseitig weiter.
+  </p>
+  <p>
+    RaceHubOS · Carrera Digital 124/132 · HMF-Prüfung und überprüfbare
+    Byte-Patches
+  </p>
+  <section aria-labelledby="parameterTitle">
+    <h2 id="parameterTitle">Firmware mit Einstellreglern anpassen</h2>
+    <p>
+      Erzeugt eine neue HMF-Datei aus der geprüften V339-Basis. Die Regler
+      ändern eine Datei; die verbundene CU bleibt unverändert.
+    </p>
+    <label
+      >Firmware-Basis<select
+        id="parameterBase"
+        aria-describedby="firmwareBasesHelp"
+      >
+        <option value="v339-stock">V339 Stock – normale CU-Funktionen</option>
+        <option value="v339-bot.5">
+          V339 + Bot-Modul Revision 5 – für kompatible Bot-Software
+        </option>
+      </select></label
+    >
+    <div id="firmwareBasesHelp" class="optionHelp">
+      <h3>Welche Firmware-Basis passt zu mir?</h3>
+      <table class="optionTable">
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Was bedeutet das?</th>
+            <th>Wann wählen?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Ohne Bot-Modul (Stock)</th>
+            <td>
+              Rekonstruierte V339-Serienbasis für Hardware 5/AVR. Handregler,
+              Zeitmessung, Tankfunktion und Startampel arbeiten mit dem
+              Serienverhalten. Piepton und Einstellungs-Lauflicht lassen sich
+              trotzdem anpassen.
+            </td>
+            <td>
+              Für normalen Rennbetrieb und deine bisherigen Anpassungen. Es wird
+              kein zusätzlicher Bot-Watchdog eingebaut.
+            </td>
+          </tr>
+          <tr>
+            <th>Mit Bot-Modul Revision 5</th>
+            <td>
+              Dieselbe V339-Basis mit Flatouts Erweiterung für
+              softwaregesteuerte Fahrzeuge: Gas pro Fahrzeug, Spurwechsel und
+              Rückgabe an den Handregler. Ein Watchdog setzt Bot-Gas bei
+              ausbleibenden Steuerbefehlen auf 0.
+            </td>
+            <td>
+              Nur wenn deine Rennsoftware dieses Bot-Modul ausdrücklich
+              unterstützt. Das Modul allein erzeugt keine automatischen Gegner
+              in RaceHubOS.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        V339 besitzt bereits eigene Befehle für softwaregesteuerte Fahrzeuge.
+        Das zusätzliche Bot-Modul ist deshalb nicht grundsätzlich nötig.
+        „Revision 5“ bezeichnet die Version der Bot-Erweiterung, keine neuere
+        Carrera-Firmware und keine neue CU-Hardware.
+      </p>
+      <p>
+        <strong>Beide Optionen sind für Hardware 5/AVR.</strong> Hardware
+        8/STM32 wird damit nicht unterstützt. „Basis laden“ lädt eine lokale
+        Datei und liest keine Firmware aus der verbundenen CU aus.
+      </p>
+    </div>
+    <button id="loadParameterBase">Geprüfte Basis laden</button>
+    <label
+      >Oder eigene unterstützte HMF-Datei<input
+        id="parameterFile"
+        type="file"
+        accept=".hmf,.HMF"
+    /></label>
+    <p class="optionHelp">
+      Eigene HMF-Datei: Hier kannst du eine zuvor erzeugte V339-Datei wieder
+      öffnen. Die Regler übernehmen ihre tatsächlichen Werte, auch wenn oben
+      noch eine andere Basis ausgewählt ist. Andere Firmware-Versionen und
+      fremde Änderungen werden für die Regler abgewiesen.
+    </p>
+    <p id="parameterBaseStatus" role="status">
+      Zuerst eine Basis laden oder eine unterstützte HMF-Datei auswählen.
+    </p>
+    <fieldset id="parameterFields" disabled>
+      <label for="eventGap"
+        >Rundenerkennung: Mindestabstand der Sensorereignisse</label
+      >
+      <input
+        id="eventGap"
+        type="range"
+        min="101"
+        max="5000"
+        step="1"
+        value="501"
+        aria-describedby="eventGapHelp"
+      /><input
+        id="eventGapNumber"
+        type="number"
+        min="101"
+        max="5000"
+        step="1"
+        value="501"
+        aria-label="Mindestabstand in Millisekunden"
+      /><output id="eventGapValue">501 ms</output>
+      <p id="eventGapHelp">
+        Serienwert 501 ms (CU-Zeitbasis laut Upstream). Gilt pro Fahrzeug
+        zwischen Sensorereignissen, auch Zwischenzeiten. Die Mindest-Rundenzeit
+        in RaceHubOS wird separat eingestellt. Größer: dicht aufeinanderfolgende
+        Ereignisse werden stärker gefiltert. Kleiner: kürzere Abstände werden
+        akzeptiert, auch unbeabsichtigte Mehrfachsignale.
+      </p>
+      <label for="debounce">Sensorentprellung für beide CU-Sensoren</label>
+      <input
+        id="debounce"
+        type="range"
+        min="1"
+        max="20"
+        step="1"
+        value="5"
+        aria-describedby="debounceHelp"
+      /><input
+        id="debounceNumber"
+        type="number"
+        min="1"
+        max="20"
+        step="1"
+        value="5"
+        aria-label="Sensorentprellung in CU-Ticks"
+      /><output id="debounceValue">5 CU-Ticks</output>
+      <p id="debounceHelp">
+        Serienwert 5 CU-Ticks. Ändert die Wiederfreigabe beider Sensoren bei der
+        Impulserfassung und nach Störsignalen. Niedrige Werte können
+        Doppelereignisse begünstigen. Keine verlässliche pauschale Umrechnung in
+        ms. Größer: Der Sensor wartet länger auf Ruhe, bevor er wieder
+        freigegeben wird. Kleiner: Er ist schneller wieder bereit, kann aber
+        empfindlicher auf Störungen reagieren.
+      </p>
+      <fieldset id="watchdogFields" disabled>
+        <label for="watchdog">Bot-Watchdog</label>
+        <input
+          id="watchdog"
+          type="range"
+          min="7"
+          max="40"
+          step="1"
+          value="13"
+          aria-describedby="watchdogHelp"
+        /><input
+          id="watchdogNumber"
+          type="number"
+          min="7"
+          max="40"
+          step="1"
+          value="13"
+          aria-label="Bot-Watchdog in Bahnzyklen"
+        /><output id="watchdogValue">13 Bahnzyklen ≈ 975 ms</output>
+        <p id="watchdogHelp">
+          Nur mit Bot-Modul .5. Ohne rechtzeitigen B-Gasbefehl wird Bot-Gas auf
+          0 gesetzt. Serienwert 13 Bahnzyklen (ungefähr 1 s); Zeitangabe bei ca.
+          75 ms je Zyklus. Der Sender muss häufiger aktualisieren. Der Watchdog
+          bleibt aktiv. Kleiner: Bot-Gas wird bei einem Verbindungsproblem
+          früher auf 0 gesetzt; zu kurze Werte können auch bei kurzen
+          Verzögerungen eingreifen. Größer: Mehr Zeit für verspätete Befehle,
+          aber eine längere Reaktionszeit bei Ausfall. Dieser Regler gilt nur
+          für das zusätzliche Bot-Modul.
+        </p>
+      </fieldset>
+      <label
+        ><input
+          id="idleSleep"
+          type="checkbox"
+          checked
+          aria-describedby="idleSleepHelp"
+        />Energiesparmodus nach Inaktivität zulassen</label
+      >
+      <p id="idleSleepHelp">
+        <strong>An:</strong> Vorhandene CU-Energiespareinstellung gilt; die CU
+        kann nach längerer Inaktivität einschlafen. <strong>Aus:</strong> Die
+        neue Firmware überspringt den Eintritt in den Schlafmodus, wenn kein
+        Fehler erkannt ist. Kurzschluss-/Überlasterkennung, Abschaltung bei
+        Fehlern und deren Blinkverarbeitung bleiben im Code unverändert. Es wird
+        nicht die globale Keep-awake-Einstellung erzwungen. Die
+        USB-/Bluetooth-Verbindung ist dafür unerheblich. Dies ist keine
+        Abschaltung des Bot-Watchdogs.
+      </p>
+      <div class="optionHelp">
+        <strong>Schutzfunktionen bleiben erhalten:</strong> Es gibt hier keinen
+        Schalter zum Abschalten des Kurzschluss- oder Überlastschutzes. Die
+        Prüfung belegt unveränderten Schutz-Code; ein realer Kurzschlusstest
+        wurde nicht durchgeführt.
+      </div>
+      <label
+        ><input
+          id="cuSound"
+          type="checkbox"
+          checked
+          aria-describedby="cuSoundHelp"
+        />CU-Pieptöne zulassen</label
+      >
+      <p id="cuSoundHelp">
+        Aus: Die angepasste Firmware unterdrückt Pieptöne über die
+        Tonwarteschlange, auch während einer Bluetooth- oder USB-Verbindung. Das
+        kann ebenfalls Hinweis- und Warntöne dieser Routine unterdrücken. An:
+        ursprüngliche Tonroutine und vorhandene CU-Sound-Einstellung. Der
+        Schalter ändert nur die exportierte Datei; die verbundene CU wird erst
+        nach einem gesonderten Flash geändert. Andere Ton-Signalwege sind nicht
+        zugesichert.
+      </p>
+      <label
+        ><input id="ledChase" type="checkbox" checked />LED-Lauflicht nach
+        Einstellungsänderungen / beim Programmieren</label
+      >
+      <p>
+        Abschaltbar über die reine Lauflicht-Routine. Startampel und
+        Fehleranzeigen bleiben erhalten.
+      </p>
+      <details class="optionHelp">
+        <summary>Weitere verfügbare Schalter</summary>
+        <label
+          ><input
+            id="sensorTones"
+            type="checkbox"
+            checked
+            aria-describedby="sensorTonesHelp"
+          />CU-Töne bei Sensorereignissen zulassen</label
+        >
+        <p id="sensorTonesHelp">
+          <strong>An:</strong> Die CU darf bei erfassten Überfahrten, Runden und
+          Bestzeiten die bisherigen Tonfolgen ausgeben.
+          <strong>Aus:</strong> Diese Tonaufrufe werden unterdrückt;
+          Rundenerfassung, Zeiten und Ranglistenberechnung bleiben unverändert.
+          Andere Tonaufrufe bleiben erhalten, solange „CU-Pieptöne zulassen“ an
+          ist. Bei allgemein ausgeschaltetem Piepton hat dieser zusätzliche
+          Schalter keine hörbare Wirkung. Die globale Stummschaltung unterdrückt
+          weiterhin auch Warntöne derselben Tonroutine.
+        </p>
+        <label
+          ><input
+            id="pcCarControl"
+            type="checkbox"
+            checked
+            aria-describedby="pcCarControlHelp"
+          />Serien-Fahrzeugsteuerung per PC zulassen (C-Befehl)</label
+        >
+        <p id="pcCarControlHelp">
+          <strong>An (Serienwert, empfohlen):</strong> Kompatible Rennsoftware
+          darf die vorhandene V339-PC-Steuerung für Gas und Spurwechsel
+          verwenden. <strong>Aus:</strong> C-Steuerbefehle werden ohne Wirkung
+          quittiert; entsprechende Software-Fahrzeuge funktionieren dann nicht.
+          Handregler, Zeitmessung und Software-START/ESC bleiben unverändert.
+          Das zusätzliche Bot-Modul verwendet einen anderen Befehl und wird
+          durch diesen Schalter nicht deaktiviert. Der Schalter ist keine
+          allgemeine Not-Aus- oder Zugriffssperre.
+        </p>
+      </details>
+      <details class="optionHelp">
+        <summary>Was machen Erstellen, Zurücksetzen und Speichern?</summary>
+        <p>
+          <strong>Serienwerte wiederherstellen:</strong> Setzt nur die Regler
+          und Schalter im Editor zurück. Eine ausgewählte Bot-Basis bleibt eine
+          Bot-Basis; die laufende CU wird nicht zurückgesetzt.
+        </p>
+        <p>
+          <strong>Firmware erstellen:</strong> Berechnet eine neue HMF-Datei und
+          den Prüfbericht aus den gewählten Einstellungen. Dafür wird die
+          Firmware nicht auf die CU übertragen.
+        </p>
+        <p>
+          <strong>Firmware-Datei speichern:</strong> Lädt die neue HMF für eine
+          spätere Übertragung herunter.
+          <strong>Prüfbericht speichern:</strong> Enthält Einstellungen,
+          Dateihashes und die geänderten Stellen. Ein erfolgreicher Dateitest
+          ist keine Hardwareprüfung.
+        </p>
+      </details>
+      <button id="resetParameters">Serienwerte wiederherstellen</button>
+      <button id="createParameters">Firmware erstellen (ohne Flashen)</button>
+    </fieldset>
+    <p id="parameterResult" role="status">
+      Noch keine angepasste Firmware erstellt.
+    </p>
+    <a
+      id="saveParameters"
+      role="button"
+      aria-disabled="true"
+      class="exportButton"
+      >Firmware-Datei speichern</a
+    ><a
+      id="saveParameterReport"
+      role="button"
+      aria-disabled="true"
+      class="exportButton"
+      >Prüfbericht speichern</a
+    >
+    <pre id="parameterReport"></pre>
+  </section>
+  <section>
+    <h2>CU-Piepton: Firmware-Schalter und normale CU-Einstellung</h2>
+    <p>
+      Oben lässt sich die Tonwarteschlange in einer neuen Firmware abschalten.
+      Dies ist kein Live-Stummschaltbefehl für die derzeit verbundene CU. Es
+      wird nicht automatisch geflasht.
+    </p>
+    <p>
+      Sensor- und Tasten-Bestätigungstöne lassen sich an der CU abschalten: CU
+      ausschalten, START/ENTER gedrückt halten, CU einschalten, Taste loslassen.
+      Der Einschalt-Quittierungston bleibt laut Carrera erhalten. Es ist eine
+      CU-Einstellung, keine Bluetooth-/USB-Toneinstellung.
+    </p>
+    <p>
+      Für die laufende V339-Verbindung ist kein eindeutig belegter eigener
+      Stummschaltbefehl vorhanden. START/ENTER per Software kann einen Rennstart
+      auslösen; ein solcher Tastendruck wird hier zum Stummschalten nicht
+      versendet.
+    </p>
+    <a
+      href="https://backend.carrera-revell-toys.com/var/assets/coreshop/pdfs/General%20Introduction%20%28B%29%20D132%20%26%20Wireless.pdf"
+      target="_blank"
+      rel="noreferrer"
+      >Carrera-Anleitung: Sound ON/OFF</a
+    >
+  </section>
+  <section>
+    <h2>1 · Firmware prüfen</h2>
+    <label
+      >Lokale HMF-Datei<input id="source" type="file" accept=".hmf,.HMF"
+    /></label>
+    <pre id="info" role="status">Noch keine Datei geladen.</pre>
+  </section>
+  <section>
+    <h2>2 · Anpassung anwenden</h2>
+    <p>
+      Ein Patch-Rezept bindet jede Änderung an die exakte SHA-256 und die
+      erwarteten Originalbytes. Adressen ab 0x3800 bleiben gesperrt.
+    </p>
+    <label
+      >Patch-Rezept (JSON)<input
+        id="recipe"
+        type="file"
+        accept=".json" /></label
+    ><button id="apply" disabled>
+      Firmware erzeugen und Prüfbericht speichern
+    </button>
+    <pre id="result" role="status"></pre>
+  </section>
+  <section>
+    <h2>3 · CU flashen oder wiederherstellen</h2>
+    <p>
+      Vollständige HMF-Datei auswählen. Bei eigener Firmware ist die erwartete
+      vierstellige CU-Version erforderlich. Vorher Fahrzeuge von der Bahn nehmen
+      und die Stromversorgung sichern.
+    </p>
+    <label
+      >Firmware zur Übertragung<input
+        id="flashFile"
+        type="file"
+        accept=".hmf,.HMF"
+    /></label>
+    <button id="inspectFlash">Datei für Flashen prüfen</button>
+    <pre id="flashInfo" role="status">Noch keine Flash-Datei geprüft.</pre>
+    <label
+      >CU-Adresse<input id="cuAddress" placeholder="Adresse der verbundenen CU"
+    /></label>
+    <p class="optionHelp">
+      CU-Adresse: Eindeutige Adresse der ausgewählten Ziel-CU. Sie muss zur
+      tatsächlich verbundenen CU passen; die Eingabe allein baut noch keine
+      Verbindung auf.
+    </p>
+    <label
+      >Erwartete CU-Version<input
+        id="expectedVersion"
+        value="5339"
+        maxlength="4"
+        pattern="[0-9]{4}"
+    /></label>
+    <p class="optionHelp">
+      Erwartete CU-Version: Kennung nach dem Flash, bei dieser V339-Basis
+      <strong>5339</strong> (Hardware 5 + Firmware 339). Sie wird bei der
+      Abschlussprüfung verglichen. Daraus lassen sich einzelne Anpassungen wie
+      „Ton aus“ nicht auslesen.
+    </p>
+    <label
+      >Übertragungsmodus<select id="flashMode" aria-describedby="flashModeHelp">
+        <option value="normal">Normal – CU ist verbunden und antwortet</option>
+        <option value="recovery">
+          Recovery – CU wartet bereits im Bootloader
+        </option>
+      </select></label
+    >
+    <div id="flashModeHelp" class="optionHelp">
+      <p>
+        <strong>Normal:</strong> Für eine erreichbare CU, die regulär antwortet.
+        Die Werkstatt prüft die Hardwarekennung und fordert erst beim Übertragen
+        den Bootloader an.
+      </p>
+      <p>
+        <strong>Recovery:</strong> Für eine bereits im Bootloader wartende CU
+        nach unterbrochenem Flash. Es wird ein vollständiges Image ab der ersten
+        Zeile gesendet, ohne vorherige normale Versionsabfrage. Nicht für den
+        üblichen Firmwarewechsel verwenden.
+      </p>
+    </div>
+    <label
+      ><input id="allowUnknown" type="checkbox" />Eigene/unbekannte Firmware
+      ausdrücklich verwenden</label
+    >
+    <label
+      ><input id="bench" type="checkbox" />Fahrzeuge entfernt, richtige CU und
+      stabile Stromversorgung geprüft</label
+    >
+    <label
+      ><input id="hardware5" type="checkbox" />Für Recovery: Hardware 5 (AVR)
+      bestätigt; keine STM32-CU mit Hardwarekennung 8</label
+    >
+    <label
+      ><input id="recoveryReset" type="checkbox" />Für Recovery: CU nach dem
+      Abbruch stromlos gemacht und gemäß Hardware-Anleitung im Bootloader neu
+      gestartet</label
+    >
+    <details class="optionHelp">
+      <summary>Was bedeuten die Freigaben und der Status?</summary>
+      <p>
+        <strong>Eigene/unbekannte Firmware:</strong> Erlaubt eine angepasste
+        Datei, deren exakter Hash nicht als offizielles Referenzimage bekannt
+        ist. „Unknown“ bedeutet weder automatisch defekt noch hardwarevalidiert.
+      </p>
+      <p>
+        <strong>Prüfaufbau:</strong> Bestätigt entfernte Fahrzeuge, die richtige
+        CU und eine gesicherte Stromversorgung. Nur bestätigen, wenn das
+        tatsächlich zutrifft.
+      </p>
+      <p>
+        <strong>Recovery-Bestätigungen:</strong> Gelten nur im Recovery-Modus.
+        Hardware 5 ist eine Voraussetzung; ein unterbrochener Datenblock muss
+        durch den passenden Bootloader-Neustart verworfen sein.
+      </p>
+      <p>
+        <strong>Status:</strong> idle = kein Flash gestartet; writing = Daten
+        werden übertragen; verifying = Neustart/Antworten werden geprüft;
+        complete = Übertragung und Abschlussprüfung erfolgreich;
+        recovery_required = Vorgang nicht abgeschlossen, Wiederherstellung
+        prüfen. complete bestätigt keinen vollständigen Firmware-Readback.
+      </p>
+      <p>
+        Die Regler oben zeigen die gewählte Datei, nicht live ausgelesene
+        CU-Einstellungen. Ein bereits abgeschlossenes Flash-Protokoll gehört zum
+        dort angegebenen Dateihash.
+      </p>
+    </details>
+    <button id="startFlash" disabled>
+      Geprüfte Firmware auf CU übertragen
+    </button>
+    <button id="refreshFlash">Status aktualisieren</button
+    ><button id="saveFlashReport">Flash-Protokoll speichern</button>
+    <pre id="flashStatus" role="status" aria-live="polite">
+Verbindung zum Firmware-Dienst wird geprüft …</pre>
+    <p>
+      Während der Übertragung dieses Fenster geöffnet lassen und die CU nicht
+      ausschalten. Nach einem Abbruch nicht automatisch erneut senden: Recovery
+      verwendet ein vollständiges Image ab der ersten Zeile. Im Recovery-Modus
+      gibt es keinen Versions-Handshake vor der Übertragung.
+    </p>
+    <p>
+      Die Abschlussprüfung prüft CU-Version und gültige Statusdaten. Ein
+      byteweiser Firmware-Readback wird vom Protokoll nicht angeboten.
+    </p>
+  </section>
+  <section>
+    <h2>Quellcode anpassen und bauen</h2>
+    <p>
+      Die mitgelieferte Flatout-V339-Rekonstruktion und Bot-Erweiterung liegen
+      im Plugin unter
+      <code>vendor/flatout/firmware</code>. Build und Installation sind in der
+      README beschrieben.
+    </p>
+    <p>
+      Geänderte Firmware ist durch Dateiprüfungen allein nicht auf Hardware
+      validiert. Nach eigenem Build oder Patch die erzeugte HMF-Datei unter „CU
+      flashen“ erneut auswählen und prüfen.
+    </p>
+    <a
+      href="https://github.com/CarlosMagni/flatout"
+      target="_blank"
+      rel="noreferrer"
+      >Flatout – Grundlage und Flash-Werkzeug</a
+    >
+  </section>
+  <script type="module" src="app.mjs"></script>
+  <script type="module" src="parameter-ui.mjs"></script>
+</html>
