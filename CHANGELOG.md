@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] - 2026-11-18
+
+### Added
+- Lap analysis under a session's leaderboard, live and in the session's record: pace (each driver's clean laps, smoothed, incidents shown apart), gaps to the leader in a race, and consistency (best, median, spread, incidents and time lost); a clean lap is within 15% of the driver's best.
+
 ## [1.36.1] - 2026-11-17
 
 ### Changed
