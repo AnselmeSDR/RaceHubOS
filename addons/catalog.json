@@ -13,6 +13,20 @@
         "fr": "Tours et distance de chaque voiture depuis son dernier entretien, un intervalle par voiture, et les voitures à entretenir.",
         "de": "Runden und Strecke jedes Fahrzeugs seit der letzten Wartung, ein Intervall pro Fahrzeug und die fälligen Fahrzeuge."
       }
+    },
+    {
+      "id": "cu-usb",
+      "repo": "https://github.com/WillibaldSoft/racehubos-cu-usb",
+      "name": {
+        "en": "USB Control Unit",
+        "de": "USB-Control-Unit",
+        "fr": "Control Unit USB"
+      },
+      "description": {
+        "en": "Connect a Carrera CU by PC USB cable, with automatic discovery.",
+        "de": "Carrera-CU per PC-USB-Kabel verbinden und automatisch erkennen.",
+        "fr": "Connecter une CU Carrera par câble PC USB avec détection automatique."
+      }
     }
   ]
 }
