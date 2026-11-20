@@ -1,6 +1,6 @@
 {
   "activeSession": {
-    "title": "Laufende Sitzung",
+    "title": "Laufende Session",
     "fallbackName": "Laufendes Rennen",
     "join": "Öffnen"
   },

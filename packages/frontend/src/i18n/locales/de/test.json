@@ -5,8 +5,8 @@
     "socketOff": "Echtzeitverbindung getrennt",
     "cuConnected": "CU verbunden",
     "cuOffline": "CU nicht erreichbar",
-    "session": "Sitzung: {{id}}",
-    "noSession": "Keine Sitzung"
+    "session": "Session: {{id}}",
+    "noSession": "Keine Session"
   },
   "raceState": {
     "unknown": "Unbekannt",
@@ -48,7 +48,7 @@
   "logs": {
     "title": "Protokolle",
     "grouped": "Gruppiert",
-    "chrono": "Zeitlich",
+    "chrono": "Chronologisch",
     "filterAll": "Alle",
     "filterLap": "Runden",
     "filterStatus": "Status",

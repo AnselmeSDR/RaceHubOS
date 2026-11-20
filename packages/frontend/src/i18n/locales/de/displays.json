@@ -1,6 +1,6 @@
 {
   "page": {
-    "title": "Anzeigen – Anzeigeelemente",
+    "title": "Anzeigeelemente – Übersicht",
     "subtitle": "Sammlung der in der Anwendung verwendeten Anzeigeelemente"
   },
   "tabs": {
@@ -23,7 +23,7 @@
     },
     "listItem": {
       "title": "Listeneintrag",
-      "description": "Kompakte Liste für Auswahlen und kleine Ansichten"
+      "description": "Kompakter Listeneintrag für Auswahllisten und kleine Ansichten"
     },
     "gridPosition": {
       "title": "Startplatz",
@@ -35,11 +35,11 @@
     },
     "selectCard": {
       "title": "Auswahlkarte",
-      "description": "Mehrere Fahrer für eine Sitzung auswählen"
+      "description": "Mehrere Fahrer für eine Session auswählen"
     },
     "badge": {
-      "title": "Kennzeichen",
-      "description": "Kompakte Kennzeichen für Menüs, Meldungen usw."
+      "title": "Fahrerabzeichen",
+      "description": "Kompakte Fahrerabzeichen für Menüs, Meldungen usw."
     },
     "row": "REIHE",
     "sizeSmall": "Klein",
@@ -54,7 +54,7 @@
     },
     "stateChip": {
       "title": "Statusanzeige",
-      "description": "Statusanzeige für Sitzung und Control Unit"
+      "description": "Statusanzeige für Session und Control Unit"
     },
     "gapDisplay": {
       "title": "Abstandsanzeige",
@@ -62,11 +62,11 @@
     },
     "leaderboard": {
       "title": "Rangliste",
-      "description": "Rangliste der laufenden Sitzung"
+      "description": "Rangliste der laufenden Session"
     },
     "freePracticeLeaderboard": {
       "title": "Trainingsrangliste",
-      "description": "Trainingsrangliste mit Runden- und Zeitfilter"
+      "description": "Trainingsrangliste mit Sortierung nach Rundenzahl oder Bestzeit"
     },
     "lapTimeDefault": "Größe „mittel“ (Standard)",
     "lapTimeIsBest": "Bestzeit hervorgehoben",
@@ -74,12 +74,12 @@
   },
   "championship": {
     "sessionTypes": {
-      "title": "Sitzungstypen",
-      "description": "Wähle einen Sitzungstyp, um die verschiedenen Zustände zu sehen"
+      "title": "Sessiontypen",
+      "description": "Wähle einen Sessiontyp, um die verschiedenen Zustände zu sehen"
     },
     "statusBadges": {
       "title": "Statuskennzeichen",
-      "description": "Statusanzeigen der Sitzung"
+      "description": "Statusanzeigen der Session"
     },
     "leaderboardByType": {
       "title": "Rangliste – {{type}}",
@@ -89,22 +89,22 @@
     },
     "freePracticeLeaderboard": {
       "title": "Trainingsrangliste",
-      "description": "Trainingsrangliste mit Runden- und Zeitfilter"
+      "description": "Trainingsrangliste mit Sortierung nach Rundenzahl oder Bestzeit"
     },
     "standingsPanel": {
       "title": "Gesamtwertung",
-      "description": "Training, Qualifikation und Rennen mit zusammengefasster Wertung",
+      "description": "Training, Qualifying und Rennen mit zusammengefasster Wertung",
       "heading": "Gesamtwertung"
     },
-    "activeSession": "Laufende Sitzung:",
+    "activeSession": "Laufende Session:",
     "statusDraft": "Entwurf",
     "statusActive": "Läuft",
-    "statusFinishing": "🏁 Sitzung wird beendet …",
+    "statusFinishing": "🏁 Session wird beendet …",
     "statusFinished": "Beendet",
     "maxLaps": "Höchstens {{count}} Runden",
     "raceLaps": "{{count}} Runden",
     "tabFree": "Training",
-    "tabQualif": "Qualifikation",
+    "tabQualif": "Qualifying",
     "tabRace": "Rennen"
   },
   "crud": {
@@ -120,15 +120,15 @@
     "emptyState": {
       "title": "Leere Ansicht",
       "description": "Anzeige für Listen ohne Daten",
-      "demoTitle": "Kein Fahrer",
-      "demoMessage": "Lege zuerst deinen ersten Fahrer an"
+      "demoTitle": "Keine Fahrer",
+      "demoMessage": "Lege deinen ersten Fahrer an"
     },
     "entityCard": {
       "title": "Eintragskarte",
       "description": "Allgemeine Karte mit Bild und Statistik"
     },
     "statBadge": {
-      "title": "Statistikkennzeichen",
+      "title": "Statistikanzeige",
       "description": "Statistikanzeige für Eintragskarten"
     },
     "colorPickerField": {
@@ -137,8 +137,8 @@
       "label": "Fahrerfarbe"
     },
     "rangeField": {
-      "title": "Wertregler",
-      "description": "Schieberegler für Zahlenwerte, z. B. Geschwindigkeit und Beschleunigung",
+      "title": "Schieberegler",
+      "description": "Schieberegler für Zahlenwerte, z. B. Höchstgeschwindigkeit und Bremskraft",
       "label": "Höchstgeschwindigkeit"
     },
     "errorMessage": {
@@ -147,7 +147,7 @@
       "demoMessage": "Beim Laden der Daten ist ein Fehler aufgetreten."
     },
     "addDriver": "Fahrer hinzufügen",
-    "noDivision": "Keine Division",
+    "noDivision": "Keine Leistungsklasse",
     "statRaces": "Rennen",
     "statLaps": "Runden",
     "statWins": "Siege",
@@ -176,8 +176,8 @@
       "description": "Diese Elemente sind vorhanden, werden aber derzeit nicht eingebunden. Sie können für spätere Funktionen genutzt oder entfernt werden."
     },
     "driverBadge": {
-      "title": "Fahrerkennzeichen",
-      "description": "Kompakte Kennzeichen – vorhanden, aber auf keiner Seite verwendet"
+      "title": "Fahrerabzeichen",
+      "description": "Kompakte Fahrerabzeichen – vorhanden, aber auf keiner Seite verwendet"
     },
     "driverGridPosition": {
       "title": "Startplatzanzeige",
@@ -197,8 +197,8 @@
       "subtitle": "Beispieleintrag"
     },
     "statBadge": {
-      "title": "Statistikkennzeichen",
-      "description": "Statistikkennzeichen – vorhanden, aber nicht verwendet"
+      "title": "Statistikanzeige",
+      "description": "Statistikanzeige – vorhanden, aber nicht verwendet"
     }
   },
   "demo": {
@@ -222,12 +222,12 @@
     },
     "selectCard": {
       "title": "5. Auswahlkarte (mehrere Fahrer)",
-      "description": "Zum Auswählen der Fahrer einer Sitzung",
+      "description": "Zum Auswählen der Fahrer einer Session",
       "selectedCount_one": "{{count}} Fahrer ausgewählt",
       "selectedCount_other": "{{count}} Fahrer ausgewählt"
     },
     "badge": {
-      "title": "6. Kennzeichen (kompakte Anzeige)",
+      "title": "6. Fahrerabzeichen (kompakte Anzeige)",
       "description": "Für kompakte Anzeigen in Menüs, Meldungen usw."
     },
     "noDriversFound": "Keine Fahrer gefunden. Lege Fahrer an, um die Vorschau zu sehen."
