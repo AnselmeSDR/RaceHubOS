@@ -13,14 +13,14 @@
     "link": "Über einen Link installieren"
   },
   "installed": {
-    "empty": "Noch kein Add-on. Im Katalog findest du eines.",
+    "empty": "Noch keine Add-ons installiert. Im Katalog findest du verfügbare Erweiterungen.",
     "by": "von {{author}}",
     "source": {
       "catalog": "Katalog",
       "link": "Link",
       "local": "Lokaler Ordner"
     },
-    "localHint": "Von Hand in addons/ abgelegt: Die App aktualisiert oder entfernt es nie.",
+    "localHint": "Manuell im Ordner addons/ abgelegt. Dieses Add-on wird von der Anwendung weder aktualisiert noch entfernt.",
     "enabled": "Aktiviert",
     "disabled": "Deaktiviert",
     "invalid": "Ungültig",
@@ -32,14 +32,14 @@
   },
   "uninstall": {
     "title": "{{name}} deinstallieren?",
-    "deleteData": "Auch seine Daten löschen",
-    "deleteDataHint": "Seine Felder bei Fahrern, Autos, Strecken… und seine eigene Datenbank. Sonst bleiben sie erhalten: Bei einer Neuinstallation ist alles wieder da.",
+    "deleteData": "Auch die Daten dieses Add-ons löschen",
+    "deleteDataHint": "Löscht die vom Add-on gespeicherten Zusatzfelder bei Fahrern, Autos, Strecken usw. sowie seine eigene Datenbank. Ohne diese Auswahl bleiben die Daten für eine Neuinstallation erhalten.",
     "confirm": "Deinstallieren",
     "cancel": "Abbrechen"
   },
   "market": {
     "empty": "Der Katalog ist noch leer.",
-    "offline": "Der Online-Katalog konnte nicht gelesen werden: Das ist der mit der App ausgelieferte Katalog.",
+    "offline": "Der Online-Katalog ist nicht erreichbar. Angezeigt wird der mit der Anwendung ausgelieferte Katalog.",
     "install": "Installieren",
     "installed": "Installiert",
     "source": "Quellcode"
@@ -53,10 +53,10 @@
   "overrides": {
     "title": "Von Add-ons geänderte Kerndateien",
     "core": "Kern",
-    "replacement": "{{addon}} ersetzt {{file}}: Die Änderungen von {{hidden}} sind verdeckt.",
+    "replacement": "{{addon}} ersetzt {{file}}. Die Änderungen von {{hidden}} kommen dadurch nicht zum Einsatz.",
     "replacementAlone": "{{addon}} ersetzt {{file}} vollständig.",
-    "orphan": "{{addon}} ändert {{file}}, die es im Kern nicht mehr gibt: Diese Änderung bewirkt nichts.",
-    "hint": "Deaktiviere eines dieser Add-ons oder bitte seinen Autor, die Datei mit @base zu umhüllen.",
+    "orphan": "{{addon}} ändert {{file}}, aber diese Datei ist im Kern nicht mehr vorhanden. Die Änderung hat daher keine Wirkung.",
+    "hint": "Deaktiviere eines der betroffenen Add-ons oder bitte dessen Autor, die Originaldatei über @base einzubinden.",
     "coreFiles_one": "{{count}} Kerndatei",
     "coreFiles_other": "{{count}} Kerndateien"
   },
@@ -67,17 +67,17 @@
     "disable": "{{addon}} wird deaktiviert",
     "uninstall": "{{addon}} wird deinstalliert",
     "newAddon": "Das Add-on",
-    "restarting": "Fertig. RaceHubOS startet neu…",
+    "restarting": "Fertig. RaceHubOS wird neu gestartet …",
     "failed": "Fehlgeschlagen: {{error}}",
     "dismiss": "Schließen"
   },
   "step": {
-    "starting": "Start…",
-    "download": "Herunterladen…",
-    "backup": "Datenbank wird gesichert…",
-    "dependencies": "Seine Abhängigkeiten werden installiert…",
-    "build": "App wird gebaut…",
-    "restart": "Neustart…",
+    "starting": "Wird gestartet …",
+    "download": "Wird heruntergeladen …",
+    "backup": "Datenbank wird gesichert …",
+    "dependencies": "Abhängigkeiten des Add-ons werden installiert …",
+    "build": "Anwendung wird erstellt …",
+    "restart": "Neustart …",
     "error": "Fehler"
   }
 }

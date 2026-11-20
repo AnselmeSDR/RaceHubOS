@@ -20,7 +20,7 @@
     "emailPlaceholder": "lewis@example.com",
     "preferredCar": "Lieblingsauto",
     "noPreferredCar": "Keins",
-    "preferredCarHint": "Wird übernommen, wenn der Fahrer an einer Meisterschaft teilnimmt, und ist dort änderbar.",
+    "preferredCarHint": "Wird bei der Teilnahme an einer Meisterschaft vorausgewählt und kann dort geändert werden.",
     "saved": "Fahrer gespeichert"
   },
   "profile": {

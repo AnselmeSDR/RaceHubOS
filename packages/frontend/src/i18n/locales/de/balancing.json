@@ -2,7 +2,7 @@
   "page": {
     "trackPlaceholder": "Strecke auswählen …",
     "title": "Fahrzeugabgleich",
-    "newSession": "Neue Sitzung",
+    "newSession": "Neue Session",
     "showStandings": "Gesamtwertung anzeigen",
     "hideStandings": "Gesamtwertung ausblenden",
     "standingsTitle": "Gesamtwertung"
@@ -18,18 +18,18 @@
     "lapsCount_one": "{{count}} Runde",
     "lapsCount_other": "{{count}} Runden",
     "best": "Bestzeit",
-    "bestMedian5": "Bester Median (5)",
-    "avg60": "Durchschnitt 60 %",
-    "medianPer5": "Median je 5 Runden"
+    "bestMedian5": "Median der 5 schnellsten Runden",
+    "avg60": "Ø der schnellsten 60 %",
+    "medianPer5": "Median je 5 Runden (nach Zeit sortiert)"
   },
   "standings": {
     "empty": "Keine Wertung vorhanden",
     "bestPerCar": "Bestzeit je Auto",
-    "lapsAndSessions_one": "{{laps}} Runden · {{count}} Sitzung",
-    "lapsAndSessions_other": "{{laps}} Runden · {{count}} Sitzungen",
+    "lapsAndSessions_one": "{{laps}} Runden · {{count}} Session",
+    "lapsAndSessions_other": "{{laps}} Runden · {{count}} Sessions",
     "best": "Bestzeit",
     "median": "Median",
-    "avg60": "60 %"
+    "avg60": "Ø schnellste 60 %"
   },
   "referenceWarning": {
     "title": "Kein Referenzfahrer",

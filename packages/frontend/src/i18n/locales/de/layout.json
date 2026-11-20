@@ -65,8 +65,8 @@
       "timerFinish": "Ziel",
       "timerSector": "Sektor {{sector}}",
       "lap": "Runde: {{label}} – {{time}} s",
-      "sessionStarted": "Sitzung gestartet: {{id}} …",
-      "sessionStopped": "Sitzung angehalten: {{id}} …"
+      "sessionStarted": "Session gestartet: {{id}} …",
+      "sessionStopped": "Session angehalten: {{id}} …"
     }
   }
 }

@@ -39,12 +39,12 @@
     "total": "Gesamt"
   },
   "sessionModal": {
-    "nameLabel": "Sitzungsname",
+    "nameLabel": "Sessionname",
     "durationLabel": "Dauer (Min.)",
     "maxLapsLabel": "Max. Runden",
     "unlimitedHint": "0 = unbegrenzt",
-    "useQualifyingGrid": "Startaufstellung aus der Qualifikation übernehmen",
-    "startQualifying": "Qualifikation starten",
+    "useQualifyingGrid": "Startaufstellung aus dem Qualifying übernehmen",
+    "startQualifying": "Qualifying starten",
     "startRace": "Rennen starten"
   },
   "trackRecords": {
@@ -69,14 +69,14 @@
   "freePracticeHeader": {
     "title": "Freies Training",
     "selectTrack": "Strecke auswählen …",
-    "qualifying": "Qualifikation",
+    "qualifying": "Qualifying",
     "race": "Rennen",
     "cuConnected": "CU verbunden",
     "cuDisconnected": "CU getrennt"
   },
   "controllerConfig": {
     "title": "Fahrerzuordnung",
-    "session": "Sitzung"
+    "session": "Session"
   },
   "startLights": {
     "cancelTitle": "Abbrechen (Esc)",
@@ -92,10 +92,10 @@
   },
   "configStatus": {
     "ready": "Bereit",
-    "toConfigure_one": "{{count}} Regler zu konfigurieren",
-    "toConfigure_other": "{{count}} Regler zu konfigurieren",
-    "toConfigureWithSlots_one": "{{count}} Regler zu konfigurieren ({{slots}})",
-    "toConfigureWithSlots_other": "{{count}} Regler zu konfigurieren ({{slots}})"
+    "toConfigure_one": "{{count}} Regler noch nicht vollständig zugeordnet",
+    "toConfigure_other": "{{count}} Regler noch nicht vollständig zugeordnet",
+    "toConfigureWithSlots_one": "{{count}} Regler noch nicht vollständig zugeordnet ({{slots}})",
+    "toConfigureWithSlots_other": "{{count}} Regler noch nicht vollständig zugeordnet ({{slots}})"
   },
   "analysis": {
     "title": "Rundenanalyse",
@@ -105,24 +105,24 @@
       "spread": "Konstanz"
     },
     "what": {
-      "pace": "Saubere Runden in Sekunden, gleitender Median über {{count}}",
+      "pace": "Rundenzeiten ohne Ausreißer in Sekunden; gleitender Median über {{count}} Runden",
       "gaps": "Abstand zum Führenden, in Sekunden",
-      "spread": "Saubere Runden, in Sekunden"
+      "spread": "Rundenzeiten ohne Ausreißer in Sekunden"
     },
     "lap": "Runde {{lap}}",
     "driverLap": "{{driver}} · Runde {{lap}}",
-    "incidents": "Zwischenfälle",
-    "incident": "Zwischenfall",
+    "incidents": "Ausreißer",
+    "incident": "Ausreißer",
     "seconds": "{{value}} s",
     "key": {
-      "clean": "eine saubere Runde",
+      "clean": "Runde ohne Ausreißer",
       "median": "Median",
-      "best": "Beste"
+      "best": "Bestzeit"
     },
     "columns": {
       "median": "Median",
-      "spread": "Konstanz",
-      "incidents": "Zwischenfälle",
+      "spread": "Streuung",
+      "incidents": "Ausreißer",
       "lost": "Zeitverlust"
     }
   }

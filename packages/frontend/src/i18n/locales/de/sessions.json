@@ -1,9 +1,9 @@
 {
-  "searchPlaceholder": "Sitzung suchen …",
-  "addLabel": "Neue Sitzung",
-  "emptyTitle": "Keine Sitzungen",
-  "emptyMessage": "Erstelle deine erste Sitzung",
-  "unnamedSession": "Sitzung #{{id}}",
+  "searchPlaceholder": "Session suchen …",
+  "addLabel": "Neue Session",
+  "emptyTitle": "Keine Sessions",
+  "emptyMessage": "Erstelle deine erste Session",
+  "unnamedSession": "Session #{{id}}",
   "columns": {
     "name": "Name",
     "type": "Typ",
@@ -12,11 +12,11 @@
     "date": "Datum"
   },
   "filters": {
-    "noChampionship": "Keine Meisterschaft"
+    "noChampionship": "Ohne Meisterschaft"
   },
   "form": {
-    "createTitle": "Neue Sitzung",
-    "editTitle": "Sitzung bearbeiten",
+    "createTitle": "Neue Session",
+    "editTitle": "Session bearbeiten",
     "generalInfo": "Allgemeine Angaben",
     "name": "Name",
     "namePlaceholder": "z. B. Freies Training Nürburgring",
@@ -36,19 +36,19 @@
     "controllerUsed": "(belegt)",
     "gridPlaceholder": "Startplatz",
     "noDriversAdded": "Keine Fahrer hinzugefügt",
-    "submit": "Sitzung erstellen",
+    "submit": "Session erstellen",
     "update": "Aktualisieren",
     "loadError": "Daten konnten nicht geladen werden",
     "trackRequired": "Eine Strecke ist erforderlich",
     "driverRequired": "Mindestens eine vollständige Zuordnung aus Fahrer, Auto und Regler ist erforderlich"
   },
   "profile": {
-    "notFound": "Sitzung nicht gefunden",
+    "notFound": "Session nicht gefunden",
     "noLapData": "Keine Rundendaten",
     "noParticipants": "Keine Teilnehmer",
     "lapHistory": "Rundenverlauf ({{count}})",
-    "bestLap": "schnellste Runde",
+    "bestLap": "Schnellste Runde",
     "time": "Zeit",
-    "deleteMessage": "Diese Sitzung löschen?"
+    "deleteMessage": "Diese Session löschen?"
   }
 }
